@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+import collections
+import json
+import os
+import sys
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+LIBRARIES = ('orjson', 'ujson', 'rapidjson', 'json')
+
+COLOR = ('blue', 'green', 'red', 'blue')
+
+def aggregate():
+    benchmarks_dir = os.path.join('.benchmarks', os.listdir('.benchmarks')[0])
+    res = collections.defaultdict(dict)
+    for filename in os.listdir(benchmarks_dir):
+        with open(os.path.join(benchmarks_dir, filename), 'r') as fileh:
+            data = json.loads(fileh.read())
+
+        for each in data['benchmarks']:
+            res[each['group']][each['extra_info']['lib']] = {
+                'data': [
+                    val * 1000 for val in each['stats']['data']
+                ],
+                'ops': each['stats']['ops'],
+            }
+    return res
+
+def box(obj):
+    for group, val in sorted(obj.items()):
+        data = []
+        for lib in LIBRARIES:
+            data.append(val[lib]['data'])
+        fig = plt.figure(1, figsize=(9, 6))
+        ax = fig.add_subplot(111)
+        bp = ax.boxplot(data, vert=False, labels=LIBRARIES)
+        ax.set_xlim(left=0)
+        ax.set_xlabel('milliseconds')
+        plt.title(group)
+        plt.show()
+
+def bar(obj):
+    res = {key: [] for key in LIBRARIES}
+    groups = set()
+    for group, val in sorted(obj.items()):
+        for lib in LIBRARIES:
+            res[lib].append(np.median(val[lib]['data']))
+            groups.add(group)
+
+    groups = list(reversed(sorted(list(groups))))
+
+    fig, ax = plt.subplots()
+    index = np.arange(len(groups))
+    bar_width = 0.2
+    opacity = 0.8
+
+    plt.title('Deserialization')
+    plt.ylabel('milliseconds')
+    plt.xticks(index + bar_width, [each.split(' ')[0] for each in groups])
+    plt.legend()
+
+    for (idx, lib) in enumerate(LIBRARIES):
+        plt.bar(
+            index + (idx * bar_width),
+            res[lib],
+            bar_width,
+            alpha=opacity,
+            color=COLOR[idx],
+            label=lib,
+        )
+    plt.tight_layout()
+    plt.show()
+
+try:
+    locals()[sys.argv[1]](aggregate())
+except KeyError:
+    sys.stderr.write("usage: graph (box|bar)\n")
+    sys.exit(1)
