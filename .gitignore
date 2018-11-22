@@ -1,0 +1,11 @@
+*.patch
+/perf.*
+__pycache__
+*.pyc
+/target
+.pytest_cache
+/.hypothesis/
+/.venv*
+benchmark_*.svg
+.coverage
+.benchmarks

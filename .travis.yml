@@ -1,0 +1,6 @@
+dist: xenial
+language: python
+python:
+  - "3.7"
+script:
+  - pip install --upgrade pip wheel pyo3-pack
