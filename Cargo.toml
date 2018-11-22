@@ -12,7 +12,6 @@ name = "orjson"
 crate-type = ["cdylib"]
 
 [dependencies]
-chrono = { version = "0.4", features = ["serde"] }
 pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
 serde = { version = "1" }
 serde_json = { version = "1" }
