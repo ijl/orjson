@@ -2,5 +2,10 @@ dist: xenial
 language: python
 python:
   - "3.7"
+install:
+  - pip install --upgrade pip wheel pyo3-pack pytest
+  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+  - PATH=$HOME/.cargo/bin:$PATH cargo update
 script:
-  - pip install --upgrade pip wheel pyo3-pack
+  - PATH=$HOME/.cargo/bin:$PATH ./build --strip
+  - pytest -v test

@@ -1,0 +1,26 @@
+[package]
+name = "orjson"
+version = "0.1.0"
+authors = []
+edition = '2018'
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/ijl/orjson"
+readme = "README.md"
+
+[lib]
+name = "orjson"
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
+serde = { version = "1" }
+serde_json = { version = "1" }
+smallvec = { version = "0.6", features = ["std", "union"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true
+panic = "abort"
+debug = false
