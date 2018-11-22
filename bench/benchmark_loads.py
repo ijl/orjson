@@ -35,25 +35,25 @@ def test_loads_canada_rapidjson(benchmark):
     benchmark(json.loads, data)
 
 def test_loads_citm_catalog_orjson(benchmark):
-    benchmark.group = 'citm_catalog-loads'
+    benchmark.group = 'citm_catalog.json deserialization'
     benchmark.extra_info['lib'] = 'orjson'
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(orjson.loads, data)
 
 def test_loads_citm_catalog_ujson(benchmark):
-    benchmark.group = 'citm_catalog-loads'
+    benchmark.group = 'citm_catalog.json deserialization'
     benchmark.extra_info['lib'] = 'ujson'
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(ujson.loads, data)
 
 def test_loads_citm_catalog_json(benchmark):
-    benchmark.group = 'citm_catalog-loads'
+    benchmark.group = 'citm_catalog.json deserialization'
     benchmark.extra_info['lib'] = 'json'
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(json.loads, data)
 
 def test_loads_citm_catalog_rapidjson(benchmark):
-    benchmark.group = 'citm_catalog-loads'
+    benchmark.group = 'citm_catalog.json deserialization'
     benchmark.extra_info['lib'] = 'rapidjson'
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(json.loads, data)
