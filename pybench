@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+rm -rf .benchmarks
+pytest -v bench/benchmark_* --benchmark-autosave --benchmark-save-data "$@"
