@@ -1,3 +1,14 @@
 #!/bin/sh -e
 
-pip install --upgrade pip wheel pyo3-pack pytest 'pytest-benchmark[histogram]' ipython ujson hypothesis python-rapidjson matplotlib
+pip install --upgrade \
+    pip \
+    wheel \
+    pyo3-pack \
+    pytest \
+    'pytest-benchmark[histogram]' \
+    hypothesis \
+    ipython \
+    ujson \
+    python-rapidjson \
+    matplotlib \
+    tabulate

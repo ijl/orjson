@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import collections
+import io
 import json
 import os
 import sys
 
+from tabulate import tabulate
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -25,6 +27,7 @@ def aggregate():
                 'data': [
                     val * 1000 for val in each['stats']['data']
                 ],
+                'median': each['stats']['median'] * 1000,
                 'ops': each['stats']['ops'],
             }
     return res
@@ -57,7 +60,6 @@ def bar(obj):
     bar_width = 0.2
     opacity = 0.8
 
-    plt.title('Deserialization')
     plt.ylabel('milliseconds')
     plt.xticks(index + bar_width, [each.split(' ')[0] for each in groups])
     plt.legend()
@@ -74,8 +76,34 @@ def bar(obj):
     plt.tight_layout()
     plt.show()
 
+def tab(obj):
+    buf = io.StringIO()
+    headers = ('Library', 'Median (milliseconds)', 'Operations per second', 'Relative (latency)')
+    for group, val in sorted(obj.items()):
+        buf.write('\n' + '#### ' + group + '\n\n')
+        table = []
+        for lib in LIBRARIES:
+            table.append(
+                [lib, val[lib]['median'], '%.1f' % val[lib]['ops'], 0]
+            )
+        fastest = min((each[1] for each in table))
+        for each in table:
+            each[3] = '%.2f' % (each[1] / fastest)
+            each[1] = '%.2f' % each[1]
+        buf.write(tabulate(table, headers, tablefmt='grid') + '\n')
+
+
+    print(
+        buf.getvalue()
+        .replace('-', '')
+        .replace('=', '-')
+        .replace('+', '|')
+        .replace('|||||', '')
+        .replace('\n\n', '\n')
+    )
+
 try:
     locals()[sys.argv[1]](aggregate())
 except KeyError:
-    sys.stderr.write("usage: graph (box|bar)\n")
+    sys.stderr.write("usage: graph (box|bar|tab)\n")
     sys.exit(1)
