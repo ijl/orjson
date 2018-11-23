@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+PYTHONPATH=. uwsgi --http :8000 --processes 4 "$@" --mount /=wsgi:app

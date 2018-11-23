@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+PYTHONPATH=. gunicorn --preload --workers 4 "$@" wsgi:app
