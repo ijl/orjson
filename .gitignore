@@ -9,4 +9,3 @@ __pycache__
 benchmark_*.svg
 .coverage
 .benchmarks
-Cargo.lock
