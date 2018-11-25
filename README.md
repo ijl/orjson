@@ -22,6 +22,7 @@ and Python environment:
 
 ```sh
 git checkout https://github.com/ijl/orjson.git && cd orjson
+git submodule init && git submodule update
 pip install --upgrade pyo3-pack
 pyo3-pack build --release --strip --interpreter python3.7
 ```
@@ -94,8 +95,8 @@ b'{"bool":true,"\xf0\x9f\x90\x88":"\xe5\x93\x88\xe5\x93\x88","int":9223372036854
 
 The library has comprehensive tests. There are unit tests against the
 roundtrip, jsonchecker, and fixtures files of the
-[nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark). It
-is tested to not crash against the
+[nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) 
+repository. It is tested to not crash against the
 [Big List of Naughty Strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 There are integration tests exercising the library's use in web
 servers (uwsgi and gunicorn, using multiprocess/forked workers) and when
