@@ -95,7 +95,7 @@ b'{"bool":true,"\xf0\x9f\x90\x88":"\xe5\x93\x88\xe5\x93\x88","int":9223372036854
 
 The library has comprehensive tests. There are unit tests against the
 roundtrip, jsonchecker, and fixtures files of the
-[nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) 
+[nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark)
 repository. It is tested to not crash against the
 [Big List of Naughty Strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 There are integration tests exercising the library's use in web
@@ -165,8 +165,8 @@ json. Deserialization performance is worse to about the same as ultrajson.
 | rapidjson |                    1.57 |                   637.3 |                 2.68 |
 | json      |                    2.17 |                   458.5 |                 3.71 |
 
-This was measured on Python 3.7.1. The above can be reproduced using
-the `pybench` and `graph` scripts.
+This was measured using orjson 1.0.0 on Python 3.7.1. The above can be
+reproduced using the `pybench` and `graph` scripts.
 
 ## License
 
