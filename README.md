@@ -5,7 +5,8 @@ library for JSON serialization, about twice as fast or more as the nearest
 other library, with deserialization performance slightly worse to similar to
 the fastest library.
 
-It supports Python 3.6 and Python 3.7 (CPython only).
+It supports Python 3.6 and Python 3.7 (CPython only). It is not intended
+as a drop-in replacement for the standard library's json module.
 
 ## Usage
 
