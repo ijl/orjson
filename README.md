@@ -34,12 +34,13 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Union[unicode, bytes, dict, list, tuple, int, float]) -> bytes
+def dumps(obj: Union[str, bytes, dict, list, tuple, int, float, None]) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.
 
-It has no options and does not support hooks for custom objects.
+It has no options, does not support hooks for custom objects, and does not
+support subclasses.
 
 It raises `TypeError` on an unsupported type or a number that is too large.
 The error message describes the invalid object.
@@ -56,7 +57,7 @@ except TypeError:
 ### Deserialize
 
 ```python
-def loads(obj: Union[bytes, unicode]) -> Any
+def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str]: ...
 ```
 
 `loads()` deserializes JSON to Python objects.

@@ -45,7 +45,6 @@ class TypeTests(unittest.TestCase):
         int  64-bit
         """
         for val in (9223372036854775807, -9223372036854775807):
-            print(orjson.dumps(val))
             self.assertEqual(orjson.loads(str(val)), val)
             self.assertEqual(orjson.dumps(val), str(val).encode('utf-8'))
 
