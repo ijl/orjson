@@ -22,3 +22,9 @@ script:
   - ./integration/run thread
   - ./integration/run gunicorn
   - ./integration/run uwsgi
+
+deploy:
+  provider: script
+  script: pyo3-pack publish --username ijl
+  on:
+    tags: true
