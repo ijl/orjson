@@ -1,13 +1,23 @@
 dist: xenial
+
 language: python
+
 python:
   - "3.5"
   - "3.6"
   - "3.7"
+
+before_install:
+  - sudo apt-get install -y wrk
+
 install:
-  - pip install --upgrade pip wheel pyo3-pack pytest hypothesis
+  - pip install --upgrade pip wheel pyo3-pack pytest hypothesis gunicorn uwsgi flask
   - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
   - PATH=$HOME/.cargo/bin:$PATH cargo update
+
 script:
   - PATH=$HOME/.cargo/bin:$PATH ./build --strip
   - pytest -v test
+  - ./integration/run thread
+  - ./integration/run gunicorn
+  - ./integration/run uwsgi

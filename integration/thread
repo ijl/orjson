@@ -30,7 +30,6 @@ STATUS = 0
 def test_func(n):
     try:
         assert sorted(orjson.loads(orjson.dumps(DATA)), key=itemgetter('id')) == DATA
-        print("thread %s: %s dumps, loads" % (get_ident(), n))
     except Exception:
         STATUS = 1
         traceback.print_exc()
@@ -38,7 +37,7 @@ def test_func(n):
 
 
 with ThreadPoolExecutor(max_workers=4) as executor:
-    executor.map(test_func, range(50000), chunksize=1000)
+    executor.map(test_func, range(20000), chunksize=1000)
     executor.shutdown(wait=True)
 
 

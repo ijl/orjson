@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -e
+
+_dir="$(dirname "${BASH_SOURCE[0]}")"
+
+to_run="${@:-thread uwsgi gunicorn}"
+
+if [[ $to_run == *"thread"* ]]; then
+	"${_dir}"/thread
+fi
+
+if [[ $to_run == *"gunicorn"* ]]; then
+	"${_dir}"/gunicorn --daemon
+	sleep 2
+	"${_dir}"/client
+	pkill -f -9 'wsgi:app'
+fi
+
+if [[ $to_run == *"uwsgi"* ]]; then
+	"${_dir}"/uwsgi --daemonize 2
+	sleep 2
+	"${_dir}"/client
+	pkill -f -9 'wsgi:app'
+fi

@@ -11,4 +11,7 @@ pip install --upgrade \
     ujson \
     python-rapidjson \
     matplotlib \
-    tabulate
+    tabulate \
+    uwsgi \
+    gunicorn \
+    flask

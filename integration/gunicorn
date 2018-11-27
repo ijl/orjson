@@ -1,3 +1,7 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
 
-PYTHONPATH=. gunicorn --preload --workers 4 "$@" wsgi:app
+set -e
+
+_dir="$(dirname "${BASH_SOURCE[0]}")"
+
+PYTHONPATH=${_dir} gunicorn --preload --max-requests 100 --workers 2 "$@" wsgi:app
