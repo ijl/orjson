@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::fmt;
-use std::marker::PhantomData;
-use std::borrow::Cow;
-use smallvec::SmallVec;
 use pyo3::prelude::*;
 use pyo3::types::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
+use smallvec::SmallVec;
+use std::borrow::Cow;
+use std::fmt;
+use std::marker::PhantomData;
 
 import_exception!(json, JSONDecodeError);
 
@@ -32,14 +32,12 @@ struct JsonValue<'a> {
 }
 
 impl<'a> JsonValue<'a> {
-
     fn new(py: Python<'a>) -> JsonValue<'a> {
         JsonValue { py }
     }
 }
 
 impl<'de, 'a> DeserializeSeed<'de> for JsonValue<'a> {
-
     type Value = PyObject;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -51,7 +49,6 @@ impl<'de, 'a> DeserializeSeed<'de> for JsonValue<'a> {
 }
 
 impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
-
     type Value = PyObject;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -65,7 +62,6 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
     where
         E: de::Error,
-
     {
         Ok(value.to_object(self.py))
     }

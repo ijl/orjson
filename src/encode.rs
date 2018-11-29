@@ -6,9 +6,12 @@ use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 pub fn serialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
     let typerefs = TypeRefs::new(py);
-    let s: Result<Vec<u8>, JsonError> = serde_json::to_vec(
-        &SerializePyObject { py: py, refs: &typerefs, obj: obj.as_ref(py) }
-    ).map_err(|error| JsonError::InvalidConversion { error });
+    let s: Result<Vec<u8>, JsonError> = serde_json::to_vec(&SerializePyObject {
+        py: py,
+        refs: &typerefs,
+        obj: obj.as_ref(py),
+    })
+    .map_err(|error| JsonError::InvalidConversion { error });
     Ok(PyBytes::new(py, (s?).as_slice()).into())
 }
 
@@ -17,7 +20,6 @@ pub enum JsonError {
 }
 
 impl From<JsonError> for PyErr {
-
     fn from(h: JsonError) -> PyErr {
         match h {
             JsonError::InvalidConversion { error } => {
@@ -41,7 +43,6 @@ pub struct TypeRefs {
 }
 
 impl TypeRefs {
-
     pub fn new(py: Python) -> TypeRefs {
         TypeRefs {
             str: PyUnicode::new(py, "python").as_ref(py).get_type_ptr(),
@@ -64,22 +65,17 @@ pub struct SerializePyObject<'p, 'a> {
 }
 
 impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
-
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         let obj_ptr = self.obj.get_type_ptr();
         if obj_ptr == self.refs.str {
-           let val: &PyUnicode = self.obj.extract().unwrap();
-            serializer.serialize_str(
-                unsafe { std::str::from_utf8_unchecked(val.as_bytes()) }
-            )
+            let val: &PyUnicode = self.obj.extract().unwrap();
+            serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
         } else if obj_ptr == self.refs.bytes {
             let val: &PyBytes = self.obj.extract().unwrap();
-            serializer.serialize_str(
-                unsafe { std::str::from_utf8_unchecked(val.as_bytes()) }
-            )
+            serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
         } else if obj_ptr == self.refs.dict {
             let val: &PyDict = self.obj.extract().unwrap();
             let len = val.len();
@@ -87,8 +83,16 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 let mut map = serializer.serialize_map(Some(len))?;
                 for (key, value) in val.iter() {
                     map.serialize_entry(
-                        &SerializePyObject { py: self.py, refs: self.refs, obj: key },
-                        &SerializePyObject { py: self.py, refs: self.refs, obj: value },
+                        &SerializePyObject {
+                            py: self.py,
+                            refs: self.refs,
+                            obj: key,
+                        },
+                        &SerializePyObject {
+                            py: self.py,
+                            refs: self.refs,
+                            obj: value,
+                        },
                     )?;
                 }
                 map.end()
@@ -101,8 +105,11 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             if len != 0 {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 for element in val {
-                    seq.serialize_element(
-                        &SerializePyObject { py: self.py, refs: self.refs, obj: element })?
+                    seq.serialize_element(&SerializePyObject {
+                        py: self.py,
+                        refs: self.refs,
+                        obj: element,
+                    })?
                 }
                 seq.end()
             } else {
@@ -114,24 +121,27 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             if len != 0 {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 for element in val {
-                    seq.serialize_element(
-                        &SerializePyObject { py: self.py, refs: self.refs, obj: element }
-                    )?
+                    seq.serialize_element(&SerializePyObject {
+                        py: self.py,
+                        refs: self.refs,
+                        obj: element,
+                    })?
                 }
                 seq.end()
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
         } else if obj_ptr == self.refs.bool {
-             let val: &PyBool = self.obj.extract().unwrap();
-             serializer.serialize_bool(val.is_true())
+            let val: &PyBool = self.obj.extract().unwrap();
+            serializer.serialize_bool(val.is_true())
         } else if obj_ptr == self.refs.int {
             if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
                 serializer.serialize_i64(val)
             } else {
-                Err(ser::Error::custom(
-                    format_args!("Integer exceeds 64-bit max: {:?}", self.obj)
-                ))
+                Err(ser::Error::custom(format_args!(
+                    "Integer exceeds 64-bit max: {:?}",
+                    self.obj
+                )))
             }
         } else if obj_ptr == self.refs.float {
             let val: &PyFloat = self.obj.extract().unwrap();

@@ -12,8 +12,8 @@ extern crate smallvec;
 use pyo3::prelude::*;
 use pyo3::types::*;
 
-mod encode;
 mod decode;
+mod encode;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
@@ -31,13 +31,11 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
         decode::deserialize(py, val.as_bytes())
     } else if let Ok(val) = <PyBytes as PyTryFrom>::try_from(obj_ref) {
         decode::deserialize(py, val.as_bytes())
-    }
-    else {
-        return Err(
-            pyo3::exceptions::TypeError::py_err(
-                format!("Input must be unicode or bytes, not: {}", obj_ref.get_type().name())
-            )
-        );
+    } else {
+        return Err(pyo3::exceptions::TypeError::py_err(format!(
+            "Input must be unicode or bytes, not: {}",
+            obj_ref.get_type().name()
+        )));
     }
 }
 
