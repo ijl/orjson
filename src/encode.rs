@@ -82,12 +82,15 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             if len != 0 {
                 let mut map = serializer.serialize_map(Some(len))?;
                 for (key, value) in val.iter() {
+                    if key.get_type_ptr() != self.refs.str {
+                        return Err(ser::Error::custom(format_args!(
+                            "Dict key must be str, not: {:?}",
+                            key
+                        )));
+                    }
+                    let keystr: &PyUnicode = key.extract().unwrap();
                     map.serialize_entry(
-                        &SerializePyObject {
-                            py: self.py,
-                            refs: self.refs,
-                            obj: key,
-                        },
+                        unsafe { std::str::from_utf8_unchecked(keystr.as_bytes()) },
                         &SerializePyObject {
                             py: self.py,
                             refs: self.refs,

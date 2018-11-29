@@ -124,3 +124,12 @@ class TypeTests(unittest.TestCase):
         obj = {'key_%s' % idx: 'value' for idx in range(513)}
         self.assertEqual(len(obj), 513)
         self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
+
+    def test_dict_invalid_key(self):
+        """
+        dict invalid key
+        """
+        with self.assertRaises(TypeError):
+            orjson.dumps({1: 'value'})
+        with self.assertRaises(TypeError):
+            orjson.dumps({b'key': 'value'})
