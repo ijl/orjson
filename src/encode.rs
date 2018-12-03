@@ -71,13 +71,13 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
     {
         let obj_ptr = self.obj.get_type_ptr();
         if obj_ptr == self.refs.str {
-            let val: &PyUnicode = self.obj.extract().unwrap();
+            let val = unsafe { <PyUnicode as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
         } else if obj_ptr == self.refs.bytes {
-            let val: &PyBytes = self.obj.extract().unwrap();
+            let val = unsafe { <PyBytes as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
         } else if obj_ptr == self.refs.dict {
-            let val: &PyDict = self.obj.extract().unwrap();
+            let val = unsafe { <PyDict as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
                 let mut map = serializer.serialize_map(Some(len))?;
@@ -88,9 +88,12 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                             key
                         )));
                     }
-                    let keystr: &PyUnicode = key.extract().unwrap();
                     map.serialize_entry(
-                        unsafe { std::str::from_utf8_unchecked(keystr.as_bytes()) },
+                        unsafe {
+                            std::str::from_utf8_unchecked(
+                                <PyUnicode as PyTryFrom>::try_from_unchecked(key).as_bytes(),
+                            )
+                        },
                         &SerializePyObject {
                             py: self.py,
                             refs: self.refs,
@@ -103,7 +106,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 serializer.serialize_map(None).unwrap().end()
             }
         } else if obj_ptr == self.refs.list {
-            let val: &PyList = self.obj.extract().unwrap();
+            let val = unsafe { <PyList as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
                 let mut seq = serializer.serialize_seq(Some(len))?;
@@ -119,7 +122,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 serializer.serialize_seq(None).unwrap().end()
             }
         } else if obj_ptr == self.refs.tuple {
-            let val: &PyTuple = self.obj.extract().unwrap();
+            let val = unsafe { <PyTuple as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
                 let mut seq = serializer.serialize_seq(Some(len))?;
@@ -135,7 +138,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 serializer.serialize_seq(None).unwrap().end()
             }
         } else if obj_ptr == self.refs.bool {
-            let val: &PyBool = self.obj.extract().unwrap();
+            let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_bool(val.is_true())
         } else if obj_ptr == self.refs.int {
             if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
@@ -147,7 +150,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 )))
             }
         } else if obj_ptr == self.refs.float {
-            let val: &PyFloat = self.obj.extract().unwrap();
+            let val = unsafe { <PyFloat as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_f64(val.value())
         } else if obj_ptr == self.refs.none {
             serializer.serialize_unit()
