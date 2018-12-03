@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::typeref::*;
 use pyo3::prelude::*;
 use pyo3::types::*;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 pub fn serialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    let typerefs = TypeRefs::new(py);
     let s: Result<Vec<u8>, JsonError> = serde_json::to_vec(&SerializePyObject {
         py: py,
-        refs: &typerefs,
         obj: obj.as_ref(py),
     })
     .map_err(|error| JsonError::InvalidConversion { error });
@@ -29,38 +28,9 @@ impl From<JsonError> for PyErr {
     }
 }
 
-#[derive(Clone)]
-pub struct TypeRefs {
-    pub str: *mut pyo3::ffi::PyTypeObject,
-    pub bytes: *mut pyo3::ffi::PyTypeObject,
-    pub dict: *mut pyo3::ffi::PyTypeObject,
-    pub list: *mut pyo3::ffi::PyTypeObject,
-    pub tuple: *mut pyo3::ffi::PyTypeObject,
-    pub none: *mut pyo3::ffi::PyTypeObject,
-    pub bool: *mut pyo3::ffi::PyTypeObject,
-    pub int: *mut pyo3::ffi::PyTypeObject,
-    pub float: *mut pyo3::ffi::PyTypeObject,
-}
-
-impl TypeRefs {
-    pub fn new(py: Python) -> TypeRefs {
-        TypeRefs {
-            str: PyUnicode::new(py, "python").as_ref(py).get_type_ptr(),
-            bytes: PyBytes::new(py, b"python").as_ref(py).get_type_ptr(),
-            dict: PyDict::new(py).as_ref().get_type_ptr(),
-            list: PyList::empty(py).as_ref().get_type_ptr(),
-            tuple: PyTuple::empty(py).as_ref(py).get_type_ptr(),
-            none: py.None().as_ref(py).get_type_ptr(),
-            bool: true.to_object(py).as_ref(py).get_type_ptr(),
-            int: 1.to_object(py).as_ref(py).get_type_ptr(),
-            float: 1.0.to_object(py).as_ref(py).get_type_ptr(),
-        }
-    }
-}
-
+#[repr(transparent)]
 pub struct SerializePyObject<'p, 'a> {
     pub py: Python<'p>,
-    pub refs: &'a TypeRefs,
     pub obj: &'a PyObjectRef,
 }
 
@@ -70,19 +40,19 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         S: Serializer,
     {
         let obj_ptr = self.obj.get_type_ptr();
-        if obj_ptr == self.refs.str {
+        if unsafe { obj_ptr == STR_PTR } {
             let val = unsafe { <PyUnicode as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
-        } else if obj_ptr == self.refs.bytes {
+        } else if unsafe { obj_ptr == BYTES_PTR } {
             let val = unsafe { <PyBytes as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
-        } else if obj_ptr == self.refs.dict {
+        } else if unsafe { obj_ptr == DICT_PTR } {
             let val = unsafe { <PyDict as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
                 let mut map = serializer.serialize_map(Some(len))?;
                 for (key, value) in val.iter() {
-                    if key.get_type_ptr() != self.refs.str {
+                    if unsafe { key.get_type_ptr() != STR_PTR } {
                         return Err(ser::Error::custom(format_args!(
                             "Dict key must be str, not: {:?}",
                             key
@@ -96,7 +66,6 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                         },
                         &SerializePyObject {
                             py: self.py,
-                            refs: self.refs,
                             obj: value,
                         },
                     )?;
@@ -105,7 +74,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             } else {
                 serializer.serialize_map(None).unwrap().end()
             }
-        } else if obj_ptr == self.refs.list {
+        } else if unsafe { obj_ptr == LIST_PTR } {
             let val = unsafe { <PyList as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
@@ -113,7 +82,6 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 for element in val {
                     seq.serialize_element(&SerializePyObject {
                         py: self.py,
-                        refs: self.refs,
                         obj: element,
                     })?
                 }
@@ -121,7 +89,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
-        } else if obj_ptr == self.refs.tuple {
+        } else if unsafe { obj_ptr == TUPLE_PTR } {
             let val = unsafe { <PyTuple as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
             if len != 0 {
@@ -129,7 +97,6 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 for element in val {
                     seq.serialize_element(&SerializePyObject {
                         py: self.py,
-                        refs: self.refs,
                         obj: element,
                     })?
                 }
@@ -137,10 +104,10 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
-        } else if obj_ptr == self.refs.bool {
+        } else if unsafe { obj_ptr == BOOL_PTR } {
             let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_bool(val.is_true())
-        } else if obj_ptr == self.refs.int {
+        } else if unsafe { obj_ptr == INT_PTR } {
             if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
                 serializer.serialize_i64(val)
             } else {
@@ -149,10 +116,10 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                     self.obj
                 )))
             }
-        } else if obj_ptr == self.refs.float {
+        } else if unsafe { obj_ptr == FLOAT_PTR } {
             let val = unsafe { <PyFloat as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_f64(val.value())
-        } else if obj_ptr == self.refs.none {
+        } else if unsafe { obj_ptr == NONE_PTR } {
             serializer.serialize_unit()
         } else {
             Err(ser::Error::custom(format_args!(
