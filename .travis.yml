@@ -16,7 +16,7 @@ install:
   - PATH=$HOME/.cargo/bin:$PATH cargo update
 
 script:
-  - PATH=$HOME/.cargo/bin:$PATH ./build --strip
+  - PATH=$HOME/.cargo/bin:$PATH ./build --strip --target x86_64-unknown-linux-gnu
   - pytest -v test
   - mypy ./orjson.pyi
   - ./integration/run thread

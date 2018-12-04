@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0 - 2018-12-04
+
+### Changed
+
+- Performance improvements.
+
 ## 1.0.1 - 2018-11-26
 
 ### Fixed
