@@ -2,10 +2,13 @@
 name = "orjson"
 version = "1.0.1"
 authors = []
+description = "Fast Python JSON library"
 edition = '2018'
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
+homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
+keywords = ["json"]
 
 [lib]
 name = "orjson"

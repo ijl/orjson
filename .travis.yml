@@ -24,7 +24,8 @@ script:
   - ./integration/run uwsgi
 
 deploy:
+  skip_cleanup: true
   provider: script
-  script: pyo3-pack publish --username ijl
+  script: ./deploy
   on:
     tags: true

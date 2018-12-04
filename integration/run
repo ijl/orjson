@@ -18,7 +18,7 @@ if [[ $to_run == *"gunicorn"* ]]; then
 fi
 
 if [[ $to_run == *"uwsgi"* ]]; then
-	"${_dir}"/uwsgi --daemonize 2
+	"${_dir}"/uwsgi --daemonize /dev/null
 	sleep 2
 	"${_dir}"/client
 	pkill -f -9 'wsgi:app'

@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+pip install --upgrade twine
+twine upload target/wheels/*.whl
