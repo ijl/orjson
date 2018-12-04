@@ -31,13 +31,31 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(orjson.dumps(obj), ref.encode('utf-8'))
             self.assertEqual(orjson.loads(ref), obj)
 
+    def test_bool_array(self):
+        """
+        bool array
+        """
+        obj = [True] * 256
+        ref = ('[' + ('true,' * 255) + 'true]').encode('utf-8')
+        self.assertEqual(orjson.dumps(obj), ref)
+        self.assertEqual(orjson.loads(ref), obj)
+
     def test_none(self):
         """
-        NoneType
+        null
         """
         obj = None
         ref = u'null'
         self.assertEqual(orjson.dumps(obj), ref.encode('utf-8'))
+        self.assertEqual(orjson.loads(ref), obj)
+
+    def test_null_array(self):
+        """
+        null array
+        """
+        obj = [None] * 256
+        ref = ('[' + ('null,' * 255) + 'null]').encode('utf-8')
+        self.assertEqual(orjson.dumps(obj), ref)
         self.assertEqual(orjson.loads(ref), obj)
 
     def test_int_64(self):

@@ -24,8 +24,8 @@ pub fn init_typerefs(py: Python) {
         LIST_PTR = PyList::empty(py).as_ref().get_type_ptr();
         TUPLE_PTR = PyTuple::empty(py).as_ref(py).get_type_ptr();
         NONE_PTR = py.None().as_ref(py).get_type_ptr();
-        BOOL_PTR = true.to_object(py).as_ref(py).get_type_ptr();
-        INT_PTR = 1.to_object(py).as_ref(py).get_type_ptr();
-        FLOAT_PTR = 1.0.to_object(py).as_ref(py).get_type_ptr();
+        BOOL_PTR = true.into_object(py).as_ref(py).get_type_ptr();
+        INT_PTR = 1.into_object(py).as_ref(py).get_type_ptr();
+        FLOAT_PTR = 1.0.into_object(py).as_ref(py).get_type_ptr();
     });
 }
