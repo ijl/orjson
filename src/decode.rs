@@ -10,9 +10,9 @@ use std::marker::PhantomData;
 
 import_exception!(json, JSONDecodeError);
 
-pub fn deserialize(py: Python, data: &[u8]) -> PyResult<PyObject> {
+pub fn deserialize(py: Python, data: &str) -> PyResult<PyObject> {
     let seed = JsonValue::new(py);
-    let mut deserializer = serde_json::Deserializer::from_slice(data);
+    let mut deserializer = serde_json::Deserializer::from_str(data);
     match seed.deserialize(&mut deserializer) {
         Ok(py_object) => {
             deserializer
