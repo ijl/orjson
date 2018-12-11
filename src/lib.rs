@@ -27,6 +27,10 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+/// loads(obj, /)
+/// --
+///
+/// Deserialize JSON to Python objects.
 #[pyfunction]
 pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
     let obj_ref = obj.as_ref(py);
@@ -49,6 +53,10 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
     decode::deserialize(py, &val)
 }
 
+/// dumps(obj, /)
+/// --
+///
+/// Serialize Python objects to JSON.
 #[pyfunction]
 pub fn dumps(py: Python, obj: PyObject) -> PyResult<PyObject> {
     encode::serialize(py, obj)
