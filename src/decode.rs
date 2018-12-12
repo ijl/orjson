@@ -8,6 +8,7 @@ use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
 use std::marker::PhantomData;
+use crate::typeref;
 
 import_exception!(json, JSONDecodeError);
 
@@ -57,7 +58,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {
-        Ok(unsafe { pyo3::ffi::Py_None() })
+        Ok(unsafe { typeref::NONE })
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>

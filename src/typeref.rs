@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::*;
 use std::sync::Once;
 
+pub static mut NONE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut STR_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut BYTES_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut DICT_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
@@ -18,6 +19,7 @@ static INIT: Once = Once::new();
 
 pub fn init_typerefs(py: Python) {
     INIT.call_once(|| unsafe {
+        NONE = pyo3::ffi::Py_None();
         STR_PTR = PyUnicode::new(py, "python").as_ref(py).get_type_ptr();
         BYTES_PTR = PyBytes::new(py, b"python").as_ref(py).get_type_ptr();
         DICT_PTR = PyDict::new(py).as_ref().get_type_ptr();
