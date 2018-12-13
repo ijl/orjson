@@ -43,9 +43,23 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         if unsafe { obj_ptr == STR_PTR } {
             let val = unsafe { <PyUnicode as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
-        } else if unsafe { obj_ptr == BYTES_PTR } {
-            let val = unsafe { <PyBytes as PyTryFrom>::try_from_unchecked(self.obj) };
-            serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
+        } else if unsafe { obj_ptr == FLOAT_PTR } {
+            let val = unsafe { <PyFloat as PyTryFrom>::try_from_unchecked(self.obj) };
+            serializer.serialize_f64(val.value())
+        } else if unsafe { obj_ptr == INT_PTR } {
+            if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
+                serializer.serialize_i64(val)
+            } else {
+                Err(ser::Error::custom(format_args!(
+                    "Integer exceeds 64-bit max: {:?}",
+                    self.obj
+                )))
+            }
+        } else if unsafe { obj_ptr == BOOL_PTR } {
+            let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
+            serializer.serialize_bool(val.is_true())
+        } else if unsafe { obj_ptr == NONE_PTR } {
+            serializer.serialize_unit()
         } else if unsafe { obj_ptr == DICT_PTR } {
             let val = unsafe { <PyDict as PyTryFrom>::try_from_unchecked(self.obj) };
             let len = val.len();
@@ -104,23 +118,9 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
-        } else if unsafe { obj_ptr == BOOL_PTR } {
-            let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
-            serializer.serialize_bool(val.is_true())
-        } else if unsafe { obj_ptr == INT_PTR } {
-            if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
-                serializer.serialize_i64(val)
-            } else {
-                Err(ser::Error::custom(format_args!(
-                    "Integer exceeds 64-bit max: {:?}",
-                    self.obj
-                )))
-            }
-        } else if unsafe { obj_ptr == FLOAT_PTR } {
-            let val = unsafe { <PyFloat as PyTryFrom>::try_from_unchecked(self.obj) };
-            serializer.serialize_f64(val.value())
-        } else if unsafe { obj_ptr == NONE_PTR } {
-            serializer.serialize_unit()
+        } else if unsafe { obj_ptr == BYTES_PTR } {
+            let val = unsafe { <PyBytes as PyTryFrom>::try_from_unchecked(self.obj) };
+            serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(val.as_bytes()) })
         } else {
             Err(ser::Error::custom(format_args!(
                 "Type is not JSON serializable: {}",

@@ -27,7 +27,7 @@ pub fn deserialize(py: Python, data: &str) -> PyResult<PyObject> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 struct JsonValue<'a> {
     py: Python<'a>,
 }
@@ -107,7 +107,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
         A: SeqAccess<'de>,
     {
         let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::new();
-        while let Some(elem) = seq.next_element_seed(self.clone())? {
+        while let Some(elem) = seq.next_element_seed(self)? {
             elements.push(elem);
         }
         let ptr = unsafe { pyo3::ffi::PyList_New(elements.len() as pyo3::ffi::Py_ssize_t) };
@@ -122,7 +122,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
         A: MapAccess<'de>,
     {
         let dict_ptr = PyDict::new(self.py).into_ptr();
-        while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self.clone())? {
+        while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
             let _ = unsafe { pyo3::ffi::PyDict_SetItem(
                 dict_ptr,
                 PyString::new(self.py, &key).into_ptr(),
