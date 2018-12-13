@@ -3,6 +3,7 @@
 use crate::typeref::*;
 use pyo3::prelude::*;
 use pyo3::types::*;
+use pyo3::ToPyPointer;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 pub fn serialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
@@ -47,14 +48,14 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             let val = unsafe { <PyFloat as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_f64(val.value())
         } else if unsafe { obj_ptr == INT_PTR } {
-            if let Ok(val) = <i64 as FromPyObject>::extract(self.obj) {
-                serializer.serialize_i64(val)
-            } else {
-                Err(ser::Error::custom(format_args!(
+            let val = unsafe { pyo3::ffi::PyLong_AsLong(self.obj.as_ptr()) };
+            if unsafe { std::intrinsics::unlikely(val == -1 && PyErr::occurred(self.py)) } {
+                return Err(ser::Error::custom(format_args!(
                     "Integer exceeds 64-bit max: {:?}",
                     self.obj
                 )))
             }
+            serializer.serialize_i64(val)
         } else if unsafe { obj_ptr == BOOL_PTR } {
             let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
             serializer.serialize_bool(val.is_true())
