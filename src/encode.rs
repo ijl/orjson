@@ -52,7 +52,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             if len != 0 {
                 let mut map = serializer.serialize_map(Some(len))?;
                 for (key, value) in val.iter() {
-                    if unsafe { key.get_type_ptr() != STR_PTR } {
+                    if unsafe { std::intrinsics::unlikely(key.get_type_ptr() != STR_PTR) } {
                         return Err(ser::Error::custom(format_args!(
                             "Dict key must be str, not: {:?}",
                             key

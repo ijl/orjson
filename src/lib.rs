@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 #![feature(custom_attribute)]
+#![feature(core_intrinsics)]
 
 #[macro_use]
 extern crate pyo3;
