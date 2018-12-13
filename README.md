@@ -62,7 +62,8 @@ def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str]: ...
 
 `loads()` deserializes JSON to Python objects.
 
-It raises `orjson.JSONDecodeError` on invalid input.
+It raises `orjson.JSONDecodeError` on invalid input. This exception is a
+subclass of `ValueError`.
 
 
 ```python

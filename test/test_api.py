@@ -55,3 +55,10 @@ class ApiTests(unittest.TestCase):
         __version__
         """
         self.assertRegex(orjson.__version__, r'^\d+\.\d+(\.\d+)?$')
+
+    def test_valueerror(self):
+        """
+        orjson.JSONDecodeError is a subclass of ValueError
+        """
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '{')
+        self.assertRaises(ValueError, orjson.loads, '{')

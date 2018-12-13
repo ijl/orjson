@@ -46,7 +46,7 @@ class JsonCheckerTests(unittest.TestCase):
         """
         fail02.json
         """
-        self._run_fail_json('fail02.json', ValueError)  # EOF
+        self._run_fail_json('fail02.json', orjson.JSONDecodeError)  # EOF
 
     def test_fail03(self):
         """
@@ -229,7 +229,7 @@ class JsonCheckerTests(unittest.TestCase):
         """
         fail32.json
         """
-        self._run_fail_json('fail32.json', ValueError)  # EOF
+        self._run_fail_json('fail32.json', orjson.JSONDecodeError)  # EOF
 
     def test_fail33(self):
         """

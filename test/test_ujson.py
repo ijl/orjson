@@ -243,78 +243,78 @@ class UltraJSONTests(unittest.TestCase):
 
     def test_decodeJibberish(self):
         input = "fdsa sda v9sa fdsa"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenArrayStart(self):
         input = "["
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenObjectStart(self):
         input = "{"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenArrayEnd(self):
         input = "]"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenObjectEnd(self):
         input = "}"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeObjectDepthTooBig(self):
         input = '{' * (1024 * 1024)
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeStringUnterminated(self):
         input = "\"TESTING"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeStringUntermEscapeSequence(self):
         input = "\"TESTING\\\""
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeStringBadEscape(self):
         input = "\"TESTING\\\""
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeTrueBroken(self):
         input = "tru"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeFalseBroken(self):
         input = "fa"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeNullBroken(self):
         input = "n"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenDictKeyTypeLeakTest(self):
         input = '{{1337:""}}'
         for _ in range(1000):
-            self.assertRaises(ValueError, orjson.loads, input)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenDictLeakTest(self):
         input = '{{"key":"}'
         for _ in range(1000):
-            self.assertRaises(ValueError, orjson.loads, input)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeBrokenListLeakTest(self):
         input = '[[[true'
         for _ in range(1000):
-            self.assertRaises(ValueError, orjson.loads, input)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeDictWithNoKey(self):
         input = "{{{{31337}}}}"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeDictWithNoColonOrValue(self):
         input = "{{{{\"key\"}}}}"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeDictWithNoValue(self):
         input = "{{{{\"key\":}}}}"
-        self.assertRaises(ValueError, orjson.loads, input)
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, input)
 
     def test_decodeNumericIntPos(self):
         input = "31337"

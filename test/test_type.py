@@ -11,17 +11,17 @@ class TypeTests(unittest.TestCase):
 
     def test_fragment(self):
         """
-        ValueError on fragments
+        orjson.JSONDecodeError on fragments
         """
         for val in ('n', '{', '[', 't'):
-            self.assertRaises(ValueError, orjson.loads, val)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, val)
 
     def test_invalid(self):
         """
-        ValueError on invalid
+        orjson.JSONDecodeError on invalid
         """
         for val in ('{"age", 44}', '[31337,]', '[,31337]', '[]]', '[,]'):
-            self.assertRaises(ValueError, orjson.loads, val)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, val)
 
     def test_bool(self):
         """
