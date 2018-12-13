@@ -8,7 +8,6 @@ import os
 import sys
 
 from tabulate import tabulate
-import numpy as np
 import matplotlib.pyplot as plt
 
 LIBRARIES = ('orjson', 'ujson', 'rapidjson', 'json')
@@ -46,37 +45,6 @@ def box(obj):
         plt.savefig('doc/{}.png'.format(group.replace(' ', '_').replace('.json', '')))
         plt.close()
 
-def bar(obj):
-    res = {key: [] for key in LIBRARIES}
-    groups = set()
-    for group, val in sorted(obj.items()):
-        for lib in LIBRARIES:
-            res[lib].append(np.median(val[lib]['data']))
-            groups.add(group)
-
-    groups = list(reversed(sorted(list(groups))))
-
-    fig, ax = plt.subplots()
-    index = np.arange(len(groups))
-    bar_width = 0.2
-    opacity = 0.8
-
-    plt.ylabel('milliseconds')
-    plt.xticks(index + bar_width, [each.split(' ')[0] for each in groups])
-    plt.legend()
-
-    for (idx, lib) in enumerate(LIBRARIES):
-        plt.bar(
-            index + (idx * bar_width),
-            res[lib],
-            bar_width,
-            alpha=opacity,
-            color=COLOR[idx],
-            label=lib,
-        )
-    plt.tight_layout()
-    plt.show()
-
 def tab(obj):
     buf = io.StringIO()
     headers = ('Library', 'Median (milliseconds)', 'Operations per second', 'Relative (latency)')
@@ -106,5 +74,5 @@ def tab(obj):
 try:
     locals()[sys.argv[1]](aggregate())
 except KeyError:
-    sys.stderr.write("usage: graph (box|bar|tab)\n")
+    sys.stderr.write("usage: graph (box|tab)\n")
     sys.exit(1)
