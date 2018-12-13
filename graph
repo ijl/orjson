@@ -43,7 +43,8 @@ def box(obj):
         ax.set_xlim(left=0)
         ax.set_xlabel('milliseconds')
         plt.title(group)
-        plt.show()
+        plt.savefig('doc/{}.png'.format(group.replace(' ', '_').replace('.json', '')))
+        plt.close()
 
 def bar(obj):
     res = {key: [] for key in LIBRARIES}
