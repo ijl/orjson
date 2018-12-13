@@ -23,6 +23,22 @@ class TypeTests(unittest.TestCase):
         for val in ('{"age", 44}', '[31337,]', '[,31337]', '[]]', '[,]'):
             self.assertRaises(orjson.JSONDecodeError, orjson.loads, val)
 
+    def test_str(self):
+        """
+        str
+        """
+        for (obj, ref) in (('blah', b'"blah"'), ('東京', b'"\xe6\x9d\xb1\xe4\xba\xac"')):
+            self.assertEqual(orjson.dumps(obj), ref)
+            self.assertEqual(orjson.loads(ref), obj)
+
+    def test_bytes(self):
+        """
+        bytes
+        """
+        for (obj, ref) in ((b'blah', b'"blah"'), ):
+            self.assertEqual(orjson.dumps(obj), ref)
+            self.assertEqual(orjson.loads(ref), obj.decode('utf-8'))
+
     def test_bool(self):
         """
         bool
