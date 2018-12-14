@@ -7,26 +7,12 @@ use pyo3::ToPyPointer;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 pub fn serialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    let s: Result<Vec<u8>, JsonError> = serde_json::to_vec(&SerializePyObject {
+    let s: Result<Vec<u8>, PyErr> = serde_json::to_vec(&SerializePyObject {
         py: py,
         obj: obj.as_ref(py),
     })
-    .map_err(|error| JsonError::InvalidConversion { error });
+    .map_err(|error| pyo3::exceptions::TypeError::py_err(error.to_string()));
     Ok(PyBytes::new(py, (s?).as_slice()).into())
-}
-
-pub enum JsonError {
-    InvalidConversion { error: serde_json::Error },
-}
-
-impl From<JsonError> for PyErr {
-    fn from(h: JsonError) -> PyErr {
-        match h {
-            JsonError::InvalidConversion { error } => {
-                PyErr::new::<pyo3::exceptions::TypeError, _>(error.to_string())
-            }
-        }
-    }
 }
 
 #[repr(transparent)]
