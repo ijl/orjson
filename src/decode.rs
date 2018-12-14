@@ -13,9 +13,29 @@ use std::os::raw::c_char;
 
 import_exception!(json, JSONDecodeError);
 
-pub fn deserialize(py: Python, data: &str) -> PyResult<PyObject> {
+pub fn deserialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
+    let obj_ref = obj.as_ref(py);
+    let obj_ptr = obj_ref.get_type_ptr();
+    let data: Cow<str>;
+    if unsafe { obj_ptr == typeref::STR_PTR } {
+        data = unsafe {
+            Cow::Borrowed(std::str::from_utf8_unchecked(
+                <PyUnicode as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes(),
+            ))
+        };
+    } else if unsafe { obj_ptr == typeref::BYTES_PTR } {
+        data = String::from_utf8_lossy(unsafe {
+            <PyBytes as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes()
+        });
+    } else {
+        return Err(pyo3::exceptions::TypeError::py_err(format!(
+            "Input must be str or bytes, not: {}",
+            obj_ref.get_type().name()
+        )));
+    }
+
     let seed = JsonValue::new(py);
-    let mut deserializer = serde_json::Deserializer::from_str(data);
+    let mut deserializer = serde_json::Deserializer::from_str(&data);
     match seed.deserialize(&mut deserializer) {
         Ok(py_ptr) => {
             deserializer

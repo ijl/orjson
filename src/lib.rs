@@ -9,10 +9,8 @@ extern crate pyo3;
 extern crate serde;
 extern crate serde_json;
 extern crate smallvec;
-use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::*;
 
 mod decode;
 mod encode;
@@ -34,26 +32,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 /// Deserialize JSON to Python objects.
 #[pyfunction]
 pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    let obj_ref = obj.as_ref(py);
-    let obj_ptr = obj_ref.get_type_ptr();
-    let val: Cow<str>;
-    if unsafe { obj_ptr == typeref::STR_PTR } {
-        val = unsafe {
-            Cow::Borrowed(std::str::from_utf8_unchecked(
-                <PyUnicode as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes(),
-            ))
-        };
-    } else if unsafe { obj_ptr == typeref::BYTES_PTR } {
-        val = String::from_utf8_lossy(unsafe {
-            <PyBytes as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes()
-        });
-    } else {
-        return Err(pyo3::exceptions::TypeError::py_err(format!(
-            "Input must be str or bytes, not: {}",
-            obj_ref.get_type().name()
-        )));
-    }
-    decode::deserialize(py, &val)
+    decode::deserialize(py, obj)
 }
 
 /// dumps(obj, /)
