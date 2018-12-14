@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::os::raw::c_char;
 use pyo3::prelude::*;
 use pyo3::types::*;
 use pyo3::IntoPyPointer;
@@ -65,42 +66,56 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
     where
         E: de::Error,
     {
-        Ok(value.into_object(self.py).into_ptr())
+        match value {
+            true => {
+                unsafe {
+                    pyo3::ffi::Py_INCREF(typeref::TRUE);
+                    Ok(typeref::TRUE)
+                }
+            },
+            false => {
+                unsafe {
+                    pyo3::ffi::Py_INCREF(typeref::FALSE);
+                    Ok(typeref::FALSE)
+                }
+            }
+        }
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_object(self.py).into_ptr())
+        Ok(unsafe { pyo3::ffi::PyLong_FromLong(value) })
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(value.into_object(self.py).into_ptr())
+        Ok(unsafe { pyo3::ffi::PyLong_FromLong(value as i64) })
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(PyFloat::new(self.py, value).into_ptr())
+        Ok(unsafe { pyo3::ffi::PyFloat_FromDouble(value) })
     }
 
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(PyString::new(self.py, value).into_ptr())
+
+        Ok(unsafe { pyo3::ffi::PyUnicode_FromStringAndSize(value.as_ptr() as *const c_char, value.len() as pyo3::ffi::Py_ssize_t) })
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(PyString::new(self.py, value).into_ptr())
+        Ok(unsafe { pyo3::ffi::PyUnicode_FromStringAndSize(value.as_ptr() as *const c_char, value.len() as pyo3::ffi::Py_ssize_t) })
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -126,7 +141,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
         while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
             let _ = unsafe { pyo3::ffi::PyDict_SetItem(
                 dict_ptr,
-                PyString::new(self.py, &key).into_ptr(),
+                pyo3::ffi::PyUnicode_FromStringAndSize(key.as_ptr() as *const c_char, key.len() as pyo3::ffi::Py_ssize_t),
                 value,
             ) };
         }
