@@ -36,9 +36,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
         } else if unsafe { obj_ptr == INT_PTR } {
             let val = unsafe { pyo3::ffi::PyLong_AsLong(self.obj.as_ptr()) };
             if unsafe { std::intrinsics::unlikely(val == -1 && PyErr::occurred(self.py)) } {
-                return Err(ser::Error::custom(
-                    "Integer exceeds 64-bit max"
-                ))
+                return Err(ser::Error::custom("Integer exceeds 64-bit max"));
             }
             serializer.serialize_i64(val)
         } else if unsafe { obj_ptr == BOOL_PTR } {
@@ -53,9 +51,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
                 let mut map = serializer.serialize_map(Some(len))?;
                 for (key, value) in val.iter() {
                     if unsafe { std::intrinsics::unlikely(key.get_type_ptr() != STR_PTR) } {
-                        return Err(ser::Error::custom(
-                            "Dict key must be str"
-                        ));
+                        return Err(ser::Error::custom("Dict key must be str"));
                     }
                     map.serialize_entry(
                         unsafe {

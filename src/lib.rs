@@ -38,13 +38,15 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
     let obj_ptr = obj_ref.get_type_ptr();
     let val: Cow<str>;
     if unsafe { obj_ptr == typeref::STR_PTR } {
-        val = unsafe { Cow::Borrowed(std::str::from_utf8_unchecked(
-            <PyUnicode as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes()
-        )) };
+        val = unsafe {
+            Cow::Borrowed(std::str::from_utf8_unchecked(
+                <PyUnicode as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes(),
+            ))
+        };
     } else if unsafe { obj_ptr == typeref::BYTES_PTR } {
-        val = String::from_utf8_lossy(
-            unsafe { <PyBytes as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes() }
-        );
+        val = String::from_utf8_lossy(unsafe {
+            <PyBytes as PyTryFrom>::try_from_unchecked(obj_ref).as_bytes()
+        });
     } else {
         return Err(pyo3::exceptions::TypeError::py_err(format!(
             "Input must be str or bytes, not: {}",
