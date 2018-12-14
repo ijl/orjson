@@ -43,7 +43,7 @@ impl<'p, 'a> Serialize for SerializePyObject<'p, 'a> {
             serializer.serialize_i64(val)
         } else if unsafe { obj_ptr == BOOL_PTR } {
             let val = unsafe { <PyBool as PyTryFrom>::try_from_unchecked(self.obj) };
-            serializer.serialize_bool(val.is_true())
+            serializer.serialize_bool(unsafe { val.as_ptr() == TRUE })
         } else if unsafe { obj_ptr == NONE_PTR } {
             serializer.serialize_unit()
         } else if unsafe { obj_ptr == DICT_PTR } {
