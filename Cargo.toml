@@ -14,6 +14,21 @@ keywords = ["json"]
 name = "orjson"
 crate-type = ["cdylib"]
 
+[package.metadata.pyo3-pack]
+classifier = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved",
+    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Rust",
+]
+
 [dependencies]
 pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
 serde = { version = "1" }
