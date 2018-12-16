@@ -3,7 +3,6 @@
 use crate::typeref;
 use pyo3::prelude::*;
 use pyo3::types::*;
-use pyo3::IntoPyPointer;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
 use std::borrow::Cow;
@@ -34,7 +33,7 @@ pub fn deserialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
         )));
     }
 
-    let seed = JsonValue::new(py);
+    let seed = JsonValue::new();
     let mut deserializer = serde_json::Deserializer::from_str(&data);
     match seed.deserialize(&mut deserializer) {
         Ok(py_ptr) => {
@@ -50,17 +49,16 @@ pub fn deserialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
 }
 
 #[derive(Clone, Copy)]
-struct JsonValue<'a> {
-    py: Python<'a>,
+struct JsonValue {
 }
 
-impl<'a> JsonValue<'a> {
-    fn new(py: Python<'a>) -> JsonValue<'a> {
-        JsonValue { py }
+impl JsonValue {
+    fn new() -> JsonValue {
+        JsonValue { }
     }
 }
 
-impl<'de, 'a> DeserializeSeed<'de> for JsonValue<'a> {
+impl<'de, 'a> DeserializeSeed<'de> for JsonValue {
     type Value = *mut pyo3::ffi::PyObject;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -71,7 +69,7 @@ impl<'de, 'a> DeserializeSeed<'de> for JsonValue<'a> {
     }
 }
 
-impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
+impl<'de, 'a> Visitor<'de> for JsonValue {
     type Value = *mut pyo3::ffi::PyObject;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -147,7 +145,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
     where
         A: SeqAccess<'de>,
     {
-        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::new();
+        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 6]> = SmallVec::new();
         while let Some(elem) = seq.next_element_seed(self)? {
             elements.push(elem);
         }
@@ -162,7 +160,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue<'a> {
     where
         A: MapAccess<'de>,
     {
-        let dict_ptr = PyDict::new(self.py).into_ptr();
+        let dict_ptr = unsafe { pyo3::ffi::PyDict_New() };
         while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
             let _ = unsafe {
                 pyo3::ffi::PyDict_SetItem(
