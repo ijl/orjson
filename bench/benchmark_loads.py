@@ -58,6 +58,30 @@ def test_loads_citm_catalog_rapidjson(benchmark):
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(json.loads, data)
 
+def test_loads_github_orjson(benchmark):
+    benchmark.group = 'github.json deserialization'
+    benchmark.extra_info['lib'] = 'orjson'
+    data = read_fixture_str("github.json.xz")
+    benchmark(orjson.loads, data)
+
+def test_loads_github_ujson(benchmark):
+    benchmark.group = 'github.json deserialization'
+    benchmark.extra_info['lib'] = 'ujson'
+    data = read_fixture_str("github.json.xz")
+    benchmark(ujson.loads, data)
+
+def test_loads_github_json(benchmark):
+    benchmark.group = 'github.json deserialization'
+    benchmark.extra_info['lib'] = 'json'
+    data = read_fixture_str("github.json.xz")
+    benchmark(json.loads, data)
+
+def test_loads_github_rapidjson(benchmark):
+    benchmark.group = 'github.json deserialization'
+    benchmark.extra_info['lib'] = 'rapidjson'
+    data = read_fixture_str("github.json.xz")
+    benchmark(json.loads, data)
+
 def test_loads_twitter_orjson(benchmark):
     benchmark.group = 'twitter.json deserialization'
     benchmark.extra_info['lib'] = 'orjson'
