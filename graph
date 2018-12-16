@@ -55,9 +55,9 @@ def tab(obj):
             table.append(
                 [lib, val[lib]['median'], '%.1f' % val[lib]['ops'], 0]
             )
-        fastest = min((each[1] for each in table))
+        baseline = table[0][1]
         for each in table:
-            each[3] = '%.2f' % (each[1] / fastest)
+            each[3] = '%.2f' % (each[1] / baseline)
             each[1] = '%.2f' % each[1]
         buf.write(tabulate(table, headers, tablefmt='grid') + '\n')
 
