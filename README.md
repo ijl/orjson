@@ -1,8 +1,8 @@
 # orjson
 
 orjson is a fast JSON library for Python. It benchmarks as the fastest Python
-library for JSON serialization, with 1.6x to 2.6x the performance as the nearest
-other library, with deserialization performance of 0.95x to 1.2x
+library for JSON serialization, with 1.6x to 2.6x the performance of the nearest
+other library, and deserialization performance of 0.95x to 1.2x
 the nearest other library.
 
 It supports CPython 3.5, 3.6, and 3.7. It is not intended
@@ -40,10 +40,16 @@ def dumps(obj: Union[str, bytes, dict, list, tuple, int, float, None]) -> bytes:
 `dumps()` serializes Python objects to JSON.
 
 It has no options, does not support hooks for custom objects, and does not
-support subclasses.
+support subclasses. It supports 64-bit integers and 64-bit floats, which
+is the same as the standard library `json` module.
 
-It raises `TypeError` on an unsupported type or a number that is too large.
-The error message describes the invalid object.
+It raises `TypeError` on an unsupported type. This exception message
+describes the invalid object.
+
+It raises `TypeError` on an integer that is too large.
+
+It raises `TypeError` if a `dict` has a key of a type other than `str`.
+
 
 ```python
 import orjson
@@ -62,8 +68,8 @@ def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str]: ...
 
 `loads()` deserializes JSON to Python objects.
 
-It raises `orjson.JSONDecodeError` on invalid input. This exception is a
-subclass of `ValueError`.
+It raises `orjson.JSONDecodeError` if given an invalid type or invalid
+JSON. This exception is a subclass of `ValueError`.
 
 
 ```python
