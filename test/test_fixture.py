@@ -52,6 +52,8 @@ class FixtureTests(unittest.TestCase):
 
         https://github.com/minimaxir/big-list-of-naughty-strings
         """
-        val = read_fixture('blns.json.xz')
-        with self.assertRaises(json.decoder.JSONDecodeError):
-            _ = orjson.loads(val)
+        val = read_fixture('blns.txt.xz')
+        for line in val.split('\n'):
+            if line and not line.startswith('#'):
+                with self.assertRaises(json.decoder.JSONDecodeError):
+                    _ = orjson.loads('"' + val + '"')
