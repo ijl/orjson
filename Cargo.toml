@@ -31,9 +31,9 @@ classifier = [
 
 [dependencies]
 pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
-serde = { version = "1" }
-serde_json = { version = "1" }
-smallvec = { version = "0.6", features = ["std", "union"] }
+serde = { version = "1", default_features = false }
+serde_json = { version = "1", default_features = false  }
+smallvec = { version = "0.6", default_features = false , features = ["union"] }
 
 [profile.release]
 opt-level = 3
