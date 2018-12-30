@@ -18,7 +18,7 @@ mod typeref;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
-    typeref::init_typerefs(py);
+    typeref::init_typerefs();
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_wrapped(wrap_function!(dumps))?;
     m.add_wrapped(wrap_function!(loads))?;
