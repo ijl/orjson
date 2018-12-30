@@ -49,12 +49,11 @@ pub fn deserialize(py: Python, obj: PyObject) -> PyResult<PyObject> {
 }
 
 #[derive(Clone, Copy)]
-struct JsonValue {
-}
+struct JsonValue {}
 
 impl JsonValue {
     fn new() -> JsonValue {
-        JsonValue { }
+        JsonValue {}
     }
 }
 
@@ -151,7 +150,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
         }
         let ptr = unsafe { pyo3::ffi::PyList_New(elements.len() as pyo3::ffi::Py_ssize_t) };
         for (i, obj) in elements.iter().enumerate() {
-            unsafe { pyo3::ffi::PyList_SetItem(ptr, i as pyo3::ffi::Py_ssize_t, *obj) };
+            unsafe { pyo3::ffi::PyList_SET_ITEM(ptr, i as pyo3::ffi::Py_ssize_t, *obj) };
         }
         Ok(ptr)
     }
