@@ -161,15 +161,19 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     {
         let dict_ptr = unsafe { pyo3::ffi::PyDict_New() };
         while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
-            let _ = unsafe {
-                pyo3::ffi::PyDict_SetItem(
-                    dict_ptr,
-                    pyo3::ffi::PyUnicode_FromStringAndSize(
-                        key.as_ptr() as *const c_char,
-                        key.len() as pyo3::ffi::Py_ssize_t,
-                    ),
-                    value,
+            let pykey = unsafe {
+                pyo3::ffi::PyUnicode_FromStringAndSize(
+                    key.as_ptr() as *const c_char,
+                    key.len() as pyo3::ffi::Py_ssize_t,
                 )
+            };
+            let _ = unsafe { pyo3::ffi::PyDict_SetItem(dict_ptr, pykey, value) };
+            // counter Py_INCREF in insertdict
+            unsafe {
+                pyo3::ffi::Py_DECREF(pykey);
+                if std::intrinsics::likely(value != typeref::NONE) {
+                    pyo3::ffi::Py_DECREF(value)
+                }
             };
         }
         Ok(dict_ptr)
