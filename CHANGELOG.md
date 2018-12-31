@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 - 2018-12-31
+
+### Fixed
+
+- Fix memory leak in deserializing dict
+
 ## 1.2.0 - 2018-12-16
 
 ### Changed
