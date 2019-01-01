@@ -11,7 +11,7 @@ before_install:
   - sudo apt-get install -y wrk
 
 install:
-  - pip install --upgrade pip wheel pyo3-pack pytest hypothesis gunicorn uwsgi flask mypy
+  - pip install --upgrade pip wheel pyo3-pack pytest hypothesis gunicorn uwsgi flask mypy psutil
   - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
   - PATH=$HOME/.cargo/bin:$PATH cargo update
 

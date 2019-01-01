@@ -15,4 +15,5 @@ pip install --upgrade \
     tabulate \
     uwsgi \
     gunicorn \
-    flask
+    flask \
+    psutil
