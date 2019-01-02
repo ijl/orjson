@@ -11,6 +11,7 @@ extern crate serde_json;
 extern crate smallvec;
 
 use pyo3::prelude::*;
+use pyo3::ToPyPointer;
 
 mod decode;
 mod encode;
@@ -41,5 +42,5 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
 /// Serialize Python objects to JSON.
 #[pyfunction]
 pub fn dumps(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    encode::serialize(py, obj)
+    encode::serialize(py, obj.as_ptr())
 }

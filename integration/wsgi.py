@@ -8,7 +8,7 @@ import orjson
 
 app = Flask(__name__)
 
-filename = os.path.join(os.path.dirname(__file__), '..', 'data', 'canada.json.xz')
+filename = os.path.join(os.path.dirname(__file__), '..', 'data', 'twitter.json.xz')
 
 with lzma.open(filename, 'r') as fileh:
     DATA = orjson.loads(fileh.read())
