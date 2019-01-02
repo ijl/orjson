@@ -33,7 +33,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 /// Deserialize JSON to Python objects.
 #[pyfunction]
 pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    decode::deserialize(py, obj)
+    decode::deserialize(py, obj.as_ptr())
 }
 
 /// dumps(obj, /)
