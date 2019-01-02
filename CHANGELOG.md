@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 - 2019-01-02
+
+### Changed
+
+- Performance improvements of 15-25% on serialization, 10% on deserialization.
+
 ## 1.2.1 - 2018-12-31
 
 ### Fixed

@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 
 LIBRARIES = ('orjson', 'ujson', 'rapidjson', 'json')
 
-COLOR = ('blue', 'green', 'red', 'blue')
-
 def aggregate():
     benchmarks_dir = os.path.join('.benchmarks', os.listdir('.benchmarks')[0])
     res = collections.defaultdict(dict)
@@ -47,8 +45,8 @@ def box(obj):
 
 def tab(obj):
     buf = io.StringIO()
-    headers = ('Library', 'Median (milliseconds)', 'Operations per second', 'Relative (latency)')
-    for group, val in sorted(obj.items()):
+    headers = ('Library', 'Median latency (milliseconds)', 'Operations per second', 'Relative (latency)')
+    for group, val in sorted(obj.items(), reverse=True):
         buf.write('\n' + '#### ' + group + '\n\n')
         table = []
         for lib in LIBRARIES:
