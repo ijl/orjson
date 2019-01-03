@@ -31,6 +31,32 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(orjson.dumps(obj), ref)
             self.assertEqual(orjson.loads(ref), obj)
 
+    def test_str_replacement(self):
+        """
+        str roundtrip �
+        """
+        self.assertEqual(orjson.dumps('�'), b'"\xef\xbf\xbd"')
+        self.assertEqual(orjson.loads(b'"\xef\xbf\xbd"'), '�')
+
+    def test_str_surrogates_loads(self):
+        """
+        str unicode surrogates loads()
+        """
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '"\ud800"')
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '"\ud83d\ude80"')
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '"\udcff"')
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, b'"\xed\xa0\xbd\xed\xba\x80"') # \ud83d\ude80
+
+    def test_str_surrogates_dumps(self):
+        """
+        str unicode surrogates dumps()
+        """
+        self.assertRaises(TypeError, orjson.dumps, '\ud800')
+        self.assertRaises(TypeError, orjson.dumps, '\ud83d\ude80')
+        self.assertRaises(TypeError, orjson.dumps, '\udcff')
+        self.assertRaises(TypeError, orjson.dumps, {'\ud83d\ude80': None})
+        self.assertRaises(TypeError, orjson.dumps, b'\xed\xa0\xbd\xed\xba\x80') # \ud83d\ude80
+
     def test_bytes(self):
         """
         bytes

@@ -45,6 +45,8 @@ support subclasses.
 It raises `TypeError` on an unsupported type. This exception message
 describes the invalid object.
 
+It raises `TypeError` on a `str` that contains invalid UTF-8.
+
 It raises `TypeError` on an integer that exceeds 64 bits. This is the same
 as the standard library's `json` module.
 
@@ -100,6 +102,36 @@ b'{"bool":true,"\xf0\x9f\x90\x88":"\xe5\x93\x88\xe5\x93\x88","int":9223372036854
 '{"bool": true, "\\ud83d\\udc08": "\\u54c8\\u54c8", "int": 9223372036854775807, "float": 1.337e+40}'
 ```
 
+### UTF-8
+
+orjson raises an exception on invalid UTF-8. This is
+necessary because Python 3 str objects may contain UTF-16 surrogates. The
+standard library's json module accepts invalid UTF-8.
+
+```python
+>>> import orjson, ujson, rapidjson, json
+>>> orjson.dumps('\ud800')
+TypeError: str is not valid UTF-8: surrogates not allowed
+>>> ujson.dumps('\ud800')
+UnicodeEncodeError: 'utf-8' codec ...
+>>> rapidjson.dumps('\ud800')
+UnicodeEncodeError: 'utf-8' codec ...
+>>> json.dumps('\ud800')
+'"\\ud800"'
+```
+
+```python
+>>> import orjson, ujson, rapidjson, json
+>>> orjson.loads('"\\ud800"')
+JSONDecodeError: unexpected end of hex escape at line 1 column 8: line 1 column 1 (char 0)
+>>> ujson.loads('"\\ud800"')
+''
+>>> rapidjson.loads('"\\ud800"')
+ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
+>>> json.loads('"\\ud800"')
+'\ud800'
+```
+
 ## Testing
 
 The library has comprehensive tests. There are unit tests against the
@@ -108,7 +140,8 @@ roundtrip, jsonchecker, and fixtures files of the
 repository. It is tested to not crash against the
 [Big List of Naughty Strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 It is tested to not leak memory. It is tested to be correct against
-input from the PyJFuzz JSON fuzzer. There are integration tests
+input from the PyJFuzz JSON fuzzer. It is tested to not crash
+against and not accept invalid UTF-8. There are integration tests
 exercising the library's use in web servers (uwsgi and gunicorn,
 using multiprocess/forked workers) and when
 multithreaded. It also uses some tests from the ultrajson library.

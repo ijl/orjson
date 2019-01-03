@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::typeref;
+use crate::exc::*;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
@@ -9,23 +10,29 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::os::raw::c_char;
 
-import_exception!(json, JSONDecodeError);
-
 pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObject> {
     let obj_type_ptr = unsafe { (*ptr).ob_type };
     let data: Cow<str>;
     if unsafe { obj_type_ptr == typeref::STR_PTR } {
         let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
+        let uni = unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(ptr, &mut str_size) as *const u8 };
+        if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
+            return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
+        }
         data = unsafe {
-            Cow::Borrowed(std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                pyo3::ffi::PyUnicode_AsUTF8AndSize(ptr, &mut str_size) as *const u8,
-                str_size as usize,
-            )))
+            Cow::Borrowed(std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize)))
         };
     } else if unsafe { obj_type_ptr == typeref::BYTES_PTR } {
         let buffer = unsafe { pyo3::ffi::PyBytes_AsString(ptr) as *const u8 };
         let length = unsafe { pyo3::ffi::PyBytes_Size(ptr) as usize };
-        data = unsafe { String::from_utf8_lossy(std::slice::from_raw_parts(buffer, length)) };
+        match String::from_utf8(unsafe { std::slice::from_raw_parts(buffer, length).to_vec() }) {
+            Ok(string) => {
+                data = Cow::Owned(string);
+            },
+            Err(_) => {
+                return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
+            }
+        }
     } else {
         return Err(pyo3::exceptions::TypeError::py_err(
             "Input must be str or bytes",
