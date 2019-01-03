@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 - 2019-01-03
+
+### Fixed
+
+- Handle invalid UTF-8 in str
+
 ## 1.3.0 - 2019-01-02
 
 ### Changed
