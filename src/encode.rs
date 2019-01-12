@@ -121,21 +121,6 @@ impl<'p> Serialize for SerializePyObject {
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
-        } else if unsafe { obj_ptr == BYTES_PTR } {
-            let buffer = unsafe { pyo3::ffi::PyBytes_AsString(self.ptr) as *const u8 };
-            let length = unsafe { pyo3::ffi::PyBytes_Size(self.ptr) as usize };
-            let pystr = unsafe { pyo3::ffi::PyUnicode_FromStringAndSize(
-                buffer as *const c_char,
-                length as pyo3::ffi::Py_ssize_t,
-            ) };
-            if unsafe { std::intrinsics::unlikely(pystr.is_null()) } {
-                return Err(ser::Error::custom(INVALID_STR));
-            }
-            let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
-            let uni = unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(pystr, &mut str_size) as *const u8 };
-            serializer.serialize_str(unsafe {
-                std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize))
-            })
         } else {
             Err(ser::Error::custom(format_args!(
                 "Type is not JSON serializable: {}",

@@ -34,7 +34,7 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Union[str, bytes, dict, list, tuple, int, float, None]) -> bytes: ...
+def dumps(obj: Union[str, dict, list, tuple, int, float, None]) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.

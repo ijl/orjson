@@ -59,11 +59,10 @@ class TypeTests(unittest.TestCase):
 
     def test_bytes(self):
         """
-        bytes
+        bytes not supported
         """
-        for (obj, ref) in ((b'blah', b'"blah"'), ):
-            self.assertEqual(orjson.dumps(obj), ref)
-            self.assertEqual(orjson.loads(ref), obj.decode('utf-8'))
+        with self.assertRaises(TypeError):
+            orjson.dumps([b'a'])
 
     def test_bool(self):
         """
