@@ -34,10 +34,12 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Union[str, dict, list, tuple, int, float, None], default=Optional[callable]) -> bytes: ...
+def dumps(obj: Any, default=Optional[Callable[Any]]) -> bytes: ...
 ```
 
-`dumps()` serializes Python objects to JSON.
+`dumps()` serializes Python objects to JSON. It natively serializes
+`str`, `dict`, `list`, `tuple`, `int`, `float`, and `None` instances. It
+supports arbitrary types through `default`.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object.
@@ -90,7 +92,7 @@ is raised.
 ### Deserialize
 
 ```python
-def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str]: ...
+def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str, None]: ...
 ```
 
 `loads()` deserializes JSON to Python objects.
