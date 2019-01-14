@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::typeref;
 use crate::exc::*;
+use crate::typeref;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
@@ -20,7 +20,10 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
         data = unsafe {
-            Cow::Borrowed(std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize)))
+            Cow::Borrowed(std::str::from_utf8_unchecked(std::slice::from_raw_parts(
+                uni,
+                str_size as usize,
+            )))
         };
     } else if unsafe { obj_type_ptr == typeref::BYTES_PTR } {
         let buffer = unsafe { pyo3::ffi::PyBytes_AsString(ptr) as *const u8 };
@@ -28,7 +31,7 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
         match String::from_utf8(unsafe { std::slice::from_raw_parts(buffer, length).to_vec() }) {
             Ok(string) => {
                 data = Cow::Owned(string);
-            },
+            }
             Err(_) => {
                 return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
             }

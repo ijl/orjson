@@ -1,15 +1,24 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::typeref::*;
 use crate::exc::*;
+use crate::typeref::*;
 use pyo3::prelude::*;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::ffi::CStr;
 use std::os::raw::c_char;
+use std::ptr::NonNull;
 
-pub fn serialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObject> {
-    let buf: Vec<u8> = serde_json::to_vec(&SerializePyObject { ptr: ptr })
-        .map_err(|error| pyo3::exceptions::TypeError::py_err(error.to_string()))?;
+pub fn serialize(
+    py: Python,
+    ptr: *mut pyo3::ffi::PyObject,
+    default: Option<NonNull<pyo3::ffi::PyObject>>,
+) -> PyResult<PyObject> {
+    let buf: Vec<u8> = serde_json::to_vec(&SerializePyObject {
+        ptr: ptr,
+        default: default,
+        recursion: 0,
+    })
+    .map_err(|error| pyo3::exceptions::TypeError::py_err(error.to_string()))?;
     let slice = buf.as_slice();
     Ok(unsafe {
         PyObject::from_owned_ptr(
@@ -22,9 +31,10 @@ pub fn serialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObject
     })
 }
 
-#[repr(transparent)]
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
+    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    recursion: u8,
 }
 
 impl<'p> Serialize for SerializePyObject {
@@ -35,7 +45,8 @@ impl<'p> Serialize for SerializePyObject {
         let obj_ptr = unsafe { (*self.ptr).ob_type };
         if unsafe { obj_ptr == STR_PTR } {
             let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
-            let uni = unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size) as *const u8 };
+            let uni =
+                unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size) as *const u8 };
             if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
                 return Err(ser::Error::custom(INVALID_STR));
             }
@@ -83,7 +94,11 @@ impl<'p> Serialize for SerializePyObject {
                                 str_size as usize,
                             ))
                         },
-                        &SerializePyObject { ptr: value },
+                        &SerializePyObject {
+                            ptr: value,
+                            default: self.default,
+                            recursion: self.recursion,
+                        },
                     )?;
                 }
                 map.end()
@@ -99,7 +114,11 @@ impl<'p> Serialize for SerializePyObject {
                     let elem =
                         unsafe { pyo3::ffi::PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t) };
                     i += 1;
-                    seq.serialize_element(&SerializePyObject { ptr: elem })?
+                    seq.serialize_element(&SerializePyObject {
+                        ptr: elem,
+                        default: self.default,
+                        recursion: self.recursion,
+                    })?
                 }
                 seq.end()
             } else {
@@ -115,13 +134,47 @@ impl<'p> Serialize for SerializePyObject {
                         pyo3::ffi::PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t)
                     };
                     i += 1;
-                    seq.serialize_element(&SerializePyObject { ptr: elem })?
+                    seq.serialize_element(&SerializePyObject {
+                        ptr: elem,
+                        default: self.default,
+                        recursion: self.recursion,
+                    })?
                 }
                 seq.end()
             } else {
                 serializer.serialize_seq(None).unwrap().end()
             }
         } else {
+            if self.default.is_some() {
+                if self.recursion > 5 {
+                    return Err(ser::Error::custom(
+                        "default serializer exceeds recursion limit",
+                    ));
+                } else {
+                    let default_obj = unsafe {
+                        pyo3::ffi::PyObject_CallFunctionObjArgs(
+                            self.default.unwrap().as_ptr(),
+                            self.ptr,
+                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                        )
+                    };
+                    if !default_obj.is_null() {
+                        let res = SerializePyObject {
+                            ptr: default_obj,
+                            default: self.default,
+                            recursion: self.recursion + 1,
+                        }
+                        .serialize(serializer);
+                        unsafe { pyo3::ffi::Py_DECREF(default_obj) };
+                        return res;
+                    } else if unsafe { !pyo3::ffi::PyErr_Occurred().is_null() } {
+                        return Err(ser::Error::custom(format_args!(
+                            "Type raised exception in default function: {}",
+                            unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }
+                        )));
+                    }
+                }
+            }
             Err(ser::Error::custom(format_args!(
                 "Type is not JSON serializable: {}",
                 unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }

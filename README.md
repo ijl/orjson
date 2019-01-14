@@ -34,13 +34,10 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Union[str, dict, list, tuple, int, float, None]) -> bytes: ...
+def dumps(obj: Union[str, dict, list, tuple, int, float, None], default=Optional[callable]) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.
-
-It has no options, does not support hooks for custom objects, and does not
-support subclasses.
 
 It raises `TypeError` on an unsupported type. This exception message
 describes the invalid object.
@@ -52,6 +49,9 @@ as the standard library's `json` module.
 
 It raises `TypeError` if a `dict` has a key of a type other than `str`.
 
+It raises `TypeError` if the output of `default` recurses to handling by
+`default` more than five levels deep.
+
 
 ```python
 import orjson
@@ -61,6 +61,29 @@ try:
 except TypeError:
     raise
 ```
+
+To serialize arbitrary types, specify `default` as a callable that returns
+a supported type. `default` may be a function, lambda, or callable class
+instance.
+
+```python
+>>> import orjson, numpy
+>>> def default(obj):
+        if isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+>>> orjson.dumps(numpy.random.rand(2, 2), default=default)
+b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.19227780743524303]]'
+```
+
+If the `default` callable does not return an object, and an exception
+was raised within the `default` function, an error describing this is
+returned. If no object is returned by the `default` callable but also
+no exception was raised, it falls through to raising `TypeError` on an
+unsupported type.
+
+The `default` callable may return an object that itself
+must be handled by `default` up to five levels deep before an exception
+is raised.
 
 ### Deserialize
 

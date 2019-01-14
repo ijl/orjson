@@ -12,6 +12,7 @@ extern crate smallvec;
 
 use pyo3::prelude::*;
 use pyo3::ToPyPointer;
+use std::ptr::NonNull;
 
 mod decode;
 mod encode;
@@ -37,11 +38,17 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
     decode::deserialize(py, obj.as_ptr())
 }
 
-/// dumps(obj, /)
+/// dumps(obj, default, /)
 /// --
 ///
 /// Serialize Python objects to JSON.
 #[pyfunction]
-pub fn dumps(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    encode::serialize(py, obj.as_ptr())
+pub fn dumps(py: Python, obj: PyObject, default: Option<PyObject>) -> PyResult<PyObject> {
+    let pydef: Option<NonNull<pyo3::ffi::PyObject>>;
+    if default.is_some() {
+        pydef = Some(unsafe { NonNull::new_unchecked(default.unwrap().as_ptr()) });
+    } else {
+        pydef = None
+    };
+    encode::serialize(py, obj.as_ptr(), pydef)
 }
