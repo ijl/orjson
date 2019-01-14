@@ -51,9 +51,7 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
                 .map_err(|e| JSONDecodeError::py_err((e.to_string(), "", 0)))?;
             Ok(unsafe { PyObject::from_owned_ptr(py, py_ptr) })
         }
-        Err(e) => {
-            return Err(JSONDecodeError::py_err((e.to_string(), "", 0)));
-        }
+        Err(e) => Err(JSONDecodeError::py_err((e.to_string(), "", 0))),
     }
 }
 
@@ -92,15 +90,16 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        match value {
-            true => unsafe {
+        if value {
+            unsafe {
                 pyo3::ffi::Py_INCREF(typeref::TRUE);
                 Ok(typeref::TRUE)
-            },
-            false => unsafe {
+            }
+        } else {
+            unsafe {
                 pyo3::ffi::Py_INCREF(typeref::FALSE);
                 Ok(typeref::FALSE)
-            },
+            }
         }
     }
 
