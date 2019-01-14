@@ -39,18 +39,20 @@ def dumps(obj: Union[str, dict, list, tuple, int, float, None], default=Optional
 
 `dumps()` serializes Python objects to JSON.
 
-It raises `TypeError` on an unsupported type. This exception message
+It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object.
 
-It raises `TypeError` on a `str` that contains invalid UTF-8.
+It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 
-It raises `TypeError` on an integer that exceeds 64 bits. This is the same
+It raises `JSONEncodeError` on an integer that exceeds 64 bits. This is the same
 as the standard library's `json` module.
 
-It raises `TypeError` if a `dict` has a key of a type other than `str`.
+It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
 
-It raises `TypeError` if the output of `default` recurses to handling by
+It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than five levels deep.
+
+`JSONEncodeError` is a subclass of `TypeError`.
 
 
 ```python
@@ -58,7 +60,7 @@ import orjson
 
 try:
     val = orjson.dumps(...)
-except TypeError:
+except orjson.JSONEncodeError:
     raise
 ```
 
@@ -78,7 +80,7 @@ b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.192277807435243
 If the `default` callable does not return an object, and an exception
 was raised within the `default` function, an error describing this is
 returned. If no object is returned by the `default` callable but also
-no exception was raised, it falls through to raising `TypeError` on an
+no exception was raised, it falls through to raising `JSONEncodeError` on an
 unsupported type.
 
 The `default` callable may return an object that itself
@@ -134,7 +136,7 @@ standard library's json module accepts invalid UTF-8.
 ```python
 >>> import orjson, ujson, rapidjson, json
 >>> orjson.dumps('\ud800')
-TypeError: str is not valid UTF-8: surrogates not allowed
+JSONEncodeError: str is not valid UTF-8: surrogates not allowed
 >>> ujson.dumps('\ud800')
 UnicodeEncodeError: 'utf-8' codec ...
 >>> rapidjson.dumps('\ud800')

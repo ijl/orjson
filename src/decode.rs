@@ -37,9 +37,11 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
             }
         }
     } else {
-        return Err(pyo3::exceptions::TypeError::py_err(
+        return Err(JSONDecodeError::py_err((
             "Input must be str or bytes",
-        ));
+            "",
+            0,
+        )));
     }
 
     let seed = JsonValue::new();

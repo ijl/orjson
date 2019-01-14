@@ -51,17 +51,17 @@ class TypeTests(unittest.TestCase):
         """
         str unicode surrogates dumps()
         """
-        self.assertRaises(TypeError, orjson.dumps, '\ud800')
-        self.assertRaises(TypeError, orjson.dumps, '\ud83d\ude80')
-        self.assertRaises(TypeError, orjson.dumps, '\udcff')
-        self.assertRaises(TypeError, orjson.dumps, {'\ud83d\ude80': None})
-        self.assertRaises(TypeError, orjson.dumps, b'\xed\xa0\xbd\xed\xba\x80') # \ud83d\ude80
+        self.assertRaises(orjson.JSONEncodeError, orjson.dumps, '\ud800')
+        self.assertRaises(orjson.JSONEncodeError, orjson.dumps, '\ud83d\ude80')
+        self.assertRaises(orjson.JSONEncodeError, orjson.dumps, '\udcff')
+        self.assertRaises(orjson.JSONEncodeError, orjson.dumps, {'\ud83d\ude80': None})
+        self.assertRaises(orjson.JSONEncodeError, orjson.dumps, b'\xed\xa0\xbd\xed\xba\x80') # \ud83d\ude80
 
     def test_bytes(self):
         """
         bytes not supported
         """
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps([b'a'])
 
     def test_bool(self):
@@ -123,7 +123,7 @@ class TypeTests(unittest.TestCase):
         These are an OverflowError in ujson, but valid in stdlib json.
         """
         for val in (9223372036854775809, -9223372036854775809):
-            self.assertRaises(TypeError, orjson.dumps, val)
+            self.assertRaises(orjson.JSONEncodeError, orjson.dumps, val)
 
     def test_float(self):
         """
@@ -197,7 +197,7 @@ class TypeTests(unittest.TestCase):
         """
         dict invalid key
         """
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({1: 'value'})
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({b'key': 'value'})

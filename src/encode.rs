@@ -18,7 +18,7 @@ pub fn serialize(
         default: default,
         recursion: 0,
     })
-    .map_err(|error| pyo3::exceptions::TypeError::py_err(error.to_string()))?;
+    .map_err(|error| JSONEncodeError::py_err(error.to_string()))?;
     let slice = buf.as_slice();
     Ok(unsafe {
         PyObject::from_owned_ptr(

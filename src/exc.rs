@@ -3,3 +3,5 @@
 pub const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
 import_exception!(json, JSONDecodeError);
+
+create_exception!(orjson, JSONEncodeError, pyo3::exceptions::TypeError);

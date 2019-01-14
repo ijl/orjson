@@ -26,6 +26,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_function!(dumps))?;
     m.add_wrapped(wrap_function!(loads))?;
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
+    m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
     Ok(())
 }
 

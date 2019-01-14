@@ -14,7 +14,7 @@ class TypeTests(unittest.TestCase):
         """
         dumps() default not callable
         """
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(uuid.uuid4(), default=NotImplementedError)
 
     def test_default_func(self):
@@ -44,7 +44,7 @@ class TypeTests(unittest.TestCase):
         """
         def default(obj):
             raise NotImplementedError
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(uuid.uuid4(), default=default)
 
     def test_default_func_nested_str(self):
@@ -91,7 +91,7 @@ class TypeTests(unittest.TestCase):
         ref = uuid.uuid4()
         def default(obj):
             return bytes(obj)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
     def test_default_func_invalid_str(self):
@@ -101,7 +101,7 @@ class TypeTests(unittest.TestCase):
         ref = uuid.uuid4()
         def default(obj):
             return '\ud800'
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
     def test_default_lambda_ok(self):
@@ -164,5 +164,5 @@ class TypeTests(unittest.TestCase):
         ref = uuid.uuid4()
         def default(obj):
             return obj
-        with self.assertRaises(TypeError):
+        with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)

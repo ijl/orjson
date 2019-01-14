@@ -42,7 +42,7 @@ class ApiTests(unittest.TestCase):
         loads() invalid type
         """
         for val in (1, 3.14, [], {}, None):
-            self.assertRaises(TypeError, orjson.loads, val)
+            self.assertRaises(orjson.JSONDecodeError, orjson.loads, val)
 
     def test_loads_recursion(self):
         """
