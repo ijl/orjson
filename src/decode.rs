@@ -83,6 +83,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        unsafe { pyo3::ffi::Py_INCREF(typeref::NONE) };
         Ok(unsafe { typeref::NONE })
     }
 
@@ -179,9 +180,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
             // counter Py_INCREF in insertdict
             unsafe {
                 pyo3::ffi::Py_DECREF(pykey);
-                if std::intrinsics::likely(value != typeref::NONE) {
-                    pyo3::ffi::Py_DECREF(value)
-                }
+                pyo3::ffi::Py_DECREF(value);
             };
         }
         Ok(dict_ptr)
