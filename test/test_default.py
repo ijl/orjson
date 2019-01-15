@@ -8,6 +8,18 @@ import uuid
 import orjson
 
 
+class Recursive:
+
+    def __init__(self, cur):
+        self.cur = cur
+
+def default(obj):
+    if obj.cur != 0:
+        obj.cur -= 1
+        return obj
+    return obj.cur
+
+
 class TypeTests(unittest.TestCase):
 
     def test_default_not_callable(self):
@@ -141,20 +153,18 @@ class TypeTests(unittest.TestCase):
         """
         dumps() default recursion limit
         """
-        class Recursive:
-
-            def __init__(self, cur):
-                self.cur = cur
-
-        def default(obj):
-            if obj.cur != 0:
-                obj.cur -= 1
-                return obj
-            return obj.cur
-
         self.assertEqual(
             orjson.dumps(Recursive(5), default=default),
             b'0',
+        )
+
+    def test_default_recursion_reset(self):
+        """
+        dumps() default recursion limit reset
+        """
+        self.assertEqual(
+            orjson.dumps([Recursive(5), {'a': 'b'}, Recursive(5), Recursive(5)], default=default),
+            b'[0,{"a":"b"},0,0]',
         )
 
     def test_default_recursion_infinite(self):
