@@ -71,7 +71,7 @@ class TypeTests(unittest.TestCase):
             b'{"a":"%s"}' % str(ref).encode('utf-8'),
         )
 
-    def test_default_func_nested_list(self):
+    def test_default_func_list(self):
         """
         dumps() default function nested list
         """
@@ -84,7 +84,7 @@ class TypeTests(unittest.TestCase):
             b'{"a":["%s"]}' % str(ref).encode('utf-8'),
         )
 
-    def test_default_func_nested_str(self):
+    def test_default_func_nested_list(self):
         """
         dumps() default function list
         """

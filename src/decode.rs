@@ -44,7 +44,7 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
         )));
     }
 
-    let seed = JsonValue::new();
+    let seed = JsonValue{};
     let mut deserializer = serde_json::Deserializer::from_str(&data);
     match seed.deserialize(&mut deserializer) {
         Ok(py_ptr) => {
@@ -58,13 +58,7 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
 }
 
 #[derive(Clone, Copy)]
-struct JsonValue {}
-
-impl JsonValue {
-    fn new() -> JsonValue {
-        JsonValue {}
-    }
-}
+struct JsonValue;
 
 impl<'de, 'a> DeserializeSeed<'de> for JsonValue {
     type Value = *mut pyo3::ffi::PyObject;
