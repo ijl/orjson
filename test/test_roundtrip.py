@@ -75,7 +75,6 @@ class JsonCheckerTests(unittest.TestCase):
         """
         self._run_roundtrip_json('roundtrip09.json')
 
-    @unittest.skipIf(sys.version_info < (3, 6), "Indeterminate key order")
     def test_roundtrip010(self):
         """
         roundtrip010.json

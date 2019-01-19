@@ -346,14 +346,12 @@ class UltraJSONTests(unittest.TestCase):
         input = "\"31337 \\u0000 31337\""
         self.assertEqual(orjson.loads(input), json.loads(input))
 
-    @unittest.skipIf(sys.version_info < (3, 6), "Bytes input not supported in older Python versions")
     def test_decodeEscape(self):
         base = '\u00e5'.encode('utf-8')
         quote = "\"".encode()
         input = quote + base + quote
         self.assertEqual(json.loads(input), orjson.loads(input))
 
-    @unittest.skipIf(sys.version_info < (3, 6), "Bytes input not supported in older Python versions")
     def test_decodeBigEscape(self):
         for _ in range(10):
             base = '\u00e5'.encode('utf-8')

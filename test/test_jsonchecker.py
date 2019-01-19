@@ -237,7 +237,6 @@ class JsonCheckerTests(unittest.TestCase):
         """
         self._run_fail_json('fail33.json')
 
-    @unittest.skipIf(sys.version_info < (3, 6), "Indeterminate key order")
     def test_pass01(self):
         """
         pass01.json
@@ -256,7 +255,6 @@ class JsonCheckerTests(unittest.TestCase):
             b'[[[[[[[[[[[[[[[[[[["Not too deep"]]]]]]]]]]]]]]]]]]]'
         )
 
-    @unittest.skipIf(sys.version_info < (3, 6), "Indeterminate key order")
     def test_pass03(self):
         """
         pass03.json

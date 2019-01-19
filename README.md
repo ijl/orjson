@@ -6,7 +6,7 @@ other library and 4.5x to 11.5x the standard library. Its deserialization
 performance is 1.05x to 1.2x the nearest other library and 1.2x to 4x
 the standard library.
 
-It supports CPython 3.5, 3.6, and 3.7. Its API is a subset of the
+It supports CPython 3.6 and 3.7. Its API is a subset of the
 API of the standard library's json module.
 
 ## Usage
