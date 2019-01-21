@@ -39,7 +39,8 @@ def dumps(obj: Any, default=Optional[Callable[Any]]) -> bytes: ...
 
 `dumps()` serializes Python objects to JSON. It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, and `None` instances. It
-supports arbitrary types through `default`.
+supports arbitrary types through `default`. It does not serialize
+subclasses of supported types natively, but `default` may be used.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object.
@@ -54,7 +55,8 @@ It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than five levels deep.
 
-`JSONEncodeError` is a subclass of `TypeError`.
+`JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
+with the standard library.
 
 
 ```python
@@ -97,8 +99,11 @@ def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str, None]: .
 
 `loads()` deserializes JSON to Python objects.
 
-It raises `orjson.JSONDecodeError` if given an invalid type or invalid
-JSON. This exception is a subclass of `ValueError`.
+It raises `JSONDecodeError` if given an invalid type or invalid
+JSON.
+
+`JSONDecodeError` is a subclass of `ValueError`. This is for
+compatibility with the standard library.
 
 
 ```python
