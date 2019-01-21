@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Handle invalid UTF-8 in str
+- Handle invalid UTF-8 in str.
 
 ## 1.3.0 - 2019-01-02
 
@@ -16,7 +16,7 @@
 
 ### Fixed
 
-- Fix memory leak in deserializing dict
+- Fix memory leak in deserializing dict.
 
 ## 1.2.0 - 2018-12-16
 

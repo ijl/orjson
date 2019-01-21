@@ -1,13 +1,21 @@
 # orjson
 
-orjson is a fast JSON library for Python. It benchmarks as the fastest Python
-library for JSON. Its serialization performance is 2x to 3x the nearest
+orjson is a fast, correct JSON library for Python. It benchmarks as the
+fastest Python library for JSON and has comprehensive unit, integration, and
+interoperability tests.
+
+Its serialization performance is 2x to 3x the nearest
 other library and 4.5x to 11.5x the standard library. Its deserialization
 performance is 1.05x to 1.2x the nearest other library and 1.2x to 4x
 the standard library.
 
-It supports CPython 3.6 and 3.7. Its API is a subset of the
-API of the standard library's json module.
+It differs in behavior from other Python JSON libraries in supporting
+datetimes, not supporting subclasses without a `default` hook,
+serializing UTF-8 to bytes rather than escaped ASCII (e.g., "好" rather than
+"\\\u597d") by default, having strict UTF-8 conformance, not supporting pretty
+printing, and not supporting all standard library options.
+
+It supports CPython 3.6 and 3.7.
 
 ## Usage
 
