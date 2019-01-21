@@ -8,7 +8,7 @@ license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
-keywords = ["json"]
+keywords = ["json", "datetime", "rfc", "3339"]
 
 [lib]
 name = "orjson"
@@ -31,6 +31,7 @@ classifier = [
 ]
 
 [dependencies]
+itoa = { version = "0.4", default_features = false }
 pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
 serde = { version = "1", default_features = false }
 serde_json = { version = "1", default_features = false }

@@ -1,19 +1,22 @@
 #!/bin/sh -e
 
 pip install --upgrade \
+    'pytest-benchmark[histogram]' \
+    arrow \
+    flask \
+    gunicorn \
+    hypothesis \
+    ipython \
+    matplotlib \
+    mypy \
+    pendulum \
     pip \
-    wheel \
+    psutil \
     pyo3-pack \
     pytest \
-    'pytest-benchmark[histogram]' \
-    hypothesis \
-    mypy \
-    ipython \
-    ujson \
     python-rapidjson \
-    matplotlib \
+    pytz \
     tabulate \
+    ujson \
     uwsgi \
-    gunicorn \
-    flask \
-    psutil
+    wheel

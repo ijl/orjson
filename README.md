@@ -38,8 +38,9 @@ def dumps(obj: Any, default=Optional[Callable[Any]]) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON. It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, and `None` instances. It
-supports arbitrary types through `default`. It does not serialize
+`str`, `dict`, `list`, `tuple`, `int`, `float`, `datetime.datetime`,
+`datetime.date`, `datetime.time`, and `None` instances. It supports
+arbitrary types through `default`. It does not serialize
 subclasses of supported types natively, but `default` may be used.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
@@ -82,8 +83,8 @@ b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.192277807435243
 ```
 
 If the `default` callable does not return an object, and an exception
-was raised within the `default` function, an error describing this is
-returned. If no object is returned by the `default` callable but also
+was raised within the `default` function, an exception describing this is
+raised. If no object is returned by the `default` callable but also
 no exception was raised, it falls through to raising `JSONEncodeError` on an
 unsupported type.
 
@@ -115,6 +116,8 @@ except orjson.JSONDecodeError:
     raise
 ```
 
+Errors with `tzinfo` result in `JSONEncodeError` being raised.
+
 ### Comparison
 
 There are slight differences in output between libraries. The differences
@@ -133,6 +136,43 @@ b'{"bool":true,"\xf0\x9f\x90\x88":"\xe5\x93\x88\xe5\x93\x88","int":9223372036854
 >>> json.dumps(data)
 '{"bool": true, "\\ud83d\\udc08": "\\u54c8\\u54c8", "int": 9223372036854775807, "float": 1.337e+40}'
 ```
+
+### datetime
+
+orjson serializes `datetime.datetime` objects to
+[RFC 3339](https://tools.ietf.org/html/rfc3339) format, a subset of
+ISO 8601.
+
+`datetime.datetime` objects must have `tzinfo` set. For UTC timezones,
+`datetime.timezone.utc` is sufficient. For other timezones, `tzinfo`
+must be a timezone object from the pendulum, pytz, or dateutil libraries.
+
+```python
+>>> import orjson, datetime, pendulum
+>>> orjson.dumps(
+    datetime.datetime.fromtimestamp(4123518902).replace(tzinfo=datetime.timezone.utc)
+)
+b'"2100-09-01T21:55:02+00:00"'
+>>> orjson.dumps(
+    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide'))
+)
+b'"2018-12-01T02:03:04.9+10:30"'
+```
+
+`datetime.time` objects must not have a `tzinfo`. `datetime.date` objects
+will always serialize.
+
+```python
+>>> import orjson, datetimem
+>>> orjson.dumps(datetime.date(1900, 1, 2))
+b'"1900-01-02"'
+>>> orjson.dumps(datetime.time(12, 0, 15, 291290))
+b'"12:00:15.291290"'
+```
+
+It is faster to have orjson serialize datetime objects than to do so
+before calling `dumps()`. If using an unsupported type such as
+`pendulum.datetime`, use `default`.
 
 ### UTF-8
 
