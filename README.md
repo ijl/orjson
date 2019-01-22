@@ -171,7 +171,7 @@ b'"2018-12-01T02:03:04.9+10:30"'
 will always serialize.
 
 ```python
->>> import orjson, datetimem
+>>> import orjson, datetime
 >>> orjson.dumps(datetime.date(1900, 1, 2))
 b'"1900-01-02"'
 >>> orjson.dumps(datetime.time(12, 0, 15, 291290))
