@@ -126,7 +126,7 @@ class TypeTests(unittest.TestCase):
 
     def test_int_64(self):
         """
-        int  64-bit
+        int 64-bit
         """
         for val in (9223372036854775807, -9223372036854775807):
             self.assertEqual(orjson.loads(str(val)), val)
@@ -209,11 +209,20 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(len(obj), 513)
         self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
 
-    def test_dict_invalid_key(self):
+    def test_dict_invalid_key_dumps(self):
         """
-        dict invalid key
+        dict invalid key dumps()
         """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({1: 'value'})
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({b'key': 'value'})
+
+    def test_dict_invalid_key_loads(self):
+        """
+        dict invalid key dumps()
+        """
+        with self.assertRaises(orjson.JSONDecodeError):
+            orjson.loads('{1:"value"}')
+        with self.assertRaises(orjson.JSONDecodeError):
+            orjson.loads('{{"a":true}:true}')
