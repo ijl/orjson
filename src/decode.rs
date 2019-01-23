@@ -28,13 +28,11 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
     } else if unsafe { obj_type_ptr == typeref::BYTES_PTR } {
         let buffer = unsafe { pyo3::ffi::PyBytes_AsString(ptr) as *const u8 };
         let length = unsafe { pyo3::ffi::PyBytes_Size(ptr) as usize };
-        match String::from_utf8(unsafe { std::slice::from_raw_parts(buffer, length).to_vec() }) {
-            Ok(string) => {
-                data = Cow::Owned(string);
-            }
-            Err(_) => {
-                return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
-            }
+        let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
+        if encoding_rs::Encoding::utf8_valid_up_to(slice) == length {
+            data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
+        } else {
+            return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
     } else {
         return Err(JSONDecodeError::py_err((
@@ -44,7 +42,7 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
         )));
     }
 
-    let seed = JsonValue{};
+    let seed = JsonValue {};
     let mut deserializer = serde_json::Deserializer::from_str(&data);
     match seed.deserialize(&mut deserializer) {
         Ok(py_ptr) => {

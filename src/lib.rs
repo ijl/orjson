@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate pyo3;
 
+extern crate encoding_rs;
 extern crate itoa;
 extern crate serde;
 extern crate serde_json;

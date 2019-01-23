@@ -31,6 +31,7 @@ classifier = [
 ]
 
 [dependencies]
+encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "0.4", default_features = false }
 pyo3 = { path = "./pyo3", features = ["extension-module", "python3"]}
 serde = { version = "1", default_features = false }
