@@ -14,19 +14,24 @@ pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
 ) -> PyResult<PyObject> {
-    let buf: Vec<u8> = serde_json::to_vec(&SerializePyObject {
-        ptr: ptr,
-        default: default,
-        recursion: 0,
-    })
+    let mut buf: Vec<u8> = Vec::with_capacity(1008);
+    {
+        serde_json::to_writer(
+            &mut buf,
+            &SerializePyObject {
+                ptr: ptr,
+                default: default,
+                recursion: 0,
+            },
+        )
+    }
     .map_err(|error| JSONEncodeError::py_err(error.to_string()))?;
-    let slice = buf.as_slice();
     Ok(unsafe {
         PyObject::from_owned_ptr(
             py,
             pyo3::ffi::PyBytes_FromStringAndSize(
-                slice.as_ptr() as *const c_char,
-                slice.len() as pyo3::ffi::Py_ssize_t,
+                buf.as_ptr() as *const c_char,
+                buf.len() as pyo3::ffi::Py_ssize_t,
             ),
         )
     })
