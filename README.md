@@ -65,6 +65,8 @@ It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than five levels deep.
 
+It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
+
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
 with the standard library.
 
@@ -126,8 +128,6 @@ except orjson.JSONDecodeError:
     raise
 ```
 
-Errors with `tzinfo` result in `JSONEncodeError` being raised.
-
 ### Comparison
 
 There are slight differences in output between libraries. The differences
@@ -173,12 +173,14 @@ b'"2018-12-01T02:03:04.9+10:30"'
 will always serialize.
 
 ```python
->>> import orjson, datetimem
+>>> import orjson, datetime
 >>> orjson.dumps(datetime.date(1900, 1, 2))
 b'"1900-01-02"'
 >>> orjson.dumps(datetime.time(12, 0, 15, 291290))
 b'"12:00:15.291290"'
 ```
+
+Errors with `tzinfo` result in `JSONEncodeError` being raised.
 
 It is faster to have orjson serialize datetime objects than to do so
 before calling `dumps()`. If using an unsupported type such as
