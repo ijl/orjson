@@ -12,7 +12,8 @@ the standard library.
 It differs in behavior from other Python JSON libraries in supporting
 datetimes, not supporting subclasses without a `default` hook,
 serializing UTF-8 to bytes rather than escaped ASCII (e.g., "好" rather than
-"\\\u597d") by default, having strict UTF-8 conformance, not supporting pretty
+"\\\u597d") by default, having strict UTF-8 conformance, having strict JSON
+conformance on NaN/Infinity/-Infinity, not supporting pretty
 printing, and not supporting all standard library options.
 
 It supports CPython 3.6 and 3.7.
@@ -109,7 +110,8 @@ def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str, None]: .
 `loads()` deserializes JSON to Python objects.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
-JSON.
+JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
+which the standard library allows, but is not valid JSON.
 
 `JSONDecodeError` is a subclass of `ValueError`. This is for
 compatibility with the standard library.
