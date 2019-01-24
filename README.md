@@ -32,7 +32,7 @@ To build a release wheel from source, assuming a Rust nightly toolchain
 and Python environment:
 
 ```sh
-git clone --recurse-submodules https://github.com/ijl/orjson.git && cd orjson
+git clone https://github.com/ijl/orjson.git && cd orjson
 pip install --upgrade pyo3-pack
 pyo3-pack build --release --strip --interpreter python3.7
 ```
