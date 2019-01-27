@@ -9,10 +9,27 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
+// https://tools.ietf.org/html/rfc7159#section-6
+// "[-(2**53)+1, (2**53)-1]"
+const STRICT_INT_MIN: i64 = -9007199254740991;
+const STRICT_INT_MAX: i64 = 9007199254740991;
+
+pub const STRICT_INTEGER: u8 = 1 << 0;
+
+pub const MAX_OPT: i8 = STRICT_INTEGER as i8;
+
+const HYPHEN: u8 = 45; // "-"
+const PLUS: u8 = 43; // "+"
+const ZERO: u8 = 48; // "0"
+const T: u8 = 84; // "T"
+const COLON: u8 = 58; // ":"
+const PERIOD: u8 = 46; // ":"
+
 pub fn serialize(
     py: Python,
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
+    opts: u8,
 ) -> PyResult<PyObject> {
     let mut buf: Vec<u8> = Vec::with_capacity(1008);
     {
@@ -21,6 +38,7 @@ pub fn serialize(
             &SerializePyObject {
                 ptr: ptr,
                 default: default,
+                opts: opts,
                 recursion: 0,
             },
         )
@@ -36,17 +54,10 @@ pub fn serialize(
         )
     })
 }
-
-const HYPHEN: u8 = 45; // "-"
-const PLUS: u8 = 43; // "+"
-const ZERO: u8 = 48; // "0"
-const T: u8 = 84; // "T"
-const COLON: u8 = 58; // ":"
-const PERIOD: u8 = 46; // ":"
-
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
+    opts: u8,
     recursion: u8,
 }
 
@@ -74,6 +85,10 @@ impl<'p> Serialize for SerializePyObject {
                 std::intrinsics::unlikely(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null())
             } {
                 return Err(ser::Error::custom("Integer exceeds 64-bit max"));
+            } else if self.opts & STRICT_INTEGER == STRICT_INTEGER
+                && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
+            {
+                return Err(ser::Error::custom("Integer exceeds 53-bit max"));
             }
             serializer.serialize_i64(val)
         } else if unsafe { obj_ptr == BOOL_PTR } {
@@ -110,6 +125,7 @@ impl<'p> Serialize for SerializePyObject {
                         &SerializePyObject {
                             ptr: value,
                             default: self.default,
+                            opts: self.opts,
                             recursion: self.recursion,
                         },
                     )?;
@@ -130,6 +146,7 @@ impl<'p> Serialize for SerializePyObject {
                     seq.serialize_element(&SerializePyObject {
                         ptr: elem,
                         default: self.default,
+                        opts: self.opts,
                         recursion: self.recursion,
                     })?
                 }
@@ -151,6 +168,7 @@ impl<'p> Serialize for SerializePyObject {
                         seq.serialize_element(&SerializePyObject {
                             ptr: elem,
                             default: self.default,
+                            opts: self.opts,
                             recursion: self.recursion,
                         })?
                     }
@@ -407,6 +425,7 @@ impl<'p> Serialize for SerializePyObject {
                         let res = SerializePyObject {
                             ptr: default_obj,
                             default: self.default,
+                            opts: self.opts,
                             recursion: self.recursion + 1,
                         }
                         .serialize(serializer);

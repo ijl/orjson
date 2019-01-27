@@ -124,6 +124,22 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('[-Infinity]')
 
+    def test_int_53(self):
+        """
+        int 53-bit
+        """
+        for val in (9007199254740991, -9007199254740991):
+            self.assertEqual(orjson.loads(str(val)), val)
+            self.assertEqual(orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER), str(val).encode('utf-8'))
+
+    def test_int_53_exc(self):
+        """
+        int 53-bit exception on 64-bit
+        """
+        for val in (9007199254740992, -9007199254740992):
+            with self.assertRaises(orjson.JSONEncodeError):
+                orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER)
+
     def test_int_64(self):
         """
         int 64-bit
@@ -220,7 +236,7 @@ class TypeTests(unittest.TestCase):
 
     def test_dict_invalid_key_loads(self):
         """
-        dict invalid key dumps()
+        dict invalid key loads()
         """
         with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('{1:"value"}')

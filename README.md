@@ -13,7 +13,8 @@ It differs in behavior from other Python JSON libraries in supporting
 datetimes, not supporting subclasses without a `default` hook,
 serializing UTF-8 to bytes rather than escaped ASCII (e.g., "好" rather than
 "\\\u597d") by default, having strict UTF-8 conformance, having strict JSON
-conformance on NaN/Infinity/-Infinity, not supporting pretty
+conformance on NaN/Infinity/-Infinity, having an option for strict
+JSON conformance on 53-bit integers, not supporting pretty
 printing, and not supporting all standard library options.
 
 It supports CPython 3.6 and 3.7.
@@ -43,7 +44,7 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Any, default=Optional[Callable[Any]]) -> bytes: ...
+def dumps(obj: Any, default=Optional[Callable[Any]], option=Optional[int]) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON. It natively serializes
@@ -185,6 +186,25 @@ Errors with `tzinfo` result in `JSONEncodeError` being raised.
 It is faster to have orjson serialize datetime objects than to do so
 before calling `dumps()`. If using an unsupported type such as
 `pendulum.datetime`, use `default`.
+
+### int
+
+JSON only requires that implementations accept integers with 53-bit precision.
+orjson will, by default, serialize 64-bit integers. This is compatible with
+the Python standard library and other non-browser implementations. For
+transmitting JSON to a web browser or other strict implementations, `dumps()`
+can be configured to raise a `JSONEncodeError` on values exceeding the
+53-bit range.
+
+```python
+>>> import orjson
+>>> orjson.dumps(9007199254740992)
+b'9007199254740992'
+>>> orjson.dumps(9007199254740992, option=orjson.OPT_STRICT_INTEGER)
+JSONEncodeError: Integer exceeds 53-bit max
+>>> orjson.dumps(-9007199254740992, option=orjson.OPT_STRICT_INTEGER)
+JSONEncodeError: Integer exceeds 53-bit max
+```
 
 ### UTF-8
 

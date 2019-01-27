@@ -62,3 +62,31 @@ class ApiTests(unittest.TestCase):
         """
         self.assertRaises(orjson.JSONDecodeError, orjson.loads, '{')
         self.assertRaises(ValueError, orjson.loads, '{')
+
+    def test_option_not_int(self):
+        """
+        dumps() option not int or None
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(True, option=True)
+
+    def test_option_invalid_int(self):
+        """
+        dumps() option invalid 64-bit number
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(True, option=9223372036854775809)
+
+    def test_option_range_low(self):
+        """
+        dumps() option out of range low
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(True, option=0)
+
+    def test_option_range_high(self):
+        """
+        dumps() option out of range high
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(True, option=4)
