@@ -1,4 +1,11 @@
 #!/bin/sh -e
 
 rm -rf .benchmarks
-pytest -v bench/benchmark_* --benchmark-disable-gc --benchmark-autosave --benchmark-save-data "$@"
+pytest \
+    --verbose \
+    --benchmark-min-time=1 \
+    --benchmark-max-time=5 \
+    --benchmark-disable-gc \
+    --benchmark-autosave \
+    --benchmark-save-data \
+    bench/benchmark_*
