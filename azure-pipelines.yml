@@ -1,0 +1,16 @@
+- job: linux-python37-manylinux1
+  pool:
+    vmImage: ubuntu-16.04
+  container: manylinux2010
+  parameters:
+    dependencies: apt
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+  - template: ./ci/linux.yaml
+    parameters:
+      python: python3.7
+      target: x86_64-unknown-linux-gnu
+      manylinux: 1
