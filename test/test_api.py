@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import datetime
 import unittest
 import json
 
@@ -90,3 +91,16 @@ class ApiTests(unittest.TestCase):
         """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(True, option=4)
+
+
+    def test_opts_multiple(self):
+        """
+        dumps() multiple option
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [1, datetime.datetime.fromtimestamp(4123518902)],
+                option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC,
+            ),
+            b'[1,"2100-09-01T21:55:02+00:00"]'
+        )

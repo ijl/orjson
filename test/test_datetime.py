@@ -19,6 +19,24 @@ class DatetimeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             orjson.dumps([datetime.datetime(2000, 1, 1, 2, 3, 4, 123)])
 
+    def test_datetime_naive_utc(self):
+        """
+        datetime.datetime naive with opt assumes UTC
+        """
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(2000, 1, 1, 2, 3, 4, 123)], option=orjson.OPT_NAIVE_UTC),
+            b'["2000-01-01T02:03:04.123+00:00"]'
+        )
+
+    def test_datetime_tz_assume(self):
+        """
+        datetime.datetime tz with assume UTC uses tz
+        """
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(2018, 1, 1, 2, 3, 4, 0, tzinfo=tz.gettz('Asia/Shanghai'))], option=orjson.OPT_NAIVE_UTC),
+            b'["2018-01-01T02:03:04+08:00"]',
+        )
+
     def test_datetime_timezone_utc(self):
         """
         datetime.datetime UTC

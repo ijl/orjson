@@ -47,11 +47,21 @@ deploying this does not require Rust or non-libc type libraries.)
 def dumps(obj: Any, default=Optional[Callable[Any]], option=Optional[int]) -> bytes: ...
 ```
 
-`dumps()` serializes Python objects to JSON. It natively serializes
+`dumps()` serializes Python objects to JSON.
+
+It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, and `None` instances. It supports
-arbitrary types through `default`. It does not serialize
+arbitrary types through `default`.
+
+It does not serialize
 subclasses of supported types natively, but `default` may be used.
+
+It accepts options via an `option` keyword argument. These include
+`orjson.OPT_STRICT_INTEGER` for enforcing a 53-bit limit on integers
+and `orjson.OPT_NAIVE_UTC` for assuming `datetime.datetime` objects without a
+`tzinfo` are UTC. Specify multiple options by masking them together, e.g.,
+`option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object.
@@ -156,10 +166,17 @@ ISO 8601.
 
 `datetime.datetime` objects must have `tzinfo` set. For UTC timezones,
 `datetime.timezone.utc` is sufficient. For other timezones, `tzinfo`
-must be a timezone object from the pendulum, pytz, or dateutil libraries.
+must be a timezone object from the pendulum, pytz, or dateutil libraries. For
+applications in which naive datetimes are known to be UTC, `tzinfo` may be
+omitted if `orjson.OPT_NAIVE_UTC` if specified. This does not affect
+datetimes with a `tzinfo` set.
 
 ```python
 >>> import orjson, datetime, pendulum
+>>> orjson.dumps(
+    datetime.datetime.fromtimestamp(4123518902), option=orjson.OPT_NAIVE_UTC
+)
+b'"2100-09-01T21:55:02+00:00"'
 >>> orjson.dumps(
     datetime.datetime.fromtimestamp(4123518902).replace(tzinfo=datetime.timezone.utc)
 )
