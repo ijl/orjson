@@ -1,12 +1,10 @@
 parameters:
   interpreter: ''
+  target: ''
 
 steps:
-- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
-- bash: /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-- bash: brew install wrk
 - bash: pip install --upgrade pip wheel pyo3-pack pytest hypothesis mypy psutil pendulum pytz arrow gunicorn flask twine
-- bash: PATH=$HOME/.cargo/bin:$PATH CARGO_INCREMENTAL=0 pyo3-pack build --release --strip --interpreter $(interpreter) --target x86_64-apple-darwin
+- bash: PATH=$HOME/.cargo/bin:$PATH CARGO_INCREMENTAL=0 pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
@@ -20,3 +18,6 @@ steps:
   displayName: gunicorn
 - bash: ./deploy
   displayName: deploy
+  env:
+    TWINE_PASSWORD: $(TWINE_PASSWORD)
+    TWINE_USERNAME: $(TWINE_USERNAME)

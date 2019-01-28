@@ -5,6 +5,7 @@ jobs:
     vmImage: ubuntu-16.04
   variables:
     interpreter: python3.7
+    target: x86_64-unknown-linux-gnu
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -14,12 +15,14 @@ jobs:
   - template: ./azure-linux.yml
     parameters:
       dependencies: apt
+  - template: ./azure-posix.yml
 
 - job: linux_python36
   pool:
     vmImage: ubuntu-16.04
   variables:
     interpreter: python3.6
+    target: x86_64-unknown-linux-gnu
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -29,12 +32,14 @@ jobs:
   - template: ./azure-linux.yml
     parameters:
       dependencies: apt
+  - template: ./azure-posix.yml
 
 - job: macos_python37
   pool:
     vmImage: xcode9-macos10.13
   variables:
     interpreter: python3.7
+    target: x86_64-apple-darwin
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -42,12 +47,14 @@ jobs:
       addToPath: true
   - checkout: self
   - template: ./azure-macos.yml
+  - template: ./azure-posix.yml
 
 - job: macos_python36
   pool:
     vmImage: xcode9-macos10.13
   variables:
     interpreter: python3.6
+    target: x86_64-apple-darwin
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -55,3 +62,4 @@ jobs:
       addToPath: true
   - checkout: self
   - template: ./azure-macos.yml
+  - template: ./azure-posix.yml
