@@ -4,7 +4,7 @@ set -e
 
 _dir="$(dirname "${BASH_SOURCE[0]}")"
 
-to_run="${@:-thread uwsgi gunicorn}"
+to_run="${@:-thread gunicorn}"
 
 if [[ $to_run == *"thread"* ]]; then
 	"${_dir}"/thread
@@ -14,12 +14,5 @@ if [[ $to_run == *"gunicorn"* ]]; then
 	"${_dir}"/gunicorn --daemon
 	sleep 2
 	"${_dir}"/client 8001
-	pkill -f 'wsgi:app'
-fi
-
-if [[ $to_run == *"uwsgi"* ]]; then
-	"${_dir}"/uwsgi --daemonize /dev/null
-	sleep 2
-	"${_dir}"/client 8000
 	pkill -f 'wsgi:app'
 fi

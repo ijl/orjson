@@ -1,4 +1,14 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
 
-pip install --upgrade twine
+set -eou pipefail
+
+tag=$(git name-rev --tags --name-only $(git rev-parse HEAD))
+
+echo "$tag"
+
+if [[ "$tag" == "undefined" ]]; then
+    echo "not on a tag"
+    exit 0
+fi
+
 twine upload target/wheels/*.whl

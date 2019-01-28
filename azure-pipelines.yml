@@ -1,0 +1,57 @@
+jobs:
+
+- job: linux_python37
+  pool:
+    vmImage: ubuntu-16.04
+  variables:
+    interpreter: python3.7
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-linux.yml
+    parameters:
+      dependencies: apt
+
+- job: linux_python36
+  pool:
+    vmImage: ubuntu-16.04
+  variables:
+    interpreter: python3.6
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.6'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-linux.yml
+    parameters:
+      dependencies: apt
+
+- job: macos_python37
+  pool:
+    vmImage: xcode9-macos10.13
+  variables:
+    interpreter: python3.7
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: macos_python36
+  pool:
+    vmImage: xcode9-macos10.13
+  variables:
+    interpreter: python3.6
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.6'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml

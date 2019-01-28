@@ -39,8 +39,9 @@ serde_json = { version = "1", default_features = false }
 smallvec = { version = "0.6", default_features = false, features = ["union"] }
 
 [profile.release]
-opt-level = 3
 codegen-units = 1
-lto = true
-panic = "abort"
 debug = false
+incremental = false
+lto = true
+opt-level = 3
+panic = "abort"

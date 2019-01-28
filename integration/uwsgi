@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-_dir="$(dirname "${BASH_SOURCE[0]}")"
-
-PYTHONPATH=${_dir} uwsgi --http :8000 --processes 2 "$@" --mount /=wsgi:app
