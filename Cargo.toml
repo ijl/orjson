@@ -1,14 +1,14 @@
 [package]
 name = "orjson"
-version = "1.3.1"
-authors = []
-description = "Fast Python JSON library"
+version = "2.0.0"
+authors = ["ijl <ijl@mailbox.org>"]
+description = "Fast, correct Python JSON library"
 edition = "2018"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
-keywords = ["json", "datetime", "rfc", "3339"]
+keywords = ["fast", "json", "datetime", "rfc", "3339"]
 
 [lib]
 name = "orjson"

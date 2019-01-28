@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 - 2019-01-28
+
+### Added
+
+- `orjson.dumps()` accepts a `default` callable to serialize arbitrary
+types.
+- `orjson.dumps()` accepts `datetime.datetime`, `datetime.date`,
+and `datetime.time`. Each is serialized to an RFC 3339 string.
+- `orjson.dumps(..., option=orjson.OPT_NAIVE_UTC)` allows serializing
+`datetime.datetime` objects that do not have a timezone set as UTC.
+- `orjson.dumps(..., option=orjson.OPT_STRICT_INTEGER)` available to
+raise an error on integer values outside the 53-bit range of all JSON
+implementations.
+
+### Changed
+
+- `orjson.dumps()` no longer accepts `bytes`.
+
 ## 1.3.1 - 2019-01-03
 
 ### Fixed
