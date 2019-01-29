@@ -5,6 +5,7 @@ import unittest
 from json import dumps as _json_dumps
 from orjson import dumps as _orjson_dumps
 from rapidjson import dumps as _rapidjson_dumps
+from simplejson import dumps as _simplejson_dumps
 from ujson import dumps as _ujson_dumps
 
 from .util import read_fixture_obj, read_fixture_str
@@ -20,6 +21,9 @@ def rapidjson_dumps(obj):
 
 def json_dumps(obj):
     return _json_dumps(obj).encode('utf-8')
+
+def simplejson_dumps(obj):
+    return _simplejson_dumps(obj).encode('utf-8')
 
 def test_dumps_canada_orjson(benchmark):
     benchmark.group = 'canada.json serialization'
@@ -45,6 +49,12 @@ def test_dumps_canada_rapidjson(benchmark):
     data = read_fixture_obj("canada.json.xz")
     benchmark(rapidjson_dumps, data)
 
+def test_dumps_canada_simplejson(benchmark):
+    benchmark.group = 'canada.json serialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_obj("canada.json.xz")
+    benchmark(simplejson_dumps, data)
+
 def test_dumps_citm_catalog_orjson(benchmark):
     benchmark.group = 'citm_catalog.json serialization'
     benchmark.extra_info['lib'] = 'orjson'
@@ -68,6 +78,12 @@ def test_dumps_citm_catalog_rapidjson(benchmark):
     benchmark.extra_info['lib'] = 'rapidjson'
     data = read_fixture_obj("citm_catalog.json.xz")
     benchmark(rapidjson_dumps, data)
+
+def test_dumps_citm_catalog_simplejson(benchmark):
+    benchmark.group = 'citm_catalog.json serialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_obj("citm_catalog.json.xz")
+    benchmark(simplejson_dumps, data)
 
 def test_dumps_github_orjson(benchmark):
     benchmark.group = 'github.json serialization'
@@ -93,6 +109,12 @@ def test_dumps_github_rapidjson(benchmark):
     data = read_fixture_obj("github.json.xz")
     benchmark(rapidjson_dumps, data)
 
+def test_dumps_github_simplejson(benchmark):
+    benchmark.group = 'github.json serialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_obj("github.json.xz")
+    benchmark(simplejson_dumps, data)
+
 def test_dumps_twitter_orjson(benchmark):
     benchmark.group = 'twitter.json serialization'
     benchmark.extra_info['lib'] = 'orjson'
@@ -116,3 +138,9 @@ def test_dumps_twitter_rapidjson(benchmark):
     benchmark.extra_info['lib'] = 'rapidjson'
     data = read_fixture_obj("twitter.json.xz")
     benchmark(rapidjson_dumps, data)
+
+def test_dumps_twitter_simplejson(benchmark):
+    benchmark.group = 'twitter.json serialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_obj("twitter.json.xz")
+    benchmark(simplejson_dumps, data)

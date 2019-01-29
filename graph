@@ -10,7 +10,7 @@ import sys
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 
-LIBRARIES = ('orjson', 'ujson', 'rapidjson', 'json')
+LIBRARIES = ('orjson', 'ujson', 'rapidjson', 'simplejson', 'json')
 
 def aggregate():
     benchmarks_dir = os.path.join('.benchmarks', os.listdir('.benchmarks')[0])

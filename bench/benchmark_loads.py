@@ -5,6 +5,7 @@ import unittest
 from json import loads as json_loads
 from orjson import loads as orjson_loads
 from rapidjson import loads as rapidjson_loads
+from simplejson import loads as simplejson_loads
 from ujson import loads as ujson_loads
 
 from .util import read_fixture_obj, read_fixture_str
@@ -34,6 +35,12 @@ def test_loads_canada_rapidjson(benchmark):
     data = read_fixture_str("canada.json.xz")
     benchmark(rapidjson_loads, data)
 
+def test_loads_canada_simplejson(benchmark):
+    benchmark.group = 'canada.json deserialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_str("canada.json.xz")
+    benchmark(simplejson_loads, data)
+
 def test_loads_citm_catalog_orjson(benchmark):
     benchmark.group = 'citm_catalog.json deserialization'
     benchmark.extra_info['lib'] = 'orjson'
@@ -57,6 +64,12 @@ def test_loads_citm_catalog_rapidjson(benchmark):
     benchmark.extra_info['lib'] = 'rapidjson'
     data = read_fixture_str("citm_catalog.json.xz")
     benchmark(rapidjson_loads, data)
+
+def test_loads_citm_catalog_simplejson(benchmark):
+    benchmark.group = 'citm_catalog.json deserialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_str("citm_catalog.json.xz")
+    benchmark(simplejson_loads, data)
 
 def test_loads_github_orjson(benchmark):
     benchmark.group = 'github.json deserialization'
@@ -82,6 +95,12 @@ def test_loads_github_rapidjson(benchmark):
     data = read_fixture_str("github.json.xz")
     benchmark(rapidjson_loads, data)
 
+def test_loads_github_simplejson(benchmark):
+    benchmark.group = 'github.json deserialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_str("github.json.xz")
+    benchmark(simplejson_loads, data)
+
 def test_loads_twitter_orjson(benchmark):
     benchmark.group = 'twitter.json deserialization'
     benchmark.extra_info['lib'] = 'orjson'
@@ -105,3 +124,9 @@ def test_loads_twitter_rapidjson(benchmark):
     benchmark.extra_info['lib'] = 'rapidjson'
     data = read_fixture_str("twitter.json.xz")
     benchmark(rapidjson_loads, data)
+
+def test_loads_twitter_simplejson(benchmark):
+    benchmark.group = 'twitter.json deserialization'
+    benchmark.extra_info['lib'] = 'simplejson'
+    data = read_fixture_str("twitter.json.xz")
+    benchmark(simplejson_loads, data)

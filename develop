@@ -16,6 +16,7 @@ pip install --upgrade \
     pytest \
     python-rapidjson \
     pytz \
+    simplejson \
     tabulate \
     ujson \
     uwsgi \
