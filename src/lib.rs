@@ -25,8 +25,8 @@ mod typeref;
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     typeref::init_typerefs();
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add_wrapped(wrap_function!(dumps))?;
-    m.add_wrapped(wrap_function!(loads))?;
+    m.add_wrapped(wrap_pyfunction!(dumps))?;
+    m.add_wrapped(wrap_pyfunction!(loads))?;
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER.into_object(py))?;
