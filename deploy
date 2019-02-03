@@ -11,4 +11,4 @@ if [[ "$tag" == "undefined" ]]; then
     exit 0
 fi
 
-twine upload target/wheels/*.whl
+twine upload "$1"

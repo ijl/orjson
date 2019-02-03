@@ -19,10 +19,11 @@ crate-type = ["cdylib"]
 classifier = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved",
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved",
     "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.6",

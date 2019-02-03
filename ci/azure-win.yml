@@ -1,0 +1,23 @@
+parameters:
+  interpreter: ''
+  target: ''
+
+steps:
+- script: |
+    curl https://win.rustup.rs/x86_64 -o rustup-init.exe
+    rustup-init.exe -y --default-host $(target) --default-toolchain nightly
+    set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+    echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
+  displayName: rustup
+- script: python.exe -m pip install --upgrade pip wheel
+  displayName: pip upgrade
+- script: python.exe -m pip install --upgrade pyo3-pack pytest hypothesis psutil pendulum pytz arrow twine
+  displayName: python dependencies
+- script: pyo3-pack.exe build --release --strip --interpreter $(interpreter) --target $(target)
+  displayName: build
+- script: python.exe -m pip install orjson --find-links=D:\a\1\s\target\wheels\
+  displayName: install
+- script: python.exe -m pytest -v test
+  displayName: pytest
+- script: python.exe integration\thread
+  displayName: thread

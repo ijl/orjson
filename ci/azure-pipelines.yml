@@ -63,3 +63,33 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
   - template: ./azure-posix.yml
+
+- job: win_python37
+  pool:
+    vmImage: vs2017-win2016
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.7.0\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python36
+  pool:
+    vmImage: vs2017-win2016
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.6.4\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.6'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml

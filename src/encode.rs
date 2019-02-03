@@ -81,7 +81,7 @@ impl<'p> Serialize for SerializePyObject {
         } else if unsafe { obj_ptr == FLOAT_PTR } {
             serializer.serialize_f64(unsafe { pyo3::ffi::PyFloat_AsDouble(self.ptr) })
         } else if unsafe { obj_ptr == INT_PTR } {
-            let val = unsafe { pyo3::ffi::PyLong_AsLong(self.ptr) };
+            let val = unsafe { pyo3::ffi::PyLong_AsLongLong(self.ptr) };
             if unsafe {
                 std::intrinsics::unlikely(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null())
             } {

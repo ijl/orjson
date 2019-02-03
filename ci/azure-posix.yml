@@ -4,7 +4,8 @@ parameters:
 
 steps:
 - bash: pip install --upgrade pip wheel pyo3-pack pytest hypothesis mypy psutil pendulum pytz arrow gunicorn flask twine
-- bash: PATH=$HOME/.cargo/bin:$PATH CARGO_INCREMENTAL=0 pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
+  displayName: python dependencies
+- bash: PATH=$HOME/.cargo/bin:$PATH pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
@@ -16,7 +17,7 @@ steps:
   displayName: thread
 - bash: ./integration/run gunicorn
   displayName: gunicorn
-- bash: ./deploy
+- bash: ./deploy target/wheels/*.whl
   displayName: deploy
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)

@@ -48,7 +48,7 @@ pub fn init_typerefs() {
         TUPLE_PTR = (*pyo3::ffi::PyTuple_New(0 as pyo3::ffi::Py_ssize_t)).ob_type;
         NONE_PTR = (*NONE).ob_type;
         BOOL_PTR = (*TRUE).ob_type;
-        INT_PTR = (*pyo3::ffi::PyLong_FromLong(0)).ob_type;
+        INT_PTR = (*pyo3::ffi::PyLong_FromLongLong(0)).ob_type;
         FLOAT_PTR = (*pyo3::ffi::PyFloat_FromDouble(0.0)).ob_type;
         let datetime = (pyo3::ffi::PyDateTimeAPI.DateTime_FromDateAndTime)(
             1970,
