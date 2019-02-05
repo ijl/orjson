@@ -17,7 +17,9 @@ conformance on NaN/Infinity/-Infinity, having an option for strict
 JSON conformance on 53-bit integers, not supporting pretty
 printing, and not supporting all standard library options.
 
-It supports CPython 3.6 and 3.7 and distributes wheels for Linux and macOS.
+It supports CPython 3.6 and 3.7 and distributes wheels for Linux, macOS, and
+Windows. The repository and issue tracker is
+[github.com/ijl/orjson](https://github.com/ijl/orjson).
 
 ## Usage
 
@@ -265,8 +267,8 @@ repository. It is tested to not crash against the
 It is tested to not leak memory. It is tested to be correct against
 input from the PyJFuzz JSON fuzzer. It is tested to not crash
 against and not accept invalid UTF-8. There are integration tests
-exercising the library's use in web servers (uwsgi and gunicorn,
-using multiprocess/forked workers) and when
+exercising the library's use in web servers (gunicorn using multiprocess/forked
+workers) and when
 multithreaded. It also uses some tests from the ultrajson library.
 
 ## Performance
