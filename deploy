@@ -2,9 +2,12 @@
 
 set -eou pipefail
 
+twine --version
+
 tag=$(git name-rev --tags --name-only $(git rev-parse HEAD))
 
 echo "$tag"
+find "$1" || true
 
 if [[ "$tag" == "undefined" ]]; then
     echo "not on a tag"
