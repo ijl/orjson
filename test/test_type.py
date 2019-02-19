@@ -4,6 +4,7 @@
 import unittest
 import datetime
 
+import pytest
 import orjson
 
 
@@ -180,6 +181,14 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(1.7893, orjson.loads("1.7893"))
         self.assertEqual(1.893, orjson.loads("1.893"))
         self.assertEqual(1.3, orjson.loads("1.3"))
+
+    @pytest.mark.xfail
+    def test_float_precision(self):
+        """
+        float precision
+        """
+        self.assertEqual(orjson.loads("31.245270191439438"), 31.245270191439438)
+        self.assertEqual(orjson.loads("121.48791951161945"), 121.48791951161945)
 
     def test_float_notation(self):
         """
