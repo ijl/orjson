@@ -2,10 +2,12 @@
 
 import unittest
 import datetime
+import sys
 
 import arrow
 import orjson
 import pendulum
+import pytest
 import pytz
 from dateutil import tz
 
@@ -154,7 +156,8 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04+10:30"]',
         )
 
-    def test_datetime_partial_second(self):
+    @pytest.mark.skipif(sys.version_info.minor == 5, reason="Non-even minute offsets supported on not 3.5")
+    def test_datetime_partial_second_pendulum_supported(self):
         """
         datetime.datetime UTC offset round seconds
 
@@ -162,6 +165,38 @@ class DatetimeTests(unittest.TestCase):
         """
         self.assertEqual(
             orjson.dumps([datetime.datetime(1937, 1, 1, 12, 0, 27, 87, tzinfo=pendulum.timezone('Europe/Amsterdam'))]),
+            b'["1937-01-01T12:00:27.87+00:20"]',
+        )
+
+    @pytest.mark.skipif(sys.version_info.minor != 5, reason="Non-even minute offsets not supported on 3.5")
+    def test_datetime_partial_second_pendulum_not_supported(self):
+        """
+        datetime.datetime UTC offset round seconds
+
+        https://tools.ietf.org/html/rfc3339#section-5.8
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps([datetime.datetime(1937, 1, 1, 12, 0, 27, 87, tzinfo=pendulum.timezone('Europe/Amsterdam'))])
+
+    def test_datetime_partial_second_pytz(self):
+        """
+        datetime.datetime UTC offset round seconds
+
+        https://tools.ietf.org/html/rfc3339#section-5.8
+        """
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(1937, 1, 1, 12, 0, 27, 87, tzinfo=pytz.timezone('Europe/Amsterdam'))]),
+            b'["1937-01-01T12:00:27.87+00:20"]',
+        )
+
+    def test_datetime_partial_second_dateutil(self):
+        """
+        datetime.datetime UTC offset round seconds
+
+        https://tools.ietf.org/html/rfc3339#section-5.8
+        """
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(1937, 1, 1, 12, 0, 27, 87, tzinfo=tz.gettz('Europe/Amsterdam'))]),
             b'["1937-01-01T12:00:27.87+00:20"]',
         )
 

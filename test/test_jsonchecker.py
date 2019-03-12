@@ -2,14 +2,13 @@
 """
 Tests files from http://json.org/JSON_checker/
 """
-from __future__ import division, print_function, unicode_literals
 
 import unittest
 import os
 import sys
 
 import orjson
-
+import pytest
 
 _path = os.path.join(os.path.dirname(__file__), '..', 'data', 'jsonchecker')
 
@@ -237,6 +236,7 @@ class JsonCheckerTests(unittest.TestCase):
         """
         self._run_fail_json('fail33.json')
 
+    @pytest.mark.skipif(sys.version_info < (3,6), reason="Indeterminate key order")
     def test_pass01(self):
         """
         pass01.json
@@ -255,6 +255,7 @@ class JsonCheckerTests(unittest.TestCase):
             b'[[[[[[[[[[[[[[[[[[["Not too deep"]]]]]]]]]]]]]]]]]]]'
         )
 
+    @pytest.mark.skipif(sys.version_info < (3,6), reason="Indeterminate key order")
     def test_pass03(self):
         """
         pass03.json

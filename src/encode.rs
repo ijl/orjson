@@ -199,6 +199,12 @@ impl<'p> Serialize for SerializePyObject {
                                 std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
                             )
                         };
+                        // test_datetime_partial_second_pendulum_not_supported
+                        if offset.is_null() {
+                            return Err(ser::Error::custom(
+                                    "datetime does not support timezones with offsets that are not even minutes",
+                                ));
+                        }
                         offset_second =
                             unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
                         offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };

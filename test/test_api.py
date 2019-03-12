@@ -92,7 +92,6 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(True, option=4)
 
-
     def test_opts_multiple(self):
         """
         dumps() multiple option

@@ -34,6 +34,23 @@ jobs:
       dependencies: apt
   - template: ./azure-posix.yml
 
+- job: linux_python35
+  pool:
+    vmImage: ubuntu-16.04
+  variables:
+    interpreter: python3.5
+    target: x86_64-unknown-linux-gnu
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.5'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-linux.yml
+    parameters:
+      dependencies: apt
+  - template: ./azure-posix.yml
+
 - job: macos_python37
   pool:
     vmImage: xcode9-macos10.13
@@ -59,6 +76,21 @@ jobs:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.6'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+  - template: ./azure-posix.yml
+
+- job: macos_python35
+  pool:
+    vmImage: xcode9-macos10.13
+  variables:
+    interpreter: python3.5
+    target: x86_64-apple-darwin
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.5'
       addToPath: true
   - checkout: self
   - template: ./azure-macos.yml
@@ -93,3 +125,19 @@ jobs:
       architecture: 'x64'
   - checkout: self
   - template: ./azure-win.yml
+
+- job: win_python35
+  pool:
+    vmImage: vs2017-win2016
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.5.4\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.5'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+

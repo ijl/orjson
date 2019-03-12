@@ -17,8 +17,8 @@ conformance on NaN/Infinity/-Infinity, having an option for strict
 JSON conformance on 53-bit integers, not supporting pretty
 printing, and not supporting all standard library options.
 
-It supports CPython 3.6 and 3.7 and distributes wheels for Linux, macOS, and
-Windows. The repository and issue tracker is
+It supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
+macOS, and Windows. The repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson).
 
 ## Usage
