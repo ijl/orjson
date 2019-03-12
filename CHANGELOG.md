@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2 - 2019-03-12
+
+### Changed
+
+- Support Python 3.5.
+
 ## 2.0.1 - 2019-02-05
 
 ### Changed

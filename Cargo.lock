@@ -105,7 +105,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "orjson"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "encoding_rs 0.8.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "itoa 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
