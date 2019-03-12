@@ -13,7 +13,7 @@ extern crate serde_json;
 extern crate smallvec;
 
 use pyo3::prelude::*;
-use pyo3::ToPyPointer;
+use pyo3::AsPyPointer;
 use std::ptr::NonNull;
 
 mod decode;
