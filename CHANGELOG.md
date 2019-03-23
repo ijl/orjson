@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.3 - 2019-03-23
+
+### Changed
+
+- `orjson.loads()` uses SSE2 to validate `bytes` input.
+
 ## 2.0.2 - 2019-03-12
 
 ### Changed
