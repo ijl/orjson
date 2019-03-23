@@ -5,6 +5,8 @@ py_min=$(python -c 'import sys; print(str(sys.version_info.minor))')
 
 rm -f target/wheels/*
 
+export RUSTFLAGS="-C target-feature=+sse2 $RUSTFLAGS"
+
 pyo3-pack build -i "python${py_maj}.${py_min}" --release "$@"
 
 pip install --force $(find target/wheels -name "*cp${py_maj}${py_min}*")

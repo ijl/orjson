@@ -14,6 +14,8 @@ steps:
 - script: python.exe -m pip install --upgrade pyo3-pack pytest hypothesis psutil pendulum pytz arrow twine
   displayName: python dependencies
 - script: pyo3-pack.exe build --release --strip --interpreter $(interpreter) --target $(target)
+  env:
+    RUSTFLAGS: "-C target-feature=+sse2"
   displayName: build
 - script: python.exe -m pip install orjson --find-links=D:\a\1\s\target\wheels\
   displayName: install

@@ -5,7 +5,7 @@ parameters:
 steps:
 - bash: pip install --upgrade pip wheel pyo3-pack pytest hypothesis mypy psutil pendulum pytz arrow gunicorn flask twine
   displayName: python dependencies
-- bash: PATH=$HOME/.cargo/bin:$PATH pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
+- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-C target-feature=+sse2" pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
