@@ -178,76 +178,77 @@ impl<'p> Serialize for SerializePyObject {
                     serializer.serialize_seq(None).unwrap().end()
                 }
             } else if unsafe { obj_ptr == DATETIME_PTR } {
-                if unsafe {
-                    (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 0
-                        && !self.opts & NAIVE_UTC == NAIVE_UTC
-                } {
-                    return Err(ser::Error::custom(
-                        "datetime.datetime must have tzinfo set; use datetime.timezone.utc if UTC",
-                    ));
-                }
-                let tzinfo = unsafe { pyo3::ffi::PyDateTime_DATE_GET_TZINFO(self.ptr) };
+                let has_tz =
+                    unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
                 let offset_day: i32;
                 let mut offset_second: i32;
-                if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 } {
-                    if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR) == 1 } {
-                        // pendulum
-                        let offset = unsafe {
-                            pyo3::ffi::PyObject_CallMethodObjArgs(
-                                self.ptr,
-                                UTCOFFSET_METHOD_STR,
-                                std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                            )
-                        };
-                        // test_datetime_partial_second_pendulum_not_supported
-                        if offset.is_null() {
-                            return Err(ser::Error::custom(
-                                    "datetime does not support timezones with offsets that are not even minutes",
-                                ));
-                        }
-                        offset_second =
-                            unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                        offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
-                    } else if unsafe {
-                        pyo3::ffi::PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR) == 1
-                    } {
-                        // pytz
-                        let offset = unsafe {
-                            pyo3::ffi::PyObject_CallMethodObjArgs(
-                                pyo3::ffi::PyObject_CallMethodObjArgs(
-                                    tzinfo,
-                                    NORMALIZE_METHOD_STR,
-                                    self.ptr,
-                                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                                ),
-                                UTCOFFSET_METHOD_STR,
-                                std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                            )
-                        };
-                        offset_second =
-                            unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                        offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
-                    } else if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, DST_STR) == 1 } {
-                        // dateutil/arrow, datetime.timezone.utc
-                        let offset = unsafe {
-                            pyo3::ffi::PyObject_CallMethodObjArgs(
-                                tzinfo,
-                                UTCOFFSET_METHOD_STR,
-                                self.ptr,
-                                std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                            )
-                        };
-                        offset_second =
-                            unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                        offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
-                    } else {
-                        return Err(ser::Error::custom(
-                    "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil",
-                ));
-                    }
-                } else {
+                if !has_tz {
                     offset_second = 0;
                     offset_day = 0;
+                } else {
+                    let tzinfo = unsafe { pyo3::ffi::PyDateTime_DATE_GET_TZINFO(self.ptr) };
+                    if unsafe {
+                        (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1
+                    } {
+                        if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR) == 1 } {
+                            // pendulum
+                            let offset = unsafe {
+                                pyo3::ffi::PyObject_CallMethodObjArgs(
+                                    self.ptr,
+                                    UTCOFFSET_METHOD_STR,
+                                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                                )
+                            };
+                            // test_datetime_partial_second_pendulum_not_supported
+                            if offset.is_null() {
+                                return Err(ser::Error::custom(
+                                        "datetime does not support timezones with offsets that are not even minutes",
+                                    ));
+                            }
+                            offset_second =
+                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
+                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
+                        } else if unsafe {
+                            pyo3::ffi::PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR) == 1
+                        } {
+                            // pytz
+                            let offset = unsafe {
+                                pyo3::ffi::PyObject_CallMethodObjArgs(
+                                    pyo3::ffi::PyObject_CallMethodObjArgs(
+                                        tzinfo,
+                                        NORMALIZE_METHOD_STR,
+                                        self.ptr,
+                                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                                    ),
+                                    UTCOFFSET_METHOD_STR,
+                                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                                )
+                            };
+                            offset_second =
+                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
+                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
+                        } else if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, DST_STR) == 1 } {
+                            // dateutil/arrow, datetime.timezone.utc
+                            let offset = unsafe {
+                                pyo3::ffi::PyObject_CallMethodObjArgs(
+                                    tzinfo,
+                                    UTCOFFSET_METHOD_STR,
+                                    self.ptr,
+                                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                                )
+                            };
+                            offset_second =
+                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
+                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
+                        } else {
+                            return Err(ser::Error::custom(
+                        "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil",
+                    ));
+                        }
+                    } else {
+                        offset_second = 0;
+                        offset_day = 0;
+                    }
                 };
 
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
@@ -316,49 +317,51 @@ impl<'p> Serialize for SerializePyObject {
                         dt.extend(itoa::Buffer::new().format(microsecond).bytes());
                     }
                 }
-                if offset_second == 0 {
-                    dt.push(PLUS);
-                    dt.push(ZERO);
-                    dt.push(ZERO);
-                    dt.push(COLON);
-                    dt.push(ZERO);
-                    dt.push(ZERO);
-                } else {
-                    if offset_day == -1 {
-                        // datetime.timedelta(days=-1, seconds=68400) -> -05:00
-                        dt.push(HYPHEN);
-                        offset_second = 86400 - offset_second
-                    } else {
-                        // datetime.timedelta(seconds=37800) -> +10:30
+                if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
+                    if offset_second == 0 {
                         dt.push(PLUS);
-                    }
-                    {
-                        let offset_minute = offset_second / 60;
-                        let offset_hour = offset_minute / 60;
-                        if offset_hour < 10 {
-                            dt.push(ZERO);
-                        }
-                        dt.extend(itoa::Buffer::new().format(offset_hour).bytes());
+                        dt.push(ZERO);
+                        dt.push(ZERO);
                         dt.push(COLON);
-
-                        let mut offset_minute_print = offset_minute % 60;
-
+                        dt.push(ZERO);
+                        dt.push(ZERO);
+                    } else {
+                        if offset_day == -1 {
+                            // datetime.timedelta(days=-1, seconds=68400) -> -05:00
+                            dt.push(HYPHEN);
+                            offset_second = 86400 - offset_second
+                        } else {
+                            // datetime.timedelta(seconds=37800) -> +10:30
+                            dt.push(PLUS);
+                        }
                         {
-                            // https://tools.ietf.org/html/rfc3339#section-5.8
-                            // "exactly 19 minutes and 32.13 seconds ahead of UTC"
-                            // "closest representable UTC offset"
-                            //  "+20:00"
-                            let offset_excess_second =
-                                offset_second - (offset_minute_print * 60 + offset_hour * 3600);
-                            if offset_excess_second >= 30 {
-                                offset_minute_print += 1;
+                            let offset_minute = offset_second / 60;
+                            let offset_hour = offset_minute / 60;
+                            if offset_hour < 10 {
+                                dt.push(ZERO);
                             }
-                        }
+                            dt.extend(itoa::Buffer::new().format(offset_hour).bytes());
+                            dt.push(COLON);
 
-                        if offset_minute_print < 10 {
-                            dt.push(ZERO);
+                            let mut offset_minute_print = offset_minute % 60;
+
+                            {
+                                // https://tools.ietf.org/html/rfc3339#section-5.8
+                                // "exactly 19 minutes and 32.13 seconds ahead of UTC"
+                                // "closest representable UTC offset"
+                                //  "+20:00"
+                                let offset_excess_second =
+                                    offset_second - (offset_minute_print * 60 + offset_hour * 3600);
+                                if offset_excess_second >= 30 {
+                                    offset_minute_print += 1;
+                                }
+                            }
+
+                            if offset_minute_print < 10 {
+                                dt.push(ZERO);
+                            }
+                            dt.extend(itoa::Buffer::new().format(offset_minute_print).bytes());
                         }
-                        dt.extend(itoa::Buffer::new().format(offset_minute_print).bytes());
                     }
                 }
                 serializer.serialize_str(unsafe {

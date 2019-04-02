@@ -16,10 +16,12 @@ class DatetimeTests(unittest.TestCase):
 
     def test_datetime_naive(self):
         """
-        datetime.datetime naive TypeError
+        datetime.datetime naive prints without offset
         """
-        with self.assertRaises(TypeError):
-            orjson.dumps([datetime.datetime(2000, 1, 1, 2, 3, 4, 123)])
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(2000, 1, 1, 2, 3, 4, 123)]),
+            b'["2000-01-01T02:03:04.123"]'
+        )
 
     def test_datetime_naive_utc(self):
         """
@@ -251,4 +253,4 @@ class TimeTests(unittest.TestCase):
         datetime.time with tzinfo error
         """
         with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps([datetime.time(12, 15, 59, 111, tzinfo=tz.gettz('Asia/Shanghai'))]),
+            orjson.dumps([datetime.time(12, 15, 59, 111, tzinfo=tz.gettz('Asia/Shanghai'))])

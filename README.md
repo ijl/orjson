@@ -168,19 +168,18 @@ orjson serializes `datetime.datetime` objects to
 [RFC 3339](https://tools.ietf.org/html/rfc3339) format, a subset of
 ISO 8601.
 
-`datetime.datetime` objects must have `tzinfo` set. For UTC timezones,
-`datetime.timezone.utc` is sufficient. For other timezones, `tzinfo`
-must be a timezone object from the pendulum, pytz, or dateutil libraries. For
-applications in which naive datetimes are known to be UTC, `tzinfo` may be
-omitted if `orjson.OPT_NAIVE_UTC` if specified. This does not affect
-datetimes with a `tzinfo` set.
+`datetime.datetime` objects serialize with or without a `tzinfo`. For a full
+ RFC 3339 representation, `tzinfo` must be present or `orjson.OPT_NAIVE_UTC`
+ must be specified (e.g., for timestamps stored in a database in UTC and
+ deserialized by the database adapter without a `tzinfo`). If a
+ `tzinfo` is not present, a timezone offset is not serialized.
+
+`tzinfo`, if specified, must be a timezone object that is either
+`datetime.timezone.utc` or from the `pendulum`, `pytz`, or
+`dateutil`/`arrow` libraries.
 
 ```python
 >>> import orjson, datetime, pendulum
->>> orjson.dumps(
-    datetime.datetime.fromtimestamp(4123518902), option=orjson.OPT_NAIVE_UTC
-)
-b'"2100-09-01T21:55:02+00:00"'
 >>> orjson.dumps(
     datetime.datetime.fromtimestamp(4123518902).replace(tzinfo=datetime.timezone.utc)
 )
@@ -189,17 +188,43 @@ b'"2100-09-01T21:55:02+00:00"'
     datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide'))
 )
 b'"2018-12-01T02:03:04.9+10:30"'
+>>> orjson.dumps(
+    datetime.datetime.fromtimestamp(4123518902)
+)
+b'"2100-09-01T21:55:02"'
 ```
 
-`datetime.time` objects must not have a `tzinfo`. `datetime.date` objects
-will always serialize.
+`orjson.OPT_NAIVE_UTC`, if specified, only applies to objects that do not have
+a `tzinfo`.
+
+```python
+>>> import orjson, datetime, pendulum
+>>> orjson.dumps(
+    datetime.datetime.fromtimestamp(4123518902),
+    option=orjson.OPT_NAIVE_UTC
+)
+b'"2100-09-01T21:55:02+00:00"'
+>>> orjson.dumps(
+    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide')),
+    option=orjson.OPT_NAIVE_UTC
+)
+b'"2018-12-01T02:03:04.9+10:30"'
+```
+
+`datetime.time` objects must not have a `tzinfo`.
+
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(datetime.time(12, 0, 15, 291290))
+b'"12:00:15.291290"'
+```
+
+`datetime.date` objects will always serialize.
 
 ```python
 >>> import orjson, datetime
 >>> orjson.dumps(datetime.date(1900, 1, 2))
 b'"1900-01-02"'
->>> orjson.dumps(datetime.time(12, 0, 15, 291290))
-b'"12:00:15.291290"'
 ```
 
 Errors with `tzinfo` result in `JSONEncodeError` being raised.
