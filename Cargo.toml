@@ -9,7 +9,7 @@ repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "datetime", "rfc", "3339"]
-include = ["Cargo.toml", "src/*"]
+include = ["Cargo.toml", "src/*", "data/*", "test/*.py", "README.md", "CHANGELOG.md", "LICENSE-APACHE", "LICENSE-MIT"]
 
 [lib]
 name = "orjson"
@@ -37,7 +37,7 @@ classifier = [
 [dependencies]
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 itoa = { version = "0.4", default_features = false }
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "f75f742c588c7338f1b26503179a949b7e270a4d", features = ["extension-module", "python3"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "08334fe5826281785c08d12b3ec9520787789a98", features = ["extension-module"]}
 serde = { version = "1", default_features = false }
 serde_json = { version = "1", default_features = false }
 smallvec = { version = "0.6", default_features = false, features = ["union"] }
