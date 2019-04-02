@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4 - 2019-04-02
+
+### Changed
+- `orjson.dumps()` now serializes `datetime.datetime` objects without a
+`tzinfo` rather than raising `JSONEncodeError`.
+
 ## 2.0.3 - 2019-03-23
 
 ### Changed

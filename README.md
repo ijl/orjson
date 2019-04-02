@@ -17,9 +17,11 @@ conformance on NaN/Infinity/-Infinity, having an option for strict
 JSON conformance on 53-bit integers, not supporting pretty
 printing, and not supporting all standard library options.
 
-It supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
-macOS, and Windows. The repository and issue tracker is
-[github.com/ijl/orjson](https://github.com/ijl/orjson).
+orjson supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
+macOS, and Windows. It is dual licensed under the Apache 2.0 and MIT licenses.
+The repository and issue tracker is
+[github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
+submitted there.
 
 ## Usage
 
@@ -408,10 +410,3 @@ This was measured using Python 3.7.2 on Linux with orjson 2.0.3, ujson 1.35,
 python-rapidson 0.7.0, and simplejson 3.16.0.
 
 The results can be reproduced using the `pybench` and `graph` scripts.
-
-## License
-
-orjson is dual licensed under the Apache 2.0 and MIT licenses. It contains
-tests from the hyperjson and ultrajson libraries. It is implemented using
-the [serde_json](https://github.com/serde-rs/json) and
-[pyo3](https://github.com/PyO3/pyo3) libraries.
