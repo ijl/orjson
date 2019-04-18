@@ -6,7 +6,10 @@ import sys
 
 import arrow
 import orjson
-import pendulum
+try:
+    import pendulum
+except ImportError:
+    pendulum = None
 import pytest
 import pytz
 from dateutil import tz
@@ -59,6 +62,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-06-01T02:03:04+00:00"]',
         )
 
+    @pytest.mark.skipif(pendulum is None, reason='pendulum install broken on win')
     def test_datetime_pendulum_utc(self):
         """
         datetime.datetime UTC
@@ -86,6 +90,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-01-01T02:03:04+08:00"]',
         )
 
+    @pytest.mark.skipif(pendulum is None, reason='pendulum install broken on win')
     def test_datetime_pendulum_positive(self):
         """
         datetime.datetime positive UTC
@@ -104,6 +109,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-06-01T02:03:04-04:00"]',
         )
 
+    @pytest.mark.skipif(pendulum is None, reason='pendulum install broken on win')
     def test_datetime_pendulum_negative_dst(self):
         """
         datetime.datetime negative UTC DST
@@ -122,6 +128,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04-05:00"]',
         )
 
+    @pytest.mark.skipif(pendulum is None, reason='pendulum install broken on win')
     def test_datetime_pendulum_negative_non_dst(self):
         """
         datetime.datetime negative UTC non-DST
@@ -149,6 +156,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04+10:30"]',
         )
 
+    @pytest.mark.skipif(pendulum is None, reason='pendulum install broken on win')
     def test_datetime_pendulum_partial_hour(self):
         """
         datetime.datetime UTC offset partial hour
@@ -158,7 +166,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04+10:30"]',
         )
 
-    @pytest.mark.skipif(sys.version_info.minor == 5, reason="Non-even minute offsets supported on not 3.5")
+    @pytest.mark.skipif(sys.version_info.minor == 5 or pendulum is None, reason="Non-even minute offsets supported on not 3.5")
     def test_datetime_partial_second_pendulum_supported(self):
         """
         datetime.datetime UTC offset round seconds
@@ -170,7 +178,7 @@ class DatetimeTests(unittest.TestCase):
             b'["1937-01-01T12:00:27.87+00:20"]',
         )
 
-    @pytest.mark.skipif(sys.version_info.minor != 5, reason="Non-even minute offsets not supported on 3.5")
+    @pytest.mark.skipif(sys.version_info.minor != 5 or pendulum is None, reason="Non-even minute offsets not supported on 3.5")
     def test_datetime_partial_second_pendulum_not_supported(self):
         """
         datetime.datetime UTC offset round seconds

@@ -11,7 +11,7 @@ steps:
   displayName: rustup
 - script: python.exe -m pip install --upgrade pip wheel
   displayName: pip upgrade
-- script: python.exe -m pip install --upgrade pyo3-pack pytest hypothesis psutil pendulum pytz arrow twine
+- script: python.exe -m pip install --upgrade pyo3-pack pytest hypothesis psutil pytz arrow twine
   displayName: python dependencies
 - script: pyo3-pack.exe build --release --strip --interpreter $(interpreter) --target $(target)
   env:
