@@ -79,7 +79,7 @@ impl<'p> Serialize for SerializePyObject {
                 std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize))
             })
         } else if unsafe { obj_ptr == FLOAT_PTR } {
-            serializer.serialize_f64(unsafe { pyo3::ffi::PyFloat_AsDouble(self.ptr) })
+            serializer.serialize_f64(unsafe { pyo3::ffi::PyFloat_AS_DOUBLE(self.ptr) })
         } else if unsafe { obj_ptr == INT_PTR } {
             let val = unsafe { pyo3::ffi::PyLong_AsLongLong(self.ptr) };
             if unsafe {

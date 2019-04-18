@@ -8,7 +8,7 @@ import psutil
 import orjson
 
 
-FIXTURE = '{"a":[1, 1.0], "b": false, "c": null, "d": "東京"}'
+FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 
 
 def default(obj):
