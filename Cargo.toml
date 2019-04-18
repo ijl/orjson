@@ -37,7 +37,7 @@ classifier = [
 [dependencies]
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 itoa = { version = "0.4", default_features = false }
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "08334fe5826281785c08d12b3ec9520787789a98", features = ["extension-module"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "dc2fc80f4aeb89dd645a20620b292bfea4756228", features = ["extension-module"]}
 serde = { version = "1", default_features = false }
 serde_json = { version = "1", default_features = false }
 smallvec = { version = "0.6", default_features = false, features = ["union"] }
