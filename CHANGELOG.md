@@ -1,8 +1,17 @@
 # Changelog
 
+## 2.0.5 - 2019-04-
+
+### Fixed
+
+- Fix inaccuracy in deserializing some `float` values, e.g.,
+31.245270191439438 was parsed to 31.24527019143944. Serialization was
+unaffected.
+
 ## 2.0.4 - 2019-04-02
 
 ### Changed
+
 - `orjson.dumps()` now serializes `datetime.datetime` objects without a
 `tzinfo` rather than raising `JSONEncodeError`.
 
