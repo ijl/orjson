@@ -182,13 +182,34 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(1.893, orjson.loads("1.893"))
         self.assertEqual(1.3, orjson.loads("1.3"))
 
-    @pytest.mark.xfail
-    def test_float_precision(self):
+    def test_float_precision_loads(self):
         """
-        float precision
+        float precision loads()
         """
         self.assertEqual(orjson.loads("31.245270191439438"), 31.245270191439438)
         self.assertEqual(orjson.loads("121.48791951161945"), 121.48791951161945)
+
+    def test_float_precision_dumps(self):
+        """
+        float precision dumps()
+        """
+        self.assertEqual(orjson.dumps(31.245270191439438), b'31.245270191439438')
+        self.assertEqual(orjson.dumps(121.48791951161945), b'121.48791951161945')
+
+    def test_float_edge(self):
+        """
+        float edge cases
+        """
+        self.assertEqual(orjson.dumps(0.8701), b'0.8701')
+
+        self.assertEqual(orjson.loads("0.8701"), 0.8701)
+        self.assertEqual(orjson.loads("0.0000000000000000000000000000000000000000000000000123e50"), 1.23)
+        self.assertEqual(orjson.loads("0.4e5"), 40000.0)
+        self.assertEqual(orjson.loads("0.00e-00"), 0.0)
+        self.assertEqual(orjson.loads("0.4e-001"), 0.04)
+        self.assertEqual(orjson.loads("0.123456789e-12"), 1.23456789e-13)
+        self.assertEqual(orjson.loads("1.234567890E+34"), 1.23456789e+34)
+        self.assertEqual(orjson.loads("23456789012E66"), 2.3456789012e+76)
 
     def test_float_notation(self):
         """
