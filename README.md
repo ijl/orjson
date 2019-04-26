@@ -48,7 +48,7 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Any, default: Optional[Callable[[Any], Any]], option: Optional[int]) -> bytes: ...
+def dumps(obj: Any, default: Optional[Callable[[Any], Any]] = None, option: Optional[int] = None) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.
