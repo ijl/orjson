@@ -1,7 +1,7 @@
 from typing import Any, Callable, Optional, Union
 
 def dumps(
-    obj: Any, default: Optional[Callable[[Any], Any]], option: Optional[int]
+    obj: Any, default: Optional[Callable[[Any], Any]] = None, option: Optional[int] = None
 ) -> bytes: ...
 def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str, None]: ...
 
