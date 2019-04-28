@@ -97,44 +97,36 @@ impl<'p> Serialize for SerializePyObject {
         } else if unsafe { obj_ptr == NONE_PTR } {
             serializer.serialize_unit()
         } else if unsafe { obj_ptr == DICT_PTR } {
-            let len = unsafe { pyo3::ffi::PyDict_Size(self.ptr) as usize };
-            if len != 0 {
-                let mut map = serializer.serialize_map(Some(len))?;
-                let mut pos = 0isize;
-                let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
-                let mut key: *mut pyo3::ffi::PyObject = unsafe { std::mem::uninitialized() };
-                let mut value: *mut pyo3::ffi::PyObject = unsafe { std::mem::uninitialized() };
-                while unsafe {
-                    pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0
-                } {
-                    if unsafe { std::intrinsics::unlikely((*key).ob_type != STR_PTR) } {
-                        return Err(ser::Error::custom("Dict key must be str"));
-                    }
-                    let data = unsafe {
-                        pyo3::ffi::PyUnicode_AsUTF8AndSize(key, &mut str_size) as *const u8
-                    };
-                    if unsafe { std::intrinsics::unlikely(data.is_null()) } {
-                        return Err(ser::Error::custom(INVALID_STR));
-                    }
-                    map.serialize_entry(
-                        unsafe {
-                            std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                                data,
-                                str_size as usize,
-                            ))
-                        },
-                        &SerializePyObject {
-                            ptr: value,
-                            default: self.default,
-                            opts: self.opts,
-                            recursion: self.recursion,
-                        },
-                    )?;
+            let mut map = serializer.serialize_map(None)?;
+            let mut pos = 0isize;
+            let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
+            let mut key: *mut pyo3::ffi::PyObject = unsafe { std::mem::uninitialized() };
+            let mut value: *mut pyo3::ffi::PyObject = unsafe { std::mem::uninitialized() };
+            while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
+                if unsafe { std::intrinsics::unlikely((*key).ob_type != STR_PTR) } {
+                    return Err(ser::Error::custom("Dict key must be str"));
                 }
-                map.end()
-            } else {
-                serializer.serialize_map(None).unwrap().end()
+                let data =
+                    unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(key, &mut str_size) as *const u8 };
+                if unsafe { std::intrinsics::unlikely(data.is_null()) } {
+                    return Err(ser::Error::custom(INVALID_STR));
+                }
+                map.serialize_entry(
+                    unsafe {
+                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(
+                            data,
+                            str_size as usize,
+                        ))
+                    },
+                    &SerializePyObject {
+                        ptr: value,
+                        default: self.default,
+                        opts: self.opts,
+                        recursion: self.recursion,
+                    },
+                )?;
             }
+            map.end()
         } else if unsafe { obj_ptr == LIST_PTR } {
             let len = unsafe { pyo3::ffi::PyList_GET_SIZE(self.ptr) as usize };
             if len != 0 {
@@ -319,12 +311,7 @@ impl<'p> Serialize for SerializePyObject {
                 }
                 if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
                     if offset_second == 0 {
-                        dt.push(PLUS);
-                        dt.push(ZERO);
-                        dt.push(ZERO);
-                        dt.push(COLON);
-                        dt.push(ZERO);
-                        dt.push(ZERO);
+                        dt.extend([PLUS, ZERO, ZERO, COLON, ZERO, ZERO].iter().cloned());
                     } else {
                         if offset_day == -1 {
                             // datetime.timedelta(days=-1, seconds=68400) -> -05:00
