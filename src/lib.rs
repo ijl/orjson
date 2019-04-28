@@ -43,7 +43,7 @@ pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
     decode::deserialize(py, obj.as_ptr())
 }
 
-/// dumps(obj, default, option, /)
+/// dumps(obj, /, default, option)
 /// --
 ///
 /// Serialize Python objects to JSON.
