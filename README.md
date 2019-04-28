@@ -48,7 +48,7 @@ deploying this does not require Rust or non-libc type libraries.)
 ### Serialize
 
 ```python
-def dumps(obj: Any, default: Optional[Callable[[Any], Any]], option: Optional[int]) -> bytes: ...
+def dumps(__obj: Any, default: Optional[Callable[[Any], Any]] = ..., option: Optional[int] = ...) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.
@@ -123,10 +123,11 @@ is raised.
 ### Deserialize
 
 ```python
-def loads(obj: Union[bytes, str]) -> Union[dict, list, int, float, str, None]: ...
+def loads(__obj: Union[bytes, str]) -> Any: ...
 ```
 
-`loads()` deserializes JSON to Python objects.
+`loads()` deserializes JSON to Python objects. It deserializes to `dict`,
+`list`, `int`, `float`, `str`, and `None` objects.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
