@@ -18,8 +18,9 @@ JSON conformance on 53-bit integers, not supporting pretty
 printing, and not supporting all standard library options.
 
 orjson supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
-macOS, and Windows. It is dual licensed under the Apache 2.0 and MIT licenses.
-The repository and issue tracker is
+macOS, and Windows. The manylinux1 wheel differs from PEP 513 in requiring
+glibc 2.18, released 2013, or later. orjson is licensed under both
+the Apache 2.0 and MIT licenses. The repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
 submitted there.
 
@@ -33,6 +34,8 @@ To install a wheel from PyPI:
 pip install --upgrade orjson
 ```
 
+There are no runtime dependencies other than libc.
+
 To build a release wheel from source, assuming a Rust nightly toolchain
 and Python environment:
 
@@ -42,8 +45,9 @@ pip install --upgrade pyo3-pack
 pyo3-pack build --release --strip --interpreter python3.7
 ```
 
-There is no runtime dependency other than a manylinux environment (i.e.,
-deploying this does not require Rust or non-libc type libraries.)
+orjson is compatible with systems using glibc earlier than 2.18 if
+compiled on such a system. Installing from source on a musl libc distribution
+is not practical due to tooling.
 
 ### Serialize
 
