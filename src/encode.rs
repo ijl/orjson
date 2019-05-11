@@ -97,7 +97,7 @@ impl<'p> Serialize for SerializePyObject {
         } else if unsafe { obj_ptr == NONE_PTR } {
             serializer.serialize_unit()
         } else if unsafe { obj_ptr == DICT_PTR } {
-            let mut map = serializer.serialize_map(None)?;
+            let mut map = serializer.serialize_map(None).unwrap();
             let mut pos = 0isize;
             let mut str_size: pyo3::ffi::Py_ssize_t = unsafe { std::mem::uninitialized() };
             let mut key: *mut pyo3::ffi::PyObject = unsafe { std::mem::uninitialized() };

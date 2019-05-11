@@ -14,6 +14,8 @@ extern crate smallvec;
 
 use pyo3::prelude::*;
 use pyo3::AsPyPointer;
+use pyo3::IntoPyPointer;
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 mod decode;
@@ -25,12 +27,32 @@ mod typeref;
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     typeref::init_typerefs();
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
     m.add_wrapped(wrap_pyfunction!(dumps))?;
-    m.add_wrapped(wrap_pyfunction!(loads))?;
+
+    // see pyo3 function_c_wrapper, impl_arg_params
+    let wrapped_loads = pyo3::ffi::PyMethodDef {
+        ml_name: "loads\0".as_ptr() as *const c_char,
+        ml_meth: Some(loads),
+        ml_flags: pyo3::ffi::METH_O,
+        ml_doc: std::ptr::null(),
+    };
+    unsafe {
+        pyo3::ffi::PyModule_AddObject(
+            m.as_ptr(),
+            "loads\0".as_ptr() as *const c_char,
+            pyo3::ffi::PyCFunction_New(
+                Box::into_raw(Box::new(wrapped_loads)),
+                std::ptr::null_mut(),
+            ),
+        )
+    };
+
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER.into_object(py))?;
     m.add("OPT_NAIVE_UTC", encode::NAIVE_UTC.into_object(py))?;
+
     Ok(())
 }
 
@@ -38,9 +60,18 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 /// --
 ///
 /// Deserialize JSON to Python objects.
-#[pyfunction]
-pub fn loads(py: Python, obj: PyObject) -> PyResult<PyObject> {
-    decode::deserialize(py, obj.as_ptr())
+pub unsafe extern "C" fn loads(
+    _self: *mut pyo3::ffi::PyObject,
+    obj: *mut pyo3::ffi::PyObject,
+) -> *mut pyo3::ffi::PyObject {
+    let py = pyo3::Python::assume_gil_acquired();
+    match decode::deserialize(py, obj) {
+        Ok(val) => val.into_ptr(),
+        Err(err) => {
+            err.restore(py);
+            std::ptr::null_mut()
+        }
+    }
 }
 
 /// dumps(obj, /, default, option)
