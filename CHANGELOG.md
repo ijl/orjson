@@ -1,6 +1,12 @@
 # Changelog
 
-## 2.0.5 - 2019-04-
+## 2.0.6 - 2019-05-11
+
+### Changed
+
+- Performance improvements.
+
+## 2.0.5 - 2019-04-19
 
 ### Fixed
 
