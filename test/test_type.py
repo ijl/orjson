@@ -109,21 +109,39 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(orjson.dumps(obj), ref)
         self.assertEqual(orjson.loads(ref), obj)
 
-    def test_nan(self):
+    def test_nan_dumps(self):
+        """
+        NaN serializes to null
+        """
+        self.assertEqual(orjson.dumps(float("NaN")), b"null")
+
+    def test_nan_loads(self):
         """
         NaN is not valid JSON
         """
         with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('[NaN]')
+        with self.assertRaises(orjson.JSONDecodeError):
+            orjson.loads('[nan]')
 
-    def test_infinity(self):
+    def test_infinity_dumps(self):
+        """
+        Infinity serializes to null
+        """
+        self.assertEqual(orjson.dumps(float("Infinity")), b"null")
+
+    def test_infinity_loads(self):
         """
         Infinity, -Infinity is not valid JSON
         """
         with self.assertRaises(orjson.JSONDecodeError):
+            orjson.loads('[infinity]')
+        with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('[Infinity]')
         with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('[-Infinity]')
+        with self.assertRaises(orjson.JSONDecodeError):
+            orjson.loads('[-infinity]')
 
     def test_int_53(self):
         """
