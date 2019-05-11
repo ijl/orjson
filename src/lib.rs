@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![feature(custom_attribute)]
 #![feature(core_intrinsics)]
 
 #[macro_use]
@@ -14,7 +13,6 @@ extern crate smallvec;
 
 use pyo3::prelude::*;
 use pyo3::AsPyPointer;
-use pyo3::IntoPyPointer;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
@@ -64,11 +62,10 @@ pub unsafe extern "C" fn loads(
     _self: *mut pyo3::ffi::PyObject,
     obj: *mut pyo3::ffi::PyObject,
 ) -> *mut pyo3::ffi::PyObject {
-    let py = pyo3::Python::assume_gil_acquired();
-    match decode::deserialize(py, obj) {
-        Ok(val) => val.into_ptr(),
+    match decode::deserialize(obj) {
+        Ok(val) => val.as_ptr(),
         Err(err) => {
-            err.restore(py);
+            err.restore(pyo3::Python::assume_gil_acquired());
             std::ptr::null_mut()
         }
     }
@@ -106,5 +103,8 @@ pub fn dumps(
     } else {
         optsbits = 0
     };
-    encode::serialize(py, obj.as_ptr(), pydef, optsbits as u8)
+    match encode::serialize(obj.as_ptr(), pydef, optsbits as u8) {
+        Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
+        Err(err) => Err(err),
+    }
 }

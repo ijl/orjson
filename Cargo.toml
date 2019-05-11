@@ -40,7 +40,7 @@ itoa = { version = "0.4", default_features = false }
 pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "77f0974dafb8819b95437e74da581d7d9c41a1ad", features = ["extension-module"]}
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "2c0c55b628c9177543283a1535549e1dcb6a870a", default_features = false, features = ["num_lexical"] }
-smallvec = { version = "0.6", default_features = false, features = ["union"] }
+smallvec = { version = "0.6", default_features = false, features = ["union", "std", "specialization"] }
 
 [profile.release]
 codegen-units = 1

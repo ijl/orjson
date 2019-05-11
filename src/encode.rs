@@ -14,7 +14,7 @@ use std::ptr::NonNull;
 const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
-pub const STRICT_INTEGER: u8 = 1 << 0;
+pub const STRICT_INTEGER: u8 = 1;
 pub const NAIVE_UTC: u8 = 1 << 1;
 
 pub const MAX_OPT: i8 = STRICT_INTEGER as i8 | NAIVE_UTC as i8;
@@ -27,33 +27,29 @@ const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // ":"
 
 pub fn serialize(
-    py: Python,
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
     opts: u8,
-) -> PyResult<PyObject> {
-    let mut buf: Vec<u8> = Vec::with_capacity(1008);
-    {
-        serde_json::to_writer(
-            &mut buf,
-            &SerializePyObject {
-                ptr: ptr,
-                default: default,
-                opts: opts,
-                recursion: 0,
-            },
-        )
-    }
-    .map_err(|error| JSONEncodeError::py_err(error.to_string()))?;
-    Ok(unsafe {
-        PyObject::from_owned_ptr(
-            py,
-            pyo3::ffi::PyBytes_FromStringAndSize(
+) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
+    let mut buf: Vec<u8> = Vec::with_capacity(1024);
+    match serde_json::to_writer(
+        &mut buf,
+        &SerializePyObject {
+            ptr,
+            default,
+            opts,
+            recursion: 0,
+        },
+    ) {
+        Ok(_) => Ok(unsafe {
+            NonNull::new_unchecked(pyo3::ffi::PyBytes_FromStringAndSize(
                 buf.as_ptr() as *const c_char,
                 buf.len() as pyo3::ffi::Py_ssize_t,
-            ),
-        )
-    })
+            ))
+        }),
+
+        Err(err) => Err(JSONEncodeError::py_err(err.to_string())),
+    }
 }
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
@@ -85,11 +81,11 @@ impl<'p> Serialize for SerializePyObject {
             if unsafe {
                 std::intrinsics::unlikely(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null())
             } {
-                return Err(ser::Error::custom("Integer exceeds 64-bit max"));
+                return Err(ser::Error::custom("Integer exceeds 64-bit range"));
             } else if self.opts & STRICT_INTEGER == STRICT_INTEGER
                 && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
             {
-                return Err(ser::Error::custom("Integer exceeds 53-bit max"));
+                return Err(ser::Error::custom("Integer exceeds 53-bit range"));
             }
             serializer.serialize_i64(val)
         } else if unsafe { obj_ptr == BOOL_PTR } {
@@ -355,7 +351,7 @@ impl<'p> Serialize for SerializePyObject {
                     std::str::from_utf8_unchecked(std::slice::from_raw_parts(dt.as_ptr(), dt.len()))
                 })
             } else if unsafe { obj_ptr == DATE_PTR } {
-                let mut dt: SmallVec<[u8; 10]> = SmallVec::with_capacity(10);
+                let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
                 {
                     let year = unsafe { pyo3::ffi::PyDateTime_GET_YEAR(self.ptr) as i32 };
                     dt.extend(itoa::Buffer::new().format(year).bytes());
@@ -424,9 +420,9 @@ impl<'p> Serialize for SerializePyObject {
                 })
             } else if self.default.is_some() {
                 if self.recursion > 5 {
-                    return Err(ser::Error::custom(
+                    Err(ser::Error::custom(
                         "default serializer exceeds recursion limit",
-                    ));
+                    ))
                 } else {
                     let default_obj = unsafe {
                         pyo3::ffi::PyObject_CallFunctionObjArgs(
@@ -444,12 +440,12 @@ impl<'p> Serialize for SerializePyObject {
                         }
                         .serialize(serializer);
                         unsafe { pyo3::ffi::Py_DECREF(default_obj) };
-                        return res;
+                        res
                     } else if unsafe { !pyo3::ffi::PyErr_Occurred().is_null() } {
-                        return Err(ser::Error::custom(format_args!(
+                        Err(ser::Error::custom(format_args!(
                             "Type raised exception in default function: {}",
                             unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }
-                        )));
+                        )))
                     } else {
                         Err(ser::Error::custom(format_args!(
                             "Type is not JSON serializable: {}",

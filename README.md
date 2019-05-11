@@ -254,9 +254,9 @@ can be configured to raise a `JSONEncodeError` on values exceeding the
 >>> orjson.dumps(9007199254740992)
 b'9007199254740992'
 >>> orjson.dumps(9007199254740992, option=orjson.OPT_STRICT_INTEGER)
-JSONEncodeError: Integer exceeds 53-bit max
+JSONEncodeError: Integer exceeds 53-bit range
 >>> orjson.dumps(-9007199254740992, option=orjson.OPT_STRICT_INTEGER)
-JSONEncodeError: Integer exceeds 53-bit max
+JSONEncodeError: Integer exceeds 53-bit range
 ```
 
 ### float

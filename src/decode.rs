@@ -9,8 +9,9 @@ use std::borrow::Cow;
 use std::fmt;
 use std::marker::PhantomData;
 use std::os::raw::c_char;
+use std::ptr::NonNull;
 
-pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObject> {
+pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let obj_type_ptr = unsafe { (*ptr).ob_type };
     let data: Cow<str>;
     if unsafe { obj_type_ptr == typeref::STR_PTR } {
@@ -19,21 +20,17 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
         if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
-        data = unsafe {
-            Cow::Borrowed(std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                uni,
-                str_size as usize,
-            )))
-        };
+        data = Cow::Borrowed(unsafe {
+            std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize))
+        });
     } else if unsafe { obj_type_ptr == typeref::BYTES_PTR } {
         let buffer = unsafe { pyo3::ffi::PyBytes_AsString(ptr) as *const u8 };
         let length = unsafe { pyo3::ffi::PyBytes_Size(ptr) as usize };
         let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
-        if encoding_rs::Encoding::utf8_valid_up_to(slice) == length {
-            data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
-        } else {
+        if encoding_rs::Encoding::utf8_valid_up_to(slice) != length {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
+        data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
     } else {
         return Err(JSONDecodeError::py_err((
             "Input must be str or bytes",
@@ -45,11 +42,11 @@ pub fn deserialize(py: Python, ptr: *mut pyo3::ffi::PyObject) -> PyResult<PyObje
     let seed = JsonValue {};
     let mut deserializer = serde_json::Deserializer::from_str(&data);
     match seed.deserialize(&mut deserializer) {
-        Ok(py_ptr) => {
+        Ok(obj) => {
             deserializer
                 .end()
                 .map_err(|e| JSONDecodeError::py_err((e.to_string(), "", 0)))?;
-            Ok(unsafe { PyObject::from_owned_ptr(py, py_ptr) })
+            Ok(unsafe { NonNull::new_unchecked(obj) })
         }
         Err(e) => Err(JSONDecodeError::py_err((e.to_string(), "", 0))),
     }
@@ -161,7 +158,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         A: SeqAccess<'de>,
     {
-        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 6]> = SmallVec::new();
+        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::new();
         while let Some(elem) = seq.next_element_seed(self)? {
             elements.push(elem);
         }
