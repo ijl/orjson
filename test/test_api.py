@@ -98,8 +98,8 @@ class ApiTests(unittest.TestCase):
         """
         self.assertEqual(
             orjson.dumps(
-                [1, datetime.datetime.fromtimestamp(4123518902)],
+                [1, datetime.datetime(2000, 1, 1, 2, 3, 4)],
                 option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC,
             ),
-            b'[1,"2100-09-01T21:55:02+00:00"]'
+            b'[1,"2000-01-01T02:03:04+00:00"]'
         )
