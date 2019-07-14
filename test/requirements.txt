@@ -1,0 +1,6 @@
+arrow
+hypothesis
+pendulum;sys_platform!="win"
+psutil
+pytest
+pytz

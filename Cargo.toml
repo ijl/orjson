@@ -9,7 +9,18 @@ repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "datetime", "rfc", "3339"]
-include = ["Cargo.toml", "src/*", "data/*", "test/*.py", "README.md", "CHANGELOG.md", "LICENSE-APACHE", "LICENSE-MIT"]
+include = [
+    "Cargo.toml",
+    "CHANGELOG.md",
+    "data/*",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+    "README.md",
+    "rust-toolchain",
+    "src/*",
+    "test/*.py",
+    "test/requirements.txt",
+]
 
 [lib]
 name = "orjson"
@@ -37,7 +48,7 @@ classifier = [
 [dependencies]
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 itoa = { version = "0.4", default_features = false }
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "77f0974dafb8819b95437e74da581d7d9c41a1ad", features = ["extension-module"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "77f0974dafb8819b95437e74da581d7d9c41a1ad", default_features = false, features = ["extension-module"]}
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "2c0c55b628c9177543283a1535549e1dcb6a870a", default_features = false, features = ["num_lexical"] }
 smallvec = { version = "0.6", default_features = false, features = ["union", "std", "specialization"] }

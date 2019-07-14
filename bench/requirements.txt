@@ -1,0 +1,6 @@
+matplotlib
+pytest-benchmark
+python-rapidjson
+simplejson
+tabulate
+ujson
