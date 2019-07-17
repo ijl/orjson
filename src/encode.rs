@@ -65,8 +65,7 @@ impl<'p> Serialize for SerializePyObject {
     {
         let obj_ptr = unsafe { (*self.ptr).ob_type };
         if unsafe { obj_ptr == STR_PTR } {
-            let mut str_size: pyo3::ffi::Py_ssize_t =
-                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+            let mut str_size: pyo3::ffi::Py_ssize_t = 0;
             let uni =
                 unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size) as *const u8 };
             if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
@@ -96,12 +95,9 @@ impl<'p> Serialize for SerializePyObject {
         } else if unsafe { obj_ptr == DICT_PTR } {
             let mut map = serializer.serialize_map(None).unwrap();
             let mut pos = 0isize;
-            let mut str_size: pyo3::ffi::Py_ssize_t =
-                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-            let mut key: *mut pyo3::ffi::PyObject =
-                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-            let mut value: *mut pyo3::ffi::PyObject =
-                unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+            let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+            let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+            let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
                 if unsafe { std::intrinsics::unlikely((*key).ob_type != STR_PTR) } {
                     return Err(ser::Error::custom("Dict key must be str"));

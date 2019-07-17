@@ -15,8 +15,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
     let obj_type_ptr = unsafe { (*ptr).ob_type };
     let data: Cow<str>;
     if unsafe { obj_type_ptr == typeref::STR_PTR } {
-        let mut str_size: pyo3::ffi::Py_ssize_t =
-            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(ptr, &mut str_size) as *const u8 };
         if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
