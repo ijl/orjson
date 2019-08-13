@@ -90,7 +90,7 @@ class ApiTests(unittest.TestCase):
         dumps() option out of range high
         """
         with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps(True, option=4)
+            orjson.dumps(True, option=orjson.OPT_NO_RFC3339 << 1)
 
     def test_opts_multiple(self):
         """

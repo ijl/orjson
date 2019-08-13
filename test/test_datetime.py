@@ -210,6 +210,20 @@ class DatetimeTests(unittest.TestCase):
             b'["1937-01-01T12:00:27.87+00:20"]',
         )
 
+    def test_datetime_no_rfc3339(self):
+        """
+        datetime.datetime not as RFC33339
+        """
+        def dflt(obj):
+            if isinstance(obj, datetime.datetime):
+                return obj.isoformat()
+            return obj
+
+        self.assertEqual(
+            orjson.dumps([datetime.datetime(1937, 1, 1, 12, 0, 27, 87, tzinfo=tz.gettz('Europe/Amsterdam'))], default=dflt, option=orjson.OPT_NO_RFC3339),
+            b'["1937-01-01T12:00:27.000087+00:19:32"]',
+        )
+
 
 class DateTests(unittest.TestCase):
 

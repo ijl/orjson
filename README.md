@@ -71,6 +71,8 @@ It accepts options via an `option` keyword argument. These include:
 limit is otherwise 64 bits, the same as the Python standard library.
 - `orjson.OPT_NAIVE_UTC` for assuming `datetime.datetime` objects without a
 `tzinfo` are UTC.
+- `orjson.OPT_NO_RFC3339` to not encode `datetime.datetime` objects into
+RFC3339 strings.
 
 To specify multiple options, mask them together, e.g.,
 `option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
@@ -186,6 +188,9 @@ ISO 8601.
 `tzinfo`, if specified, must be a timezone object that is either
 `datetime.timezone.utc` or from the `pendulum`, `pytz`, or
 `dateutil`/`arrow` libraries.
+
+To disable the builtin serializer (and use your own default hook) use
+`orjson.OPT_NO_RFC3339`.
 
 ```python
 >>> import orjson, datetime, pendulum

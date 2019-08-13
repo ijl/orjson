@@ -50,6 +50,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER.into_object(py))?;
     m.add("OPT_NAIVE_UTC", encode::NAIVE_UTC.into_object(py))?;
+    m.add("OPT_NO_RFC3339", encode::NO_RFC3339.into_object(py))?;
 
     Ok(())
 }

@@ -10,3 +10,4 @@ class JSONEncodeError(TypeError): ...
 
 OPT_STRICT_INTEGER: int
 OPT_NAIVE_UTC: int
+OPT_NO_RFC3339: int

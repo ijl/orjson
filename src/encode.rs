@@ -16,8 +16,9 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const STRICT_INTEGER: u8 = 1;
 pub const NAIVE_UTC: u8 = 1 << 1;
+pub const NO_RFC3339: u8 = 1 << 2;
 
-pub const MAX_OPT: i8 = STRICT_INTEGER as i8 | NAIVE_UTC as i8;
+pub const MAX_OPT: i8 = STRICT_INTEGER as i8 | NAIVE_UTC as i8 | NO_RFC3339 as i8;
 
 const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
@@ -165,7 +166,7 @@ impl<'p> Serialize for SerializePyObject {
                 } else {
                     serializer.serialize_seq(None).unwrap().end()
                 }
-            } else if unsafe { obj_ptr == DATETIME_PTR } {
+            } else if (self.opts & NO_RFC3339 != NO_RFC3339) && unsafe { obj_ptr == DATETIME_PTR } {
                 let has_tz =
                     unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
                 let offset_day: i32;
