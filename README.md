@@ -60,7 +60,7 @@ def dumps(__obj: Any, default: Optional[Callable[[Any], Any]] = ..., option: Opt
 `dumps()` serializes Python objects to JSON.
 
 It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, `datetime.datetime`,
+`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, and `None` instances. It supports
 arbitrary types through `default`. It does not serialize subclasses of
 supported types natively, but `default` may be used.
@@ -133,7 +133,7 @@ def loads(__obj: Union[bytes, str]) -> Any: ...
 ```
 
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
-`list`, `int`, `float`, `str`, and `None` objects.
+`list`, `int`, `float`, `str`, `bool`, and `None` objects.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
