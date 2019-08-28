@@ -48,9 +48,27 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
-    m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER.into_object(py))?;
-    m.add("OPT_NAIVE_UTC", encode::NAIVE_UTC.into_object(py))?;
 
+    unsafe {
+        pyo3::ffi::PyModule_AddObject(
+            m.as_ptr(),
+            "OPT_STRICT_INTEGER\0".as_ptr() as *const c_char,
+            #[cfg(target_os = "windows")]
+            pyo3::ffi::PyLong_FromUnsignedLongLong(encode::STRICT_INTEGER as u64),
+            #[cfg(not(target_os = "windows"))]
+            pyo3::ffi::PyLong_FromUnsignedLong(encode::STRICT_INTEGER as u64),
+        )
+    };
+    unsafe {
+        pyo3::ffi::PyModule_AddObject(
+            m.as_ptr(),
+            "OPT_NAIVE_UTC\0".as_ptr() as *const c_char,
+            #[cfg(target_os = "windows")]
+            pyo3::ffi::PyLong_FromUnsignedLongLong(encode::NAIVE_UTC as u64),
+            #[cfg(not(target_os = "windows"))]
+            pyo3::ffi::PyLong_FromUnsignedLong(encode::NAIVE_UTC as u64),
+        )
+    };
     Ok(())
 }
 

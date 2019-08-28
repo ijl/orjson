@@ -48,7 +48,7 @@ classifier = [
 [dependencies]
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 itoa = { version = "0.4", default_features = false }
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "86cc84e692f92003d466cd6754ce24083d84213e", default_features = false, features = ["extension-module"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "a4c9fb96a35b1ff829952a431d425c30d7cfba92", default_features = false, features = ["extension-module"]}
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "2c0c55b628c9177543283a1535549e1dcb6a870a", default_features = false, features = ["num_lexical"] }
 smallvec = { version = "0.6", default_features = false, features = ["union", "std", "specialization"] }
