@@ -38,6 +38,7 @@ pub fn serialize(
             ptr,
             default,
             opts,
+            default_calls: 0,
             recursion: 0,
         },
     ) {
@@ -55,6 +56,7 @@ struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
     opts: u8,
+    default_calls: u8,
     recursion: u8,
 }
 
@@ -99,6 +101,9 @@ impl<'p> Serialize for SerializePyObject {
             let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
+                if unsafe { std::intrinsics::unlikely(self.recursion == 255) } {
+                    return Err(ser::Error::custom("Recursion limit reached"));
+                }
                 if unsafe { std::intrinsics::unlikely((*key).ob_type != STR_PTR) } {
                     return Err(ser::Error::custom("Dict key must be str"));
                 }
@@ -118,7 +123,8 @@ impl<'p> Serialize for SerializePyObject {
                         ptr: value,
                         default: self.default,
                         opts: self.opts,
-                        recursion: self.recursion,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion + 1,
                     },
                 )?;
             }
@@ -129,6 +135,9 @@ impl<'p> Serialize for SerializePyObject {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 let mut i = 0;
                 while i < len {
+                    if unsafe { std::intrinsics::unlikely(self.recursion == 255) } {
+                        return Err(ser::Error::custom("Recursion limit reached"));
+                    }
                     let elem =
                         unsafe { pyo3::ffi::PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t) };
                     i += 1;
@@ -136,7 +145,8 @@ impl<'p> Serialize for SerializePyObject {
                         ptr: elem,
                         default: self.default,
                         opts: self.opts,
-                        recursion: self.recursion,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion + 1,
                     })?
                 }
                 seq.end()
@@ -158,6 +168,7 @@ impl<'p> Serialize for SerializePyObject {
                             ptr: elem,
                             default: self.default,
                             opts: self.opts,
+                            default_calls: self.default_calls,
                             recursion: self.recursion,
                         })?
                     }
@@ -419,7 +430,7 @@ impl<'p> Serialize for SerializePyObject {
                     std::str::from_utf8_unchecked(std::slice::from_raw_parts(dt.as_ptr(), dt.len()))
                 })
             } else if self.default.is_some() {
-                if self.recursion > 5 {
+                if self.default_calls > 5 {
                     Err(ser::Error::custom(
                         "default serializer exceeds recursion limit",
                     ))
@@ -436,7 +447,8 @@ impl<'p> Serialize for SerializePyObject {
                             ptr: default_obj,
                             default: self.default,
                             opts: self.opts,
-                            recursion: self.recursion + 1,
+                            default_calls: self.default_calls + 1,
+                            recursion: self.recursion,
                         }
                         .serialize(serializer);
                         unsafe { pyo3::ffi::Py_DECREF(default_obj) };

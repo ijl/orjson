@@ -88,6 +88,8 @@ It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than five levels deep.
 
+It raises `JSONEncodeError` on circular references.
+
 It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
 
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
