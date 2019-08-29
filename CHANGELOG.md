@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.7 - 2019-08-29
+
+### Changed
+
+- Publish PEP 517 source distribution.
+
+### Fixed
+
+- `orjson.dumps()` raises `JSONEncodeError` on circular references.
+
 ## 2.0.6 - 2019-05-11
 
 ### Changed
