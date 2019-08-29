@@ -41,7 +41,7 @@ To build from source requires [Rust](https://www.rust-lang.org/) on the
 pip:
 
 ```sh
-pip wheel orjson
+pip wheel --no-binary=orjson orjson
 ```
 
 There are no runtime dependencies other than libc. orjson is compatible with
