@@ -17,7 +17,6 @@ def default(obj):
 
 
 class MemoryTests(unittest.TestCase):
-
     def test_memory_loads(self):
         """
         loads() memory leak
@@ -53,7 +52,7 @@ class MemoryTests(unittest.TestCase):
         proc = psutil.Process()
         gc.collect()
         fixture = orjson.loads(FIXTURE)
-        fixture['custom'] = uuid.uuid4()
+        fixture["custom"] = uuid.uuid4()
         val = orjson.dumps(fixture, default=default)
         mem = proc.memory_info().rss
         for _ in range(10000):

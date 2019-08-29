@@ -10,18 +10,21 @@ from threading import get_ident
 import orjson
 
 
-DATA = sorted([
-    {
-        'id': i,
-        'name': '90as90ji0123ioj2390as90as90',
-        'body': '哈哈89asu89as😊89as9as90jas-😋0apjzxiojzx89hq23n',
-        'score': 901290129.1,
-        'bool': True,
-        'int': 9832,
-        'none': None,
-    }
-    for i in range(10)
-], key=itemgetter('id'))
+DATA = sorted(
+    [
+        {
+            "id": i,
+            "name": "90as90ji0123ioj2390as90as90",
+            "body": "哈哈89asu89as😊89as9as90jas-😋0apjzxiojzx89hq23n",
+            "score": 901290129.1,
+            "bool": True,
+            "int": 9832,
+            "none": None,
+        }
+        for i in range(10)
+    ],
+    key=itemgetter("id"),
+)
 
 
 STATUS = 0
@@ -29,7 +32,7 @@ STATUS = 0
 
 def test_func(n):
     try:
-        assert sorted(orjson.loads(orjson.dumps(DATA)), key=itemgetter('id')) == DATA
+        assert sorted(orjson.loads(orjson.dumps(DATA)), key=itemgetter("id")) == DATA
     except Exception:
         STATUS = 1
         traceback.print_exc()
@@ -42,9 +45,9 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 
 
 if STATUS == 0:
-    print('ok')
+    print("ok")
 else:
-    print('error')
+    print("error")
 
 
 sys.exit(STATUS)

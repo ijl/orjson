@@ -11,25 +11,24 @@ SIMPLE_TYPES = (1, 1.0, -1, None, "str", True, False)
 
 
 class ApiTests(unittest.TestCase):
-
     def test_loads_trailing(self):
         """
         loads() handles trailing whitespace
         """
-        self.assertEqual(orjson.loads('{}\n\t '), {})
+        self.assertEqual(orjson.loads("{}\n\t "), {})
 
     def test_loads_trailing_invalid(self):
         """
         loads() handles trailing invalid
         """
-        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '{}\n\t a')
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, "{}\n\t a")
 
     def test_simple_json(self):
         """
         dumps() equivalent to json on simple types
         """
         for obj in SIMPLE_TYPES:
-            self.assertEqual(orjson.dumps(obj), json.dumps(obj).encode('utf-8'))
+            self.assertEqual(orjson.dumps(obj), json.dumps(obj).encode("utf-8"))
 
     def test_simple_round_trip(self):
         """
@@ -49,20 +48,20 @@ class ApiTests(unittest.TestCase):
         """
         loads() recursion limit
         """
-        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '[' * (1024 * 1024))
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, "[" * (1024 * 1024))
 
     def test_version(self):
         """
         __version__
         """
-        self.assertRegex(orjson.__version__, r'^\d+\.\d+(\.\d+)?$')
+        self.assertRegex(orjson.__version__, r"^\d+\.\d+(\.\d+)?$")
 
     def test_valueerror(self):
         """
         orjson.JSONDecodeError is a subclass of ValueError
         """
-        self.assertRaises(orjson.JSONDecodeError, orjson.loads, '{')
-        self.assertRaises(ValueError, orjson.loads, '{')
+        self.assertRaises(orjson.JSONDecodeError, orjson.loads, "{")
+        self.assertRaises(ValueError, orjson.loads, "{")
 
     def test_option_not_int(self):
         """
@@ -101,5 +100,5 @@ class ApiTests(unittest.TestCase):
                 [1, datetime.datetime(2000, 1, 1, 2, 3, 4)],
                 option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC,
             ),
-            b'[1,"2000-01-01T02:03:04+00:00"]'
+            b'[1,"2000-01-01T02:03:04+00:00"]',
         )

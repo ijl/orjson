@@ -8,15 +8,15 @@ from orjson import dumps, loads
 
 filename = sys.argv[1]
 
-with lzma.open(filename, 'r') as fileh:
-    file_utf8 = fileh.read().decode('utf-8')
+with lzma.open(filename, "r") as fileh:
+    file_utf8 = fileh.read().decode("utf-8")
 
 n = 1000
 
-if sys.argv[2] == 'dumps':
+if sys.argv[2] == "dumps":
     file_obj = loads(file_utf8)
     for _ in range(n):
         dumps(file_utf8)
-elif sys.argv[2] == 'loads':
+elif sys.argv[2] == "loads":
     for _ in range(n):
         loads(file_utf8)

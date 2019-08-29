@@ -9,9 +9,9 @@ import orjson
 
 
 class Recursive:
-
     def __init__(self, cur):
         self.cur = cur
+
 
 def default(obj):
     if obj.cur != 0:
@@ -21,7 +21,6 @@ def default(obj):
 
 
 class TypeTests(unittest.TestCase):
-
     def test_default_not_callable(self):
         """
         dumps() default not callable
@@ -34,28 +33,28 @@ class TypeTests(unittest.TestCase):
         dumps() default function
         """
         ref = uuid.uuid4()
+
         def default(obj):
             return str(obj)
+
         self.assertEqual(
-            orjson.dumps(ref, default=default),
-            b'"%s"' % str(ref).encode('utf-8'),
+            orjson.dumps(ref, default=default), b'"%s"' % str(ref).encode("utf-8")
         )
 
     def test_default_func_none(self):
         """
         dumps() default function None ok
         """
-        self.assertEqual(
-            orjson.dumps(uuid.uuid4(), default=lambda x: None),
-            b"null"
-        )
+        self.assertEqual(orjson.dumps(uuid.uuid4(), default=lambda x: None), b"null")
 
     def test_default_func_exc(self):
         """
         dumps() default function raises exception
         """
+
         def default(obj):
             raise NotImplementedError
+
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(uuid.uuid4(), default=default)
 
@@ -64,11 +63,13 @@ class TypeTests(unittest.TestCase):
         dumps() default function nested str
         """
         ref = uuid.uuid4()
+
         def default(obj):
             return str(obj)
+
         self.assertEqual(
             orjson.dumps({"a": ref}, default=default),
-            b'{"a":"%s"}' % str(ref).encode('utf-8'),
+            b'{"a":"%s"}' % str(ref).encode("utf-8"),
         )
 
     def test_default_func_list(self):
@@ -76,12 +77,14 @@ class TypeTests(unittest.TestCase):
         dumps() default function nested list
         """
         ref = uuid.uuid4()
+
         def default(obj):
             if isinstance(obj, uuid.UUID):
-                return [str(obj), ]
+                return [str(obj)]
+
         self.assertEqual(
             orjson.dumps({"a": ref}, default=default),
-            b'{"a":["%s"]}' % str(ref).encode('utf-8'),
+            b'{"a":["%s"]}' % str(ref).encode("utf-8"),
         )
 
     def test_default_func_nested_list(self):
@@ -89,11 +92,14 @@ class TypeTests(unittest.TestCase):
         dumps() default function list
         """
         ref = uuid.uuid4()
+
         def default(obj):
             return str(obj)
+
         self.assertEqual(
             orjson.dumps([ref] * 100, default=default),
-            b'[%s]' % b','.join((b'"%s"' % str(ref).encode('utf-8') for _ in range(100)))
+            b"[%s]"
+            % b",".join((b'"%s"' % str(ref).encode("utf-8") for _ in range(100))),
         )
 
     def test_default_func_bytes(self):
@@ -101,8 +107,10 @@ class TypeTests(unittest.TestCase):
         dumps() default function errors on non-str
         """
         ref = uuid.uuid4()
+
         def default(obj):
             return bytes(obj)
+
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
@@ -111,8 +119,10 @@ class TypeTests(unittest.TestCase):
         dumps() default function errors on invalid str
         """
         ref = uuid.uuid4()
+
         def default(obj):
-            return '\ud800'
+            return "\ud800"
+
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
@@ -123,7 +133,7 @@ class TypeTests(unittest.TestCase):
         ref = uuid.uuid4()
         self.assertEqual(
             orjson.dumps(ref, default=lambda x: str(x)),
-            b'"%s"' % str(ref).encode('utf-8'),
+            b'"%s"' % str(ref).encode("utf-8"),
         )
 
     def test_default_callable_ok(self):
@@ -132,7 +142,6 @@ class TypeTests(unittest.TestCase):
         """
 
         class CustomSerializer:
-
             def __init__(self):
                 self._cache = {}
 
@@ -142,28 +151,24 @@ class TypeTests(unittest.TestCase):
                 return self._cache[obj]
 
         ref_obj = uuid.uuid4()
-        ref_bytes = b'"%s"' % str(ref_obj).encode('utf-8')
+        ref_bytes = b'"%s"' % str(ref_obj).encode("utf-8")
         for obj in [ref_obj] * 100:
-            self.assertEqual(
-                orjson.dumps(obj, default=CustomSerializer()),
-                ref_bytes,
-            )
+            self.assertEqual(orjson.dumps(obj, default=CustomSerializer()), ref_bytes)
 
     def test_default_recursion(self):
         """
         dumps() default recursion limit
         """
-        self.assertEqual(
-            orjson.dumps(Recursive(5), default=default),
-            b'0',
-        )
+        self.assertEqual(orjson.dumps(Recursive(5), default=default), b"0")
 
     def test_default_recursion_reset(self):
         """
         dumps() default recursion limit reset
         """
         self.assertEqual(
-            orjson.dumps([Recursive(5), {'a': 'b'}, Recursive(5), Recursive(5)], default=default),
+            orjson.dumps(
+                [Recursive(5), {"a": "b"}, Recursive(5), Recursive(5)], default=default
+            ),
             b'[0,{"a":"b"},0,0]',
         )
 
@@ -172,7 +177,9 @@ class TypeTests(unittest.TestCase):
         dumps() default infinite recursion
         """
         ref = uuid.uuid4()
+
         def default(obj):
             return obj
+
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
