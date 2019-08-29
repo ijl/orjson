@@ -36,20 +36,17 @@ To install a wheel from PyPI:
 pip install --upgrade orjson
 ```
 
-There are no runtime dependencies other than libc.
-
-To build a release wheel from source, assuming a Rust nightly toolchain
-and Python environment:
+To build from source requires [Rust](https://www.rust-lang.org/) on the
+`nightly` channel. Package a wheel from a PEP 517 source distribution using
+pip:
 
 ```sh
-git clone https://github.com/ijl/orjson.git && cd orjson
-pip install --upgrade pyo3-pack
-pyo3-pack build --release --strip --interpreter python3.7
+pip wheel orjson
 ```
 
-orjson is compatible with systems using glibc earlier than 2.18 if
-compiled on such a system. Installing from source on a musl libc distribution
-is not practical due to tooling.
+There are no runtime dependencies other than libc. orjson is compatible with
+systems using glibc earlier than 2.18 if compiled on such a system. Tooling
+does not currently support musl libc.
 
 ### Serialize
 

@@ -1,0 +1,8 @@
+[build-system]
+build-backend = "pyo3_pack"
+requires = ["pyo3-pack>=0.7.0.beta11,<0.8"]
+
+[tool.pyo3-pack]
+manylinux = "off"
+rustc-extra-args = "-C target-feature=+sse2"
+strip = "on"

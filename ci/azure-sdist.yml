@@ -3,7 +3,7 @@ parameters:
   target: ''
 
 steps:
-- bash: pip install --upgrade pip wheel pyo3-pack mypy twine
+- bash: pip install --upgrade pip wheel twine
   displayName: build dependencies
 - bash: pip install --upgrade --pre pyo3-pack
   displayName: pyo3-pack beta
@@ -11,19 +11,17 @@ steps:
   displayName: test dependencies
 - bash: pip install -r integration/requirements.txt
   displayName: integration dependencies
-- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-C target-feature=+sse2" pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
-  displayName: build
-- bash: pip install target/wheels/orjson*.whl
+- bash: pyo3-pack sdist
+  displayName: package sdist
+- bash: pip install target/wheels/orjson*.tar.gz
   displayName: install
 - bash: pytest -v test
   displayName: pytest
-- bash: mypy ./orjson.pyi
-  displayName: mypy
 - bash: ./integration/run thread
   displayName: thread
 - bash: ./integration/run gunicorn
   displayName: gunicorn
-- bash: ./deploy target/wheels/*.whl
+- bash: ./deploy target/wheels/*.tar.gz
   displayName: deploy
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)

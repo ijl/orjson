@@ -15,6 +15,7 @@ include = [
     "data/*",
     "LICENSE-APACHE",
     "LICENSE-MIT",
+    "pyproject.toml",
     "README.md",
     "rust-toolchain",
     "src/*",

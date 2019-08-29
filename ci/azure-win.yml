@@ -10,8 +10,10 @@ steps:
     rustup default nightly
     echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
   displayName: rustup
-- script: python.exe -m pip install --upgrade pip wheel pyo3-pack twine
+- script: python.exe -m pip install --upgrade pip wheel twine
   displayName: build dependencies
+- script: python.exe -m pip install --upgrade --pre pyo3-pack
+  displayName: pyo3-pack beta
 - script: python.exe -m pip install -r test\requirements.txt
   displayName: test dependencies
 - script: pyo3-pack.exe build --release --strip --interpreter $(interpreter) --target $(target)
