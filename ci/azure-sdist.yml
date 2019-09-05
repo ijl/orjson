@@ -3,15 +3,13 @@ parameters:
   target: ''
 
 steps:
-- bash: pip install --upgrade pip wheel twine
+- bash: pip install --upgrade pip wheel twine maturin
   displayName: build dependencies
-- bash: pip install --upgrade --pre pyo3-pack
-  displayName: pyo3-pack beta
 - bash: pip install -r test/requirements.txt
   displayName: test dependencies
 - bash: pip install -r integration/requirements.txt
   displayName: integration dependencies
-- bash: pyo3-pack sdist
+- bash: maturin sdist
   displayName: package sdist
 - bash: pip install target/wheels/orjson*.tar.gz
   displayName: install

@@ -27,7 +27,7 @@ include = [
 name = "orjson"
 crate-type = ["cdylib"]
 
-[package.metadata.pyo3-pack]
+[package.metadata.maturin]
 classifier = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",

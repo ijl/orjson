@@ -3,15 +3,13 @@ parameters:
   target: ''
 
 steps:
-- bash: pip install --upgrade pip wheel pyo3-pack mypy twine
+- bash: pip install --upgrade pip wheel maturin mypy twine
   displayName: build dependencies
-- bash: pip install --upgrade --pre pyo3-pack
-  displayName: pyo3-pack beta
 - bash: pip install -r test/requirements.txt
   displayName: test dependencies
 - bash: pip install -r integration/requirements.txt
   displayName: integration dependencies
-- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-C target-feature=+sse2" pyo3-pack build --release --strip --interpreter $(interpreter) --target $(target)
+- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-C target-feature=+sse2" maturin build --release --strip --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
