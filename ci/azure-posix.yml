@@ -13,7 +13,7 @@ steps:
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
-- bash: pytest -v test
+- bash: pytest -vrxXs test
   displayName: pytest
 - bash: mypy ./orjson.pyi
   displayName: mypy

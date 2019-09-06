@@ -28,9 +28,8 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.loads(FIXTURE)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem)
+        self.assertTrue(proc.memory_info().rss <= mem + 1024)
 
-    @pytest.mark.xfail
     def test_memory_dumps(self):
         """
         dumps() memory leak
@@ -43,7 +42,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem)
+        self.assertTrue(proc.memory_info().rss <= mem + 1024)
 
     def test_memory_dumps_default(self):
         """
@@ -58,4 +57,4 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture, default=default)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem)
+        self.assertTrue(proc.memory_info().rss <= mem + 1024)
