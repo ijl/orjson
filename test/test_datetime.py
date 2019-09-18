@@ -23,7 +23,7 @@ class DatetimeTests(unittest.TestCase):
         """
         self.assertEqual(
             orjson.dumps([datetime.datetime(2000, 1, 1, 2, 3, 4, 123)]),
-            b'["2000-01-01T02:03:04.123"]',
+            b'["2000-01-01T02:03:04.000123"]',
         )
 
     def test_datetime_naive_utc(self):
@@ -35,7 +35,7 @@ class DatetimeTests(unittest.TestCase):
                 [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
                 option=orjson.OPT_NAIVE_UTC,
             ),
-            b'["2000-01-01T02:03:04.123+00:00"]',
+            b'["2000-01-01T02:03:04.000123+00:00"]',
         )
 
     def test_datetime_min(self):
@@ -342,7 +342,7 @@ class DatetimeTests(unittest.TestCase):
                     )
                 ]
             ),
-            b'["1937-01-01T12:00:27.87+00:20"]',
+            b'["1937-01-01T12:00:27.000087+00:20"]',
         )
 
     @pytest.mark.skipif(
@@ -392,7 +392,7 @@ class DatetimeTests(unittest.TestCase):
                     )
                 ]
             ),
-            b'["1937-01-01T12:00:27.87+00:20"]',
+            b'["1937-01-01T12:00:27.000087+00:20"]',
         )
 
     def test_datetime_partial_second_dateutil(self):
@@ -409,8 +409,37 @@ class DatetimeTests(unittest.TestCase):
                     )
                 ]
             ),
-            b'["1937-01-01T12:00:27.87+00:20"]',
+            b'["1937-01-01T12:00:27.000087+00:20"]',
         )
+
+    def test_datetime_microsecond_max(self):
+        """
+        datetime.datetime microsecond max
+        """
+        self.assertEqual(
+            orjson.dumps(datetime.datetime(2000, 1, 1, 0, 0, 0, 999999)),
+            b'"2000-01-01T00:00:00.999999"',
+        )
+
+    def test_datetime_microsecond_min(self):
+        """
+        datetime.datetime microsecond min
+        """
+        self.assertEqual(
+            orjson.dumps(datetime.datetime(2000, 1, 1, 0, 0, 0, 1)),
+            b'"2000-01-01T00:00:00.000001"',
+        )
+
+    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    def test_datetime_roundtrip(self):
+        """
+        datetime.datetime parsed by pendulum
+        """
+        obj = datetime.datetime(2000, 1, 1, 0, 0, 0, 1, tzinfo=datetime.timezone.utc)
+        serialized = orjson.dumps(obj).decode("utf-8").replace('"', "")
+        parsed = pendulum.parse(serialized)
+        for attr in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
+            self.assertEqual(getattr(obj, attr), getattr(parsed, attr))
 
 
 class DateTests(unittest.TestCase):

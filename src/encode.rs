@@ -313,7 +313,14 @@ impl<'p> Serialize for SerializePyObject {
                         unsafe { pyo3::ffi::PyDateTime_DATE_GET_MICROSECOND(self.ptr) as u32 };
                     if microsecond != 0 {
                         dt.push(PERIOD);
-                        dt.extend(itoa::Buffer::new().format(microsecond).bytes());
+                        let mut buf = itoa::Buffer::new();
+                        let formatted = buf.format(microsecond);
+                        let mut to_pad = 6 - formatted.len();
+                        while to_pad != 0 {
+                            dt.push(ZERO);
+                            to_pad -= 1;
+                        }
+                        dt.extend(formatted.bytes());
                     }
                 }
                 if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
