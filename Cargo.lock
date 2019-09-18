@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "orjson"
-version = "2.0.7"
+version = "2.0.8"
 dependencies = [
  "encoding_rs 0.8.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
