@@ -299,3 +299,10 @@ class TypeTests(unittest.TestCase):
             orjson.loads('{1:"value"}')
         with self.assertRaises(orjson.JSONDecodeError):
             orjson.loads('{{"a":true}:true}')
+
+    def test_object(self):
+        """
+        object() dumps()
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(object())

@@ -38,6 +38,30 @@ class DatetimeTests(unittest.TestCase):
             b'["2000-01-01T02:03:04.123+00:00"]',
         )
 
+    def test_datetime_min(self):
+        """
+        datetime.datetime min range
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(datetime.MINYEAR, 1, 1, 0, 0, 0, 0)],
+                option=orjson.OPT_NAIVE_UTC,
+            ),
+            b'["1-01-01T00:00:00+00:00"]',
+        )
+
+    def test_datetime_max(self):
+        """
+        datetime.datetime max range
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(datetime.MAXYEAR, 12, 31, 23, 59, 50, 999999)],
+                option=orjson.OPT_NAIVE_UTC,
+            ),
+            b'["9999-12-31T23:59:50.999999+00:00"]',
+        )
+
     def test_datetime_tz_assume(self):
         """
         datetime.datetime tz with assume UTC uses tz
