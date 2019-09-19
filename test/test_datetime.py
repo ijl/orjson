@@ -472,7 +472,7 @@ class TimeTests(unittest.TestCase):
         datetime.time
         """
         self.assertEqual(
-            orjson.dumps([datetime.time(12, 15, 59, 111)]), b'["12:15:59.111"]'
+            orjson.dumps([datetime.time(12, 15, 59, 111)]), b'["12:15:59.000111"]'
         )
         self.assertEqual(orjson.dumps([datetime.time(12, 15, 59)]), b'["12:15:59"]')
 
@@ -484,3 +484,21 @@ class TimeTests(unittest.TestCase):
             orjson.dumps(
                 [datetime.time(12, 15, 59, 111, tzinfo=tz.gettz("Asia/Shanghai"))]
             )
+
+    def test_time_microsecond_max(self):
+        """
+        datetime.time microsecond max
+        """
+        self.assertEqual(
+            orjson.dumps(datetime.time(0, 0, 0, 999999)),
+            b'"00:00:00.999999"',
+        )
+
+    def test_time_microsecond_min(self):
+        """
+        datetime.time microsecond min
+        """
+        self.assertEqual(
+            orjson.dumps(datetime.time(0, 0, 0, 1)),
+            b'"00:00:00.000001"',
+        )

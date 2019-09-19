@@ -195,7 +195,7 @@ b'"2100-09-01T21:55:02+00:00"'
 >>> orjson.dumps(
     datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide'))
 )
-b'"2018-12-01T02:03:04.9+10:30"'
+b'"2018-12-01T02:03:04.000009+10:30"'
 >>> orjson.dumps(
     datetime.datetime.fromtimestamp(4123518902)
 )
@@ -216,15 +216,15 @@ b'"2100-09-01T21:55:02+00:00"'
     datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide')),
     option=orjson.OPT_NAIVE_UTC
 )
-b'"2018-12-01T02:03:04.9+10:30"'
+b'"2018-12-01T02:03:04.000009+10:30"'
 ```
 
 `datetime.time` objects must not have a `tzinfo`.
 
 ```python
 >>> import orjson, datetime
->>> orjson.dumps(datetime.time(12, 0, 15, 291290))
-b'"12:00:15.291290"'
+>>> orjson.dumps(datetime.time(12, 0, 15, 290))
+b'"12:00:15.000290"'
 ```
 
 `datetime.date` objects will always serialize.
