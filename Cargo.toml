@@ -12,6 +12,7 @@ keywords = ["fast", "json", "datetime", "rfc", "3339"]
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
+    "conftest.py",
     "data/*",
     "LICENSE-APACHE",
     "LICENSE-MIT",

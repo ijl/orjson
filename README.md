@@ -57,7 +57,8 @@ def dumps(__obj: Any, default: Optional[Callable[[Any], Any]] = ..., option: Opt
 `dumps()` serializes Python objects to JSON.
 
 It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`, `datetime.datetime`,
+`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
+`typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, and `None` instances. It supports
 arbitrary types through `default`. It does not serialize subclasses of
 supported types natively, but `default` may be used.

@@ -490,15 +490,11 @@ class TimeTests(unittest.TestCase):
         datetime.time microsecond max
         """
         self.assertEqual(
-            orjson.dumps(datetime.time(0, 0, 0, 999999)),
-            b'"00:00:00.999999"',
+            orjson.dumps(datetime.time(0, 0, 0, 999999)), b'"00:00:00.999999"'
         )
 
     def test_time_microsecond_min(self):
         """
         datetime.time microsecond min
         """
-        self.assertEqual(
-            orjson.dumps(datetime.time(0, 0, 0, 1)),
-            b'"00:00:00.000001"',
-        )
+        self.assertEqual(orjson.dumps(datetime.time(0, 0, 0, 1)), b'"00:00:00.000001"')

@@ -3,3 +3,4 @@ pendulum;sys_platform!="win"
 psutil
 pytest
 pytz
+typing_extensions;python_version>"3.5" and python_version <"3.8"
