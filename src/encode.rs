@@ -73,8 +73,6 @@ impl<'p> Serialize for SerializePyObject {
                 return Err(ser::Error::custom(INVALID_STR));
             }
             serializer.serialize_str(str_from_slice!(uni, str_size))
-        } else if is_type!(obj_ptr, FLOAT_PTR) {
-            serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
         } else if is_type!(obj_ptr, INT_PTR) {
             let val = ffi!(PyLong_AsLongLong(self.ptr));
             if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
@@ -85,10 +83,29 @@ impl<'p> Serialize for SerializePyObject {
                 return Err(ser::Error::custom("Integer exceeds 53-bit range"));
             }
             serializer.serialize_i64(val)
-        } else if is_type!(obj_ptr, BOOL_PTR) {
-            serializer.serialize_bool(unsafe { self.ptr == TRUE })
-        } else if is_type!(obj_ptr, NONE_PTR) {
-            serializer.serialize_unit()
+        } else if is_type!(obj_ptr, LIST_PTR) {
+            let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
+            if len != 0 {
+                let mut seq = serializer.serialize_seq(Some(len))?;
+                let mut i = 0;
+                while i < len {
+                    if unlikely!(self.recursion == 255) {
+                        return Err(ser::Error::custom("Recursion limit reached"));
+                    }
+                    let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
+                    i += 1;
+                    seq.serialize_element(&SerializePyObject {
+                        ptr: elem,
+                        default: self.default,
+                        opts: self.opts,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion + 1,
+                    })?
+                }
+                seq.end()
+            } else {
+                serializer.serialize_seq(None).unwrap().end()
+            }
         } else if is_type!(obj_ptr, DICT_PTR) {
             let mut map = serializer.serialize_map(None).unwrap();
             let mut pos = 0isize;
@@ -118,29 +135,12 @@ impl<'p> Serialize for SerializePyObject {
                 )?;
             }
             map.end()
-        } else if is_type!(obj_ptr, LIST_PTR) {
-            let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
-            if len != 0 {
-                let mut seq = serializer.serialize_seq(Some(len))?;
-                let mut i = 0;
-                while i < len {
-                    if unlikely!(self.recursion == 255) {
-                        return Err(ser::Error::custom("Recursion limit reached"));
-                    }
-                    let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
-                    i += 1;
-                    seq.serialize_element(&SerializePyObject {
-                        ptr: elem,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    })?
-                }
-                seq.end()
-            } else {
-                serializer.serialize_seq(None).unwrap().end()
-            }
+        } else if is_type!(obj_ptr, BOOL_PTR) {
+            serializer.serialize_bool(unsafe { self.ptr == TRUE })
+        } else if is_type!(obj_ptr, NONE_PTR) {
+            serializer.serialize_unit()
+        } else if is_type!(obj_ptr, FLOAT_PTR) {
+            serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
         } else {
             if is_type!(obj_ptr, TUPLE_PTR) {
                 let len = ffi!(PyTuple_GET_SIZE(self.ptr)) as usize;
