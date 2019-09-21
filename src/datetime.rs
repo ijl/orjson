@@ -1,0 +1,227 @@
+use crate::typeref::*;
+use smallvec::SmallVec;
+
+const NAIVE_UTC: u8 = 1 << 1;
+
+const HYPHEN: u8 = 45; // "-"
+const PLUS: u8 = 43; // "+"
+const ZERO: u8 = 48; // "0"
+const T: u8 = 84; // "T"
+const COLON: u8 = 58; // ":"
+const PERIOD: u8 = 46; // ":"
+
+macro_rules! write_double_digit {
+    ($dt:ident, $value:ident) => {
+        if $value < 10 {
+            $dt.push(ZERO);
+        }
+        $dt.extend(itoa::Buffer::new().format($value).bytes());
+    };
+}
+
+macro_rules! write_microsecond {
+    ($dt:ident, $microsecond:ident) => {
+        if $microsecond != 0 {
+            $dt.push(PERIOD);
+            let mut buf = itoa::Buffer::new();
+            let formatted = buf.format($microsecond);
+            let mut to_pad = 6 - formatted.len();
+            while to_pad != 0 {
+                $dt.push(ZERO);
+                to_pad -= 1;
+            }
+            $dt.extend(formatted.bytes());
+        }
+    };
+}
+
+pub enum DatetimeError {
+    Offset,
+    Library,
+}
+
+#[inline(never)]
+pub fn write_datetime(
+    ptr: *mut pyo3::ffi::PyObject,
+    opts: u8,
+    dt: &mut SmallVec<[u8; 32]>,
+) -> Result<(), DatetimeError> {
+    let has_tz = unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
+    let offset_day: i32;
+    let mut offset_second: i32;
+    if !has_tz {
+        offset_second = 0;
+        offset_day = 0;
+    } else {
+        let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(ptr));
+        if unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 } {
+            if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
+                // pendulum
+                let offset = unsafe {
+                    pyo3::ffi::PyObject_CallMethodObjArgs(
+                        ptr,
+                        UTCOFFSET_METHOD_STR,
+                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                    )
+                };
+                // test_datetime_partial_second_pendulum_not_supported
+                if offset.is_null() {
+                    return Err(DatetimeError::Offset);
+                }
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+            } else if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR) == 1 } {
+                // pytz
+                let offset = unsafe {
+                    pyo3::ffi::PyObject_CallMethodObjArgs(
+                        pyo3::ffi::PyObject_CallMethodObjArgs(
+                            tzinfo,
+                            NORMALIZE_METHOD_STR,
+                            ptr,
+                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                        ),
+                        UTCOFFSET_METHOD_STR,
+                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                    )
+                };
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+            } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
+                // dateutil/arrow, datetime.timezone.utc
+                let offset = unsafe {
+                    pyo3::ffi::PyObject_CallMethodObjArgs(
+                        tzinfo,
+                        UTCOFFSET_METHOD_STR,
+                        ptr,
+                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                    )
+                };
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+            } else {
+                return Err(DatetimeError::Library);
+            }
+        } else {
+            offset_second = 0;
+            offset_day = 0;
+        }
+    };
+
+    dt.extend(
+        itoa::Buffer::new()
+            .format(ffi!(PyDateTime_GET_YEAR(ptr)) as i32)
+            .bytes(),
+    );
+    dt.push(HYPHEN);
+    {
+        let month = ffi!(PyDateTime_GET_MONTH(ptr)) as u8;
+        write_double_digit!(dt, month);
+    }
+    dt.push(HYPHEN);
+    {
+        let day = ffi!(PyDateTime_GET_DAY(ptr)) as u8;
+        write_double_digit!(dt, day);
+    }
+    dt.push(T);
+    {
+        let hour = ffi!(PyDateTime_DATE_GET_HOUR(ptr)) as u8;
+        write_double_digit!(dt, hour);
+    }
+    dt.push(COLON);
+    {
+        let minute = ffi!(PyDateTime_DATE_GET_MINUTE(ptr)) as u8;
+        write_double_digit!(dt, minute);
+    }
+    dt.push(COLON);
+    {
+        let second = ffi!(PyDateTime_DATE_GET_SECOND(ptr)) as u8;
+        write_double_digit!(dt, second);
+    }
+    {
+        let microsecond = ffi!(PyDateTime_DATE_GET_MICROSECOND(ptr)) as u32;
+        write_microsecond!(dt, microsecond);
+    }
+    if has_tz || opts & NAIVE_UTC == NAIVE_UTC {
+        if offset_second == 0 {
+            dt.extend([PLUS, ZERO, ZERO, COLON, ZERO, ZERO].iter().cloned());
+        } else {
+            if offset_day == -1 {
+                // datetime.timedelta(days=-1, seconds=68400) -> -05:00
+                dt.push(HYPHEN);
+                offset_second = 86400 - offset_second
+            } else {
+                // datetime.timedelta(seconds=37800) -> +10:30
+                dt.push(PLUS);
+            }
+            {
+                let offset_minute = offset_second / 60;
+                let offset_hour = offset_minute / 60;
+                if offset_hour < 10 {
+                    dt.push(ZERO);
+                }
+                dt.extend(itoa::Buffer::new().format(offset_hour).bytes());
+                dt.push(COLON);
+
+                let mut offset_minute_print = offset_minute % 60;
+
+                {
+                    // https://tools.ietf.org/html/rfc3339#section-5.8
+                    // "exactly 19 minutes and 32.13 seconds ahead of UTC"
+                    // "closest representable UTC offset"
+                    //  "+20:00"
+                    let offset_excess_second =
+                        offset_second - (offset_minute_print * 60 + offset_hour * 3600);
+                    if offset_excess_second >= 30 {
+                        offset_minute_print += 1;
+                    }
+                }
+
+                if offset_minute_print < 10 {
+                    dt.push(ZERO);
+                }
+                dt.extend(itoa::Buffer::new().format(offset_minute_print).bytes());
+            }
+        }
+    }
+    Ok(())
+}
+
+#[inline(never)]
+pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
+    {
+        let year = ffi!(PyDateTime_GET_YEAR(ptr)) as i32;
+        dt.extend(itoa::Buffer::new().format(year).bytes());
+    }
+    dt.push(HYPHEN);
+    {
+        let month = ffi!(PyDateTime_GET_MONTH(ptr)) as u32;
+        write_double_digit!(dt, month);
+    }
+    dt.push(HYPHEN);
+    {
+        let day = ffi!(PyDateTime_GET_DAY(ptr)) as u32;
+        write_double_digit!(dt, day);
+    }
+}
+
+#[inline(never)]
+pub fn write_time(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
+    {
+        let hour = ffi!(PyDateTime_TIME_GET_HOUR(ptr)) as u8;
+        write_double_digit!(dt, hour);
+    }
+    dt.push(COLON);
+    {
+        let minute = ffi!(PyDateTime_TIME_GET_MINUTE(ptr)) as u8;
+        write_double_digit!(dt, minute);
+    }
+    dt.push(COLON);
+    {
+        let second = ffi!(PyDateTime_TIME_GET_SECOND(ptr)) as u8;
+        write_double_digit!(dt, second);
+    }
+    {
+        let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(ptr)) as u32;
+        write_microsecond!(dt, microsecond);
+    }
+}

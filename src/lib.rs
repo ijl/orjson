@@ -19,6 +19,7 @@ use std::ptr::NonNull;
 #[macro_use]
 mod util;
 
+mod datetime;
 mod decode;
 mod encode;
 mod exc;
