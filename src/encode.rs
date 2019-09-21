@@ -26,6 +26,12 @@ macro_rules! obj_name {
     };
 }
 
+macro_rules! err {
+    ($msg:expr) => {
+        return Err(ser::Error::custom($msg));
+    };
+}
+
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -70,17 +76,17 @@ impl<'p> Serialize for SerializePyObject {
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
             let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
             if unlikely!(uni.is_null()) {
-                return Err(ser::Error::custom(INVALID_STR));
+                err!(INVALID_STR)
             }
             serializer.serialize_str(str_from_slice!(uni, str_size))
         } else if is_type!(obj_ptr, INT_PTR) {
             let val = ffi!(PyLong_AsLongLong(self.ptr));
             if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
-                return Err(ser::Error::custom("Integer exceeds 64-bit range"));
+                err!("Integer exceeds 64-bit range")
             } else if self.opts & STRICT_INTEGER == STRICT_INTEGER
                 && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
             {
-                return Err(ser::Error::custom("Integer exceeds 53-bit range"));
+                err!("Integer exceeds 53-bit range")
             }
             serializer.serialize_i64(val)
         } else if is_type!(obj_ptr, LIST_PTR) {
@@ -90,7 +96,7 @@ impl<'p> Serialize for SerializePyObject {
                 let mut i = 0;
                 while i < len {
                     if unlikely!(self.recursion == 255) {
-                        return Err(ser::Error::custom("Recursion limit reached"));
+                        err!("Recursion limit reached")
                     }
                     let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
                     i += 1;
@@ -114,14 +120,14 @@ impl<'p> Serialize for SerializePyObject {
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
                 if unlikely!(self.recursion == 255) {
-                    return Err(ser::Error::custom("Recursion limit reached"));
+                    err!("Recursion limit reached")
                 }
                 if unlikely!((*key).ob_type != STR_PTR) {
-                    return Err(ser::Error::custom("Dict key must be str"));
+                    err!("Dict key must be str")
                 }
                 let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
                 if unlikely!(data.is_null()) {
-                    return Err(ser::Error::custom(INVALID_STR));
+                    err!(INVALID_STR)
                 }
                 map.serialize_entry(
                     str_from_slice!(data, str_size),
@@ -167,10 +173,10 @@ impl<'p> Serialize for SerializePyObject {
                 match write_datetime(self.ptr, self.opts, &mut dt) {
                     Ok(_) => serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len())),
                     Err(DatetimeError::Offset) => {
-                        return Err(ser::Error::custom("datetime does not support timezones with offsets that are not even minutes",));
+                    err!("datetime does not support timezones with offsets that are not even minutes")
                     }
                     Err(DatetimeError::Library) => {
-                        return Err(ser::Error::custom("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil"));
+                    err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
                     }
                 }
             } else if is_type!(obj_ptr, DATE_PTR) {
@@ -179,16 +185,14 @@ impl<'p> Serialize for SerializePyObject {
                 serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
             } else if is_type!(obj_ptr, TIME_PTR) {
                 if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
-                    return Err(ser::Error::custom("datetime.time must not have tzinfo set"));
+                    err!("datetime.time must not have tzinfo set")
                 }
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
                 write_time(self.ptr, &mut dt);
                 serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
             } else if self.default.is_some() {
                 if self.default_calls > 5 {
-                    Err(ser::Error::custom(
-                        "default serializer exceeds recursion limit",
-                    ))
+                    err!("default serializer exceeds recursion limit")
                 } else {
                     let default_obj = unsafe {
                         pyo3::ffi::PyObject_CallFunctionObjArgs(
@@ -209,22 +213,22 @@ impl<'p> Serialize for SerializePyObject {
                         ffi!(Py_DECREF(default_obj));
                         res
                     } else if !ffi!(PyErr_Occurred()).is_null() {
-                        Err(ser::Error::custom(format_args!(
+                        err!(format_args!(
                             "Type raised exception in default function: {}",
                             obj_name!(obj_ptr)
-                        )))
+                        ))
                     } else {
-                        Err(ser::Error::custom(format_args!(
+                        err!(format_args!(
                             "Type is not JSON serializable: {}",
                             obj_name!(obj_ptr)
-                        )))
+                        ))
                     }
                 }
             } else {
-                Err(ser::Error::custom(format_args!(
+                err!(format_args!(
                     "Type is not JSON serializable: {}",
                     obj_name!(obj_ptr)
-                )))
+                ))
             }
         }
     }
