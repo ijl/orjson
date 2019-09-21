@@ -26,6 +26,37 @@ const T: u8 = 84; // "T"
 const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // ":"
 
+macro_rules! write_double_digit {
+    ($dt:ident, $value:ident) => {
+        if $value < 10 {
+            $dt.push(ZERO);
+        }
+        $dt.extend(itoa::Buffer::new().format($value).bytes());
+    };
+}
+
+macro_rules! write_microsecond {
+    ($dt:ident, $microsecond:ident) => {
+        if $microsecond != 0 {
+            $dt.push(PERIOD);
+            let mut buf = itoa::Buffer::new();
+            let formatted = buf.format($microsecond);
+            let mut to_pad = 6 - formatted.len();
+            while to_pad != 0 {
+                $dt.push(ZERO);
+                to_pad -= 1;
+            }
+            $dt.extend(formatted.bytes());
+        }
+    };
+}
+
+macro_rules! obj_name {
+    ($obj:ident) => {
+        unsafe { CStr::from_ptr((*$obj).tp_name).to_string_lossy() }
+    };
+}
+
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -66,23 +97,18 @@ impl<'p> Serialize for SerializePyObject {
         S: Serializer,
     {
         let obj_ptr = unsafe { (*self.ptr).ob_type };
-        if unsafe { obj_ptr == STR_PTR } {
+        if is_type!(obj_ptr, STR_PTR) {
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-            let uni =
-                unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size) as *const u8 };
-            if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
+            let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
+            if unlikely!(uni.is_null()) {
                 return Err(ser::Error::custom(INVALID_STR));
             }
-            serializer.serialize_str(unsafe {
-                std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize))
-            })
-        } else if unsafe { obj_ptr == FLOAT_PTR } {
-            serializer.serialize_f64(unsafe { pyo3::ffi::PyFloat_AS_DOUBLE(self.ptr) })
-        } else if unsafe { obj_ptr == INT_PTR } {
-            let val = unsafe { pyo3::ffi::PyLong_AsLongLong(self.ptr) };
-            if unsafe {
-                std::intrinsics::unlikely(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null())
-            } {
+            serializer.serialize_str(str_from_slice!(uni, str_size))
+        } else if is_type!(obj_ptr, FLOAT_PTR) {
+            serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
+        } else if is_type!(obj_ptr, INT_PTR) {
+            let val = ffi!(PyLong_AsLongLong(self.ptr));
+            if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
                 return Err(ser::Error::custom("Integer exceeds 64-bit range"));
             } else if self.opts & STRICT_INTEGER == STRICT_INTEGER
                 && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
@@ -90,35 +116,29 @@ impl<'p> Serialize for SerializePyObject {
                 return Err(ser::Error::custom("Integer exceeds 53-bit range"));
             }
             serializer.serialize_i64(val)
-        } else if unsafe { obj_ptr == BOOL_PTR } {
+        } else if is_type!(obj_ptr, BOOL_PTR) {
             serializer.serialize_bool(unsafe { self.ptr == TRUE })
-        } else if unsafe { obj_ptr == NONE_PTR } {
+        } else if is_type!(obj_ptr, NONE_PTR) {
             serializer.serialize_unit()
-        } else if unsafe { obj_ptr == DICT_PTR } {
+        } else if is_type!(obj_ptr, DICT_PTR) {
             let mut map = serializer.serialize_map(None).unwrap();
             let mut pos = 0isize;
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
             let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
-                if unsafe { std::intrinsics::unlikely(self.recursion == 255) } {
+                if unlikely!(self.recursion == 255) {
                     return Err(ser::Error::custom("Recursion limit reached"));
                 }
-                if unsafe { std::intrinsics::unlikely((*key).ob_type != STR_PTR) } {
+                if unlikely!((*key).ob_type != STR_PTR) {
                     return Err(ser::Error::custom("Dict key must be str"));
                 }
-                let data =
-                    unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(key, &mut str_size) as *const u8 };
-                if unsafe { std::intrinsics::unlikely(data.is_null()) } {
+                let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
+                if unlikely!(data.is_null()) {
                     return Err(ser::Error::custom(INVALID_STR));
                 }
                 map.serialize_entry(
-                    unsafe {
-                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                            data,
-                            str_size as usize,
-                        ))
-                    },
+                    str_from_slice!(data, str_size),
                     &SerializePyObject {
                         ptr: value,
                         default: self.default,
@@ -129,17 +149,16 @@ impl<'p> Serialize for SerializePyObject {
                 )?;
             }
             map.end()
-        } else if unsafe { obj_ptr == LIST_PTR } {
-            let len = unsafe { pyo3::ffi::PyList_GET_SIZE(self.ptr) as usize };
+        } else if is_type!(obj_ptr, LIST_PTR) {
+            let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
             if len != 0 {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 let mut i = 0;
                 while i < len {
-                    if unsafe { std::intrinsics::unlikely(self.recursion == 255) } {
+                    if unlikely!(self.recursion == 255) {
                         return Err(ser::Error::custom("Recursion limit reached"));
                     }
-                    let elem =
-                        unsafe { pyo3::ffi::PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t) };
+                    let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
                     i += 1;
                     seq.serialize_element(&SerializePyObject {
                         ptr: elem,
@@ -154,15 +173,13 @@ impl<'p> Serialize for SerializePyObject {
                 serializer.serialize_seq(None).unwrap().end()
             }
         } else {
-            if unsafe { obj_ptr == TUPLE_PTR } {
-                let len = unsafe { pyo3::ffi::PyTuple_GET_SIZE(self.ptr) as usize };
+            if is_type!(obj_ptr, TUPLE_PTR) {
+                let len = ffi!(PyTuple_GET_SIZE(self.ptr)) as usize;
                 if len != 0 {
                     let mut seq = serializer.serialize_seq(Some(len))?;
                     let mut i = 0;
                     while i < len {
-                        let elem = unsafe {
-                            pyo3::ffi::PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t)
-                        };
+                        let elem = ffi!(PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
                         i += 1;
                         seq.serialize_element(&SerializePyObject {
                             ptr: elem,
@@ -176,7 +193,7 @@ impl<'p> Serialize for SerializePyObject {
                 } else {
                     serializer.serialize_seq(None).unwrap().end()
                 }
-            } else if unsafe { obj_ptr == DATETIME_PTR } {
+            } else if is_type!(obj_ptr, DATETIME_PTR) {
                 let has_tz =
                     unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
                 let offset_day: i32;
@@ -185,11 +202,11 @@ impl<'p> Serialize for SerializePyObject {
                     offset_second = 0;
                     offset_day = 0;
                 } else {
-                    let tzinfo = unsafe { pyo3::ffi::PyDateTime_DATE_GET_TZINFO(self.ptr) };
+                    let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
                     if unsafe {
                         (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1
                     } {
-                        if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR) == 1 } {
+                        if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
                             // pendulum
                             let offset = unsafe {
                                 pyo3::ffi::PyObject_CallMethodObjArgs(
@@ -204,9 +221,8 @@ impl<'p> Serialize for SerializePyObject {
                                         "datetime does not support timezones with offsets that are not even minutes",
                                     ));
                             }
-                            offset_second =
-                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
+                            offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                            offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
                         } else if unsafe {
                             pyo3::ffi::PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR) == 1
                         } {
@@ -223,10 +239,9 @@ impl<'p> Serialize for SerializePyObject {
                                     std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
                                 )
                             };
-                            offset_second =
-                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
-                        } else if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, DST_STR) == 1 } {
+                            offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                            offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                        } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
                             // dateutil/arrow, datetime.timezone.utc
                             let offset = unsafe {
                                 pyo3::ffi::PyObject_CallMethodObjArgs(
@@ -236,9 +251,8 @@ impl<'p> Serialize for SerializePyObject {
                                     std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
                                 )
                             };
-                            offset_second =
-                                unsafe { pyo3::ffi::PyDateTime_DELTA_GET_SECONDS(offset) as i32 };
-                            offset_day = unsafe { pyo3::ffi::PyDateTime_DELTA_GET_DAYS(offset) };
+                            offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                            offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
                         } else {
                             return Err(ser::Error::custom(
                         "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil",
@@ -251,77 +265,39 @@ impl<'p> Serialize for SerializePyObject {
                 };
 
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-
                 dt.extend(
                     itoa::Buffer::new()
-                        .format(unsafe { pyo3::ffi::PyDateTime_GET_YEAR(self.ptr) as i32 })
+                        .format(ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32)
                         .bytes(),
                 );
-
                 dt.push(HYPHEN);
-
                 {
-                    let month = unsafe { pyo3::ffi::PyDateTime_GET_MONTH(self.ptr) as u8 };
-                    if month < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(month).bytes());
-
-                    dt.push(HYPHEN);
+                    let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;
+                    write_double_digit!(dt, month);
                 }
-
+                dt.push(HYPHEN);
                 {
-                    let day = unsafe { pyo3::ffi::PyDateTime_GET_DAY(self.ptr) as u8 };
-                    if day < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(day).bytes());
-
-                    dt.push(T);
+                    let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u8;
+                    write_double_digit!(dt, day);
                 }
-
+                dt.push(T);
                 {
-                    let hour = unsafe { pyo3::ffi::PyDateTime_DATE_GET_HOUR(self.ptr) as u8 };
-                    if hour < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(hour).bytes());
-
-                    dt.push(COLON);
+                    let hour = ffi!(PyDateTime_DATE_GET_HOUR(self.ptr)) as u8;
+                    write_double_digit!(dt, hour);
                 }
-
-                {
-                    let minute = unsafe { pyo3::ffi::PyDateTime_DATE_GET_MINUTE(self.ptr) as u8 };
-                    if minute < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(minute).bytes());
-                }
-
                 dt.push(COLON);
-
                 {
-                    let second = unsafe { pyo3::ffi::PyDateTime_DATE_GET_SECOND(self.ptr) as u8 };
-                    if second < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(second).bytes());
+                    let minute = ffi!(PyDateTime_DATE_GET_MINUTE(self.ptr)) as u8;
+                    write_double_digit!(dt, minute);
                 }
-
+                dt.push(COLON);
                 {
-                    let microsecond =
-                        unsafe { pyo3::ffi::PyDateTime_DATE_GET_MICROSECOND(self.ptr) as u32 };
-                    if microsecond != 0 {
-                        dt.push(PERIOD);
-                        let mut buf = itoa::Buffer::new();
-                        let formatted = buf.format(microsecond);
-                        let mut to_pad = 6 - formatted.len();
-                        while to_pad != 0 {
-                            dt.push(ZERO);
-                            to_pad -= 1;
-                        }
-                        dt.extend(formatted.bytes());
-                    }
+                    let second = ffi!(PyDateTime_DATE_GET_SECOND(self.ptr)) as u8;
+                    write_double_digit!(dt, second);
+                }
+                {
+                    let microsecond = ffi!(PyDateTime_DATE_GET_MICROSECOND(self.ptr)) as u32;
+                    write_microsecond!(dt, microsecond);
                 }
                 if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
                     if offset_second == 0 {
@@ -365,84 +341,48 @@ impl<'p> Serialize for SerializePyObject {
                         }
                     }
                 }
-                serializer.serialize_str(unsafe {
-                    std::str::from_utf8_unchecked(std::slice::from_raw_parts(dt.as_ptr(), dt.len()))
-                })
-            } else if unsafe { obj_ptr == DATE_PTR } {
+                serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+            } else if is_type!(obj_ptr, DATE_PTR) {
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
                 {
-                    let year = unsafe { pyo3::ffi::PyDateTime_GET_YEAR(self.ptr) as i32 };
+                    let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
                     dt.extend(itoa::Buffer::new().format(year).bytes());
                 }
                 dt.push(HYPHEN);
-
                 {
-                    let month = unsafe { pyo3::ffi::PyDateTime_GET_MONTH(self.ptr) as u32 };
-                    if month < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(month).bytes());
+                    let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u32;
+                    write_double_digit!(dt, month);
                 }
                 dt.push(HYPHEN);
                 {
-                    let day = unsafe { pyo3::ffi::PyDateTime_GET_DAY(self.ptr) as u32 };
-                    if day < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(day).bytes());
+                    let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u32;
+                    write_double_digit!(dt, day);
                 }
-                serializer.serialize_str(unsafe {
-                    std::str::from_utf8_unchecked(std::slice::from_raw_parts(dt.as_ptr(), dt.len()))
-                })
-            } else if unsafe { obj_ptr == TIME_PTR } {
+                serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+            } else if is_type!(obj_ptr, TIME_PTR) {
                 if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
                     return Err(ser::Error::custom("datetime.time must not have tzinfo set"));
                 }
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
                 {
-                    let hour = unsafe { pyo3::ffi::PyDateTime_TIME_GET_HOUR(self.ptr) as u8 };
-                    if hour < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(hour).bytes());
-
-                    dt.push(COLON);
+                    let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
+                    write_double_digit!(dt, hour);
+                }
+                dt.push(COLON);
+                {
+                    let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
+                    write_double_digit!(dt, minute);
+                }
+                dt.push(COLON);
+                {
+                    let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
+                    write_double_digit!(dt, second);
                 }
                 {
-                    let minute = unsafe { pyo3::ffi::PyDateTime_TIME_GET_MINUTE(self.ptr) as u8 };
-                    if minute < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(minute).bytes());
-
-                    dt.push(COLON);
+                    let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
+                    write_microsecond!(dt, microsecond);
                 }
-                {
-                    let second = unsafe { pyo3::ffi::PyDateTime_TIME_GET_SECOND(self.ptr) as u8 };
-                    if second < 10 {
-                        dt.push(ZERO);
-                    }
-                    dt.extend(itoa::Buffer::new().format(second).bytes());
-                }
-                {
-                    let microsecond =
-                        unsafe { pyo3::ffi::PyDateTime_TIME_GET_MICROSECOND(self.ptr) as u32 };
-                    if microsecond != 0 {
-                        dt.push(PERIOD);
-                        let mut buf = itoa::Buffer::new();
-                        let formatted = buf.format(microsecond);
-                        let mut to_pad = 6 - formatted.len();
-                        while to_pad != 0 {
-                            dt.push(ZERO);
-                            to_pad -= 1;
-                        }
-                        dt.extend(formatted.bytes());
-                    }
-                }
-
-                serializer.serialize_str(unsafe {
-                    std::str::from_utf8_unchecked(std::slice::from_raw_parts(dt.as_ptr(), dt.len()))
-                })
+                serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
             } else if self.default.is_some() {
                 if self.default_calls > 5 {
                     Err(ser::Error::custom(
@@ -465,24 +405,24 @@ impl<'p> Serialize for SerializePyObject {
                             recursion: self.recursion,
                         }
                         .serialize(serializer);
-                        unsafe { pyo3::ffi::Py_DECREF(default_obj) };
+                        ffi!(Py_DECREF(default_obj));
                         res
-                    } else if unsafe { !pyo3::ffi::PyErr_Occurred().is_null() } {
+                    } else if !ffi!(PyErr_Occurred()).is_null() {
                         Err(ser::Error::custom(format_args!(
                             "Type raised exception in default function: {}",
-                            unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }
+                            obj_name!(obj_ptr)
                         )))
                     } else {
                         Err(ser::Error::custom(format_args!(
                             "Type is not JSON serializable: {}",
-                            unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }
+                            obj_name!(obj_ptr)
                         )))
                     }
                 }
             } else {
                 Err(ser::Error::custom(format_args!(
                     "Type is not JSON serializable: {}",
-                    unsafe { CStr::from_ptr((*obj_ptr).tp_name).to_string_lossy() }
+                    obj_name!(obj_ptr)
                 )))
             }
         }

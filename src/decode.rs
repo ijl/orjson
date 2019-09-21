@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
-use crate::typeref;
+use crate::typeref::*;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
@@ -14,18 +14,16 @@ use std::ptr::NonNull;
 pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let obj_type_ptr = unsafe { (*ptr).ob_type };
     let data: Cow<str>;
-    if unsafe { obj_type_ptr == typeref::STR_PTR } {
+    if is_type!(obj_type_ptr, STR_PTR) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let uni = unsafe { pyo3::ffi::PyUnicode_AsUTF8AndSize(ptr, &mut str_size) as *const u8 };
-        if unsafe { std::intrinsics::unlikely(uni.is_null()) } {
+        let uni = ffi!(PyUnicode_AsUTF8AndSize(ptr, &mut str_size)) as *const u8;
+        if unlikely!(uni.is_null()) {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
-        data = Cow::Borrowed(unsafe {
-            std::str::from_utf8_unchecked(std::slice::from_raw_parts(uni, str_size as usize))
-        });
-    } else if unsafe { obj_type_ptr == typeref::BYTES_PTR } {
-        let buffer = unsafe { pyo3::ffi::PyBytes_AsString(ptr) as *const u8 };
-        let length = unsafe { pyo3::ffi::PyBytes_Size(ptr) as usize };
+        data = Cow::Borrowed(str_from_slice!(uni, str_size));
+    } else if is_type!(obj_type_ptr, BYTES_PTR) {
+        let buffer = ffi!(PyBytes_AsString(ptr)) as *const u8;
+        let length = ffi!(PyBytes_Size(ptr)) as usize;
         let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(slice) != length {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
@@ -74,8 +72,8 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {
-        unsafe { pyo3::ffi::Py_INCREF(typeref::NONE) };
-        Ok(unsafe { typeref::NONE })
+        ffi!(Py_INCREF(NONE));
+        Ok(unsafe { NONE })
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
@@ -83,15 +81,11 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
         E: de::Error,
     {
         if value {
-            unsafe {
-                pyo3::ffi::Py_INCREF(typeref::TRUE);
-                Ok(typeref::TRUE)
-            }
+            ffi!(Py_INCREF(TRUE));
+            Ok(unsafe { TRUE })
         } else {
-            unsafe {
-                pyo3::ffi::Py_INCREF(typeref::FALSE);
-                Ok(typeref::FALSE)
-            }
+            ffi!(Py_INCREF(FALSE));
+            Ok(unsafe { FALSE })
         }
     }
 
@@ -101,11 +95,11 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     {
         #[cfg(target_os = "windows")]
         {
-            Ok(unsafe { pyo3::ffi::PyLong_FromLongLong(value) })
+            Ok(ffi!(PyLong_FromLongLong(value)))
         }
         #[cfg(not(target_os = "windows"))]
         {
-            Ok(unsafe { pyo3::ffi::PyLong_FromLong(value) })
+            Ok(ffi!(PyLong_FromLong(value)))
         }
     }
 
@@ -115,11 +109,11 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     {
         #[cfg(target_os = "windows")]
         {
-            Ok(unsafe { pyo3::ffi::PyLong_FromUnsignedLongLong(value) })
+            Ok(ffi!(PyLong_FromUnsignedLongLong(value)))
         }
         #[cfg(not(target_os = "windows"))]
         {
-            Ok(unsafe { pyo3::ffi::PyLong_FromUnsignedLong(value) })
+            Ok(ffi!(PyLong_FromUnsignedLong(value)))
         }
     }
 
@@ -127,31 +121,21 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        Ok(unsafe { pyo3::ffi::PyFloat_FromDouble(value) })
+        Ok(ffi!(PyFloat_FromDouble(value)))
     }
 
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(unsafe {
-            pyo3::ffi::PyUnicode_FromStringAndSize(
-                value.as_ptr() as *const c_char,
-                value.len() as pyo3::ffi::Py_ssize_t,
-            )
-        })
+        Ok(str_to_pyobject!(value))
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(unsafe {
-            pyo3::ffi::PyUnicode_FromStringAndSize(
-                value.as_ptr() as *const c_char,
-                value.len() as pyo3::ffi::Py_ssize_t,
-            )
-        })
+        Ok(str_to_pyobject!(value))
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -162,9 +146,9 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
         while let Some(elem) = seq.next_element_seed(self)? {
             elements.push(elem);
         }
-        let ptr = unsafe { pyo3::ffi::PyList_New(elements.len() as pyo3::ffi::Py_ssize_t) };
+        let ptr = ffi!(PyList_New(elements.len() as pyo3::ffi::Py_ssize_t));
         for (i, obj) in elements.iter().enumerate() {
-            unsafe { pyo3::ffi::PyList_SET_ITEM(ptr, i as pyo3::ffi::Py_ssize_t, *obj) };
+            ffi!(PyList_SET_ITEM(ptr, i as pyo3::ffi::Py_ssize_t, *obj));
         }
         Ok(ptr)
     }
@@ -173,20 +157,13 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         A: MapAccess<'de>,
     {
-        let dict_ptr = unsafe { pyo3::ffi::PyDict_New() };
+        let dict_ptr = ffi!(PyDict_New());
         while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
-            let pykey = unsafe {
-                pyo3::ffi::PyUnicode_FromStringAndSize(
-                    key.as_ptr() as *const c_char,
-                    key.len() as pyo3::ffi::Py_ssize_t,
-                )
-            };
-            let _ = unsafe { pyo3::ffi::PyDict_SetItem(dict_ptr, pykey, value) };
+            let pykey = str_to_pyobject!(key);
+            let _ = ffi!(PyDict_SetItem(dict_ptr, pykey, value));
             // counter Py_INCREF in insertdict
-            unsafe {
-                pyo3::ffi::Py_DECREF(pykey);
-                pyo3::ffi::Py_DECREF(value);
-            };
+            ffi!(Py_DECREF(pykey));
+            ffi!(Py_DECREF(value));
         }
         Ok(dict_ptr)
     }

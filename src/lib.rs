@@ -16,6 +16,9 @@ use pyo3::AsPyPointer;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
+#[macro_use]
+mod util;
+
 mod decode;
 mod encode;
 mod exc;
@@ -94,7 +97,7 @@ pub fn dumps(
         if unsafe { (*optsptr).ob_type != typeref::INT_PTR } {
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
-            optsbits = unsafe { pyo3::ffi::PyLong_AsLong(optsptr) as i8 };
+            optsbits = ffi!(PyLong_AsLong(optsptr)) as i8;
             if optsbits <= 0 || optsbits > encode::MAX_OPT {
                 // -1
                 return Err(exc::JSONEncodeError::py_err("Invalid opts"));
