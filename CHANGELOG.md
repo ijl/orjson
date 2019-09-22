@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.9 - 2019-09-22
+
+### Changed
+
+- Minor performance improvements.
+
+### Fixed
+
+- Fix inaccurate zero padding in serialization of microseconds on
+`datetime.time` objects.
+
 ## 2.0.8 - 2019-09-18
 
 ### Fixed
