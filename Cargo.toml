@@ -52,7 +52,7 @@ encoding_rs = { version = "0.8", default_features = false, features = ["simd-acc
 itoa = { version = "0.4", default_features = false }
 pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "ce4b3a56a581c402bb67397590b66f1a0c12ba45", default_features = false, features = ["extension-module"]}
 serde = { version = "1", default_features = false }
-serde_json = { git = "https://github.com/ijl/json.git", rev = "2c0c55b628c9177543283a1535549e1dcb6a870a", default_features = false, features = ["num_lexical"] }
+serde_json = { git = "https://github.com/ijl/json.git", rev = "0e82f6055fc062888026229d3208466f2c99182a", default_features = false, features = ["perfect_float"] }
 smallvec = { version = "0.6", default_features = false, features = ["union", "std", "specialization"] }
 
 [profile.release]

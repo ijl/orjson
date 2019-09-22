@@ -14,7 +14,7 @@ steps:
   displayName: build dependencies
 - script: python.exe -m pip install -r test\requirements.txt
   displayName: test dependencies
-- script: maturin.exe build --release --strip --interpreter $(interpreter) --target $(target)
+- script: maturin.exe build --release --strip --interpreter $(interpreter)
   env:
     RUSTFLAGS: "-C target-feature=+sse2"
   displayName: build

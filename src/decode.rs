@@ -7,7 +7,6 @@ use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visit
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
-use std::marker::PhantomData;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
@@ -142,7 +141,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         A: SeqAccess<'de>,
     {
-        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::new();
+        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::with_capacity(8);
         while let Some(elem) = seq.next_element_seed(self)? {
             elements.push(elem);
         }
@@ -158,8 +157,9 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
         A: MapAccess<'de>,
     {
         let dict_ptr = ffi!(PyDict_New());
-        while let Some((key, value)) = map.next_entry_seed(PhantomData::<Cow<str>>, self)? {
+        while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey = str_to_pyobject!(key);
+            let value = map.next_value_seed(self)?;
             let _ = ffi!(PyDict_SetItem(dict_ptr, pykey, value));
             // counter Py_INCREF in insertdict
             ffi!(Py_DECREF(pykey));
