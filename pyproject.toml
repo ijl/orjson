@@ -10,3 +10,8 @@ requires = ["maturin>=0.7.2,<0.8"]
 manylinux = "off"
 rustc-extra-args = "-C target-feature=+sse2"
 strip = "on"
+
+[tool.black]
+line-length = 88
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'

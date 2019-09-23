@@ -99,7 +99,7 @@ class TypeTests(unittest.TestCase):
         null
         """
         obj = None
-        ref = u"null"
+        ref = "null"
         self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
         self.assertEqual(orjson.loads(ref), obj)
 
