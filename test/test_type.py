@@ -282,6 +282,17 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(len(obj), 513)
         self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
 
+    def test_dict_large_keys(self):
+        """
+        dict with keys too large to cache
+        """
+        obj = {
+            "keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey": "value"
+        }
+        ref = '{"keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey":"value"}'
+        self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
+        self.assertEqual(orjson.loads(ref), obj)
+
     def test_dict_invalid_key_dumps(self):
         """
         dict invalid key dumps()

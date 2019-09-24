@@ -135,13 +135,20 @@ def loads(__obj: Union[bytes, str]) -> Any: ...
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
 `list`, `int`, `float`, `str`, `bool`, and `None` objects.
 
+Either `bytes` or `str` input are accepted. If the input exists as
+`bytes` (was read directly from a source), it is recommended to
+pass `bytes`. This has lower memory usage and lower latency.
+
+orjson maintains a cache of map keys for the duration of the process. This
+causes a net reduction in memory usage by avoiding duplicate strings. The
+keys must be at most 64 bytes to be cached and 512 entries are stored.
+
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
 which the standard library allows, but is not valid JSON.
 
 `JSONDecodeError` is a subclass of `ValueError`. This is for
 compatibility with the standard library.
-
 
 ```python
 import orjson

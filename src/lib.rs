@@ -1,15 +1,22 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 #![feature(core_intrinsics)]
+#![feature(const_fn)]
 
 #[macro_use]
 extern crate pyo3;
 
+#[macro_use]
+extern crate lazy_static;
+
+extern crate associative_cache;
 extern crate encoding_rs;
 extern crate itoa;
+extern crate parking_lot;
 extern crate serde;
 extern crate serde_json;
 extern crate smallvec;
+extern crate wyhash;
 
 use pyo3::prelude::*;
 use pyo3::AsPyPointer;

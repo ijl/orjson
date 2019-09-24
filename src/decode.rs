@@ -2,13 +2,51 @@
 
 use crate::exc::*;
 use crate::typeref::*;
+use associative_cache::replacement::RoundRobinReplacement;
+use associative_cache::*;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
 use std::os::raw::c_char;
+use std::os::raw::c_void;
 use std::ptr::NonNull;
+use wyhash::wyhash;
+
+#[derive(Clone)]
+#[repr(transparent)]
+struct CachedKey(*mut c_void);
+
+unsafe impl Send for CachedKey {}
+unsafe impl Sync for CachedKey {}
+
+impl CachedKey {
+    fn new(ptr: *mut pyo3::ffi::PyObject) -> CachedKey {
+        CachedKey {
+            0: ptr as *mut c_void,
+        }
+    }
+
+    fn get(&mut self) -> *mut pyo3::ffi::PyObject {
+        let ptr = self.0 as *mut pyo3::ffi::PyObject;
+        ffi!(Py_INCREF(ptr));
+        ptr
+    }
+}
+
+impl Drop for CachedKey {
+    fn drop(&mut self) {
+        ffi!(Py_DECREF(self.0 as *mut pyo3::ffi::PyObject));
+    }
+}
+
+type KeyMap =
+    AssociativeCache<u64, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
+
+lazy_static! {
+    static ref KEY_MAP: parking_lot::Mutex<KeyMap> = { parking_lot::Mutex::new(KeyMap::default()) };
+}
 
 pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let obj_type_ptr = unsafe { (*ptr).ob_type };
@@ -158,7 +196,19 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     {
         let dict_ptr = ffi!(PyDict_New());
         while let Some(key) = map.next_key::<Cow<str>>()? {
-            let pykey = str_to_pyobject!(key);
+            let pykey: *mut pyo3::ffi::PyObject;
+            if unlikely!(key.len() > 64) {
+                pykey = str_to_pyobject!(key);
+            } else {
+                let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
+                {
+                    let mut map = KEY_MAP.lock();
+                    let entry = map
+                        .entry(&hash)
+                        .or_insert_with(|| hash, || CachedKey::new(str_to_pyobject!(key)));
+                    pykey = entry.get();
+                }
+            };
             let value = map.next_value_seed(self)?;
             let _ = ffi!(PyDict_SetItem(dict_ptr, pykey, value));
             // counter Py_INCREF in insertdict

@@ -3,6 +3,7 @@
 use std::os::raw::c_char;
 use std::sync::Once;
 
+pub static mut HASH_SEED: u64 = 0;
 pub static mut NONE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut TRUE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut FALSE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
@@ -30,6 +31,7 @@ static INIT: Once = Once::new();
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
         pyo3::ffi::PyDateTime_IMPORT();
+        HASH_SEED = rand::random::<u64>();
         NONE = pyo3::ffi::Py_None();
         TRUE = pyo3::ffi::Py_True();
         FALSE = pyo3::ffi::Py_False();

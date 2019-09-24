@@ -58,3 +58,19 @@ class MemoryTests(unittest.TestCase):
             val = orjson.dumps(fixture, default=default)
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + 1024)
+
+    def test_memory_loads_keys(self):
+        """
+        loads() memory leak with number of keys causing cache eviction
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = {"key_%s" % idx: "value" for idx in range(1024)}
+        self.assertEqual(len(fixture), 1024)
+        val = orjson.dumps(fixture)
+        loaded = orjson.loads(val)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            loaded = orjson.loads(val)
+        gc.collect()
+        self.assertTrue(proc.memory_info().rss <= mem + 256 * 1024)
