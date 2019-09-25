@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.19 - 2019-09-25
+
+### Changed
+
+- Performance improvements and lower memory usage in deserialization
+by creating only one `str` object for repeated map keys.
+
 ## 2.0.9 - 2019-09-22
 
 ### Changed

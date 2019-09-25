@@ -4,9 +4,9 @@ orjson is a fast, correct JSON library for Python. It benchmarks as the
 fastest Python library for JSON and has comprehensive unit, integration, and
 interoperability tests.
 
-Its serialization performance is 2x to 3x the nearest
+Its serialization performance is 2.5x to 9.5x the nearest
 other library and 4x to 12x the standard library. Its deserialization
-performance is 0.9x to 1.1x the nearest other library and 1.1x to 2x
+performance is 1.2x to 1.3x the nearest other library and 1.4x to 2x
 the standard library.
 
 It differs in behavior from other Python JSON libraries in supporting
@@ -93,16 +93,6 @@ It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
 with the standard library.
 
-
-```python
-import orjson
-
-try:
-    val = orjson.dumps(...)
-except orjson.JSONEncodeError:
-    raise
-```
-
 To serialize arbitrary types, specify `default` as a callable that returns
 a supported type. `default` may be a function, lambda, or callable class
 instance.
@@ -150,34 +140,6 @@ which the standard library allows, but is not valid JSON.
 `JSONDecodeError` is a subclass of `ValueError`. This is for
 compatibility with the standard library.
 
-```python
-import orjson
-
-try:
-    val = orjson.loads(...)
-except orjson.JSONDecodeError:
-    raise
-```
-
-### Comparison
-
-There are slight differences in output between libraries. The differences
-are not an issue for interoperability. Note orjson returns bytes. Its output
-is slightly smaller as well.
-
-```python
->>> import orjson, ujson, rapidjson, json
->>> data = {'bool': True, '🐈':'哈哈', 'int': 9223372036854775807, 'float': 1.337e+40}
->>> orjson.dumps(data)
-b'{"bool":true,"\xf0\x9f\x90\x88":"\xe5\x93\x88\xe5\x93\x88","int":9223372036854775807,"float":1.337e40}'
->>> ujson.dumps(data)
-'{"bool":true,"\\ud83d\\udc08":"\\u54c8\\u54c8","int":9223372036854775807,"float":1.337000000000000e+40}'
->>> rapidjson.dumps(data)
-'{"bool":true,"\\uD83D\\uDC08":"\\u54C8\\u54C8","int":9223372036854775807,"float":1.337e+40}'
->>> json.dumps(data)
-'{"bool": true, "\\ud83d\\udc08": "\\u54c8\\u54c8", "int": 9223372036854775807, "float": 1.337e+40}'
-```
-
 ### datetime
 
 orjson serializes `datetime.datetime` objects to
@@ -197,13 +159,13 @@ ISO 8601.
 ```python
 >>> import orjson, datetime, pendulum
 >>> orjson.dumps(
-    datetime.datetime.fromtimestamp(4123518902).replace(tzinfo=datetime.timezone.utc)
-)
-b'"2100-09-01T21:55:02+00:00"'
->>> orjson.dumps(
     datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide'))
 )
 b'"2018-12-01T02:03:04.000009+10:30"'
+>>> orjson.dumps(
+    datetime.datetime.fromtimestamp(4123518902).replace(tzinfo=datetime.timezone.utc)
+)
+b'"2100-09-01T21:55:02+00:00"'
 >>> orjson.dumps(
     datetime.datetime.fromtimestamp(4123518902)
 )
@@ -336,6 +298,8 @@ strings and arrays of integers, indented.
 * canada.json, 2.2MiB, coordinates of the Canadian border in GeoJSON
 format, containing floats and arrays, indented.
 
+### Latency
+
 ![alt text](doc/twitter_serialization.png "twitter.json serialization")
 ![alt text](doc/twitter_deserialization.png "twitter.json deserialization")
 ![alt text](doc/github_serialization.png "github.json serialization")
@@ -349,87 +313,138 @@ format, containing floats and arrays, indented.
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            0.5  |                  1985.7 |                 1    |
-| ujson      |                            1.38 |                   722.5 |                 2.75 |
-| rapidjson  |                            1.59 |                   628   |                 3.16 |
-| simplejson |                            2.61 |                   382.5 |                 5.19 |
-| json       |                            2.64 |                   378.6 |                 5.24 |
+| orjson     |                            0.76 |                  1308.1 |                 1    |
+| ujson      |                            2.14 |                   468   |                 2.8  |
+| rapidjson  |                            2.14 |                   467.5 |                 2.8  |
+| simplejson |                            3.45 |                   289.1 |                 4.52 |
+| json       |                            3.6  |                   277.9 |                 4.71 |
 
 #### twitter.json deserialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            2.49 |                   400.5 |                 1    |
-| ujson      |                            2.21 |                   451.1 |                 0.89 |
-| rapidjson  |                            3.03 |                   329.3 |                 1.22 |
-| simplejson |                            2.67 |                   374.7 |                 1.07 |
-| json       |                            2.78 |                   359.8 |                 1.12 |
+| orjson     |                            2.8  |                   357.9 |                 1    |
+| ujson      |                            3.37 |                   296.1 |                 1.21 |
+| rapidjson  |                            4.48 |                   222.9 |                 1.6  |
+| simplejson |                            3.71 |                   269.3 |                 1.33 |
+| json       |                            4.13 |                   242.3 |                 1.48 |
 
 #### github.json serialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            0.06 |                 18040.3 |                 1    |
-| ujson      |                            0.13 |                  7501.6 |                 2.4  |
-| rapidjson  |                            0.16 |                  6298.6 |                 2.86 |
-| simplejson |                            0.3  |                  3348.9 |                 5.38 |
-| json       |                            0.25 |                  4042.6 |                 4.44 |
+| orjson     |                            0.08 |                 12430.9 |                 1    |
+| ujson      |                            0.21 |                  4774.2 |                 2.6  |
+| rapidjson  |                            0.23 |                  4350.4 |                 2.87 |
+| simplejson |                            0.44 |                  2290.5 |                 5.42 |
+| json       |                            0.36 |                  2786.8 |                 4.46 |
 
 #### github.json deserialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            0.21 |                  4757.4 |                 1    |
-| ujson      |                            0.22 |                  4516.9 |                 1.05 |
-| rapidjson  |                            0.27 |                  3715.4 |                 1.28 |
-| simplejson |                            0.23 |                  4426.2 |                 1.08 |
-| json       |                            0.25 |                  4062.4 |                 1.18 |
+| orjson     |                            0.25 |                  3939.5 |                 1    |
+| ujson      |                            0.33 |                  3053.2 |                 1.29 |
+| rapidjson  |                            0.39 |                  2589.7 |                 1.52 |
+| simplejson |                            0.28 |                  3549.6 |                 1.11 |
+| json       |                            0.36 |                  2767.7 |                 1.43 |
 
 #### citm_catalog.json serialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            0.8  |                  1246.4 |                 1    |
-| ujson      |                            2.64 |                   378.7 |                 3.29 |
-| rapidjson  |                            2.48 |                   403.8 |                 3.09 |
-| simplejson |                            9.6  |                   103.9 |                11.96 |
-| json       |                            5.36 |                   186.5 |                 6.68 |
+| orjson     |                            1.17 |                   856   |                 1    |
+| ujson      |                            3.65 |                   273   |                 3.11 |
+| rapidjson  |                            3.45 |                   274.1 |                 2.94 |
+| simplejson |                           14.67 |                    68.2 |                12.5  |
+| json       |                            8.19 |                   122.2 |                 6.98 |
 
 #### citm_catalog.json deserialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            4.97 |                   201   |                 1    |
-| ujson      |                            4.7  |                   208.7 |                 0.95 |
-| rapidjson  |                            5.73 |                   174.7 |                 1.15 |
-| simplejson |                            6.08 |                   164.9 |                 1.22 |
-| json       |                            6.3  |                   158.4 |                 1.27 |
+| orjson     |                            5.62 |                   178   |                 1    |
+| ujson      |                            6.76 |                   148.3 |                 1.2  |
+| rapidjson  |                            7.65 |                   129   |                 1.36 |
+| simplejson |                            9.05 |                   110.4 |                 1.61 |
+| json       |                            8.24 |                   120.8 |                 1.47 |
 
 #### canada.json serialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                            4.05 |                   247.3 |                 1    |
+| orjson     |                            7.58 |                   138.6 |                 1    |
 | ujson      |                                 |                         |                      |
-| rapidjson  |                           44.17 |                    22.6 |                10.91 |
-| simplejson |                           62.31 |                    16.1 |                15.39 |
-| json       |                           47.49 |                    21.1 |                11.73 |
+| rapidjson  |                           73.02 |                    13.7 |                 9.64 |
+| simplejson |                          101.21 |                     9.8 |                13.36 |
+| json       |                           91.45 |                    11.5 |                12.07 |
 
 #### canada.json deserialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
 |------------|---------------------------------|-------------------------|----------------------|
-| orjson     |                           14.97 |                    66.8 |                 1    |
+| orjson     |                           22.89 |                    43.8 |                 1    |
 | ujson      |                                 |                         |                      |
-| rapidjson  |                           29.72 |                    33.7 |                 1.99 |
-| simplejson |                           28.54 |                    35.1 |                 1.91 |
-| json       |                           29.29 |                    34.2 |                 1.96 |
-
+| rapidjson  |                           47.18 |                    21.3 |                 2.06 |
+| simplejson |                           44.41 |                    22.5 |                 1.94 |
+| json       |                           43.72 |                    22.9 |                 1.91 |
 
 If a row is blank, the library did not serialize and deserialize the fixture without
 modifying it, e.g., returning different values for floating point numbers.
 
-This was measured using Python 3.7.3 on Linux with orjson 2.0.6, ujson 1.35,
-python-rapidson 0.7.0, and simplejson 3.16.0.
+### Memory
 
-The results can be reproduced using the `pybench` and `graph` scripts.
+orjson's memory usage when deserializing is similar to or lower than
+the standard library and other third-party libraries.
+
+This measures, in the first column, RSS after importing a library and reading
+the fixture, and in the second column, increases in RSS after repeatedly
+calling `loads()` on the fixture.
+
+#### twitter.json
+
+| Library    |   import, read() RSS (MiB) |   loads() increase in RSS (MiB) |
+|------------|----------------------------|---------------------------------|
+| orjson     |                       12.8 |                             2.7 |
+| ujson      |                       12.8 |                             4.6 |
+| rapidjson  |                       14.3 |                             6.4 |
+| json       |                       12.3 |                             2.5 |
+| simplejson |                       13   |                             2.8 |
+
+#### github.json
+
+| Library    |   import, read() RSS (MiB) |   loads() increase in RSS (MiB) |
+|------------|----------------------------|---------------------------------|
+| orjson     |                       12.3 |                             0.3 |
+| ujson      |                       12.4 |                             0.5 |
+| rapidjson  |                       13.8 |                             0.5 |
+| json       |                       11.7 |                             0.3 |
+| simplejson |                       12.4 |                             0.3 |
+
+#### citm_catalog.json
+
+| Library    |   import, read() RSS (MiB) |   loads() increase in RSS (MiB) |
+|------------|----------------------------|---------------------------------|
+| orjson     |                       13.9 |                             8.3 |
+| ujson      |                       13.8 |                            12   |
+| rapidjson  |                       15.5 |                            20.3 |
+| json       |                       13.4 |                            20.2 |
+| simplejson |                       14.1 |                            21.8 |
+
+#### canada.json
+
+| Library    |   import, read() RSS (MiB) |   loads() increase in RSS (MiB) |
+|------------|----------------------------|---------------------------------|
+| orjson     |                       16.5 |                            17.5 |
+| ujson      |                       16.4 |                            19.4 |
+| rapidjson  |                       17.8 |                            19.8 |
+| json       |                       16.1 |                            21.3 |
+| simplejson |                       16.5 |                            21.3 |
+
+### Reproducing
+
+The above was measured using Python 3.7.4 on Linux with orjson 2.0.10,
+ujson 1.35, python-rapidson 0.8.0, and simplejson 3.16.0.
+
+The latency results can be reproduced using the `pybench` and `graph`
+scripts. The memory results can be reproduced using the `pymem` script.

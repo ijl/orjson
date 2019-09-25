@@ -10,7 +10,7 @@ import psutil
 filename = sys.argv[1]
 
 with lzma.open(filename, "r") as fileh:
-    file_utf8 = fileh.read()
+    fixture = fileh.read()
 
 proc = psutil.Process()
 
@@ -32,7 +32,8 @@ gc.collect()
 
 mem_before = proc.memory_info().rss
 
-val = loads(file_utf8)
+for _ in range(100):
+    val = loads(fixture)
 
 mem_after = proc.memory_info().rss
 
