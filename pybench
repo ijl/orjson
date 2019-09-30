@@ -1,6 +1,5 @@
 #!/bin/sh -e
 
-rm -rf .benchmarks
 pytest \
     --verbose \
     --benchmark-min-time=1 \

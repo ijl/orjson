@@ -131,14 +131,14 @@ pass `bytes`. This has lower memory usage and lower latency.
 
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
-keys must be at most 64 bytes to be cached and 512 entries are stored.
+keys must be at most 64 chars to be cached and 512 entries are stored.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
 which the standard library allows, but is not valid JSON.
 
-`JSONDecodeError` is a subclass of `ValueError`. This is for
-compatibility with the standard library.
+`JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
+This is for compatibility with the standard library.
 
 ### datetime
 
@@ -268,10 +268,10 @@ ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
 
 ## Testing
 
-The library has comprehensive tests. There are unit tests against the
-roundtrip, jsonchecker, and fixtures files of the
+The library has comprehensive tests. There are tests against fixtures in the
+[JSONTestSuite](https://github.com/nst/JSONTestSuite) and
 [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark)
-repository. It is tested to not crash against the
+repositories. It is tested to not crash against the
 [Big List of Naughty Strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 It is tested to not leak memory. It is tested to be correct against
 input from the PyJFuzz JSON fuzzer. It is tested to not crash
@@ -408,8 +408,8 @@ calling `loads()` on the fixture.
 | orjson     |                       12.8 |                             2.7 |
 | ujson      |                       12.8 |                             4.6 |
 | rapidjson  |                       14.3 |                             6.4 |
-| json       |                       12.3 |                             2.5 |
 | simplejson |                       13   |                             2.8 |
+| json       |                       12.3 |                             2.5 |
 
 #### github.json
 
@@ -418,8 +418,8 @@ calling `loads()` on the fixture.
 | orjson     |                       12.3 |                             0.3 |
 | ujson      |                       12.4 |                             0.5 |
 | rapidjson  |                       13.8 |                             0.5 |
-| json       |                       11.7 |                             0.3 |
 | simplejson |                       12.4 |                             0.3 |
+| json       |                       11.7 |                             0.3 |
 
 #### citm_catalog.json
 
@@ -428,18 +428,18 @@ calling `loads()` on the fixture.
 | orjson     |                       13.9 |                             8.3 |
 | ujson      |                       13.8 |                            12   |
 | rapidjson  |                       15.5 |                            20.3 |
-| json       |                       13.4 |                            20.2 |
 | simplejson |                       14.1 |                            21.8 |
+| json       |                       13.4 |                            20.2 |
 
 #### canada.json
 
 | Library    |   import, read() RSS (MiB) |   loads() increase in RSS (MiB) |
 |------------|----------------------------|---------------------------------|
 | orjson     |                       16.5 |                            17.5 |
-| ujson      |                       16.4 |                            19.4 |
+| ujson      |                            |                                 |
 | rapidjson  |                       17.8 |                            19.8 |
-| json       |                       16.1 |                            21.3 |
 | simplejson |                       16.5 |                            21.3 |
+| json       |                       16.1 |                            21.3 |
 
 ### Reproducing
 
