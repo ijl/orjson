@@ -1,8 +1,8 @@
 # orjson
 
 orjson is a fast, correct JSON library for Python. It benchmarks as the
-fastest Python library for JSON and has comprehensive unit, integration, and
-interoperability tests.
+fastest Python library for JSON and is more correct than the standard json
+library or third-party libraries.
 
 Its serialization performance is 2.5x to 9.5x the nearest
 other library and 4x to 12x the standard library. Its deserialization
@@ -232,15 +232,32 @@ JSONEncodeError: Integer exceeds 53-bit range
 
 ### float
 
-orjson serializes and deserializes float values in a consistent way. The
-same behavior is observed in rapidjson, simplejson, and json. ujson is
-inaccurate in both serialization and deserialization.
+orjson serializes and deserializes floats with no loss of precision and
+consistent rounding. The same behavior is observed in rapidjson, simplejson,
+and json. ujson is inaccurate in both serialization and deserialization,
+i.e., it modifies the data.
+
+`orjson.dumps()` serializes Nan, Infinity, and -Infinity, which are not
+compliant JSON, as `null`:
+
+```python
+>>> import orjson
+>>> orjson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
+b'[null,null,null]'
+>>> ujson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
+OverflowError: Invalid Inf value when encoding double
+>>> rapidjson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
+'[NaN,Infinity,-Infinity]'
+>>> json.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
+'[NaN, Infinity, -Infinity]'
+```
 
 ### UTF-8
 
 orjson raises an exception on invalid UTF-8. This is
-necessary because Python 3 str objects may contain UTF-16 surrogates. The
-standard library's json module accepts invalid UTF-8.
+necessary because Python 3 `str` objects may contain UTF-16 surrogates.
+
+The standard library's json module deserializes and serializes invalid UTF-8.
 
 ```python
 >>> import orjson, ujson, rapidjson, json

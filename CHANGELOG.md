@@ -1,6 +1,12 @@
 # Changelog
 
-## 2.0.19 - 2019-09-25
+## 2.0.11 - 2019-10-01
+
+### Changed
+
+- Publish Python 3.8 wheel for Linux.
+
+## 2.0.10 - 2019-09-25
 
 ### Changed
 
