@@ -17,6 +17,18 @@ jobs:
       dependencies: apt
   - template: ./azure-sdist.yml
 
+- job: linux_python38
+  pool:
+    vmImage: ubuntu-16.04
+  container: python:3.8-rc-buster
+  variables:
+    interpreter: python3.8
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+  steps:
+  - checkout: self
+  - template: ./azure-linux38.yml
+
 - job: linux_python37
   pool:
     vmImage: ubuntu-16.04
