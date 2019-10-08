@@ -53,7 +53,7 @@ encoding_rs = { version = "0.8", default_features = false, features = ["simd-acc
 itoa = { version = "0.4", default_features = false }
 lazy_static = { version = "1.4.0", default_features = false }
 parking_lot = {version = "0.9", features = ["nightly"]}
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "75516d87eb83d10ed298581ef15b4e54c393df2c", default_features = false, features = ["extension-module"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "89b7c7e3090e31625c282d7a5546dd61008ed1a2", default_features = false, features = ["extension-module"]}
 rand = { version = "0.7", default_features = false, features = ["getrandom", "std"] }
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "0e82f6055fc062888026229d3208466f2c99182a", default_features = false, features = ["perfect_float"] }
