@@ -3,22 +3,8 @@
 #![feature(core_intrinsics)]
 #![feature(const_fn)]
 
-#[macro_use]
-extern crate pyo3;
-
-#[macro_use]
-extern crate lazy_static;
-
-extern crate associative_cache;
-extern crate encoding_rs;
-extern crate itoa;
-extern crate parking_lot;
-extern crate serde;
-extern crate serde_json;
-extern crate smallvec;
-extern crate wyhash;
-
 use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
 use pyo3::AsPyPointer;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
@@ -94,14 +80,14 @@ pub fn dumps(
     option: Option<PyObject>,
 ) -> PyResult<PyObject> {
     let pydef: Option<NonNull<pyo3::ffi::PyObject>>;
-    if default.is_some() {
-        pydef = Some(unsafe { NonNull::new_unchecked(default.unwrap().as_ptr()) });
+    if let Some(value) = default {
+        pydef = Some(unsafe { NonNull::new_unchecked(value.as_ptr()) });
     } else {
         pydef = None
     };
     let optsbits: i8;
-    if option.is_some() {
-        let optsptr = option.unwrap().as_ptr();
+    if let Some(value) = option {
+        let optsptr = value.as_ptr();
         if unsafe { (*optsptr).ob_type != typeref::INT_PTR } {
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {

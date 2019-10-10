@@ -4,6 +4,7 @@ use crate::exc::*;
 use crate::typeref::*;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
+use lazy_static::lazy_static;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
