@@ -2,12 +2,12 @@
 
 import unittest
 
+import orjson
+
 try:
     from typing import TypedDict
 except ImportError:
     from typing_extensions import TypedDict
-
-import orjson
 
 
 class TypedDictTests(unittest.TestCase):

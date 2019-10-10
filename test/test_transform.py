@@ -1,19 +1,16 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
-import os
 import sys
+import unittest
 
 import orjson
 import pytest
 
-_path = os.path.join(os.path.dirname(__file__), "..", "data", "transform")
+from .util import read_fixture_bytes
 
 
 def _read_file(filename):
-    with open(os.path.join(_path, filename), "rb") as fileh:
-        data = fileh.read().strip(b"\n").strip(b"\r")
-    return data
+    return read_fixture_bytes(filename, "transform").strip(b"\n").strip(b"\r")
 
 
 class JSONTestSuiteTransformTests(unittest.TestCase):

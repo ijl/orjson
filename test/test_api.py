@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
-import unittest
 import json
+import unittest
 
 import orjson
-
 
 SIMPLE_TYPES = (1, 1.0, -1, None, "str", True, False)
 

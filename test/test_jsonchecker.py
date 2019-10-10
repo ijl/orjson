@@ -3,34 +3,26 @@
 Tests files from http://json.org/JSON_checker/
 """
 
-import unittest
-import os
 import sys
+import unittest
 
 import orjson
 import pytest
 
-_path = os.path.join(os.path.dirname(__file__), "..", "data", "jsonchecker")
-
+from .util import read_fixture_str
 
 PATTERN_1 = '["JSON Test Pattern pass1",{"object with 1 member":["array with 1 element"]},{},[],-42,true,false,null,{"integer":1234567890,"real":-9876.54321,"e":1.23456789e-13,"E":1.23456789e34,"":2.3456789012e76,"zero":0,"one":1,"space":" ","quote":"\\"","backslash":"\\\\","controls":"\\b\\f\\n\\r\\t","slash":"/ & /","alpha":"abcdefghijklmnopqrstuvwyz","ALPHA":"ABCDEFGHIJKLMNOPQRSTUVWYZ","digit":"0123456789","0123456789":"digit","special":"`1~!@#$%^&*()_+-={\':[,]}|;.</>?","hex":"ģ䕧覫췯ꯍ\uef4a","true":true,"false":false,"null":null,"array":[],"object":{},"address":"50 St. James Street","url":"http://www.JSON.org/","comment":"// /* <!-- --","# -- --> */":" "," s p a c e d ":[1,2,3,4,5,6,7],"compact":[1,2,3,4,5,6,7],"jsontext":"{\\"object with 1 member\\":[\\"array with 1 element\\"]}","quotes":"&#34; \\" %22 0x22 034 &#x22;","/\\\\\\"쫾몾ꮘﳞ볚\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?":"A key can be any string"},0.5,98.6,99.44,1066,10.0,1.0,0.1,1.0,2.0,2.0,"rosebud"]'.encode(
     "utf-8"
 )
 
 
-def _read_jsonchecker_file(filename):
-    with open(os.path.join(_path, filename), "rb") as fileh:
-        data = fileh.read().decode("utf-8")
-    return data
-
-
 class JsonCheckerTests(unittest.TestCase):
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
-        data = _read_jsonchecker_file(filename)
+        data = read_fixture_str(filename, "jsonchecker")
         self.assertRaises(exc, orjson.loads, data)
 
     def _run_pass_json(self, filename, match=""):
-        data = _read_jsonchecker_file(filename)
+        data = read_fixture_str(filename, "jsonchecker")
         self.assertEqual(orjson.dumps(orjson.loads(data)), match)
 
     def test_fail01(self):

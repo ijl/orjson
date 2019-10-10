@@ -1,24 +1,17 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
-import os
 import sys
+import unittest
 
 import orjson
 import pytest
 
-_path = os.path.join(os.path.dirname(__file__), "..", "data", "roundtrip")
-
-
-def _read_roundtrip_file(filename):
-    with open(os.path.join(_path, filename), "rb") as fileh:
-        data = fileh.read().decode("utf-8")
-    return data
+from .util import read_fixture_str
 
 
 class JsonCheckerTests(unittest.TestCase):
     def _run_roundtrip_json(self, filename):
-        data = _read_roundtrip_file(filename)
+        data = read_fixture_str(filename, "roundtrip")
         self.assertEqual(orjson.dumps(orjson.loads(data)), data.encode("utf-8"))
 
     def test_roundtrip001(self):

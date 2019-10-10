@@ -2,10 +2,9 @@
 # coding=UTF-8
 
 import unittest
-import datetime
 
-import pytest
 import orjson
+import pytest
 
 
 class TypeTests(unittest.TestCase):

@@ -4,10 +4,9 @@ import gc
 import unittest
 import uuid
 
-import pytest
-import psutil
 import orjson
-
+import psutil
+import pytest
 
 FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 

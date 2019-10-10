@@ -1,29 +1,16 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import lzma
 import unittest
-import os
-import sys
 
 import orjson
 import pytest
 
-_path = os.path.join(os.path.dirname(__file__), "..", "data", "parsing")
-
-
-def _read_file(filename):
-    if filename.endswith(".xz"):
-        with lzma.open(os.path.join(_path, filename), "rb") as fileh:
-            data = fileh.read()
-    else:
-        with open(os.path.join(_path, filename), "rb") as fileh:
-            data = fileh.read()
-    return data
+from .util import read_fixture_bytes
 
 
 class JSONTestSuiteParsingTests(unittest.TestCase):
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
-        data = _read_file(filename)
+        data = read_fixture_bytes(filename, "parsing")
         with self.assertRaises(exc):
             res = orjson.loads(data)
         try:
@@ -35,7 +22,7 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
                 res = orjson.loads(decoded)
 
     def _run_pass_json(self, filename, match=""):
-        data = _read_file(filename)
+        data = read_fixture_bytes(filename, "parsing")
         orjson.loads(data)
         orjson.loads(data.decode("utf-8"))
 

@@ -1,19 +1,19 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
 import datetime
 import sys
+import unittest
 
 import arrow
 import orjson
+import pytest
+import pytz
+from dateutil import tz
 
 try:
     import pendulum
 except ImportError:
     pendulum = None
-import pytest
-import pytz
-from dateutil import tz
 
 
 class DatetimeTests(unittest.TestCase):

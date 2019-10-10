@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 # coding=UTF-8
 
-import datetime
 import unittest
 import uuid
 

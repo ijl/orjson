@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
-import orjson
 import lzma
+from pathlib import Path
+
+import orjson
 
 dirname = os.path.join(os.path.dirname(__file__), "../data")
 
@@ -13,12 +15,12 @@ OBJ_CACHE = {}
 
 def read_fixture_str(filename):
     if not filename in STR_CACHE:
-        if filename.endswith(".xz"):
-            with lzma.open(os.path.join(dirname, filename), "r") as fileh:
-                STR_CACHE[filename] = fileh.read().decode("utf-8")
+        path = Path(dirname, filename)
+        if path.suffix == ".xz":
+            contents = lzma.decompress(path.read_bytes())
         else:
-            with open(os.path.join(dirname, filename), "r") as fileh:
-                STR_CACHE[filename] = fileh.read().decode("utf-8")
+            contents = path.read_bytes()
+        STR_CACHE[filename] = contents.decode("utf-8")
     return STR_CACHE[filename]
 
 
