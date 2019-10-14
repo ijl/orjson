@@ -290,7 +290,7 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_pass_json("y_string_accepted_surrogate_pair.json")
 
-    def test_y_string_accepted_surrogate_pair(self):
+    def test_y_string_accepted_surrogate_pairs(self):
         """
         y_string_accepted_surrogate_pairs.json
         """
@@ -813,13 +813,13 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_-2..json")
 
-    def test_n_number_NaN(self):
+    def test_n_number_negative_NaN(self):
         """
         n_number_-NaN.json
         """
         self._run_fail_json("n_number_-NaN.json")
 
-    def test_n_number_1(self):
+    def test_n_number_negative_1(self):
         """
         n_number_.-1.json
         """
@@ -937,7 +937,7 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_9.e+.json")
 
-    def test_n_number_Inf(self):
+    def test_n_number_negative_Inf(self):
         """
         n_number_Inf.json
         """
