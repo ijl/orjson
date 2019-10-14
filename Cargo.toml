@@ -34,7 +34,6 @@ classifier = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: MIT License",
-    "License :: OSI Approved",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -45,6 +44,7 @@ classifier = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python",
     "Programming Language :: Rust",
+    "Typing :: Typed",
 ]
 
 [dependencies]
@@ -53,7 +53,7 @@ encoding_rs = { version = "0.8", default_features = false, features = ["simd-acc
 itoa = { version = "0.4", default_features = false }
 lazy_static = { version = "1.4.0", default_features = false }
 parking_lot = {version = "0.9", features = ["nightly"]}
-pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "89b7c7e3090e31625c282d7a5546dd61008ed1a2", default_features = false, features = ["extension-module"]}
+pyo3 = { git = "https://github.com/PyO3/pyo3.git", rev = "1796335617ca1fb6385682db2fccc6f3a7472704", default_features = false, features = ["extension-module"]}
 rand = { version = "0.7", default_features = false, features = ["getrandom", "std"] }
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "0e82f6055fc062888026229d3208466f2c99182a", default_features = false, features = ["perfect_float"] }
