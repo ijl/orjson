@@ -1,21 +1,33 @@
 # orjson
 
-orjson is a fast, correct JSON library for Python. It benchmarks as the
-fastest Python library for JSON and is more correct than the standard json
-library or third-party libraries.
+orjson is a fast, correct JSON library for Python. It
+[benchmarks](#performance) as the fastest Python library for JSON and is
+more correct than the standard json library or third-party libraries.
 
-Its serialization performance is 2.5x to 9.5x the nearest
-other library and 4x to 12x the standard library. Its deserialization
-performance is 1.2x to 1.3x the nearest other library and 1.4x to 2x
-the standard library.
+Its serialization performance on fixtures of real data is 2.5x to 9.5x the
+nearest other library and 4x to 12x the standard library. Its deserialization
+performance on the same fixtures is 1.2x to 1.3x the nearest other
+library and 1.4x to 2x the standard library.
 
-It differs in behavior from other Python JSON libraries in supporting
-datetimes, not supporting subclasses without a `default` hook,
-serializing UTF-8 to bytes rather than escaped ASCII (e.g., "好" rather than
-"\\\u597d") by default, having strict UTF-8 conformance, having strict JSON
-conformance on NaN/Infinity/-Infinity, having an option for strict
-JSON conformance on 53-bit integers, not supporting pretty
-printing, and not supporting all standard library options.
+Its features and drawbacks compared to other Python JSON libraries:
+
+* serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
+a subset of ISO 8601
+* serializes to `bytes` rather than `str`
+* serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
+"\\\u597d"
+* serializes `float` 10x faster and deserializes twice as fast as other
+libraries
+* serializes arbitrary types using a `default` hook
+* does not support subclasses, requiring use of `default`
+* has strict UTF-8 conformance, more correct than the standard library
+* has strict JSON conformance in not supporting Nan/Infinity/-Infinity
+* has an option for strict JSON conformance on 53-bit integers with default
+support for 64-bit
+* does not support pretty printing
+* does not support sorting `dict` by keys
+* does not provide `load()` or `dump()` functions for reading/writing from
+file-like objects
 
 orjson supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
 macOS, and Windows. The manylinux1 wheel differs from PEP 513 in requiring
@@ -25,6 +37,21 @@ orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
 submitted there.
+
+ 1. [Usage](#usage)
+    1. [Install](#install)
+    2. [Serialize](#serialize)
+    3. [Deserialize](#deserialize)
+ 2. [Types](#types)
+    1. [datetime](#datetime)
+    2. [int](#int)
+    3. [float](#float)
+    4. [str](#str)
+ 3. [Testing](#testing)
+ 4. [Performance](#performance)
+    1. [Latency](#latency)
+    2. [Memory](#memory)
+    3. [Reproducing](#reproducing)
 
 ## Usage
 
@@ -61,9 +88,33 @@ It natively serializes
 `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, and `None` instances. It supports
 arbitrary types through `default`. It does not serialize subclasses of
-supported types natively, but `default` may be used.
+supported types natively.
 
-It accepts options via an `option` keyword argument. These include:
+To serialize a subclass or arbitrary types, specify `default` as a
+callable that returns a supported type. `default` may be a function,
+lambda, or callable class instance.
+
+```python
+>>> import orjson, numpy
+>>>
+def default(obj):
+    if isinstance(obj, numpy.ndarray):
+        return obj.tolist()
+>>> orjson.dumps(numpy.random.rand(2, 2), default=default)
+b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.19227780743524303]]'
+```
+
+If the `default` callable does not return an object, and an exception
+was raised within the `default` function, an exception describing this is
+raised. If no object is returned by the `default` callable but also
+no exception was raised, it falls through to raising `JSONEncodeError` on an
+unsupported type.
+
+The `default` callable may return an object that itself
+must be handled by `default` up to five levels deep before an exception
+is raised.
+
+`dumps()` accepts options via an `option` keyword argument. These include:
 
 - `orjson.OPT_STRICT_INTEGER` for enforcing a 53-bit limit on integers. The
 limit is otherwise 64 bits, the same as the Python standard library.
@@ -93,28 +144,6 @@ It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
 with the standard library.
 
-To serialize arbitrary types, specify `default` as a callable that returns
-a supported type. `default` may be a function, lambda, or callable class
-instance.
-
-```python
->>> import orjson, numpy
->>> def default(obj):
-        if isinstance(obj, numpy.ndarray):
-            return obj.tolist()
->>> orjson.dumps(numpy.random.rand(2, 2), default=default)
-b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.19227780743524303]]'
-```
-
-If the `default` callable does not return an object, and an exception
-was raised within the `default` function, an exception describing this is
-raised. If no object is returned by the `default` callable but also
-no exception was raised, it falls through to raising `JSONEncodeError` on an
-unsupported type.
-
-The `default` callable may return an object that itself
-must be handled by `default` up to five levels deep before an exception
-is raised.
 
 ### Deserialize
 
@@ -139,6 +168,8 @@ which the standard library allows, but is not valid JSON.
 
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
+
+## Types
 
 ### datetime
 
@@ -241,7 +272,7 @@ i.e., it modifies the data.
 compliant JSON, as `null`:
 
 ```python
->>> import orjson
+>>> import orjson, ujson, rapidjson, json
 >>> orjson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
 b'[null,null,null]'
 >>> ujson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
@@ -252,12 +283,18 @@ OverflowError: Invalid Inf value when encoding double
 '[NaN, Infinity, -Infinity]'
 ```
 
-### UTF-8
+### str
 
-orjson raises an exception on invalid UTF-8. This is
-necessary because Python 3 `str` objects may contain UTF-16 surrogates.
+orjson is strict about UTF-8 conformance. This is stricter than the standard
+library's json module, which will serialize and deserialize UTF-16 surrogates,
+e.g., "\ud800", that are invalid UTF-8.
 
-The standard library's json module deserializes and serializes invalid UTF-8.
+If `orjson.dumps()` is given a `str` that does not contain valid UTF-8,
+`orjson.JSONEncodeError` is raised. If `loads()` receives invalid UTF-8,
+`orjson.JSONDecodeError` is raised.
+
+orjson and rapidjson are the only compared JSON libraries to consistently
+error on bad input.
 
 ```python
 >>> import orjson, ujson, rapidjson, json
@@ -269,10 +306,6 @@ UnicodeEncodeError: 'utf-8' codec ...
 UnicodeEncodeError: 'utf-8' codec ...
 >>> json.dumps('\ud800')
 '"\\ud800"'
-```
-
-```python
->>> import orjson, ujson, rapidjson, json
 >>> orjson.loads('"\\ud800"')
 JSONDecodeError: unexpected end of hex escape at line 1 column 8: line 1 column 1 (char 0)
 >>> ujson.loads('"\\ud800"')
