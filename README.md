@@ -148,13 +148,13 @@ with the standard library.
 ### Deserialize
 
 ```python
-def loads(__obj: Union[bytes, str]) -> Any: ...
+def loads(__obj: Union[bytes, bytearray, str]) -> Any: ...
 ```
 
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
 `list`, `int`, `float`, `str`, `bool`, and `None` objects.
 
-Either `bytes` or `str` input are accepted. If the input exists as
+`bytes`, `bytearray`, and `str` input are accepted. If the input exists as
 `bytes` (was read directly from a source), it is recommended to
 pass `bytes`. This has lower memory usage and lower latency.
 

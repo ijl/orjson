@@ -60,12 +60,26 @@ class TypeTests(unittest.TestCase):
             orjson.JSONEncodeError, orjson.dumps, b"\xed\xa0\xbd\xed\xba\x80"
         )  # \ud83d\ude80
 
-    def test_bytes(self):
+    def test_bytes_dumps(self):
         """
-        bytes not supported
+        bytes dumps not supported
         """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps([b"a"])
+
+    def test_bytes_loads(self):
+        """
+        bytes loads
+        """
+        self.assertEqual(orjson.loads(b"[]"), [])
+
+    def test_bytearray_loads(self):
+        """
+        bytearray loads
+        """
+        arr = bytearray()
+        arr.extend(b"[]")
+        self.assertEqual(orjson.loads(arr), [])
 
     def test_bool(self):
         """

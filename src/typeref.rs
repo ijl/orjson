@@ -9,6 +9,7 @@ pub static mut TRUE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut FALSE: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut STR_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut BYTES_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
+pub static mut BYTEARRAY_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut DICT_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut LIST_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut TUPLE_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
@@ -41,6 +42,11 @@ pub fn init_typerefs() {
         ))
         .ob_type;
         BYTES_PTR = (*pyo3::ffi::PyBytes_FromStringAndSize(
+            EMTPY_STR.as_ptr() as *const c_char,
+            EMTPY_STR.len() as pyo3::ffi::Py_ssize_t,
+        ))
+        .ob_type;
+        BYTEARRAY_PTR = (*pyo3::ffi::PyByteArray_FromStringAndSize(
             EMTPY_STR.as_ptr() as *const c_char,
             EMTPY_STR.len() as pyo3::ffi::Py_ssize_t,
         ))

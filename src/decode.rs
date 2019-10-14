@@ -67,6 +67,14 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
         data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
+    } else if is_type!(obj_type_ptr, BYTEARRAY_PTR) {
+        let buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
+        let length = ffi!(PyByteArray_Size(ptr)) as usize;
+        let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
+        if encoding_rs::Encoding::utf8_valid_up_to(slice) != length {
+            return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
+        }
+        data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
     } else {
         return Err(JSONDecodeError::py_err((
             "Input must be str or bytes",
