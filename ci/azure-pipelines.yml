@@ -23,6 +23,7 @@ jobs:
   container: python:3.8-rc-buster
   variables:
     interpreter: python3.8
+    manylinux: 2010
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
@@ -34,6 +35,7 @@ jobs:
     vmImage: ubuntu-16.04
   variables:
     interpreter: python3.7
+    manylinux: 2010
     target: x86_64-unknown-linux-gnu
   steps:
   - task: UsePythonVersion@0
@@ -51,6 +53,7 @@ jobs:
     vmImage: ubuntu-16.04
   variables:
     interpreter: python3.6
+    manylinux: 2010
     target: x86_64-unknown-linux-gnu
   steps:
   - task: UsePythonVersion@0
@@ -68,6 +71,7 @@ jobs:
     vmImage: xcode9-macos10.13
   variables:
     interpreter: python3.7
+    manylinux: off
     target: x86_64-apple-darwin
   steps:
   - task: UsePythonVersion@0
@@ -83,6 +87,7 @@ jobs:
     vmImage: xcode9-macos10.13
   variables:
     interpreter: python3.6
+    manylinux: off
     target: x86_64-apple-darwin
   steps:
   - task: UsePythonVersion@0
