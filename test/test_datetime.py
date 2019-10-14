@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
-import sys
 import unittest
 
 import arrow
@@ -317,10 +316,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04+10:30"]',
         )
 
-    @pytest.mark.skipif(
-        sys.version_info.minor == 5 or pendulum is None,
-        reason="Non-even minute offsets supported on not 3.5",
-    )
+    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
     def test_datetime_partial_second_pendulum_supported(self):
         """
         datetime.datetime UTC offset round seconds
@@ -344,32 +340,6 @@ class DatetimeTests(unittest.TestCase):
             ),
             b'["1937-01-01T12:00:27.000087+00:20"]',
         )
-
-    @pytest.mark.skipif(
-        sys.version_info.minor != 5 or pendulum is None,
-        reason="Non-even minute offsets not supported on 3.5",
-    )
-    def test_datetime_partial_second_pendulum_not_supported(self):
-        """
-        datetime.datetime UTC offset round seconds
-
-        https://tools.ietf.org/html/rfc3339#section-5.8
-        """
-        with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps(
-                [
-                    datetime.datetime(
-                        1937,
-                        1,
-                        1,
-                        12,
-                        0,
-                        27,
-                        87,
-                        tzinfo=pendulum.timezone("Europe/Amsterdam"),
-                    )
-                ]
-            )
 
     def test_datetime_partial_second_pytz(self):
         """

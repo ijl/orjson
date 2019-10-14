@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import sys
 import unittest
 
 import orjson
@@ -68,7 +67,6 @@ class JsonCheckerTests(unittest.TestCase):
         """
         self._run_roundtrip_json("roundtrip09.json")
 
-    @pytest.mark.skipif(sys.version_info < (3, 6), reason="Indeterminate key order")
     def test_roundtrip010(self):
         """
         roundtrip010.json

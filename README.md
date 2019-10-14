@@ -29,7 +29,7 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading/writing from
 file-like objects
 
-orjson supports CPython 3.5, 3.6, 3.7, and 3.8. It distributes wheels for Linux,
+orjson supports CPython 3.6, 3.7, and 3.8. It distributes wheels for Linux,
 macOS, and Windows. The manylinux1 wheel differs from PEP 513 in requiring
 glibc 2.18, released 2013, or later. orjson does not currently support PyPy.
 

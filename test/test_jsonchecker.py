@@ -3,7 +3,6 @@
 Tests files from http://json.org/JSON_checker/
 """
 
-import sys
 import unittest
 
 import orjson
@@ -228,7 +227,6 @@ class JsonCheckerTests(unittest.TestCase):
         """
         self._run_fail_json("fail33.json")
 
-    @pytest.mark.skipif(sys.version_info < (3, 6), reason="Indeterminate key order")
     def test_pass01(self):
         """
         pass01.json
@@ -243,7 +241,6 @@ class JsonCheckerTests(unittest.TestCase):
             "pass02.json", b'[[[[[[[[[[[[[[[[[[["Not too deep"]]]]]]]]]]]]]]]]]]]'
         )
 
-    @pytest.mark.skipif(sys.version_info < (3, 6), reason="Indeterminate key order")
     def test_pass03(self):
         """
         pass03.json

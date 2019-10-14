@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import sys
 import unittest
 
 import orjson
@@ -57,14 +56,12 @@ class JSONTestSuiteTransformTests(unittest.TestCase):
         """
         self._pass_transform("number_1000000000000000.json")
 
-    @pytest.mark.skipif(sys.version_info < (3, 6), reason="Indeterminate key order")
     def test_object_key_nfc_nfd(self):
         """
         object_key_nfc_nfd.json
         """
         self._pass_transform("object_key_nfc_nfd.json")
 
-    @pytest.mark.skipif(sys.version_info < (3, 6), reason="Indeterminate key order")
     def test_object_key_nfd_nfc(self):
         """
         object_key_nfd_nfc.json

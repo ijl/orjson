@@ -12,7 +12,6 @@ keywords = ["fast", "json", "datetime", "rfc", "8259", "3339"]
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
-    "conftest.py",
     "data/*",
     "LICENSE-APACHE",
     "LICENSE-MIT",
@@ -38,7 +37,6 @@ classifier = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
