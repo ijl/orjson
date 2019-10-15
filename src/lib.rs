@@ -45,8 +45,9 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
+    m.add("OPT_NAIVE_UTC", datetime::NAIVE_UTC)?;
+    m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
-    m.add("OPT_NAIVE_UTC", encode::NAIVE_UTC)?;
 
     Ok(())
 }

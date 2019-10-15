@@ -400,6 +400,41 @@ class DatetimeTests(unittest.TestCase):
             b'"2000-01-01T00:00:00.000001"',
         )
 
+    def test_datetime_omit_microseconds(self):
+        """
+        datetime.datetime OPT_OMIT_MICROSECONDS
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
+                option=orjson.OPT_OMIT_MICROSECONDS,
+            ),
+            b'["2000-01-01T02:03:04"]',
+        )
+
+    def test_datetime_omit_microseconds_naive(self):
+        """
+        datetime.datetime naive OPT_OMIT_MICROSECONDS
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
+                option=orjson.OPT_NAIVE_UTC | orjson.OPT_OMIT_MICROSECONDS,
+            ),
+            b'["2000-01-01T02:03:04+00:00"]',
+        )
+
+    def test_time_omit_microseconds(self):
+        """
+        datetime.time OPT_OMIT_MICROSECONDS
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.time(2, 3, 4, 123)], option=orjson.OPT_OMIT_MICROSECONDS
+            ),
+            b'["02:03:04"]',
+        )
+
     @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
     def test_datetime_roundtrip(self):
         """

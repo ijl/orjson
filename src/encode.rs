@@ -16,9 +16,8 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const STRICT_INTEGER: u8 = 1;
-pub const NAIVE_UTC: u8 = 1 << 1;
 
-pub const MAX_OPT: i8 = STRICT_INTEGER as i8 | NAIVE_UTC as i8;
+pub const MAX_OPT: i8 = (STRICT_INTEGER | NAIVE_UTC | OMIT_MICROSECONDS) as i8;
 
 macro_rules! obj_name {
     ($obj:ident) => {
@@ -188,7 +187,7 @@ impl<'p> Serialize for SerializePyObject {
                     err!("datetime.time must not have tzinfo set")
                 }
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-                write_time(self.ptr, &mut dt);
+                write_time(self.ptr, self.opts, &mut dt);
                 serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
             } else if self.default.is_some() {
                 if self.default_calls > 5 {

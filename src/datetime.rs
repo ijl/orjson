@@ -1,7 +1,8 @@
 use crate::typeref::*;
 use smallvec::SmallVec;
 
-const NAIVE_UTC: u8 = 1 << 1;
+pub const NAIVE_UTC: u8 = 1 << 1;
+pub const OMIT_MICROSECONDS: u8 = 1 << 2;
 
 const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
@@ -137,7 +138,7 @@ pub fn write_datetime(
         let second = ffi!(PyDateTime_DATE_GET_SECOND(ptr)) as u8;
         write_double_digit!(dt, second);
     }
-    {
+    if opts & OMIT_MICROSECONDS != OMIT_MICROSECONDS {
         let microsecond = ffi!(PyDateTime_DATE_GET_MICROSECOND(ptr)) as u32;
         write_microsecond!(dt, microsecond);
     }
@@ -205,7 +206,7 @@ pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
 }
 
 #[inline(never)]
-pub fn write_time(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
+pub fn write_time(ptr: *mut pyo3::ffi::PyObject, opts: u8, dt: &mut SmallVec<[u8; 32]>) {
     {
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(ptr)) as u8;
         write_double_digit!(dt, hour);
@@ -220,7 +221,7 @@ pub fn write_time(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
         let second = ffi!(PyDateTime_TIME_GET_SECOND(ptr)) as u8;
         write_double_digit!(dt, second);
     }
-    {
+    if opts & OMIT_MICROSECONDS != OMIT_MICROSECONDS {
         let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(ptr)) as u32;
         write_microsecond!(dt, microsecond);
     }
