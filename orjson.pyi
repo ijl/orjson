@@ -15,3 +15,4 @@ class JSONEncodeError(TypeError): ...
 OPT_NAIVE_UTC: int
 OPT_OMIT_MICROSECONDS: int
 OPT_STRICT_INTEGER: int
+OPT_UTC_Z: int

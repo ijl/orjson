@@ -17,7 +17,7 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const STRICT_INTEGER: u8 = 1;
 
-pub const MAX_OPT: i8 = (STRICT_INTEGER | NAIVE_UTC | OMIT_MICROSECONDS) as i8;
+pub const MAX_OPT: i8 = (STRICT_INTEGER | NAIVE_UTC | OMIT_MICROSECONDS | UTC_Z) as i8;
 
 macro_rules! obj_name {
     ($obj:ident) => {

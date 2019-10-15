@@ -435,6 +435,70 @@ class DatetimeTests(unittest.TestCase):
             b'["02:03:04"]',
         )
 
+    def test_datetime_utc_z_naive_omit(self):
+        """
+        datetime.datetime naive OPT_UTC_Z
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
+                option=orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z
+                | orjson.OPT_OMIT_MICROSECONDS,
+            ),
+            b'["2000-01-01T02:03:04Z"]',
+        )
+
+    def test_datetime_utc_z_naive(self):
+        """
+        datetime.datetime naive OPT_UTC_Z
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
+                option=orjson.OPT_NAIVE_UTC | orjson.OPT_UTC_Z,
+            ),
+            b'["2000-01-01T02:03:04.000123Z"]',
+        )
+
+    def test_datetime_utc_z_without_tz(self):
+        """
+        datetime.datetime naive OPT_UTC_Z
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)], option=orjson.OPT_UTC_Z
+            ),
+            b'["2000-01-01T02:03:04.000123"]',
+        )
+
+    def test_datetime_utc_z_with_tz(self):
+        """
+        datetime.datetime naive OPT_UTC_Z
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2000, 1, 1, 0, 0, 0, 1, tzinfo=datetime.timezone.utc
+                    )
+                ],
+                option=orjson.OPT_UTC_Z,
+            ),
+            b'["2000-01-01T00:00:00.000001Z"]',
+        )
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        1937, 1, 1, 12, 0, 27, 87, tzinfo=tz.gettz("Europe/Amsterdam")
+                    )
+                ],
+                option=orjson.OPT_UTC_Z,
+            ),
+            b'["1937-01-01T12:00:27.000087+00:20"]',
+        )
+
     @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
     def test_datetime_roundtrip(self):
         """

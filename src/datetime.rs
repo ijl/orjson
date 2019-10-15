@@ -3,6 +3,7 @@ use smallvec::SmallVec;
 
 pub const NAIVE_UTC: u8 = 1 << 1;
 pub const OMIT_MICROSECONDS: u8 = 1 << 2;
+pub const UTC_Z: u8 = 1 << 3;
 
 const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
@@ -10,6 +11,7 @@ const ZERO: u8 = 48; // "0"
 const T: u8 = 84; // "T"
 const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // ":"
+const Z: u8 = 90; // "Z"
 
 macro_rules! write_double_digit {
     ($dt:ident, $value:ident) => {
@@ -144,7 +146,11 @@ pub fn write_datetime(
     }
     if has_tz || opts & NAIVE_UTC == NAIVE_UTC {
         if offset_second == 0 {
-            dt.extend([PLUS, ZERO, ZERO, COLON, ZERO, ZERO].iter().cloned());
+            if opts & UTC_Z == UTC_Z {
+                dt.push(Z);
+            } else {
+                dt.extend([PLUS, ZERO, ZERO, COLON, ZERO, ZERO].iter().cloned());
+            }
         } else {
             if offset_day == -1 {
                 // datetime.timedelta(days=-1, seconds=68400) -> -05:00

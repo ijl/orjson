@@ -122,6 +122,8 @@ is raised.
 on `datetime.datetime` and `datetime.time` instances.
 - `orjson.OPT_STRICT_INTEGER` for enforcing a 53-bit limit on integers. The
 limit is otherwise 64 bits, the same as the Python standard library.
+- `orjson.OPT_UTC_Z` to serialize a UTC timezone on `datetime.datetime`
+instances as `Z` instead of `+00:00`.
 
 To specify multiple options, mask them together, e.g.,
 `option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
