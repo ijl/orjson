@@ -189,6 +189,39 @@ impl<'p> Serialize for SerializePyObject {
                 let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
                 write_time(self.ptr, self.opts, &mut dt);
                 serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+            } else if ffi!(PyObject_HasAttr(self.ptr, DATACLASS_FIELDS_STR)) == 1 {
+                let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
+                ffi!(Py_DECREF(fields));
+                let mut map = serializer.serialize_map(None).unwrap();
+                let mut pos = 0isize;
+                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                while unsafe {
+                    pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
+                } {
+                    if unlikely!(self.recursion == 255) {
+                        err!("Recursion limit reached")
+                    }
+                    let data = ffi!(PyUnicode_AsUTF8AndSize(attr, &mut str_size)) as *const u8;
+                    if unlikely!(data.is_null()) {
+                        err!(INVALID_STR);
+                    }
+                    let value = ffi!(PyObject_GetAttr(self.ptr, attr));
+                    ffi!(Py_DECREF(value));
+
+                    map.serialize_entry(
+                        str_from_slice!(data, str_size),
+                        &SerializePyObject {
+                            ptr: value,
+                            default: self.default,
+                            opts: self.opts,
+                            default_calls: self.default_calls,
+                            recursion: self.recursion + 1,
+                        },
+                    )?;
+                }
+                map.end()
             } else if self.default.is_some() {
                 if self.default_calls > 5 {
                     err!("default serializer exceeds recursion limit")

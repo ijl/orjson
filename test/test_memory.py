@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import dataclasses
+import datetime
 import gc
+import random
 import unittest
 import uuid
+from typing import List
 
 import orjson
 import psutil
@@ -13,6 +17,32 @@ FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "Êù±‰
 
 def default(obj):
     return str(obj)
+
+
+@dataclasses.dataclass
+class Member:
+    id: int
+    active: bool
+
+
+@dataclasses.dataclass
+class Object:
+    id: int
+    updated_at: datetime.datetime
+    name: str
+    members: List[Member]
+
+
+DATACLASS_FIXTURE = [
+    Object(
+        i,
+        datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(seconds=random.randint(0, 10000)),
+        str(i) * 3,
+        [Member(j, True) for j in range(0, 10)],
+    )
+    for i in range(100000, 101000)
+]
 
 
 class MemoryTests(unittest.TestCase):
@@ -57,6 +87,19 @@ class MemoryTests(unittest.TestCase):
             val = orjson.dumps(fixture, default=default)
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + 1024)
+
+    def test_memory_dumps_dataclass(self):
+        """
+        dumps() dataclass memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        val = orjson.dumps(DATACLASS_FIXTURE)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            val = orjson.dumps(DATACLASS_FIXTURE)
+        gc.collect()
+        self.assertTrue(proc.memory_info().rss <= mem + 1024 * 1024)
 
     def test_memory_loads_keys(self):
         """

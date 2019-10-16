@@ -24,6 +24,7 @@ pub static mut UTCOFFSET_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::
 pub static mut NORMALIZE_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut CONVERT_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut DST_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
+pub static mut DATACLASS_FIELDS_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 
 static EMTPY_STR: &str = "";
 
@@ -89,6 +90,10 @@ pub fn init_typerefs() {
         CONVERT_METHOD_STR =
             pyo3::ffi::PyUnicode_FromStringAndSize("convert".as_ptr() as *const c_char, 7);
         DST_STR = pyo3::ffi::PyUnicode_FromStringAndSize("dst".as_ptr() as *const c_char, 3);
+        DATACLASS_FIELDS_STR = pyo3::ffi::PyUnicode_FromStringAndSize(
+            "__dataclass_fields__".as_ptr() as *const c_char,
+            20,
+        );
         pyo3::ffi::Py_DECREF(datetime);
         pyo3::ffi::Py_DECREF(date);
         pyo3::ffi::Py_DECREF(time);

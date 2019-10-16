@@ -2,7 +2,9 @@
 
 orjson is a fast, correct JSON library for Python. It
 [benchmarks](#performance) as the fastest Python library for JSON and is
-more correct than the standard json library or third-party libraries.
+more correct than the standard json library or third-party libraries. It
+serializes [dataclass](#dataclass) and [datetime](#datetime) instances by
+default.
 
 Its serialization performance on fixtures of real data is 2.5x to 9.5x the
 nearest other library and 4x to 12x the standard library. Its deserialization
@@ -11,6 +13,8 @@ library and 1.4x to 2x the standard library.
 
 Its features and drawbacks compared to other Python JSON libraries:
 
+* serializes `dataclass` instances significantly faster than the
+standard library
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 a subset of ISO 8601
 * serializes to `bytes` rather than `str`
@@ -43,10 +47,11 @@ submitted there.
     2. [Serialize](#serialize)
     3. [Deserialize](#deserialize)
  2. [Types](#types)
-    1. [datetime](#datetime)
-    2. [int](#int)
-    3. [float](#float)
-    4. [str](#str)
+    1. [dataclass](#dataclass)
+    2. [datetime](#datetime)
+    3. [int](#int)
+    4. [float](#float)
+    5. [str](#str)
  3. [Testing](#testing)
  4. [Performance](#performance)
     1. [Latency](#latency)
@@ -85,10 +90,11 @@ def dumps(__obj: Any, default: Optional[Callable[[Any], Any]] = ..., option: Opt
 
 It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
-`typing.TypedDict`, `datetime.datetime`,
+`dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, and `None` instances. It supports
 arbitrary types through `default`. It does not serialize subclasses of
-supported types natively.
+supported types natively, with the exception of `dataclasses.dataclass`
+subclasses.
 
 To serialize a subclass or arbitrary types, specify `default` as a
 callable that returns a supported type. `default` may be a function,
@@ -174,6 +180,13 @@ which the standard library allows, but is not valid JSON.
 This is for compatibility with the standard library.
 
 ## Types
+
+### dataclass
+
+orjson serializes instances of `dataclasses.dataclass` natively.
+
+`orjson.dumps()` serializes instances significantly faster than using
+`dataclasses.asdict()` with `json.dumps()`.
 
 ### datetime
 

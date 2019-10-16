@@ -1,6 +1,7 @@
 arrow
+dataclasses;python_version<"3.7"
 pendulum;sys_platform!="win"
 psutil
 pytest
 pytz
-typing_extensions;python_version>"3.5" and python_version <"3.8"
+typing_extensions;python_version>="3.6" and python_version<"3.8"
