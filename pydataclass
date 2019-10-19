@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+import dataclasses
+import io
+import json
+from timeit import timeit
+from typing import List
+
+import orjson
+import rapidjson
+import simplejson
+from tabulate import tabulate
+
+buf = io.StringIO()
+
+
+@dataclasses.dataclass
+class Member:
+    id: int
+    active: bool
+
+
+@dataclasses.dataclass
+class Object:
+    id: int
+    name: str
+    members: List[Member]
+
+
+objects_as_dataclass = [
+    Object(i, str(i) * 3, [Member(j, True) for j in range(0, 10)])
+    for i in range(100000, 101000)
+]
+
+objects_as_dict = [dataclasses.asdict(each) for each in objects_as_dataclass]
+
+
+def default(__obj):
+    if dataclasses.is_dataclass(__obj):
+        return dataclasses.asdict(__obj)
+
+
+headers = ("Library", "dict (ms)", "dataclass (ms)", "dataclass vs. dict", "vs. orjson")
+
+LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+
+ITERATIONS = 100
+
+table = []
+for lib_name in LIBRARIES:
+    if lib_name == "json":
+        as_dict = timeit(
+            lambda: json.dumps(objects_as_dict, default=default).encode("utf-8"),
+            number=ITERATIONS,
+        )
+        as_dataclass = timeit(
+            lambda: json.dumps(objects_as_dataclass, default=default).encode("utf-8"),
+            number=ITERATIONS,
+        )
+    elif lib_name == "simplejson":
+        as_dict = timeit(
+            lambda: simplejson.dumps(objects_as_dict, default=default).encode("utf-8"),
+            number=ITERATIONS,
+        )
+        as_dataclass = timeit(
+            lambda: simplejson.dumps(objects_as_dataclass, default=default).encode(
+                "utf-8"
+            ),
+            number=ITERATIONS,
+        )
+    elif lib_name == "ujson":
+        as_dict = None
+        as_dataclass = None
+    elif lib_name == "rapidjson":
+        as_dict = timeit(
+            lambda: rapidjson.dumps(objects_as_dict, default=default).encode("utf-8"),
+            number=ITERATIONS,
+        )
+        as_dataclass = timeit(
+            lambda: rapidjson.dumps(objects_as_dataclass, default=default).encode(
+                "utf-8"
+            ),
+            number=ITERATIONS,
+        )
+    elif lib_name == "orjson":
+        as_dict = timeit(lambda: orjson.dumps(objects_as_dict), number=ITERATIONS)
+        as_dataclass = timeit(
+            lambda: orjson.dumps(objects_as_dataclass), number=ITERATIONS
+        )
+        orjson_as_dataclass = as_dataclass
+    else:
+        raise NotImplementedError
+    relative = (
+        int(((as_dataclass - as_dict) / as_dataclass) * 100) if as_dataclass else None
+    )
+    if lib_name == "orjson":
+        compared_to_orjson = 1
+    elif as_dict:
+        compared_to_orjson = int(as_dataclass / orjson_as_dataclass)
+    else:
+        compared_to_orjson = None
+
+    table.append(
+        (
+            lib_name,
+            f"{as_dict:,.2f}" if as_dict else "",
+            f"{as_dataclass:,.2f}" if as_dataclass else "",
+            f"*{relative}%" if relative else "",
+            f"{compared_to_orjson:d}" if compared_to_orjson else "",
+        )
+    )
+buf.write(tabulate(table, headers, tablefmt="grid") + "\n")
+
+print(
+    buf.getvalue()
+    .replace("-", "")
+    .replace("*", "-")
+    .replace("=", "-")
+    .replace("+", "|")
+    .replace("||||||", "")
+    .replace("\n\n", "\n")
+)
+
+payload = len(orjson.dumps(objects_as_dataclass)) // 1024
+
+print(f"Payload of {payload}KiB")

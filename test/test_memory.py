@@ -44,6 +44,8 @@ DATACLASS_FIXTURE = [
     for i in range(100000, 101000)
 ]
 
+MAX_INCREASE = 1048576  # 1MiB
+
 
 class MemoryTests(unittest.TestCase):
     def test_memory_loads(self):
@@ -57,7 +59,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.loads(FIXTURE)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + 1024)
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
     def test_memory_dumps(self):
         """
@@ -71,7 +73,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + 1024)
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
     def test_memory_dumps_default(self):
         """
@@ -86,7 +88,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture, default=default)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + 1024)
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
     def test_memory_dumps_dataclass(self):
         """
@@ -99,7 +101,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(100):
             val = orjson.dumps(DATACLASS_FIXTURE)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + 1024 * 1024)
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
     def test_memory_loads_keys(self):
         """
@@ -115,4 +117,4 @@ class MemoryTests(unittest.TestCase):
         for _ in range(100):
             loaded = orjson.loads(val)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + 256 * 1024)
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)

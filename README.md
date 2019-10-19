@@ -13,24 +13,23 @@ library and 1.4x to 2x the standard library.
 
 Its features and drawbacks compared to other Python JSON libraries:
 
-* serializes `dataclass` instances significantly faster than the
-standard library
+* serializes `dataclass` instances 30x faster than other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
-a subset of ISO 8601
-* serializes to `bytes` rather than `str`
+e.g., `1970-01-01T00:00:00+00:00`
+* serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
 "\\\u597d"
 * serializes `float` 10x faster and deserializes twice as fast as other
 libraries
 * serializes arbitrary types using a `default` hook
-* does not support subclasses, requiring use of `default`
 * has strict UTF-8 conformance, more correct than the standard library
 * has strict JSON conformance in not supporting Nan/Infinity/-Infinity
 * has an option for strict JSON conformance on 53-bit integers with default
 support for 64-bit
+* does not support subclasses by default, requiring use of `default` hook
 * does not support pretty printing
 * does not support sorting `dict` by keys
-* does not provide `load()` or `dump()` functions for reading/writing from
+* does not provide `load()` or `dump()` functions for reading to/writing from
 file-like objects
 
 orjson supports CPython 3.6, 3.7, and 3.8. It distributes wheels for Linux,
@@ -49,8 +48,8 @@ submitted there.
  2. [Types](#types)
     1. [dataclass](#dataclass)
     2. [datetime](#datetime)
-    3. [int](#int)
-    4. [float](#float)
+    3. [float](#float)
+    4. [int](#int)
     5. [str](#str)
  3. [Testing](#testing)
  4. [Performance](#performance)
@@ -83,7 +82,11 @@ does not currently support musl libc.
 ### Serialize
 
 ```python
-def dumps(__obj: Any, default: Optional[Callable[[Any], Any]] = ..., option: Optional[int] = ...) -> bytes: ...
+def dumps(
+    __obj: Any,
+    default: Optional[Callable[[Any], Any]] = ...,
+    option: Optional[int] = ...,
+) -> bytes: ...
 ```
 
 `dumps()` serializes Python objects to JSON.
@@ -183,16 +186,39 @@ This is for compatibility with the standard library.
 
 ### dataclass
 
-orjson serializes instances of `dataclasses.dataclass` natively.
+orjson serializes instances of `dataclasses.dataclass` natively. It serializes
+instances 30x as fast as other libraries and avoids a severe slowdown seen
+in other libraries compared to serializing `dict`.
 
-`orjson.dumps()` serializes instances significantly faster than using
-`dataclasses.asdict()` with `json.dumps()`.
+| Library    | dict (ms)   | dataclass (ms)   | dataclass vs. dict   | vs. orjson   |
+|------------|-------------|------------------|----------------------|--------------|
+| orjson     | 0.10        | 0.19             | -46%                 | 1            |
+| ujson      |             |                  |                      |              |
+| rapidjson  | 0.24        | 6.48             | -96%                 | 33           |
+| simplejson | 1.06        | 7.94             | -86%                 | 40           |
+| json       | 0.92        | 7.32             | -87%                 | 37           |
+
+This measures serializing 277KiB of JSON generated from dataclass instances,
+orjson serializing natively and other libraries using `default` to serialize
+the output of `dataclasses.asdict()`. Validation and serialization
+frameworks that support dataclasses could be expected to have at best the
+same performance as this. This can be reproduced using the `pydataclass`
+script.
+
+orjson will serialize every attribute as specified. Users may wish
+to control how dataclass instances are serialized, e.g., to not serialize an
+attribute or to change the name of an attribute when serialized. orjson may
+implement support using the metadata mapping on `field` attributes,
+e.g., `field(metadata={"json_serialize": False})`. orjson does not currently
+implement this because use cases and interoperability with other
+libraries are not clear.
 
 ### datetime
 
 orjson serializes `datetime.datetime` objects to
-[RFC 3339](https://tools.ietf.org/html/rfc3339) format, a subset of
-ISO 8601.
+[RFC 3339](https://tools.ietf.org/html/rfc3339) format,
+e.g., `1970-01-01T00:00:00+00:00`. This is a subset of ISO 8601 and
+compatible with `isoformat()` in the standard library.
 
 `datetime.datetime` objects serialize with or without a `tzinfo`. For a full
  RFC 3339 representation, `tzinfo` must be present or `orjson.OPT_NAIVE_UTC`
@@ -259,25 +285,6 @@ It is faster to have orjson serialize datetime objects than to do so
 before calling `dumps()`. If using an unsupported type such as
 `pendulum.datetime`, use `default`.
 
-### int
-
-JSON only requires that implementations accept integers with 53-bit precision.
-orjson will, by default, serialize 64-bit integers. This is compatible with
-the Python standard library and other non-browser implementations. For
-transmitting JSON to a web browser or other strict implementations, `dumps()`
-can be configured to raise a `JSONEncodeError` on values exceeding the
-53-bit range.
-
-```python
->>> import orjson
->>> orjson.dumps(9007199254740992)
-b'9007199254740992'
->>> orjson.dumps(9007199254740992, option=orjson.OPT_STRICT_INTEGER)
-JSONEncodeError: Integer exceeds 53-bit range
->>> orjson.dumps(-9007199254740992, option=orjson.OPT_STRICT_INTEGER)
-JSONEncodeError: Integer exceeds 53-bit range
-```
-
 ### float
 
 orjson serializes and deserializes floats with no loss of precision and
@@ -298,6 +305,25 @@ OverflowError: Invalid Inf value when encoding double
 '[NaN,Infinity,-Infinity]'
 >>> json.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
 '[NaN, Infinity, -Infinity]'
+```
+
+### int
+
+JSON only requires that implementations accept integers with 53-bit precision.
+orjson will, by default, serialize 64-bit integers. This is compatible with
+the Python standard library and other non-browser implementations. For
+transmitting JSON to a web browser or other strict implementations, `dumps()`
+can be configured to raise a `JSONEncodeError` on values exceeding the
+53-bit range.
+
+```python
+>>> import orjson
+>>> orjson.dumps(9007199254740992)
+b'9007199254740992'
+>>> orjson.dumps(9007199254740992, option=orjson.OPT_STRICT_INTEGER)
+JSONEncodeError: Integer exceeds 53-bit range
+>>> orjson.dumps(-9007199254740992, option=orjson.OPT_STRICT_INTEGER)
+JSONEncodeError: Integer exceeds 53-bit range
 ```
 
 ### str

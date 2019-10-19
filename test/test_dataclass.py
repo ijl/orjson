@@ -37,11 +37,18 @@ class Dataclass3:
 class Dataclass4:
     a: str = field()
     b: int = field(metadata={"unrelated": False})
-    c: float
+    c: float = 1.1
 
 
 class Datasubclass(Dataclass1):
     number: float
+
+
+@dataclass
+class Slotsdataclass:
+    __slots__ = ("a", "b")
+    a: str
+    b: int
 
 
 class DataclassTests(unittest.TestCase):
@@ -96,9 +103,23 @@ class DataclassTests(unittest.TestCase):
         obj = Dataclass4("a", 1, 2.1)
         self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1,"c":2.1}')
 
+    def test_dataclass_classvar(self):
+        """
+        dumps() dataclass class variable
+        """
+        obj = Dataclass4("a", 1)
+        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1,"c":1.1}')
+
     def test_dataclass_subclass(self):
         """
         dumps() dataclass subclass
         """
         obj = Datasubclass("a", 1.0, None)
         self.assertEqual(orjson.dumps(obj), b'{"name":"a","number":1.0,"sub":null}')
+
+    def test_dataclass_slots(self):
+        """
+        dumps() dataclass with __slots__
+        """
+        obj = Slotsdataclass("a", 1)
+        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1}')
