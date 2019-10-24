@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.0 - 2019-10-24
+
+### Added
+
+- `orjson.dumps()` serializes `dataclasses.dataclass` instances if
+`option=orjson.OPT_SERIALIZE_DATACLASS` is specified.
+- `orjson.dumps()` accepts `orjson.OPT_UTC_Z` to serialize UTC as "Z" instead
+of "+00:00".
+- `orjson.dumps()` accepts `orjson.OPT_OMIT_MICROSECONDS` to not serialize
+the `microseconds` attribute of `datetime.datetime` and `datetime.time`
+instances.
+- `orjson.loads()` accepts `bytearray`.
+
+### Changed
+
+- Drop support for Python 3.5.
+- Publish `manylinux2010` wheels instead of `manylinux1`.
+
 ## 2.0.11 - 2019-10-01
 
 ### Changed
