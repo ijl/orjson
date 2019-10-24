@@ -15,7 +15,7 @@ Its features and drawbacks compared to other Python JSON libraries:
 
 * serializes `dataclass` instances 30x faster than other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
-e.g., `1970-01-01T00:00:00+00:00`
+e.g., "1970-01-01T00:00:00+00:00"
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
 "\\\u597d"
@@ -125,6 +125,8 @@ is raised.
 
 `dumps()` accepts options via an `option` keyword argument. These include:
 
+- `orjson.OPT_SERIALIZE_DATACLASS` to serialize `dataclasses.dataclass`
+instances.
 - `orjson.OPT_NAIVE_UTC` for assuming `datetime.datetime` objects without a
 `tzinfo` are UTC.
 - `orjson.OPT_OMIT_MICROSECONDS` to not serialize the `microseconds` field
@@ -188,7 +190,14 @@ This is for compatibility with the standard library.
 
 orjson serializes instances of `dataclasses.dataclass` natively. It serializes
 instances 30x as fast as other libraries and avoids a severe slowdown seen
-in other libraries compared to serializing `dict`.
+in other libraries compared to serializing `dict`. To serialize
+instances, specify `option=orjson.OPT_SERIALIZE_DATACLASS`. The option
+is required so that users may continue to use `default` until the
+implementation allows customizing instances' serialization.
+
+It is supported to pass all variants of dataclasses, including dataclasses
+using `__slots__` (which yields a modest performance improvement), frozen
+dataclasses, those with optional or default attributes, and subclasses.
 
 | Library    | dict (ms)   | dataclass (ms)   | dataclass vs. dict   | vs. orjson   |
 |------------|-------------|------------------|----------------------|--------------|
@@ -198,26 +207,44 @@ in other libraries compared to serializing `dict`.
 | simplejson | 1.06        | 7.94             | -86%                 | 40           |
 | json       | 0.92        | 7.32             | -87%                 | 37           |
 
-This measures serializing 277KiB of JSON generated from dataclass instances,
-orjson serializing natively and other libraries using `default` to serialize
-the output of `dataclasses.asdict()`. Validation and serialization
-frameworks that support dataclasses could be expected to have at best the
-same performance as this. This can be reproduced using the `pydataclass`
-script.
+This measures orjson serializing instances natively and other libraries using
+`default` to serialize the output of `dataclasses.asdict()`. This can be
+reproduced using the `pydataclass` script.
 
-orjson will serialize every attribute as specified. Users may wish
-to control how dataclass instances are serialized, e.g., to not serialize an
-attribute or to change the name of an attribute when serialized. orjson may
-implement support using the metadata mapping on `field` attributes,
-e.g., `field(metadata={"json_serialize": False})`. orjson does not currently
-implement this because use cases and interoperability with other
-libraries are not clear.
+Dataclasses are serialized as maps, with every attribute serialized and in
+the order given on class definition:
+
+```python
+>>> import dataclasses, orjson, typing
+
+@dataclasses.dataclass
+class Member:
+    id: int
+    active: bool = dataclasses.field(default=False)
+
+@dataclasses.dataclass
+class Object:
+    id: int
+    name: str
+    members: typing.List[Member]
+
+>>> orjson.dumps(
+        Object(1, "a", [Member(1, True), Member(2)]),
+        option=orjson.OPT_SERIALIZE_DATACLASS,
+    )
+b'{"id":1,"name":"a","members":[{"id":1,"active":true},{"id":2,"active":false}]}'
+```
+Users may wish to control how dataclass instances are serialized, e.g.,
+to not serialize an attribute or to change the name of an
+attribute when serialized. orjson may implement support using the
+metadata mapping on `field` attributes,
+e.g., `field(metadata={"json_serialize": False})`, if use cases are clear.
 
 ### datetime
 
 orjson serializes `datetime.datetime` objects to
 [RFC 3339](https://tools.ietf.org/html/rfc3339) format,
-e.g., `1970-01-01T00:00:00+00:00`. This is a subset of ISO 8601 and
+e.g., "1970-01-01T00:00:00+00:00". This is a subset of ISO 8601 and
 compatible with `isoformat()` in the standard library.
 
 `datetime.datetime` objects serialize with or without a `tzinfo`. For a full

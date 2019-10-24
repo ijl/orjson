@@ -18,6 +18,12 @@ mod encode;
 mod exc;
 mod typeref;
 
+const MAX_OPT: i8 = (encode::STRICT_INTEGER
+    | datetime::NAIVE_UTC
+    | datetime::OMIT_MICROSECONDS
+    | datetime::UTC_Z
+    | encode::SERIALIZE_DATACLASS) as i8;
+
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     typeref::init_typerefs();
@@ -49,6 +55,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
     m.add("OPT_UTC_Z", datetime::UTC_Z)?;
+    m.add("OPT_SERIALIZE_DATACLASS", encode::SERIALIZE_DATACLASS)?;
 
     Ok(())
 }
@@ -94,7 +101,7 @@ pub fn dumps(
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
             optsbits = ffi!(PyLong_AsLong(optsptr)) as i8;
-            if optsbits <= 0 || optsbits > encode::MAX_OPT {
+            if optsbits <= 0 || optsbits > MAX_OPT {
                 // -1
                 return Err(exc::JSONEncodeError::py_err("Invalid opts"));
             }

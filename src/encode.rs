@@ -16,8 +16,7 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const STRICT_INTEGER: u8 = 1;
-
-pub const MAX_OPT: i8 = (STRICT_INTEGER | NAIVE_UTC | OMIT_MICROSECONDS | UTC_Z) as i8;
+pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
 
 macro_rules! obj_name {
     ($obj:ident) => {
@@ -146,30 +145,29 @@ impl<'p> Serialize for SerializePyObject {
             serializer.serialize_unit()
         } else if is_type!(obj_ptr, FLOAT_PTR) {
             serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
-        } else {
-            if is_type!(obj_ptr, TUPLE_PTR) {
-                let len = ffi!(PyTuple_GET_SIZE(self.ptr)) as usize;
-                if len != 0 {
-                    let mut seq = serializer.serialize_seq(Some(len))?;
-                    let mut i = 0;
-                    while i < len {
-                        let elem = ffi!(PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
-                        i += 1;
-                        seq.serialize_element(&SerializePyObject {
-                            ptr: elem,
-                            default: self.default,
-                            opts: self.opts,
-                            default_calls: self.default_calls,
-                            recursion: self.recursion,
-                        })?
-                    }
-                    seq.end()
-                } else {
-                    serializer.serialize_seq(None).unwrap().end()
+        } else if is_type!(obj_ptr, TUPLE_PTR) {
+            let len = ffi!(PyTuple_GET_SIZE(self.ptr)) as usize;
+            if len != 0 {
+                let mut seq = serializer.serialize_seq(Some(len))?;
+                let mut i = 0;
+                while i < len {
+                    let elem = ffi!(PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
+                    i += 1;
+                    seq.serialize_element(&SerializePyObject {
+                        ptr: elem,
+                        default: self.default,
+                        opts: self.opts,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion,
+                    })?
                 }
-            } else if is_type!(obj_ptr, DATETIME_PTR) {
-                let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-                match write_datetime(self.ptr, self.opts, &mut dt) {
+                seq.end()
+            } else {
+                serializer.serialize_seq(None).unwrap().end()
+            }
+        } else if is_type!(obj_ptr, DATETIME_PTR) {
+            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+            match write_datetime(self.ptr, self.opts, &mut dt) {
                     Ok(_) => serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len())),
                     Err(DatetimeError::Offset) => {
                     err!("datetime does not support timezones with offsets that are not even minutes")
@@ -178,18 +176,21 @@ impl<'p> Serialize for SerializePyObject {
                     err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
                     }
                 }
-            } else if is_type!(obj_ptr, DATE_PTR) {
-                let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-                write_date(self.ptr, &mut dt);
-                serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
-            } else if is_type!(obj_ptr, TIME_PTR) {
-                if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
-                    err!("datetime.time must not have tzinfo set")
-                }
-                let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-                write_time(self.ptr, self.opts, &mut dt);
-                serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
-            } else if ffi!(PyObject_HasAttr(self.ptr, DATACLASS_FIELDS_STR)) == 1 {
+        } else if is_type!(obj_ptr, DATE_PTR) {
+            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+            write_date(self.ptr, &mut dt);
+            serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+        } else if is_type!(obj_ptr, TIME_PTR) {
+            if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
+                err!("datetime.time must not have tzinfo set")
+            }
+            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+            write_time(self.ptr, self.opts, &mut dt);
+            serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+        } else {
+            if self.opts & SERIALIZE_DATACLASS == SERIALIZE_DATACLASS
+                && ffi!(PyObject_HasAttr(self.ptr, DATACLASS_FIELDS_STR)) == 1
+            {
                 let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
                 ffi!(Py_DECREF(fields));
                 let mut map = serializer.serialize_map(None).unwrap();

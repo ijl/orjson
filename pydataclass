@@ -86,7 +86,10 @@ for lib_name in LIBRARIES:
     elif lib_name == "orjson":
         as_dict = timeit(lambda: orjson.dumps(objects_as_dict), number=ITERATIONS)
         as_dataclass = timeit(
-            lambda: orjson.dumps(objects_as_dataclass), number=ITERATIONS
+            lambda: orjson.dumps(
+                objects_as_dataclass, None, orjson.OPT_SERIALIZE_DATACLASS
+            ),
+            number=ITERATIONS,
         )
         orjson_as_dataclass = as_dataclass
     else:
@@ -121,7 +124,3 @@ print(
     .replace("||||||", "")
     .replace("\n\n", "\n")
 )
-
-payload = len(orjson.dumps(objects_as_dataclass)) // 1024
-
-print(f"Payload of {payload}KiB")

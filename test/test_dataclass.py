@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import unittest
+import uuid
 import pytest
 import sys
 
@@ -51,13 +52,28 @@ class Slotsdataclass:
     b: int
 
 
+@dataclass
+class Defaultdataclass:
+    a: uuid.UUID
+
+
 class DataclassTests(unittest.TestCase):
+    def test_dataclass_error(self):
+        """
+        dumps() dataclass error without option
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(Dataclass1("a", 1, None))
+
     def test_dataclass(self):
         """
         dumps() dataclass
         """
         obj = Dataclass1("a", 1, None)
-        self.assertEqual(orjson.dumps(obj), b'{"name":"a","number":1,"sub":null}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"name":"a","number":1,"sub":null}',
+        )
 
     def test_dataclass_recursive(self):
         """
@@ -65,7 +81,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass1("a", 1, Dataclass1("b", 2, None))
         self.assertEqual(
-            orjson.dumps(obj),
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
             b'{"name":"a","number":1,"sub":{"name":"b","number":2,"sub":null}}',
         )
 
@@ -84,7 +100,9 @@ class DataclassTests(unittest.TestCase):
         dumps() dataclass default
         """
         obj = Dataclass2()
-        self.assertEqual(orjson.dumps(obj), b'{"name":"?"}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS), b'{"name":"?"}'
+        )
 
     def test_dataclass_types(self):
         """
@@ -92,7 +110,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass3("a", 1, {"a": "b"}, True, 1.1, [1, 2], (3, 4))
         self.assertEqual(
-            orjson.dumps(obj),
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
             b'{"a":"a","b":1,"c":{"a":"b"},"d":true,"e":1.1,"f":[1,2],"g":[3,4]}',
         )
 
@@ -101,25 +119,51 @@ class DataclassTests(unittest.TestCase):
         dumps() dataclass metadata
         """
         obj = Dataclass4("a", 1, 2.1)
-        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1,"c":2.1}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"a":"a","b":1,"c":2.1}',
+        )
 
     def test_dataclass_classvar(self):
         """
         dumps() dataclass class variable
         """
         obj = Dataclass4("a", 1)
-        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1,"c":1.1}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"a":"a","b":1,"c":1.1}',
+        )
 
     def test_dataclass_subclass(self):
         """
         dumps() dataclass subclass
         """
         obj = Datasubclass("a", 1.0, None)
-        self.assertEqual(orjson.dumps(obj), b'{"name":"a","number":1.0,"sub":null}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"name":"a","number":1.0,"sub":null}',
+        )
 
     def test_dataclass_slots(self):
         """
         dumps() dataclass with __slots__
         """
         obj = Slotsdataclass("a", 1)
-        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1}')
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS), b'{"a":"a","b":1}'
+        )
+
+    def test_dataclass_default(self):
+        """
+        dumps() dataclass with default
+        """
+
+        def default(__obj):
+            if isinstance(__obj, uuid.UUID):
+                return str(__obj)
+
+        obj = Defaultdataclass(uuid.UUID("808989c0-00d5-48a8-b5c4-c804bf9032f2"))
+        self.assertEqual(
+            orjson.dumps(obj, default=default, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"a":"808989c0-00d5-48a8-b5c4-c804bf9032f2"}',
+        )
