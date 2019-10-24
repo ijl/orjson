@@ -2,7 +2,7 @@
 name = "orjson"
 version = "2.0.11"
 authors = ["ijl <ijl@mailbox.org>"]
-description = "Fast, correct Python JSON library"
+description = "Fast, correct Python JSON library supporting dataclasses and datetimes"
 edition = "2018"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
@@ -28,6 +28,7 @@ name = "orjson"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
+requires-python = ">=3.6"
 classifier = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
