@@ -5,7 +5,7 @@ parameters:
   target: ''
 
 steps:
-- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
   displayName: rustup
 - bash: PATH=$(path) rustup default nightly
   displayName: ensure nightly

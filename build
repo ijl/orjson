@@ -4,6 +4,6 @@ rm -f target/wheels/*
 
 export RUSTFLAGS="-C target-feature=+sse2 $RUSTFLAGS"
 
-maturin build --no-sdist --manylinux 2010 -i python3 --release "$@"
+maturin build --no-sdist --manylinux 1 -i python3 --release "$@"
 
 pip install --force $(find target/wheels -name "*cp3*")
