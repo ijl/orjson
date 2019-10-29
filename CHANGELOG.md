@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1 - 2019-10-29
+
+### Changed
+
+- Publish `manylinux1` wheels instead of `manylinux2010`.
+
 ## 2.1.0 - 2019-10-24
 
 ### Added
