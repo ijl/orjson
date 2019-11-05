@@ -15,6 +15,8 @@ use std::ptr::NonNull;
 const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
+const RECURSION_LIMIT: u8 = 255;
+
 pub const STRICT_INTEGER: u8 = 1;
 pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
 
@@ -93,7 +95,7 @@ impl<'p> Serialize for SerializePyObject {
                 let mut seq = serializer.serialize_seq(Some(len))?;
                 let mut i = 0;
                 while i < len {
-                    if unlikely!(self.recursion == 255) {
+                    if unlikely!(self.recursion == RECURSION_LIMIT) {
                         err!("Recursion limit reached")
                     }
                     let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
@@ -117,7 +119,7 @@ impl<'p> Serialize for SerializePyObject {
             let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
-                if unlikely!(self.recursion == 255) {
+                if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!("Recursion limit reached")
                 }
                 if unlikely!((*key).ob_type != STR_PTR) {
@@ -201,7 +203,7 @@ impl<'p> Serialize for SerializePyObject {
                 while unsafe {
                     pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
                 } {
-                    if unlikely!(self.recursion == 255) {
+                    if unlikely!(self.recursion == RECURSION_LIMIT) {
                         err!("Recursion limit reached")
                     }
                     let data = ffi!(PyUnicode_AsUTF8AndSize(attr, &mut str_size)) as *const u8;
@@ -224,38 +226,37 @@ impl<'p> Serialize for SerializePyObject {
                 }
                 map.end()
             } else if self.default.is_some() {
-                if self.default_calls > 5 {
+                if unlikely!(self.default_calls == RECURSION_LIMIT) {
                     err!("default serializer exceeds recursion limit")
-                } else {
-                    let default_obj = unsafe {
-                        pyo3::ffi::PyObject_CallFunctionObjArgs(
-                            self.default.unwrap().as_ptr(),
-                            self.ptr,
-                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                        )
-                    };
-                    if !default_obj.is_null() {
-                        let res = SerializePyObject {
-                            ptr: default_obj,
-                            default: self.default,
-                            opts: self.opts,
-                            default_calls: self.default_calls + 1,
-                            recursion: self.recursion,
-                        }
-                        .serialize(serializer);
-                        ffi!(Py_DECREF(default_obj));
-                        res
-                    } else if !ffi!(PyErr_Occurred()).is_null() {
-                        err!(format_args!(
-                            "Type raised exception in default function: {}",
-                            obj_name!(obj_ptr)
-                        ))
-                    } else {
-                        err!(format_args!(
-                            "Type is not JSON serializable: {}",
-                            obj_name!(obj_ptr)
-                        ))
+                }
+                let default_obj = unsafe {
+                    pyo3::ffi::PyObject_CallFunctionObjArgs(
+                        self.default.unwrap().as_ptr(),
+                        self.ptr,
+                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
+                    )
+                };
+                if !default_obj.is_null() {
+                    let res = SerializePyObject {
+                        ptr: default_obj,
+                        default: self.default,
+                        opts: self.opts,
+                        default_calls: self.default_calls + 1,
+                        recursion: self.recursion,
                     }
+                    .serialize(serializer);
+                    ffi!(Py_DECREF(default_obj));
+                    res
+                } else if !ffi!(PyErr_Occurred()).is_null() {
+                    err!(format_args!(
+                        "Type raised exception in default function: {}",
+                        obj_name!(obj_ptr)
+                    ))
+                } else {
+                    err!(format_args!(
+                        "Type is not JSON serializable: {}",
+                        obj_name!(obj_ptr)
+                    ))
                 }
             } else {
                 err!(format_args!(

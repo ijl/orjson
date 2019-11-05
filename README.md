@@ -29,7 +29,7 @@ support for 64-bit
 * does not support subclasses by default, requiring use of `default` hook
 * does not support pretty printing
 * does not support sorting `dict` by keys
-* does not provide `load()` or `dump()` functions for reading to/writing from
+* does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
 orjson supports CPython 3.6, 3.7, and 3.8. It distributes wheels for Linux,
@@ -120,7 +120,7 @@ no exception was raised, it falls through to raising `JSONEncodeError` on an
 unsupported type.
 
 The `default` callable may return an object that itself
-must be handled by `default` up to five levels deep before an exception
+must be handled by `default` up to 254 times before an exception
 is raised.
 
 `dumps()` accepts options via an `option` keyword argument. These include:

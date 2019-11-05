@@ -158,7 +158,7 @@ class TypeTests(unittest.TestCase):
         """
         dumps() default recursion limit
         """
-        self.assertEqual(orjson.dumps(Recursive(5), default=default), b"0")
+        self.assertEqual(orjson.dumps(Recursive(254), default=default), b"0")
 
     def test_default_recursion_reset(self):
         """
@@ -166,7 +166,8 @@ class TypeTests(unittest.TestCase):
         """
         self.assertEqual(
             orjson.dumps(
-                [Recursive(5), {"a": "b"}, Recursive(5), Recursive(5)], default=default
+                [Recursive(254), {"a": "b"}, Recursive(254), Recursive(254)],
+                default=default,
             ),
             b'[0,{"a":"b"},0,0]',
         )
