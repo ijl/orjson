@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.2 - 2019-11-07
+
+### Changed
+
+- The recursion limit of `default` on `orjson.dumps()` has been increased from
+5 to 254.
+
 ## 2.1.1 - 2019-10-29
 
 ### Changed

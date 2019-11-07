@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "orjson"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "associative-cache 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding_rs 0.8.20 (registry+https://github.com/rust-lang/crates.io-index)",
