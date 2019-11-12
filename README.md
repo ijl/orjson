@@ -150,7 +150,7 @@ with `OPT_STRICT_INTEGER`, 53 bits.
 It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
 
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
-`default` more than five levels deep.
+`default` more than 254 levels deep.
 
 It raises `JSONEncodeError` on circular references.
 

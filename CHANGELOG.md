@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.3 - 2019-11-12
+
+### Changed
+
+- Publish Python 3.8 wheels for macOS and Windows.
+
 ## 2.1.2 - 2019-11-07
 
 ### Changed
