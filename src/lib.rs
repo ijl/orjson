@@ -2,6 +2,7 @@
 
 #![feature(core_intrinsics)]
 #![feature(const_fn)]
+#![allow(unused_unsafe)]
 
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
