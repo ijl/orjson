@@ -3,6 +3,7 @@
 import datetime
 import json
 import unittest
+import inspect
 
 import orjson
 
@@ -101,3 +102,17 @@ class ApiTests(unittest.TestCase):
             ),
             b'[1,"2000-01-01T02:03:04+00:00"]',
         )
+
+    def test_dumps_signature(self):
+        """
+        dumps() valid __text_signature__
+        """
+        self.assertEqual(
+            str(inspect.signature(orjson.dumps)), "(obj, /, default, option)"
+        )
+
+    def test_loads_signature(self):
+        """
+        loads() valid __text_signature__
+        """
+        self.assertEqual(str(inspect.signature(orjson.loads)), "(obj, /)")

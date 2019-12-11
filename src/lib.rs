@@ -37,7 +37,8 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
         ml_name: "loads\0".as_ptr() as *const c_char,
         ml_meth: Some(loads),
         ml_flags: pyo3::ffi::METH_O,
-        ml_doc: std::ptr::null(),
+        ml_doc: "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0".as_ptr()
+            as *const c_char,
     };
     unsafe {
         pyo3::ffi::PyModule_AddObject(
@@ -61,10 +62,6 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-/// loads(obj, /)
-/// --
-///
-/// Deserialize JSON to Python objects.
 pub unsafe extern "C" fn loads(
     _self: *mut pyo3::ffi::PyObject,
     obj: *mut pyo3::ffi::PyObject,
