@@ -171,9 +171,6 @@ impl<'p> Serialize for SerializePyObject {
             let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
             match write_datetime(self.ptr, self.opts, &mut dt) {
                     Ok(_) => serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len())),
-                    Err(DatetimeError::Offset) => {
-                    err!("datetime does not support timezones with offsets that are not even minutes")
-                    }
                     Err(DatetimeError::Library) => {
                     err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
                     }

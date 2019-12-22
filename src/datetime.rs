@@ -41,7 +41,6 @@ macro_rules! write_microsecond {
 }
 
 pub enum DatetimeError {
-    Offset,
     Library,
 }
 
@@ -69,13 +68,9 @@ pub fn write_datetime(
                         std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
                     )
                 };
-                // test_datetime_partial_second_pendulum_not_supported
-                if offset.is_null() {
-                    return Err(DatetimeError::Offset);
-                }
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
-            } else if unsafe { pyo3::ffi::PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR) == 1 } {
+            } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
                 // pytz
                 let offset = unsafe {
                     pyo3::ffi::PyObject_CallMethodObjArgs(
