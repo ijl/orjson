@@ -13,6 +13,9 @@ STR_CACHE = {}
 OBJ_CACHE = {}
 
 
+os.sched_setaffinity(os.getpid(), {0, 1})
+
+
 def read_fixture_str(filename):
     if not filename in STR_CACHE:
         path = Path(dirname, filename)

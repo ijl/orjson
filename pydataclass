@@ -4,6 +4,7 @@
 import dataclasses
 import io
 import json
+import os
 from timeit import timeit
 from typing import List
 
@@ -11,6 +12,10 @@ import orjson
 import rapidjson
 import simplejson
 from tabulate import tabulate
+
+
+os.sched_setaffinity(os.getpid(), {0, 1})
+
 
 buf = io.StringIO()
 
