@@ -6,9 +6,15 @@ import pytest
 import sys
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Optional
 
 import orjson
+
+
+class AnEnum(Enum):
+    ONE = 1
+    TWO = 2
 
 
 @dataclass
@@ -55,6 +61,7 @@ class Slotsdataclass:
 @dataclass
 class Defaultdataclass:
     a: uuid.UUID
+    b: AnEnum
 
 
 class DataclassTests(unittest.TestCase):
@@ -161,9 +168,13 @@ class DataclassTests(unittest.TestCase):
         def default(__obj):
             if isinstance(__obj, uuid.UUID):
                 return str(__obj)
+            elif isinstance(__obj, Enum):
+                return __obj.value
 
-        obj = Defaultdataclass(uuid.UUID("808989c0-00d5-48a8-b5c4-c804bf9032f2"))
+        obj = Defaultdataclass(
+            uuid.UUID("808989c0-00d5-48a8-b5c4-c804bf9032f2"), AnEnum.ONE
+        )
         self.assertEqual(
             orjson.dumps(obj, default=default, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"a":"808989c0-00d5-48a8-b5c4-c804bf9032f2"}',
+            b'{"a":"808989c0-00d5-48a8-b5c4-c804bf9032f2","b":1}',
         )
