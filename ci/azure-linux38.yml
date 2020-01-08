@@ -9,7 +9,7 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default nightly
   displayName: ensure nightly
-- bash: PATH=$(path) pip install --user --upgrade pip wheel maturin mypy twine
+- bash: PATH=$(path) pip install --user --upgrade pip wheel maturin twine
   displayName: build dependencies
 - bash: PATH=$(path) pip install --user -r test/requirements.txt
   displayName: test dependencies
@@ -19,10 +19,8 @@ steps:
   displayName: build
 - bash: PATH=$(path) pip install --user target/wheels/orjson*.whl
   displayName: install
-- bash: PATH=$(path) pytest -vrxXs test
+- bash: PATH=$(path) pytest -s -rxX -v test
   displayName: pytest
-- bash: PATH=$(path) mypy ./orjson.pyi
-  displayName: mypy
 - bash: PATH=$(path) ./integration/run thread
   displayName: thread
 - bash: PATH=$(path) ./deploy target/wheels/*.whl

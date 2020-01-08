@@ -20,7 +20,7 @@ steps:
   displayName: build
 - script: python.exe -m pip install orjson --find-links=D:\a\1\s\target\wheels\
   displayName: install
-- script: python.exe -m pytest -vrxXs test
+- script: python.exe -m pytest -s -rxX -v test
   displayName: pytest
 - script: python.exe integration\thread
   displayName: thread

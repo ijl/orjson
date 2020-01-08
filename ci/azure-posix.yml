@@ -4,7 +4,7 @@ parameters:
   target: ''
 
 steps:
-- bash: pip install --upgrade pip wheel maturin mypy twine
+- bash: pip install --upgrade pip wheel maturin twine
   displayName: build dependencies
 - bash: pip install -r test/requirements.txt
   displayName: test dependencies
@@ -14,10 +14,8 @@ steps:
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
-- bash: pytest -vrxXs test
+- bash: pytest -s -rxX -v test
   displayName: pytest
-- bash: mypy ./orjson.pyi
-  displayName: mypy
 - bash: ./integration/run thread
   displayName: thread
 - bash: ./integration/run gunicorn
