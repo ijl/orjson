@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.4 - 2020-01-08
+
+### Fixed
+
+- Specify a text signature for `orjson.loads()`.
+
+### Changed
+
+- Improve documentation.
+
 ## 2.1.3 - 2019-11-12
 
 ### Changed

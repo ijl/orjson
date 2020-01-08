@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "orjson"
-version = "2.1.3"
+version = "2.1.4"
 dependencies = [
  "associative-cache",
  "encoding_rs",
