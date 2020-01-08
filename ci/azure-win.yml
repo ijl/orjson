@@ -16,7 +16,7 @@ steps:
   displayName: test dependencies
 - script: maturin.exe build --release --strip --interpreter $(interpreter)
   env:
-    RUSTFLAGS: "-C target-feature=+sse2"
+    RUSTFLAGS: "-Zmutable-noalias -C target-feature=+sse2"
   displayName: build
 - script: python.exe -m pip install orjson --find-links=D:\a\1\s\target\wheels\
   displayName: install

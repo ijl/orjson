@@ -10,7 +10,7 @@ steps:
   displayName: test dependencies
 - bash: pip install -r integration/requirements.txt
   displayName: integration dependencies
-- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-C target-feature=+sse2" maturin build --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
+- bash: PATH=$HOME/.cargo/bin:$PATH RUSTFLAGS="-Zmutable-noalias -C target-feature=+sse2" maturin build --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install

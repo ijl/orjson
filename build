@@ -2,7 +2,7 @@
 
 rm -f target/wheels/*
 
-export RUSTFLAGS="-C target-feature=+sse2 $RUSTFLAGS"
+export RUSTFLAGS="-Zmutable-noalias -C target-feature=+sse2 $RUSTFLAGS"
 
 maturin build --no-sdist --manylinux 1 -i python3 --release "$@"
 
