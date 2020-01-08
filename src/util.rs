@@ -21,9 +21,11 @@ macro_rules! str_from_slice {
 macro_rules! str_to_pyobject {
     ($obj:expr) => {
         unsafe {
-            pyo3::ffi::PyUnicode_FromStringAndSize(
+            pyo3::ffi::PyUnicode_DecodeUTF8Stateful(
                 $obj.as_ptr() as *const c_char,
                 $obj.len() as pyo3::ffi::Py_ssize_t,
+                "ignore\0".as_ptr() as *const c_char,
+                std::ptr::null_mut(),
             )
         };
     };
