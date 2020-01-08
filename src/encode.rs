@@ -125,20 +125,20 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!((*key).ob_type != STR_PTR) {
                     err!("Dict key must be str")
                 }
-                let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
-                if unlikely!(data.is_null()) {
-                    err!(INVALID_STR)
+                {
+                    let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
+                    if unlikely!(data.is_null()) {
+                        err!(INVALID_STR)
+                    }
+                    map.serialize_key(str_from_slice!(data, str_size)).unwrap();
                 }
-                map.serialize_entry(
-                    str_from_slice!(data, str_size),
-                    &SerializePyObject {
-                        ptr: value,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    },
-                )?;
+                map.serialize_value(&SerializePyObject {
+                    ptr: value,
+                    default: self.default,
+                    opts: self.opts,
+                    default_calls: self.default_calls,
+                    recursion: self.recursion + 1,
+                })?;
             }
             map.end()
         } else if is_type!(obj_ptr, BOOL_PTR) {
@@ -203,23 +203,24 @@ impl<'p> Serialize for SerializePyObject {
                     if unlikely!(self.recursion == RECURSION_LIMIT) {
                         err!("Recursion limit reached")
                     }
-                    let data = ffi!(PyUnicode_AsUTF8AndSize(attr, &mut str_size)) as *const u8;
-                    if unlikely!(data.is_null()) {
-                        err!(INVALID_STR);
+                    {
+                        let data = ffi!(PyUnicode_AsUTF8AndSize(attr, &mut str_size)) as *const u8;
+                        if unlikely!(data.is_null()) {
+                            err!(INVALID_STR);
+                        }
+                        map.serialize_key(str_from_slice!(data, str_size)).unwrap();
                     }
+
                     let value = ffi!(PyObject_GetAttr(self.ptr, attr));
                     ffi!(Py_DECREF(value));
 
-                    map.serialize_entry(
-                        str_from_slice!(data, str_size),
-                        &SerializePyObject {
-                            ptr: value,
-                            default: self.default,
-                            opts: self.opts,
-                            default_calls: self.default_calls,
-                            recursion: self.recursion + 1,
-                        },
-                    )?;
+                    map.serialize_value(&SerializePyObject {
+                        ptr: value,
+                        default: self.default,
+                        opts: self.opts,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion + 1,
+                    })?;
                 }
                 map.end()
             } else if self.default.is_some() {
