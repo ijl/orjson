@@ -41,21 +41,24 @@ repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
 submitted there.
 
- 1. [Usage](#usage)
+1. [Usage](#usage)
     1. [Install](#install)
     2. [Serialize](#serialize)
+        1. [default](#default)
+        2. [option](#option)
     3. [Deserialize](#deserialize)
- 2. [Types](#types)
+2. [Types](#types)
     1. [dataclass](#dataclass)
     2. [datetime](#datetime)
     3. [float](#float)
     4. [int](#int)
     5. [str](#str)
- 3. [Testing](#testing)
- 4. [Performance](#performance)
+3. [Testing](#testing)
+4. [Performance](#performance)
     1. [Latency](#latency)
     2. [Memory](#memory)
     3. [Reproducing](#reproducing)
+5. [License](#license)
 
 ## Usage
 
@@ -99,6 +102,28 @@ arbitrary types through `default`. It does not serialize subclasses of
 supported types natively, with the exception of `dataclasses.dataclass`
 subclasses.
 
+It raises `JSONEncodeError` on an unsupported type. This exception message
+describes the invalid object.
+
+It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
+
+It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
+with `OPT_STRICT_INTEGER`, 53 bits.
+
+It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
+
+It raises `JSONEncodeError` if the output of `default` recurses to handling by
+`default` more than 254 levels deep.
+
+It raises `JSONEncodeError` on circular references.
+
+It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
+
+`JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
+with the standard library.
+
+#### default
+
 To serialize a subclass or arbitrary types, specify `default` as a
 callable that returns a supported type. `default` may be a function,
 lambda, or callable class instance.
@@ -123,42 +148,75 @@ The `default` callable may return an object that itself
 must be handled by `default` up to 254 times before an exception
 is raised.
 
-`dumps()` accepts options via an `option` keyword argument. These include:
+#### option
 
-- `orjson.OPT_NAIVE_UTC` for assuming `datetime.datetime` objects without a
-`tzinfo` are UTC.
-- `orjson.OPT_OMIT_MICROSECONDS` to not serialize the `microseconds` field
-on `datetime.datetime` and `datetime.time` instances.
-- `orjson.OPT_SERIALIZE_DATACLASS` to serialize `dataclasses.dataclass`
-instances.
-- `orjson.OPT_STRICT_INTEGER` for enforcing a 53-bit limit on integers. The
-limit is otherwise 64 bits, the same as the Python standard library.
-- `orjson.OPT_UTC_Z` to serialize a UTC timezone on `datetime.datetime`
-instances as `Z` instead of `+00:00`.
-
-To specify multiple options, mask them together, e.g.,
+To modify how data is serialized, specify `option`. Each `option` is an integer
+constant in `orjson`. To specify multiple options, mask them together, e.g.,
 `option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
 
-It raises `JSONEncodeError` on an unsupported type. This exception message
-describes the invalid object.
+##### OPT_NAIVE_UTC
 
-It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
+Serialize `datetime.datetime` objects without a `tzinfo` as UTC. This
+has no effect on `datetime.datetime` objects that have `tzinfo` set.
 
-It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
-with `OPT_STRICT_INTEGER`, 53 bits.
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0),
+    )
+b'"1970-01-01T00:00:00"'
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0),
+        option=orjson.OPT_NAIVE_UTC,
+    )
+b'"1970-01-01T00:00:00+00:00"'
+```
 
-It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
+##### OPT_OMIT_MICROSECONDS
 
-It raises `JSONEncodeError` if the output of `default` recurses to handling by
-`default` more than 254 levels deep.
+Do not serialize the `microsecond` field on `datetime.datetime` and
+`datetime.time` instances.
 
-It raises `JSONEncodeError` on circular references.
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
+    )
+b'"1970-01-01T00:00:00.000001"'
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
+        option=orjson.OPT_OMIT_MICROSECONDS,
+    )
+b'"1970-01-01T00:00:00"'
+```
 
-It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
+##### OPT_SERIALIZE_DATACLASS
 
-`JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
-with the standard library.
+Serialize `dataclasses.dataclass` instances. For more, see
+[dataclass](#dataclass).
 
+##### OPT_STRICT_INTEGER
+
+Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
+the Python standard library. For more, see [int](#int).
+
+##### OPT_UTC_Z
+
+Serialize a UTC timezone on `datetime.datetime` instances as `Z` instead
+of `+00:00`.
+
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+    )
+b'"1970-01-01T00:00:00+00:00"'
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        option=orjson.OPT_UTC_Z
+    )
+b'"1970-01-01T00:00:00Z"'
+```
 
 ### Deserialize
 
@@ -247,16 +305,6 @@ orjson serializes `datetime.datetime` objects to
 e.g., "1970-01-01T00:00:00+00:00". This is a subset of ISO 8601 and
 compatible with `isoformat()` in the standard library.
 
-`datetime.datetime` objects serialize with or without a `tzinfo`. For a full
- RFC 3339 representation, `tzinfo` must be present or `orjson.OPT_NAIVE_UTC`
- must be specified (e.g., for timestamps stored in a database in UTC and
- deserialized by the database adapter without a `tzinfo`). If a
- `tzinfo` is not present, a timezone offset is not serialized.
-
-`tzinfo`, if specified, must be a timezone object that is either
-`datetime.timezone.utc` or from the `pendulum`, `pytz`, or
-`dateutil`/`arrow` libraries.
-
 ```python
 >>> import orjson, datetime, pendulum
 >>> orjson.dumps(
@@ -273,22 +321,9 @@ b'"2100-09-01T21:55:02+00:00"'
 b'"2100-09-01T21:55:02"'
 ```
 
-`orjson.OPT_NAIVE_UTC`, if specified, only applies to objects that do not have
-a `tzinfo`.
-
-```python
->>> import orjson, datetime, pendulum
->>> orjson.dumps(
-    datetime.datetime.fromtimestamp(4123518902),
-    option=orjson.OPT_NAIVE_UTC
-)
-b'"2100-09-01T21:55:02+00:00"'
->>> orjson.dumps(
-    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide')),
-    option=orjson.OPT_NAIVE_UTC
-)
-b'"2018-12-01T02:03:04.000009+10:30"'
-```
+`datetime.datetime` supports instances with a `tzinfo` that is `None`,
+`datetime.timezone.utc` or a timezone instance from
+the `pendulum`, `pytz`, or `dateutil`/`arrow` libraries.
 
 `datetime.time` objects must not have a `tzinfo`.
 
@@ -393,8 +428,7 @@ The library has comprehensive tests. There are tests against fixtures in the
 [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark)
 repositories. It is tested to not crash against the
 [Big List of Naughty Strings](https://github.com/minimaxir/big-list-of-naughty-strings).
-It is tested to not leak memory. It is tested to be correct against
-input from the PyJFuzz JSON fuzzer. It is tested to not crash
+It is tested to not leak memory. It is tested to not crash
 against and not accept invalid UTF-8. There are integration tests
 exercising the library's use in web servers (gunicorn using multiprocess/forked
 workers) and when
@@ -509,7 +543,6 @@ format, containing floats and arrays, indented.
 | simplejson |                           42.99 |                    23.2 |                 1.93 |
 | json       |                           44.69 |                    21.4 |                 2.01 |
 
-
 If a row is blank, the library did not serialize and deserialize the fixture without
 modifying it, e.g., returning different values for floating point numbers.
 
@@ -569,3 +602,8 @@ ujson 1.35, python-rapidson 0.8.0, and simplejson 3.16.0.
 
 The latency results can be reproduced using the `pybench` and `graph`
 scripts. The memory results can be reproduced using the `pymem` script.
+
+## License
+
+orjson was written by ijl <ijl@mailbox.org>, copyright 2018 - 2020, licensed
+under either the Apache 2 or MIT licenses.
