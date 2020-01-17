@@ -5,7 +5,6 @@ import datetime
 import gc
 import random
 import unittest
-import uuid
 from typing import List
 
 import orjson
@@ -81,7 +80,15 @@ class MemoryTests(unittest.TestCase):
         proc = psutil.Process()
         gc.collect()
         fixture = orjson.loads(FIXTURE)
-        fixture["custom"] = uuid.uuid4()
+
+        class Custom:
+            def __init__(self, name):
+                self.name = name
+
+            def __str__(self):
+                return "%s(%s)" % (self.__class__.__name__, self.name)
+
+        fixture["custom"] = Custom("orjson")
         val = orjson.dumps(fixture, default=default)
         mem = proc.memory_info().rss
         for _ in range(10000):

@@ -57,7 +57,7 @@ pyo3 = { version = "0.9.0-alpha.1", default_features = false, features = ["exten
 rand = { version = "0.7", default_features = false, features = ["getrandom", "std"] }
 serde = { version = "1", default_features = false }
 serde_json = { git = "https://github.com/ijl/json.git", rev = "83efe507487afe2332c5d6f83d28056159a58e5d", default_features = false, features = ["perfect_float"] }
-smallvec = { version = "1", default_features = false, features = ["union", "specialization"] }
+smallvec = { version = "1", default_features = false, features = ["union", "specialization", "write"] }
 wyhash = { version = "0.3" }
 
 [profile.release]

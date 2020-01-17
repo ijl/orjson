@@ -220,6 +220,9 @@ b'"1970-01-01T00:00:00+00:00"'
     )
 b'"1970-01-01T00:00:00Z"'
 ```
+##### OPT_SERIALIZE_UUID
+
+Serialize `uuid.UUID` instances. For more, see [uuid](#uuid).
 
 ### Deserialize
 
@@ -422,6 +425,19 @@ JSONDecodeError: unexpected end of hex escape at line 1 column 8: line 1 column 
 ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
 >>> json.loads('"\\ud800"')
 '\ud800'
+```
+
+### uuid
+
+If the `OPT_SERIALIZE_UUID` option is provided, orjson serializes
+`uuid.UUID` objects natively in ["canonical"](https://en.wikipedia.org/wiki/Universally_unique_identifier#Format)
+format: as 32 hexadecimal digits, in 5 groups separated by hyphens,
+in the form 8-4-4-4-12, for a total of 36 characters.
+
+``` python
+>>> import orjson, uuid
+>>> orjson.dumps(uuid.UUID(int=0x12345678123456781234567812345678), option=orjson.OPT_SERIALIZE_UUID)
+b'"12345678-1234-5678-1234-567812345678"'
 ```
 
 ## Testing

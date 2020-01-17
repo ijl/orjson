@@ -20,6 +20,8 @@ pub static mut FLOAT_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::Py
 pub static mut DATETIME_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut DATE_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
 pub static mut TIME_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
+pub static mut UUID_PTR: *mut pyo3::ffi::PyTypeObject = 0 as *mut pyo3::ffi::PyTypeObject;
+pub static mut INT_ATTR_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut NORMALIZE_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut CONVERT_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
@@ -29,6 +31,24 @@ pub static mut DATACLASS_FIELDS_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::
 static EMTPY_STR: &str = "";
 
 static INIT: Once = Once::new();
+
+/// Look up the `uuid.UUID` type pointer, which is defined in Python
+pub unsafe fn look_up_uuid_type() -> *mut pyo3::ffi::PyTypeObject {
+    // Use the module-level `NAMESPACE_DNS` instance to get the type pointer
+    // https://docs.python.org/3/library/uuid.html#uuid.NAMESPACE_DNS
+    let uuid_mod = pyo3::ffi::PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
+    let uuid_mod_dict = pyo3::ffi::PyModule_GetDict(uuid_mod);
+    let uuid = pyo3::ffi::PyMapping_GetItemString(
+        uuid_mod_dict,
+        "NAMESPACE_DNS\0".as_ptr() as *const c_char,
+    );
+    let ptr = (*uuid).ob_type;
+    // Ensure Python can garbage-collect everything
+    pyo3::ffi::Py_DECREF(uuid);
+    pyo3::ffi::Py_DECREF(uuid_mod_dict);
+    pyo3::ffi::Py_DECREF(uuid_mod);
+    ptr
+}
 
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
@@ -83,6 +103,10 @@ pub fn init_typerefs() {
             pyo3::ffi::PyDateTimeAPI.TimeType,
         );
         TIME_PTR = (*time).ob_type;
+        UUID_PTR = look_up_uuid_type();
+        // We'll be looking up the "int" attribute on UUIDs, so it's convenient
+        // to define this ahead of time as a constant.
+        INT_ATTR_STR = pyo3::ffi::PyUnicode_FromStringAndSize("int".as_ptr() as *const c_char, 3);
         UTCOFFSET_METHOD_STR =
             pyo3::ffi::PyUnicode_FromStringAndSize("utcoffset".as_ptr() as *const c_char, 9);
         NORMALIZE_METHOD_STR =
