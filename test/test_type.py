@@ -306,6 +306,16 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
         self.assertEqual(orjson.loads(ref), obj)
 
+    def test_dict_unicode(self):
+        """
+        dict unicode keys
+        """
+        obj = {"🐈": "value"}
+        ref = b'{"\xf0\x9f\x90\x88":"value"}'
+        self.assertEqual(orjson.dumps(obj), ref)
+        self.assertEqual(orjson.loads(ref), obj)
+        self.assertEqual(orjson.loads(ref)["🐈"], "value")
+
     def test_dict_invalid_key_dumps(self):
         """
         dict invalid key dumps()
