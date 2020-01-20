@@ -3,7 +3,6 @@
 import unittest
 
 import orjson
-import pytest
 
 from .util import read_fixture_str
 

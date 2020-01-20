@@ -4,7 +4,6 @@
 import unittest
 
 import orjson
-import pytest
 
 
 class TypeTests(unittest.TestCase):

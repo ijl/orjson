@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
 
 from json import loads as json_loads, dumps as json_dumps
 from orjson import loads as orjson_loads, dumps as orjson_dumps
@@ -8,7 +7,7 @@ from rapidjson import loads as rapidjson_loads, dumps as rapidjson_dumps
 from simplejson import loads as simplejson_loads, dumps as simplejson_dumps
 from ujson import loads as ujson_loads, dumps as ujson_dumps
 
-from .util import read_fixture_obj, read_fixture_str
+from .util import read_fixture_str
 
 
 def test_loads_canada_orjson(benchmark):

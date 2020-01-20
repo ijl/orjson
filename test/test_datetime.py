@@ -3,7 +3,6 @@
 import datetime
 import unittest
 
-import arrow
 import orjson
 import pytest
 import pytz

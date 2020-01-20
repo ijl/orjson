@@ -6,7 +6,6 @@ Tests files from http://json.org/JSON_checker/
 import unittest
 
 import orjson
-import pytest
 
 from .util import read_fixture_str
 

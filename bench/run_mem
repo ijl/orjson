@@ -40,6 +40,7 @@ mem_after = proc.memory_info().rss
 mem_diff = mem_after - mem_before
 
 from json import loads as json_loads
+
 correct = 1 if (json_loads(fixture) == json_loads(dumps(loads(fixture)))) else 0
 
 print(f"{mem_before},{mem_diff},{correct}")

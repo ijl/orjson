@@ -8,7 +8,6 @@ import math
 import unittest
 
 import orjson
-import pytest
 
 
 class UltraJSONTests(unittest.TestCase):
