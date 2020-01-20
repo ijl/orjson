@@ -1,10 +1,11 @@
 # orjson
 
 orjson is a fast, correct JSON library for Python. It
-[benchmarks](#performance) as the fastest Python library for JSON and is
-more correct than the standard json library or third-party libraries. It
-serializes [dataclass](#dataclass) and [datetime](#datetime) instances by
-default.
+[benchmarks](https://github.com/ijl/orjson#performance) as the fastest Python
+library for JSON and is more correct than the standard json library or
+third-party libraries. It serializes
+[dataclass](https://github.com/ijl/orjson#dataclass) and
+[datetime](https://github.com/ijl/orjson#datetime) instances.
 
 Its serialization performance on fixtures of real data is 2.5x to 9.5x the
 nearest other library and 4x to 12x the standard library. Its deserialization
@@ -39,26 +40,28 @@ requiring glibc 2.18, released 2013, or later. orjson does not support PyPy.
 orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
-submitted there.
+submitted there. There is a
+[CHANGELOG](https://github.com/ijl/orjson/blob/master/CHANGELOG.md)
+available in the repository.
 
-1. [Usage](#usage)
-    1. [Install](#install)
-    2. [Serialize](#serialize)
-        1. [default](#default)
-        2. [option](#option)
-    3. [Deserialize](#deserialize)
-2. [Types](#types)
-    1. [dataclass](#dataclass)
-    2. [datetime](#datetime)
-    3. [float](#float)
-    4. [int](#int)
-    5. [str](#str)
-3. [Testing](#testing)
-4. [Performance](#performance)
-    1. [Latency](#latency)
-    2. [Memory](#memory)
-    3. [Reproducing](#reproducing)
-5. [License](#license)
+1. [Usage](https://github.com/ijl/orjson#usage)
+    1. [Install](https://github.com/ijl/orjson#install)
+    2. [Serialize](https://github.com/ijl/orjson#serialize)
+        1. [default](https://github.com/ijl/orjson#default)
+        2. [option](https://github.com/ijl/orjson#option)
+    3. [Deserialize](https://github.com/ijl/orjson#deserialize)
+2. [Types](https://github.com/ijl/orjson#types)
+    1. [dataclass](https://github.com/ijl/orjson#dataclass)
+    2. [datetime](https://github.com/ijl/orjson#datetime)
+    3. [float](https://github.com/ijl/orjson#float)
+    4. [int](https://github.com/ijl/orjson#int)
+    5. [str](https://github.com/ijl/orjson#str)
+3. [Testing](https://github.com/ijl/orjson#testing)
+4. [Performance](https://github.com/ijl/orjson#performance)
+    1. [Latency](https://github.com/ijl/orjson#latency)
+    2. [Memory](https://github.com/ijl/orjson#memory)
+    3. [Reproducing](https://github.com/ijl/orjson#reproducing)
+5. [License](https://github.com/ijl/orjson#license)
 
 ## Usage
 
@@ -193,12 +196,12 @@ b'"1970-01-01T00:00:00"'
 ##### OPT_SERIALIZE_DATACLASS
 
 Serialize `dataclasses.dataclass` instances. For more, see
-[dataclass](#dataclass).
+[dataclass](https://github.com/ijl/orjson#dataclass).
 
 ##### OPT_STRICT_INTEGER
 
 Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
-the Python standard library. For more, see [int](#int).
+the Python standard library. For more, see [int](https://github.com/ijl/orjson#int).
 
 ##### OPT_UTC_Z
 
@@ -605,5 +608,5 @@ scripts. The memory results can be reproduced using the `pymem` script.
 
 ## License
 
-orjson was written by ijl <ijl@mailbox.org>, copyright 2018 - 2020, licensed
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2020, licensed
 under either the Apache 2 or MIT licenses.
