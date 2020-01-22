@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::bytes::*;
 use crate::exc::*;
 use crate::typeref::*;
+use crate::unicode::*;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
 use lazy_static::lazy_static;
@@ -50,23 +52,23 @@ lazy_static! {
 }
 
 pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
+    let data: &str;
     let obj_type_ptr = unsafe { (*ptr).ob_type };
-    let data: Cow<str>;
     if is_type!(obj_type_ptr, STR_PTR) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let uni = ffi!(PyUnicode_AsUTF8AndSize(ptr, &mut str_size)) as *const u8;
+        let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
-        data = Cow::Borrowed(str_from_slice!(uni, str_size));
+        data = str_from_slice!(uni, str_size);
     } else if is_type!(obj_type_ptr, BYTES_PTR) {
-        let buffer = ffi!(PyBytes_AsString(ptr)) as *const u8;
-        let length = ffi!(PyBytes_Size(ptr)) as usize;
+        let buffer = unsafe { PyBytes_AS_STRING(ptr) as *const u8 };
+        let length = unsafe { PyBytes_GET_SIZE(ptr) as usize };
         let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(slice) != length {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
-        data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
+        data = unsafe { std::str::from_utf8_unchecked(slice) };
     } else if is_type!(obj_type_ptr, BYTEARRAY_PTR) {
         let buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
         let length = ffi!(PyByteArray_Size(ptr)) as usize;
@@ -74,7 +76,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
         if encoding_rs::Encoding::utf8_valid_up_to(slice) != length {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
-        data = Cow::Borrowed(unsafe { std::str::from_utf8_unchecked(slice) });
+        data = unsafe { std::str::from_utf8_unchecked(slice) };
     } else {
         return Err(JSONDecodeError::py_err((
             "Input must be str or bytes",
@@ -84,7 +86,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
     }
 
     let seed = JsonValue {};
-    let mut deserializer = serde_json::Deserializer::from_str(&data);
+    let mut deserializer = serde_json::Deserializer::from_str(data);
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
             deserializer

@@ -13,11 +13,13 @@ use std::ptr::NonNull;
 #[macro_use]
 mod util;
 
+mod bytes;
 mod datetime;
 mod decode;
 mod encode;
 mod exc;
 mod typeref;
+mod unicode;
 mod uuid;
 
 const MAX_OPT: i8 = (encode::STRICT_INTEGER

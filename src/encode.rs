@@ -3,6 +3,7 @@
 use crate::datetime::*;
 use crate::exc::*;
 use crate::typeref::*;
+use crate::unicode::*;
 use crate::uuid::write_uuid;
 use pyo3::prelude::*;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
@@ -76,7 +77,7 @@ impl<'p> Serialize for SerializePyObject {
         let obj_ptr = unsafe { (*self.ptr).ob_type };
         if is_type!(obj_ptr, STR_PTR) {
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-            let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
+            let uni = read_utf8_from_str(self.ptr, &mut str_size);
             if unlikely!(uni.is_null()) {
                 err!(INVALID_STR)
             }
@@ -128,7 +129,7 @@ impl<'p> Serialize for SerializePyObject {
                     err!("Dict key must be str")
                 }
                 {
-                    let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
+                    let data = read_utf8_from_str(key, &mut str_size);
                     if unlikely!(data.is_null()) {
                         err!(INVALID_STR)
                     }
@@ -210,7 +211,7 @@ impl<'p> Serialize for SerializePyObject {
                         err!("Recursion limit reached")
                     }
                     {
-                        let data = ffi!(PyUnicode_AsUTF8AndSize(attr, &mut str_size)) as *const u8;
+                        let data = read_utf8_from_str(attr, &mut str_size);
                         if unlikely!(data.is_null()) {
                             err!(INVALID_STR);
                         }
