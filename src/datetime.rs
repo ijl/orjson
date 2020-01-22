@@ -20,7 +20,7 @@ macro_rules! write_double_digit {
         if $value < 10 {
             $dt.push(ZERO);
         }
-        $dt.extend(itoa::Buffer::new().format($value).bytes());
+        $dt.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
     };
 }
 
@@ -30,12 +30,8 @@ macro_rules! write_microsecond {
             $dt.push(PERIOD);
             let mut buf = itoa::Buffer::new();
             let formatted = buf.format($microsecond);
-            let mut to_pad = 6 - formatted.len();
-            while to_pad != 0 {
-                $dt.push(ZERO);
-                to_pad -= 1;
-            }
-            $dt.extend(formatted.bytes());
+            $dt.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())]);
+            $dt.extend_from_slice(formatted.as_bytes());
         }
     };
 }
@@ -107,10 +103,10 @@ pub fn write_datetime(
         }
     };
 
-    dt.extend(
+    dt.extend_from_slice(
         itoa::Buffer::new()
             .format(ffi!(PyDateTime_GET_YEAR(ptr)) as i32)
-            .bytes(),
+            .as_bytes(),
     );
     dt.push(HYPHEN);
     {
@@ -146,7 +142,7 @@ pub fn write_datetime(
             if opts & UTC_Z == UTC_Z {
                 dt.push(Z);
             } else {
-                dt.extend([PLUS, ZERO, ZERO, COLON, ZERO, ZERO].iter().cloned());
+                dt.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO]);
             }
         } else {
             if offset_day == -1 {
@@ -163,7 +159,7 @@ pub fn write_datetime(
                 if offset_hour < 10 {
                     dt.push(ZERO);
                 }
-                dt.extend(itoa::Buffer::new().format(offset_hour).bytes());
+                dt.extend_from_slice(itoa::Buffer::new().format(offset_hour).as_bytes());
                 dt.push(COLON);
 
                 let mut offset_minute_print = offset_minute % 60;
@@ -183,7 +179,7 @@ pub fn write_datetime(
                 if offset_minute_print < 10 {
                     dt.push(ZERO);
                 }
-                dt.extend(itoa::Buffer::new().format(offset_minute_print).bytes());
+                dt.extend_from_slice(itoa::Buffer::new().format(offset_minute_print).as_bytes());
             }
         }
     }
@@ -194,7 +190,7 @@ pub fn write_datetime(
 pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
     {
         let year = ffi!(PyDateTime_GET_YEAR(ptr)) as i32;
-        dt.extend(itoa::Buffer::new().format(year).bytes());
+        dt.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
     }
     dt.push(HYPHEN);
     {
