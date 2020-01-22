@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.2.0 - 2020-01-22
+
+### Added
+
+- `orjson.dumps()` serializes `uuid.UUID` instances if
+`option=orjson.OPT_SERIALIZE_UUID` is specified.
+
+### Changed
+
+- Minor performance improvements.
+- Publish Python 3.9 wheel for Linux.
+
 ## 2.1.4 - 2020-01-08
 
 ### Fixed
