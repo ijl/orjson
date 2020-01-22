@@ -47,4 +47,8 @@ macro_rules! ffi {
     ($fn:ident($obj1:expr, $obj2:expr, $obj3:expr)) => {
         unsafe { pyo3::ffi::$fn($obj1, $obj2, $obj3) }
     };
+
+    ($fn:ident($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr)) => {
+        unsafe { pyo3::ffi::$fn($obj1, $obj2, $obj3, $obj4) }
+    };
 }

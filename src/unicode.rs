@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::typeref::STR_HASH_FUNCTION;
 use pyo3::ffi::*;
 use std::os::raw::c_char;
 
@@ -45,5 +46,15 @@ pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *cons
         } else {
             PyUnicode_AsUTF8AndSize(op, str_size) as *const u8
         }
+    }
+}
+
+#[inline]
+pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
+    unsafe {
+        if (*op.cast::<PyASCIIObject>()).hash == -1 {
+            (*op.cast::<PyASCIIObject>()).hash = STR_HASH_FUNCTION.unwrap()(op);
+        }
+        (*op.cast::<PyASCIIObject>()).hash
     }
 }

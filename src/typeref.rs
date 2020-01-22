@@ -27,6 +27,7 @@ pub static mut NORMALIZE_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::
 pub static mut CONVERT_METHOD_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut DST_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut pyo3::ffi::PyObject = 0 as *mut pyo3::ffi::PyObject;
+pub static mut STR_HASH_FUNCTION: Option<pyo3::ffi::hashfunc> = None;
 
 static EMTPY_STR: &str = "";
 
@@ -53,11 +54,9 @@ pub fn init_typerefs() {
         NONE = pyo3::ffi::Py_None();
         TRUE = pyo3::ffi::Py_True();
         FALSE = pyo3::ffi::Py_False();
-        STR_PTR = (*pyo3::ffi::PyUnicode_FromStringAndSize(
-            EMTPY_STR.as_ptr() as *const c_char,
-            EMTPY_STR.len() as pyo3::ffi::Py_ssize_t,
-        ))
-        .ob_type;
+        let unicode = pyo3::ffi::PyUnicode_New(0, 255);
+        STR_PTR = (*unicode).ob_type;
+        STR_HASH_FUNCTION = (*((*unicode).ob_type)).tp_hash;
         BYTES_PTR = (*pyo3::ffi::PyBytes_FromStringAndSize(
             EMTPY_STR.as_ptr() as *const c_char,
             EMTPY_STR.len() as pyo3::ffi::Py_ssize_t,

@@ -220,8 +220,9 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
                     pykey = entry.get();
                 }
             };
+            let hash = hash_str(pykey);
             let value = map.next_value_seed(self)?;
-            let _ = ffi!(PyDict_SetItem(dict_ptr, pykey, value));
+            let _ = ffi!(_PyDict_SetItem_KnownHash(dict_ptr, pykey, value, hash));
             // counter Py_INCREF in insertdict
             ffi!(Py_DECREF(pykey));
             ffi!(Py_DECREF(value));
