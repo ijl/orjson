@@ -7,7 +7,7 @@ pub const NAIVE_UTC: u8 = 1 << 1;
 pub const OMIT_MICROSECONDS: u8 = 1 << 2;
 pub const UTC_Z: u8 = 1 << 3;
 
-const HYPHEN: u8 = 45; // "-"
+pub const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
 const ZERO: u8 = 48; // "0"
 const T: u8 = 84; // "T"

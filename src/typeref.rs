@@ -32,10 +32,7 @@ static EMTPY_STR: &str = "";
 
 static INIT: Once = Once::new();
 
-/// Look up the `uuid.UUID` type pointer, which is defined in Python
 pub unsafe fn look_up_uuid_type() -> *mut pyo3::ffi::PyTypeObject {
-    // Use the module-level `NAMESPACE_DNS` instance to get the type pointer
-    // https://docs.python.org/3/library/uuid.html#uuid.NAMESPACE_DNS
     let uuid_mod = pyo3::ffi::PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
     let uuid_mod_dict = pyo3::ffi::PyModule_GetDict(uuid_mod);
     let uuid = pyo3::ffi::PyMapping_GetItemString(
@@ -43,7 +40,6 @@ pub unsafe fn look_up_uuid_type() -> *mut pyo3::ffi::PyTypeObject {
         "NAMESPACE_DNS\0".as_ptr() as *const c_char,
     );
     let ptr = (*uuid).ob_type;
-    // Ensure Python can garbage-collect everything
     pyo3::ffi::Py_DECREF(uuid);
     pyo3::ffi::Py_DECREF(uuid_mod_dict);
     pyo3::ffi::Py_DECREF(uuid_mod);

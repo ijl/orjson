@@ -3,12 +3,12 @@
 use crate::datetime::*;
 use crate::exc::*;
 use crate::typeref::*;
+use crate::uuid::write_uuid;
 use pyo3::prelude::*;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
 use smallvec::SmallVec;
 use std::ffi::CStr;
-use std::io::Write;
-use std::os::raw::{c_char, c_uchar};
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -188,44 +188,10 @@ impl<'p> Serialize for SerializePyObject {
             let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
             write_time(self.ptr, self.opts, &mut dt);
             serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
-        } else if is_type!(obj_ptr, UUID_PTR) && (self.opts & SERIALIZE_UUID == SERIALIZE_UUID) {
-            // In Python, `self.int` is the 128-bit integer value of the UUID;
-            // we can assume this will not fail, as tested in `test_uuid.py`
-            let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
-            // Copied in from https://github.com/PyO3/pyo3/blob/fb17d5e82f302f09b6611ac608edd1ce37504703/src/types/num.rs#L95
-            // because we don't have a `pyo3::Python` reference. However, because
-            // we haven't yet Py_DECREF'd the `py_int` attribute, the reference
-            // to `self.int` should be valid, and this should be safe to do.
-            // We know it's a `PyLongObject` because `self.int` is a 128-bit int,
-            // and know that _PyLong_AsByteArray won't error, as tested in test_uuid.py
-            let buffer: [c_uchar; 16] = [0; 16];
-            unsafe {
-                pyo3::ffi::_PyLong_AsByteArray(
-                    py_int as *mut pyo3::ffi::PyLongObject,
-                    buffer.as_ptr() as *const c_uchar,
-                    16,
-                    1, // Return a little-endian array
-                    0, // Unsigned - UUIDs can't be negative
-                )
-            };
-            ffi!(Py_DECREF(py_int));
-            let value = u128::from_le_bytes(buffer);
-            let mut hexadecimal: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-            write!(hexadecimal, "{:032x}", value).unwrap();
-            // Now we manually format it in canonical form: 5 groups separated
-            // by hyphens, 8-4-4-4-12
-            // https://en.wikipedia.org/wiki/Universally_unique_identifier#Format
-            let mut formatted: SmallVec<[u8; 36]> = SmallVec::with_capacity(36);
-            formatted.extend_from_slice(&hexadecimal[..8]);
-            formatted.push('-' as u8);
-            formatted.extend_from_slice(&hexadecimal[8..12]);
-            formatted.push('-' as u8);
-            formatted.extend_from_slice(&hexadecimal[12..16]);
-            formatted.push('-' as u8);
-            formatted.extend_from_slice(&hexadecimal[16..20]);
-            formatted.push('-' as u8);
-            formatted.extend_from_slice(&hexadecimal[20..]);
-            serializer.serialize_str(str_from_slice!(formatted.as_ptr(), 36))
+        } else if self.opts & SERIALIZE_UUID == SERIALIZE_UUID && is_type!(obj_ptr, UUID_PTR) {
+            let mut buf: SmallVec<[u8; 36]> = SmallVec::with_capacity(36);
+            write_uuid(self.ptr, &mut buf);
+            serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
         } else {
             if self.opts & SERIALIZE_DATACLASS == SERIALIZE_DATACLASS
                 && ffi!(PyObject_HasAttr(self.ptr, DATACLASS_FIELDS_STR)) == 1

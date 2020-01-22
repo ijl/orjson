@@ -56,6 +56,7 @@ available in the repository.
     3. [float](https://github.com/ijl/orjson#float)
     4. [int](https://github.com/ijl/orjson#int)
     5. [str](https://github.com/ijl/orjson#str)
+    6. [UUID](https://github.com/ijl/orjson#UUID)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -198,6 +199,11 @@ b'"1970-01-01T00:00:00"'
 Serialize `dataclasses.dataclass` instances. For more, see
 [dataclass](https://github.com/ijl/orjson#dataclass).
 
+##### OPT_SERIALIZE_UUID
+
+Serialize `uuid.UUID` instances. For more, see
+[uuid](https://github.com/ijl/orjson#UUID).
+
 ##### OPT_STRICT_INTEGER
 
 Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
@@ -220,9 +226,6 @@ b'"1970-01-01T00:00:00+00:00"'
     )
 b'"1970-01-01T00:00:00Z"'
 ```
-##### OPT_SERIALIZE_UUID
-
-Serialize `uuid.UUID` instances. For more, see [uuid](#uuid).
 
 ### Deserialize
 
@@ -427,17 +430,25 @@ ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
 '\ud800'
 ```
 
-### uuid
+### UUID
 
-If the `OPT_SERIALIZE_UUID` option is provided, orjson serializes
-`uuid.UUID` objects natively in ["canonical"](https://en.wikipedia.org/wiki/Universally_unique_identifier#Format)
-format: as 32 hexadecimal digits, in 5 groups separated by hyphens,
-in the form 8-4-4-4-12, for a total of 36 characters.
+orjson serializes `uuid.UUID` instances to
+[RFC 4122](https://tools.ietf.org/html/rfc4122) format, e.g.,
+"f81d4fae-7dec-11d0-a765-00a0c91e6bf6". This requires specifying
+`option=orjson.OPT_SERIALIZE_UUID`.
 
 ``` python
 >>> import orjson, uuid
->>> orjson.dumps(uuid.UUID(int=0x12345678123456781234567812345678), option=orjson.OPT_SERIALIZE_UUID)
-b'"12345678-1234-5678-1234-567812345678"'
+>>> orjson.dumps(
+    uuid.UUID('f81d4fae-7dec-11d0-a765-00a0c91e6bf6'),
+    option=orjson.OPT_SERIALIZE_UUID,
+)
+b'"f81d4fae-7dec-11d0-a765-00a0c91e6bf6"'
+>>> orjson.dumps(
+    uuid.uuid5(uuid.NAMESPACE_DNS, "python.org"),
+    option=orjson.OPT_SERIALIZE_UUID,
+)
+b'"886313e1-3b8a-5372-9b90-0c9aee199e5d"'
 ```
 
 ## Testing

@@ -18,6 +18,7 @@ mod decode;
 mod encode;
 mod exc;
 mod typeref;
+mod uuid;
 
 const MAX_OPT: i8 = (encode::STRICT_INTEGER
     | datetime::NAIVE_UTC
