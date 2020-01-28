@@ -7,11 +7,6 @@ third-party libraries. It serializes
 [dataclass](https://github.com/ijl/orjson#dataclass) and
 [datetime](https://github.com/ijl/orjson#datetime) instances.
 
-Its serialization performance on fixtures of real data is 2.5x to 9.5x the
-nearest other library and 4x to 12x the standard library. Its deserialization
-performance on the same fixtures is 1.2x to 1.3x the nearest other
-library and 1.4x to 2x the standard library.
-
 Its features and drawbacks compared to other Python JSON libraries:
 
 * serializes `dataclass` instances 30x faster than other libraries
@@ -202,7 +197,7 @@ Serialize `dataclasses.dataclass` instances. For more, see
 ##### OPT_SERIALIZE_UUID
 
 Serialize `uuid.UUID` instances. For more, see
-[uuid](https://github.com/ijl/orjson#UUID).
+[UUID](https://github.com/ijl/orjson#UUID).
 
 ##### OPT_STRICT_INTEGER
 
@@ -266,13 +261,13 @@ It is supported to pass all variants of dataclasses, including dataclasses
 using `__slots__` (which yields a modest performance improvement), frozen
 dataclasses, those with optional or default attributes, and subclasses.
 
-| Library    | dict (ms)   | dataclass (ms)   | dataclass vs. dict   | vs. orjson   |
-|------------|-------------|------------------|----------------------|--------------|
-| orjson     | 0.10        | 0.19             | -46%                 | 1            |
-| ujson      |             |                  |                      |              |
-| rapidjson  | 0.24        | 6.48             | -96%                 | 33           |
-| simplejson | 1.06        | 7.94             | -86%                 | 40           |
-| json       | 0.92        | 7.32             | -87%                 | 37           |
+| Library    | dict (ms)   | dataclass (ms)   | vs. orjson   |
+|------------|-------------|------------------|--------------|
+| orjson     | 0.10        | 0.19             | 1            |
+| ujson      |             |                  |              |
+| rapidjson  | 0.24        | 6.48             | 33           |
+| simplejson | 1.06        | 7.94             | 40           |
+| json       | 0.92        | 7.32             | 37           |
 
 This measures orjson serializing instances natively and other libraries using
 `default` to serialize the output of `dataclasses.asdict()`. This can be

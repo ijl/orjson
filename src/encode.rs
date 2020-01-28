@@ -2,6 +2,7 @@
 
 use crate::datetime::*;
 use crate::exc::*;
+use crate::iter::*;
 use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::write_uuid;
@@ -61,6 +62,7 @@ pub fn serialize(
         Err(err) => Err(JSONEncodeError::py_err(err.to_string())),
     }
 }
+
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -75,14 +77,14 @@ impl<'p> Serialize for SerializePyObject {
         S: Serializer,
     {
         let obj_ptr = unsafe { (*self.ptr).ob_type };
-        if is_type!(obj_ptr, STR_PTR) {
+        if is_type!(obj_ptr, STR_TYPE) {
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
             let uni = read_utf8_from_str(self.ptr, &mut str_size);
             if unlikely!(uni.is_null()) {
                 err!(INVALID_STR)
             }
             serializer.serialize_str(str_from_slice!(uni, str_size))
-        } else if is_type!(obj_ptr, INT_PTR) {
+        } else if is_type!(obj_ptr, INT_TYPE) {
             let val = ffi!(PyLong_AsLongLong(self.ptr));
             if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
                 err!("Integer exceeds 64-bit range")
@@ -92,40 +94,32 @@ impl<'p> Serialize for SerializePyObject {
                 err!("Integer exceeds 53-bit range")
             }
             serializer.serialize_i64(val)
-        } else if is_type!(obj_ptr, LIST_PTR) {
-            let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
-            if len != 0 {
-                let mut seq = serializer.serialize_seq(Some(len))?;
-                let mut i = 0;
-                while i < len {
-                    if unlikely!(self.recursion == RECURSION_LIMIT) {
-                        err!("Recursion limit reached")
-                    }
-                    let elem = ffi!(PyList_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
-                    i += 1;
-                    seq.serialize_element(&SerializePyObject {
-                        ptr: elem,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    })?
-                }
-                seq.end()
-            } else {
-                serializer.serialize_seq(None).unwrap().end()
+        } else if is_type!(obj_ptr, LIST_TYPE) {
+            if unlikely!(self.recursion == RECURSION_LIMIT) {
+                err!("Recursion limit reached")
             }
-        } else if is_type!(obj_ptr, DICT_PTR) {
+            let mut seq = serializer.serialize_seq(None).unwrap();
+            for elem in PyListIterator::new(self.ptr) {
+                seq.serialize_element(&SerializePyObject {
+                    ptr: elem.as_ptr(),
+                    default: self.default,
+                    opts: self.opts,
+                    default_calls: self.default_calls,
+                    recursion: self.recursion + 1,
+                })?
+            }
+            seq.end()
+        } else if is_type!(obj_ptr, DICT_TYPE) {
+            if unlikely!(self.recursion == RECURSION_LIMIT) {
+                err!("Recursion limit reached")
+            }
             let mut map = serializer.serialize_map(None).unwrap();
             let mut pos = 0isize;
             let mut str_size: pyo3::ffi::Py_ssize_t = 0;
             let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
-                if unlikely!(self.recursion == RECURSION_LIMIT) {
-                    err!("Recursion limit reached")
-                }
-                if unlikely!((*key).ob_type != STR_PTR) {
+                if unlikely!((*key).ob_type != STR_TYPE) {
                     err!("Dict key must be str")
                 }
                 {
@@ -144,33 +138,25 @@ impl<'p> Serialize for SerializePyObject {
                 })?;
             }
             map.end()
-        } else if is_type!(obj_ptr, BOOL_PTR) {
+        } else if is_type!(obj_ptr, BOOL_TYPE) {
             serializer.serialize_bool(unsafe { self.ptr == TRUE })
-        } else if is_type!(obj_ptr, NONE_PTR) {
+        } else if is_type!(obj_ptr, NONE_TYPE) {
             serializer.serialize_unit()
-        } else if is_type!(obj_ptr, FLOAT_PTR) {
+        } else if is_type!(obj_ptr, FLOAT_TYPE) {
             serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
-        } else if is_type!(obj_ptr, TUPLE_PTR) {
-            let len = ffi!(PyTuple_GET_SIZE(self.ptr)) as usize;
-            if len != 0 {
-                let mut seq = serializer.serialize_seq(Some(len))?;
-                let mut i = 0;
-                while i < len {
-                    let elem = ffi!(PyTuple_GET_ITEM(self.ptr, i as pyo3::ffi::Py_ssize_t));
-                    i += 1;
-                    seq.serialize_element(&SerializePyObject {
-                        ptr: elem,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion,
-                    })?
-                }
-                seq.end()
-            } else {
-                serializer.serialize_seq(None).unwrap().end()
+        } else if is_type!(obj_ptr, TUPLE_TYPE) {
+            let mut seq = serializer.serialize_seq(None).unwrap();
+            for elem in PyTupleIterator::new(self.ptr) {
+                seq.serialize_element(&SerializePyObject {
+                    ptr: elem.as_ptr(),
+                    default: self.default,
+                    opts: self.opts,
+                    default_calls: self.default_calls,
+                    recursion: self.recursion + 1,
+                })?
             }
-        } else if is_type!(obj_ptr, DATETIME_PTR) {
+            seq.end()
+        } else if is_type!(obj_ptr, DATETIME_TYPE) {
             let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
             match write_datetime(self.ptr, self.opts, &mut dt) {
                     Ok(_) => serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len())),
@@ -178,18 +164,14 @@ impl<'p> Serialize for SerializePyObject {
                     err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
                     }
                 }
-        } else if is_type!(obj_ptr, DATE_PTR) {
-            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-            write_date(self.ptr, &mut dt);
-            serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
-        } else if is_type!(obj_ptr, TIME_PTR) {
+        } else if is_type!(obj_ptr, DATE_TYPE) {
+            Date::new(self.ptr).serialize(serializer)
+        } else if is_type!(obj_ptr, TIME_TYPE) {
             if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
                 err!("datetime.time must not have tzinfo set")
             }
-            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-            write_time(self.ptr, self.opts, &mut dt);
-            serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
-        } else if self.opts & SERIALIZE_UUID == SERIALIZE_UUID && is_type!(obj_ptr, UUID_PTR) {
+            Time::new(self.ptr, self.opts).serialize(serializer)
+        } else if self.opts & SERIALIZE_UUID == SERIALIZE_UUID && is_type!(obj_ptr, UUID_TYPE) {
             let mut buf: SmallVec<[u8; 36]> = SmallVec::with_capacity(36);
             write_uuid(self.ptr, &mut buf);
             serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
@@ -197,6 +179,9 @@ impl<'p> Serialize for SerializePyObject {
             if self.opts & SERIALIZE_DATACLASS == SERIALIZE_DATACLASS
                 && ffi!(PyObject_HasAttr(self.ptr, DATACLASS_FIELDS_STR)) == 1
             {
+                if unlikely!(self.recursion == RECURSION_LIMIT) {
+                    err!("Recursion limit reached")
+                }
                 let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
                 ffi!(Py_DECREF(fields));
                 let mut map = serializer.serialize_map(None).unwrap();
@@ -207,9 +192,6 @@ impl<'p> Serialize for SerializePyObject {
                 while unsafe {
                     pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
                 } {
-                    if unlikely!(self.recursion == RECURSION_LIMIT) {
-                        err!("Recursion limit reached")
-                    }
                     {
                         let data = read_utf8_from_str(attr, &mut str_size);
                         if unlikely!(data.is_null()) {

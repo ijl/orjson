@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::typeref::*;
+use serde::ser::{Serialize, Serializer};
 use smallvec::SmallVec;
 
 pub const NAIVE_UTC: u8 = 1 << 1;
@@ -34,6 +35,51 @@ macro_rules! write_microsecond {
             $dt.extend_from_slice(formatted.as_bytes());
         }
     };
+}
+
+pub struct Date {
+    ptr: *mut pyo3::ffi::PyObject,
+}
+
+impl Date {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+        Date { ptr: ptr }
+    }
+}
+impl<'p> Serialize for Date {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+        write_date(self.ptr, &mut dt);
+        serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+    }
+}
+
+pub struct Time {
+    ptr: *mut pyo3::ffi::PyObject,
+    opts: u8,
+}
+
+impl Time {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u8) -> Self {
+        Time {
+            ptr: ptr,
+            opts: opts,
+        }
+    }
+}
+
+impl<'p> Serialize for Time {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+        write_time(self.ptr, self.opts, &mut dt);
+        serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+    }
 }
 
 pub enum DatetimeError {

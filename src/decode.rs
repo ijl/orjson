@@ -54,14 +54,14 @@ lazy_static! {
 pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let data: &str;
     let obj_type_ptr = unsafe { (*ptr).ob_type };
-    if is_type!(obj_type_ptr, STR_PTR) {
+    if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
         data = str_from_slice!(uni, str_size);
-    } else if is_type!(obj_type_ptr, BYTES_PTR) {
+    } else if is_type!(obj_type_ptr, BYTES_TYPE) {
         let buffer = unsafe { PyBytes_AS_STRING(ptr) as *const u8 };
         let length = unsafe { PyBytes_GET_SIZE(ptr) as usize };
         let slice = unsafe { std::slice::from_raw_parts(buffer, length) };
@@ -69,7 +69,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
             return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
         }
         data = unsafe { std::str::from_utf8_unchecked(slice) };
-    } else if is_type!(obj_type_ptr, BYTEARRAY_PTR) {
+    } else if is_type!(obj_type_ptr, BYTEARRAY_TYPE) {
         let buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
         let length = ffi!(PyByteArray_Size(ptr)) as usize;
         let slice = unsafe { std::slice::from_raw_parts(buffer, length) };

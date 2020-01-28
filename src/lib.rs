@@ -18,6 +18,7 @@ mod datetime;
 mod decode;
 mod encode;
 mod exc;
+mod iter;
 mod typeref;
 mod unicode;
 mod uuid;
@@ -100,7 +101,7 @@ pub fn dumps(
     let optsbits: i8;
     if let Some(value) = option {
         let optsptr = value.as_ptr();
-        if unsafe { (*optsptr).ob_type != typeref::INT_PTR } {
+        if unsafe { (*optsptr).ob_type != typeref::INT_TYPE } {
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
             optsbits = ffi!(PyLong_AsLong(optsptr)) as i8;

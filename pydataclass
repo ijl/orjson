@@ -46,7 +46,7 @@ def default(__obj):
         return dataclasses.asdict(__obj)
 
 
-headers = ("Library", "dict (ms)", "dataclass (ms)", "dataclass vs. dict", "vs. orjson")
+headers = ("Library", "dict (ms)", "dataclass (ms)", "vs. orjson")
 
 LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
@@ -99,9 +99,7 @@ for lib_name in LIBRARIES:
         orjson_as_dataclass = as_dataclass
     else:
         raise NotImplementedError
-    relative = (
-        int(((as_dataclass - as_dict) / as_dataclass) * 100) if as_dataclass else None
-    )
+
     if lib_name == "orjson":
         compared_to_orjson = 1
     elif as_dict:
@@ -114,7 +112,6 @@ for lib_name in LIBRARIES:
             lib_name,
             f"{as_dict:,.2f}" if as_dict else "",
             f"{as_dataclass:,.2f}" if as_dataclass else "",
-            f"*{relative}%" if relative else "",
             f"{compared_to_orjson:d}" if compared_to_orjson else "",
         )
     )
@@ -126,6 +123,6 @@ print(
     .replace("*", "-")
     .replace("=", "-")
     .replace("+", "|")
-    .replace("||||||", "")
+    .replace("|||||", "")
     .replace("\n\n", "\n")
 )
