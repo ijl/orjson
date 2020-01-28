@@ -12,7 +12,7 @@ steps:
   displayName: rustup
 - script: python.exe -m pip install --upgrade pip wheel twine maturin
   displayName: build dependencies
-- script: python.exe -m pip install -r test\requirements.txt
+- script: python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
   displayName: test dependencies
 - script: maturin.exe build --release --strip --interpreter $(interpreter)
   env:

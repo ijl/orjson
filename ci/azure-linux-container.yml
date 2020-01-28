@@ -11,10 +11,8 @@ steps:
   displayName: ensure nightly
 - bash: PATH=$(path) pip install --user --upgrade pip wheel maturin twine
   displayName: build dependencies
-- bash: PATH=$(path) pip install --user -r test/requirements.txt
+- bash: PATH=$(path) pip install --user -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
-- bash: PATH=$(path) pip install --user -r integration/requirements.txt
-  displayName: integration dependencies
 - bash: PATH=$(path) RUSTFLAGS="-Zmutable-noalias -C target-feature=+sse2" maturin build --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: PATH=$(path) pip install --user target/wheels/orjson*.whl
@@ -23,6 +21,8 @@ steps:
   displayName: pytest
 - bash: PATH=$(path) ./integration/run thread
   displayName: thread
+- bash: PATH=$(path) ./integration/run http
+  displayName: http
 - bash: PATH=$(path) ./deploy target/wheels/*.whl
   displayName: deploy
   env:

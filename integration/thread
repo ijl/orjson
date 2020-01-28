@@ -29,6 +29,11 @@ DATA = sorted(
 
 STATUS = 0
 
+TEST_MESSAGE = "thread test running..."
+
+sys.stdout.write(TEST_MESSAGE)
+sys.stdout.flush()
+
 
 def test_func(n):
     try:
@@ -45,9 +50,9 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 
 
 if STATUS == 0:
-    print("ok")
+    sys.stdout.write(f"\r{TEST_MESSAGE} ok\n")
 else:
-    print("error")
+    sys.stdout.write(f"\r{TEST_MESSAGE} error\n")
 
 
 sys.exit(STATUS)

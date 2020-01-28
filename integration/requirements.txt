@@ -1,2 +1,3 @@
-flask
-gunicorn
+flask;sys_platform!="win"
+gunicorn;sys_platform!="win"
+httpx;sys_platform!="win"

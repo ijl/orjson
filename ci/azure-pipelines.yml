@@ -2,7 +2,7 @@ jobs:
 
 - job: linux_sdist
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   variables:
     interpreter: python3.7
     target: x86_64-unknown-linux-gnu
@@ -12,14 +12,11 @@ jobs:
       versionSpec: '3.7'
       addToPath: true
   - checkout: self
-  - template: ./azure-linux.yml
-    parameters:
-      dependencies: apt
   - template: ./azure-sdist.yml
 
 - job: linux_python39
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   container: python:3.9-rc-buster
   variables:
     interpreter: python3.9
@@ -32,7 +29,7 @@ jobs:
 
 - job: linux_python38
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   container: python:3.8-buster
   variables:
     interpreter: python3.8
@@ -45,43 +42,33 @@ jobs:
 
 - job: linux_python37
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
+  container: python:3.7-buster
   variables:
     interpreter: python3.7
     manylinux: 1
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-      addToPath: true
   - checkout: self
-  - template: ./azure-linux.yml
-    parameters:
-      dependencies: apt
-  - template: ./azure-posix.yml
+  - template: ./azure-linux-container.yml
 
 - job: linux_python36
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
+  container: python:3.6-buster
   variables:
     interpreter: python3.6
     manylinux: 1
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.6'
-      addToPath: true
   - checkout: self
-  - template: ./azure-linux.yml
-    parameters:
-      dependencies: apt
-  - template: ./azure-posix.yml
+  - template: ./azure-linux-container.yml
 
 - job: macos_python38
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macOS-10.14
   variables:
     interpreter: python3.8
     manylinux: off
@@ -92,12 +79,11 @@ jobs:
       versionSpec: '3.8'
       addToPath: true
   - checkout: self
-  - template: ./azure-macos.yml
   - template: ./azure-posix.yml
 
 - job: macos_python37
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macOS-10.14
   variables:
     interpreter: python3.7
     manylinux: off
@@ -108,12 +94,11 @@ jobs:
       versionSpec: '3.7'
       addToPath: true
   - checkout: self
-  - template: ./azure-macos.yml
   - template: ./azure-posix.yml
 
 - job: macos_python36
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macOS-10.14
   variables:
     interpreter: python3.6
     manylinux: off
@@ -124,12 +109,11 @@ jobs:
       versionSpec: '3.6'
       addToPath: true
   - checkout: self
-  - template: ./azure-macos.yml
   - template: ./azure-posix.yml
 
 - job: win_python38
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   variables:
     interpreter: C:\hostedtoolcache\windows\Python\3.8.1\x64\python.exe
     target: x86_64-pc-windows-msvc
@@ -144,7 +128,7 @@ jobs:
 
 - job: win_python37
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   variables:
     interpreter: C:\hostedtoolcache\windows\Python\3.7.6\x64\python.exe
     target: x86_64-pc-windows-msvc
@@ -159,7 +143,7 @@ jobs:
 
 - job: win_python36
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
   variables:
     interpreter: C:\hostedtoolcache\windows\Python\3.6.8\x64\python.exe
     target: x86_64-pc-windows-msvc

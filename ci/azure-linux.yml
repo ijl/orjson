@@ -1,6 +1,0 @@
-steps:
-- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-  displayName: rustup
-- bash: rustup default nightly
-  displayName: ensure nightly
-- bash: sudo apt-get update && sudo apt-get install -y wrk
