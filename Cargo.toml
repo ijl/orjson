@@ -49,6 +49,7 @@ classifier = [
 
 [dependencies]
 associative-cache = { version = "1" }
+heapless = { version = "0.5", default_features = false }
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 itoa = { version = "0.4", default_features = false }
 lazy_static = { version = "1.4", default_features = false }

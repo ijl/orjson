@@ -5,10 +5,9 @@ use crate::exc::*;
 use crate::iter::*;
 use crate::typeref::*;
 use crate::unicode::*;
-use crate::uuid::write_uuid;
+use crate::uuid::*;
 use pyo3::prelude::*;
 use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
-use smallvec::SmallVec;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
@@ -157,9 +156,9 @@ impl<'p> Serialize for SerializePyObject {
             }
             seq.end()
         } else if is_type!(obj_ptr, DATETIME_TYPE) {
-            let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-            match write_datetime(self.ptr, self.opts, &mut dt) {
-                    Ok(_) => serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len())),
+            let mut buf: DateTimeBuffer = heapless::Vec::new();
+            match write_datetime(self.ptr, self.opts, &mut buf) {
+                    Ok(_) => serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len())),
                     Err(DatetimeError::Library) => {
                     err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
                     }
@@ -172,7 +171,7 @@ impl<'p> Serialize for SerializePyObject {
             }
             Time::new(self.ptr, self.opts).serialize(serializer)
         } else if self.opts & SERIALIZE_UUID == SERIALIZE_UUID && is_type!(obj_ptr, UUID_TYPE) {
-            let mut buf: SmallVec<[u8; 36]> = SmallVec::with_capacity(36);
+            let mut buf: UUIDBuffer = heapless::Vec::new();
             write_uuid(self.ptr, &mut buf);
             serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
         } else {

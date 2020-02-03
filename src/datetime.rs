@@ -2,7 +2,6 @@
 
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
-use smallvec::SmallVec;
 
 pub const NAIVE_UTC: u8 = 1 << 1;
 pub const OMIT_MICROSECONDS: u8 = 1 << 2;
@@ -16,23 +15,27 @@ const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // ":"
 const Z: u8 = 90; // "Z"
 
+pub type DateTimeBuffer = heapless::Vec<u8, heapless::consts::U32>;
+
 macro_rules! write_double_digit {
     ($dt:ident, $value:ident) => {
         if $value < 10 {
-            $dt.push(ZERO);
+            $dt.push(ZERO).unwrap();
         }
-        $dt.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
+        $dt.extend_from_slice(itoa::Buffer::new().format($value).as_bytes())
+            .unwrap();
     };
 }
 
 macro_rules! write_microsecond {
     ($dt:ident, $microsecond:ident) => {
         if $microsecond != 0 {
-            $dt.push(PERIOD);
+            $dt.push(PERIOD).unwrap();
             let mut buf = itoa::Buffer::new();
             let formatted = buf.format($microsecond);
-            $dt.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())]);
-            $dt.extend_from_slice(formatted.as_bytes());
+            $dt.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())])
+                .unwrap();
+            $dt.extend_from_slice(formatted.as_bytes()).unwrap();
         }
     };
 }
@@ -51,9 +54,9 @@ impl<'p> Serialize for Date {
     where
         S: Serializer,
     {
-        let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-        write_date(self.ptr, &mut dt);
-        serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        write_date(self.ptr, &mut buf);
+        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }
 
@@ -76,9 +79,9 @@ impl<'p> Serialize for Time {
     where
         S: Serializer,
     {
-        let mut dt: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
-        write_time(self.ptr, self.opts, &mut dt);
-        serializer.serialize_str(str_from_slice!(dt.as_ptr(), dt.len()))
+        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        write_time(self.ptr, self.opts, &mut buf);
+        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }
 
@@ -90,7 +93,7 @@ pub enum DatetimeError {
 pub fn write_datetime(
     ptr: *mut pyo3::ffi::PyObject,
     opts: u8,
-    dt: &mut SmallVec<[u8; 32]>,
+    dt: &mut DateTimeBuffer,
 ) -> Result<(), DatetimeError> {
     let has_tz = unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
     let offset_day: i32;
@@ -153,28 +156,29 @@ pub fn write_datetime(
         itoa::Buffer::new()
             .format(ffi!(PyDateTime_GET_YEAR(ptr)) as i32)
             .as_bytes(),
-    );
-    dt.push(HYPHEN);
+    )
+    .unwrap();
+    dt.push(HYPHEN).unwrap();
     {
         let month = ffi!(PyDateTime_GET_MONTH(ptr)) as u8;
         write_double_digit!(dt, month);
     }
-    dt.push(HYPHEN);
+    dt.push(HYPHEN).unwrap();
     {
         let day = ffi!(PyDateTime_GET_DAY(ptr)) as u8;
         write_double_digit!(dt, day);
     }
-    dt.push(T);
+    dt.push(T).unwrap();
     {
         let hour = ffi!(PyDateTime_DATE_GET_HOUR(ptr)) as u8;
         write_double_digit!(dt, hour);
     }
-    dt.push(COLON);
+    dt.push(COLON).unwrap();
     {
         let minute = ffi!(PyDateTime_DATE_GET_MINUTE(ptr)) as u8;
         write_double_digit!(dt, minute);
     }
-    dt.push(COLON);
+    dt.push(COLON).unwrap();
     {
         let second = ffi!(PyDateTime_DATE_GET_SECOND(ptr)) as u8;
         write_double_digit!(dt, second);
@@ -186,27 +190,25 @@ pub fn write_datetime(
     if has_tz || opts & NAIVE_UTC == NAIVE_UTC {
         if offset_second == 0 {
             if opts & UTC_Z == UTC_Z {
-                dt.push(Z);
+                dt.push(Z).unwrap();
             } else {
-                dt.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO]);
+                dt.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO])
+                    .unwrap();
             }
         } else {
             if offset_day == -1 {
                 // datetime.timedelta(days=-1, seconds=68400) -> -05:00
-                dt.push(HYPHEN);
+                dt.push(HYPHEN).unwrap();
                 offset_second = 86400 - offset_second
             } else {
                 // datetime.timedelta(seconds=37800) -> +10:30
-                dt.push(PLUS);
+                dt.push(PLUS).unwrap();
             }
             {
                 let offset_minute = offset_second / 60;
                 let offset_hour = offset_minute / 60;
-                if offset_hour < 10 {
-                    dt.push(ZERO);
-                }
-                dt.extend_from_slice(itoa::Buffer::new().format(offset_hour).as_bytes());
-                dt.push(COLON);
+                write_double_digit!(dt, offset_hour);
+                dt.push(COLON).unwrap();
 
                 let mut offset_minute_print = offset_minute % 60;
 
@@ -223,9 +225,10 @@ pub fn write_datetime(
                 }
 
                 if offset_minute_print < 10 {
-                    dt.push(ZERO);
+                    dt.push(ZERO).unwrap();
                 }
-                dt.extend_from_slice(itoa::Buffer::new().format(offset_minute_print).as_bytes());
+                dt.extend_from_slice(itoa::Buffer::new().format(offset_minute_print).as_bytes())
+                    .unwrap();
             }
         }
     }
@@ -233,17 +236,18 @@ pub fn write_datetime(
 }
 
 #[inline(never)]
-pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
+pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut DateTimeBuffer) {
     {
         let year = ffi!(PyDateTime_GET_YEAR(ptr)) as i32;
-        dt.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
+        dt.extend_from_slice(itoa::Buffer::new().format(year).as_bytes())
+            .unwrap();
     }
-    dt.push(HYPHEN);
+    dt.push(HYPHEN).unwrap();
     {
         let month = ffi!(PyDateTime_GET_MONTH(ptr)) as u32;
         write_double_digit!(dt, month);
     }
-    dt.push(HYPHEN);
+    dt.push(HYPHEN).unwrap();
     {
         let day = ffi!(PyDateTime_GET_DAY(ptr)) as u32;
         write_double_digit!(dt, day);
@@ -251,17 +255,17 @@ pub fn write_date(ptr: *mut pyo3::ffi::PyObject, dt: &mut SmallVec<[u8; 32]>) {
 }
 
 #[inline(never)]
-pub fn write_time(ptr: *mut pyo3::ffi::PyObject, opts: u8, dt: &mut SmallVec<[u8; 32]>) {
+pub fn write_time(ptr: *mut pyo3::ffi::PyObject, opts: u8, dt: &mut DateTimeBuffer) {
     {
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(ptr)) as u8;
         write_double_digit!(dt, hour);
     }
-    dt.push(COLON);
+    dt.push(COLON).unwrap();
     {
         let minute = ffi!(PyDateTime_TIME_GET_MINUTE(ptr)) as u8;
         write_double_digit!(dt, minute);
     }
-    dt.push(COLON);
+    dt.push(COLON).unwrap();
     {
         let second = ffi!(PyDateTime_TIME_GET_SECOND(ptr)) as u8;
         write_double_digit!(dt, second);

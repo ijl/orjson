@@ -6,8 +6,10 @@ use smallvec::SmallVec;
 use std::io::Write;
 use std::os::raw::c_uchar;
 
+pub type UUIDBuffer = heapless::Vec<u8, heapless::consts::U64>;
+
 #[inline(never)]
-pub fn write_uuid(ptr: *mut pyo3::ffi::PyObject, buf: &mut SmallVec<[u8; 36]>) {
+pub fn write_uuid(ptr: *mut pyo3::ffi::PyObject, buf: &mut UUIDBuffer) {
     let value: u128;
     {
         // test_uuid_immutable, test_uuid_int
@@ -30,13 +32,13 @@ pub fn write_uuid(ptr: *mut pyo3::ffi::PyObject, buf: &mut SmallVec<[u8; 36]>) {
     let mut hexadecimal: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
     write!(hexadecimal, "{:032x}", value).unwrap();
 
-    buf.extend_from_slice(&hexadecimal[..8]);
-    buf.push(HYPHEN);
-    buf.extend_from_slice(&hexadecimal[8..12]);
-    buf.push(HYPHEN);
-    buf.extend_from_slice(&hexadecimal[12..16]);
-    buf.push(HYPHEN);
-    buf.extend_from_slice(&hexadecimal[16..20]);
-    buf.push(HYPHEN);
-    buf.extend_from_slice(&hexadecimal[20..]);
+    buf.extend_from_slice(&hexadecimal[..8]).unwrap();
+    buf.push(HYPHEN).unwrap();
+    buf.extend_from_slice(&hexadecimal[8..12]).unwrap();
+    buf.push(HYPHEN).unwrap();
+    buf.extend_from_slice(&hexadecimal[12..16]).unwrap();
+    buf.push(HYPHEN).unwrap();
+    buf.extend_from_slice(&hexadecimal[16..20]).unwrap();
+    buf.push(HYPHEN).unwrap();
+    buf.extend_from_slice(&hexadecimal[20..]).unwrap();
 }
