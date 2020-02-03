@@ -263,14 +263,14 @@ dataclasses, those with optional or default attributes, and subclasses.
 
 | Library    | dict (ms)   | dataclass (ms)   | vs. orjson   |
 |------------|-------------|------------------|--------------|
-| orjson     | 0.10        | 0.19             | 1            |
+| orjson     | 1.80        | 2.87             | 1            |
 | ujson      |             |                  |              |
-| rapidjson  | 0.24        | 6.48             | 33           |
-| simplejson | 1.06        | 7.94             | 40           |
-| json       | 0.92        | 7.32             | 37           |
+| rapidjson  | 4.23        | 91.79            | 31           |
+| simplejson | 19.26       | 113.70           | 39           |
+| json       | 14.37       | 107.38           | 37           |
 
-This measures orjson serializing instances natively and other libraries using
-`default` to serialize the output of `dataclasses.asdict()`. This can be
+This measures serializing 555KiB of JSON, orjson natively and other libraries
+using `default` to serialize the output of `dataclasses.asdict()`. This can be
 reproduced using the `pydataclass` script.
 
 Dataclasses are serialized as maps, with every attribute serialized and in

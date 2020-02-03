@@ -17,9 +17,6 @@ from tabulate import tabulate
 os.sched_setaffinity(os.getpid(), {0, 1})
 
 
-buf = io.StringIO()
-
-
 @dataclasses.dataclass
 class Member:
     id: int
@@ -35,10 +32,14 @@ class Object:
 
 objects_as_dataclass = [
     Object(i, str(i) * 3, [Member(j, True) for j in range(0, 10)])
-    for i in range(100000, 101000)
+    for i in range(100000, 102000)
 ]
 
 objects_as_dict = [dataclasses.asdict(each) for each in objects_as_dataclass]
+
+output_in_kib = len(orjson.dumps(objects_as_dict)) / 1024
+
+print(f"{output_in_kib:,.0f}KiB output (orjson)")
 
 
 def default(__obj):
@@ -51,6 +52,13 @@ headers = ("Library", "dict (ms)", "dataclass (ms)", "vs. orjson")
 LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
 ITERATIONS = 100
+
+
+def per_iter_latency(val):
+    if val is None:
+        return None
+    return (val * 1000) / ITERATIONS
+
 
 table = []
 for lib_name in LIBRARIES:
@@ -96,9 +104,12 @@ for lib_name in LIBRARIES:
             ),
             number=ITERATIONS,
         )
-        orjson_as_dataclass = as_dataclass
+        orjson_as_dataclass = per_iter_latency(as_dataclass)
     else:
         raise NotImplementedError
+
+    as_dict = per_iter_latency(as_dict)
+    as_dataclass = per_iter_latency(as_dataclass)
 
     if lib_name == "orjson":
         compared_to_orjson = 1
@@ -115,6 +126,8 @@ for lib_name in LIBRARIES:
             f"{compared_to_orjson:d}" if compared_to_orjson else "",
         )
     )
+
+buf = io.StringIO()
 buf.write(tabulate(table, headers, tablefmt="grid") + "\n")
 
 print(
