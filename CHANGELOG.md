@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.1 - 2020-02-04
+
+### Fixed
+
+- `orjson.loads()` rejects floats that do not have a digit following
+the decimal, e.g., `-2.`, `2.e-3`.
+
+### Changed
+
+- Build Linux, macOS, and Windows wheels on more recent distributions.
+
 ## 2.2.0 - 2020-01-22
 
 ### Added
