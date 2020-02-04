@@ -809,7 +809,6 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_-1.0..json")
 
-    @pytest.mark.xfail
     def test_n_number_2(self):
         """
         n_number_-2..json
@@ -852,7 +851,6 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_0.3e.json")
 
-    @pytest.mark.xfail
     def test_n_number_0_e1(self):
         """
         n_number_0.e1.json
@@ -913,21 +911,18 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_1eE2.json")
 
-    @pytest.mark.xfail
     def test_n_number_2_e_3(self):
         """
         n_number_2.e+3.json
         """
         self._run_fail_json("n_number_2.e+3.json")
 
-    @pytest.mark.xfail
     def test_n_number_2_e_3_2(self):
         """
         n_number_2.e-3.json
         """
         self._run_fail_json("n_number_2.e-3.json")
 
-    @pytest.mark.xfail
     def test_n_number_2_e3_3(self):
         """
         n_number_2.e3.json
@@ -1060,7 +1055,6 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         self._run_fail_json("n_number_real_with_invalid_utf8_after_e.json")
 
-    @pytest.mark.xfail
     def test_n_number_real_without_fractional_part(self):
         """
         n_number_real_without_fractional_part.json

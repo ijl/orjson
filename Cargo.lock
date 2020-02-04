@@ -267,7 +267,7 @@ dependencies = [
  "pyo3",
  "rand",
  "serde",
- "serde_json 1.0.44",
+ "serde_json 1.0.46 (git+https://github.com/ijl/json.git?rev=f24505b31bd9e5f41701dc9f5ac7d76813d139b5)",
  "smallvec",
  "wyhash",
 ]
@@ -369,7 +369,7 @@ dependencies = [
  "pyo3cls",
  "regex",
  "serde",
- "serde_json 1.0.46",
+ "serde_json 1.0.46 (registry+https://github.com/rust-lang/crates.io-index)",
  "unindent",
  "version_check",
 ]
@@ -511,8 +511,8 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.44"
-source = "git+https://github.com/ijl/json.git?rev=83efe507487afe2332c5d6f83d28056159a58e5d#83efe507487afe2332c5d6f83d28056159a58e5d"
+version = "1.0.46"
+source = "git+https://github.com/ijl/json.git?rev=f24505b31bd9e5f41701dc9f5ac7d76813d139b5#f24505b31bd9e5f41701dc9f5ac7d76813d139b5"
 dependencies = [
  "itoa",
  "lexical-core",
