@@ -97,10 +97,16 @@ impl<'p> Serialize for SerializePyObject {
             if unlikely!(self.recursion == RECURSION_LIMIT) {
                 err!("Recursion limit reached")
             }
+            let slice: &[*mut pyo3::ffi::PyObject] = unsafe {
+                std::slice::from_raw_parts(
+                    (*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item,
+                    ffi!(PyList_GET_SIZE(self.ptr)) as usize,
+                )
+            };
             let mut seq = serializer.serialize_seq(None).unwrap();
-            for elem in PyListIterator::new(self.ptr) {
+            for &elem in slice {
                 seq.serialize_element(&SerializePyObject {
-                    ptr: elem.as_ptr(),
+                    ptr: elem,
                     default: self.default,
                     opts: self.opts,
                     default_calls: self.default_calls,
