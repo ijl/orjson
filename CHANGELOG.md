@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.2 - 2020-02-10
+
+### Changed
+
+- Performance improvements to serializing a list containing elements of the
+same type.
+
 ## 2.2.1 - 2020-02-04
 
 ### Fixed
