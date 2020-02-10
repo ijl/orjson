@@ -45,6 +45,7 @@ pub fn serialize(
         &mut buf,
         &SerializePyObject {
             ptr,
+            obtype: None,
             default,
             opts,
             default_calls: 0,
@@ -121,10 +122,11 @@ fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u8) -> ObType {
 
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    obtype: Option<ObType>,
     opts: u8,
     default_calls: u8,
     recursion: u8,
+    default: Option<NonNull<pyo3::ffi::PyObject>>,
 }
 
 impl<'p> Serialize for SerializePyObject {
@@ -132,7 +134,10 @@ impl<'p> Serialize for SerializePyObject {
     where
         S: Serializer,
     {
-        match pyobject_to_obtype(self.ptr, self.opts) {
+        match self
+            .obtype
+            .unwrap_or_else(|| pyobject_to_obtype(self.ptr, self.opts))
+        {
             ObType::STR => {
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                 let uni = read_utf8_from_str(self.ptr, &mut str_size);
@@ -200,6 +205,7 @@ impl<'p> Serialize for SerializePyObject {
                     }
                     map.serialize_value(&SerializePyObject {
                         ptr: value,
+                        obtype: None,
                         default: self.default,
                         opts: self.opts,
                         default_calls: self.default_calls,
@@ -212,29 +218,47 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                let slice: &[*mut pyo3::ffi::PyObject] = unsafe {
-                    std::slice::from_raw_parts(
-                        (*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item,
-                        ffi!(PyList_GET_SIZE(self.ptr)) as usize,
-                    )
-                };
-                let mut seq = serializer.serialize_seq(None).unwrap();
-                for &elem in slice {
-                    seq.serialize_element(&SerializePyObject {
-                        ptr: elem,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    })?
+                let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
+                if len == 0 {
+                    serializer.serialize_seq(Some(0)).unwrap().end()
+                } else {
+                    let slice: &[*mut pyo3::ffi::PyObject] = unsafe {
+                        std::slice::from_raw_parts(
+                            (*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item,
+                            len,
+                        )
+                    };
+
+                    let mut type_ptr = unsafe { (*(*(slice.get_unchecked(0)))).ob_type };
+                    let mut ob_type = Some(pyobject_to_obtype(
+                        unsafe { *(slice.get_unchecked(0)) },
+                        self.opts,
+                    ));
+
+                    let mut seq = serializer.serialize_seq(None).unwrap();
+                    for &elem in slice {
+                        if unsafe { (*(elem)).ob_type } != type_ptr {
+                            type_ptr = unsafe { (*(elem)).ob_type };
+                            ob_type = Some(pyobject_to_obtype(elem, self.opts))
+                        }
+                        seq.serialize_element(&SerializePyObject {
+                            ptr: elem,
+                            obtype: ob_type,
+                            default: self.default,
+                            opts: self.opts,
+                            default_calls: self.default_calls,
+                            recursion: self.recursion + 1,
+                        })?
+                    }
+                    seq.end()
                 }
-                seq.end()
             }
             ObType::TUPLE => {
                 let mut seq = serializer.serialize_seq(None).unwrap();
                 for elem in PyTupleIterator::new(self.ptr) {
                     seq.serialize_element(&SerializePyObject {
                         ptr: elem.as_ptr(),
+                        obtype: None,
                         default: self.default,
                         opts: self.opts,
                         default_calls: self.default_calls,
@@ -270,6 +294,7 @@ impl<'p> Serialize for SerializePyObject {
 
                     map.serialize_value(&SerializePyObject {
                         ptr: value,
+                        obtype: None,
                         default: self.default,
                         opts: self.opts,
                         default_calls: self.default_calls,
@@ -294,6 +319,7 @@ impl<'p> Serialize for SerializePyObject {
                     if !default_obj.is_null() {
                         let res = SerializePyObject {
                             ptr: default_obj,
+                            obtype: None,
                             default: self.default,
                             opts: self.opts,
                             default_calls: self.default_calls + 1,
