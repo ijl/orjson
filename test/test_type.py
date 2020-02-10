@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# coding=UTF-8
 
 import unittest
 
@@ -285,6 +284,9 @@ class TypeTests(unittest.TestCase):
         ref = '{"key":"value"}'
         self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
         self.assertEqual(orjson.loads(ref), obj)
+
+    def test_dict_duplicate_loads(self):
+        self.assertEqual(orjson.loads(b'{"1":true,"1":false}'), {"1": False})
 
     def test_dict_large(self):
         """

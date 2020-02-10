@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import uuid
 import unittest
+import uuid
 
 import orjson
 

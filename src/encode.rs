@@ -7,7 +7,7 @@ use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
 use pyo3::prelude::*;
-use serde::ser::{self, Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
@@ -19,9 +19,9 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 const RECURSION_LIMIT: u8 = 255;
 
-pub const STRICT_INTEGER: u8 = 1;
 pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
 pub const SERIALIZE_UUID: u8 = 1 << 5;
+pub const STRICT_INTEGER: u8 = 1;
 
 macro_rules! obj_name {
     ($obj:ident) => {
@@ -31,7 +31,7 @@ macro_rules! obj_name {
 
 macro_rules! err {
     ($msg:expr) => {
-        return Err(ser::Error::custom($msg));
+        return Err(Error::custom($msg));
     };
 }
 
@@ -160,27 +160,10 @@ impl<'p> Serialize for SerializePyObject {
             ObType::NONE => serializer.serialize_unit(),
             ObType::FLOAT => serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr))),
             ObType::BOOL => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
-            ObType::DATETIME => {
-                let mut buf: DateTimeBuffer = heapless::Vec::new();
-                match write_datetime(self.ptr, self.opts, &mut buf) {
-                    Ok(_) => serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len())),
-                    Err(DatetimeError::Library) => {
-                    err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
-                    }
-                }
-            }
+            ObType::DATETIME => DateTime::new(self.ptr, self.opts).serialize(serializer),
             ObType::DATE => Date::new(self.ptr).serialize(serializer),
-            ObType::TIME => {
-                if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
-                    err!("datetime.time must not have tzinfo set")
-                }
-                Time::new(self.ptr, self.opts).serialize(serializer)
-            }
-            ObType::UUID => {
-                let mut buf: UUIDBuffer = heapless::Vec::new();
-                write_uuid(self.ptr, &mut buf);
-                serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
-            }
+            ObType::TIME => Time::new(self.ptr, self.opts).serialize(serializer),
+            ObType::UUID => UUID::new(self.ptr).serialize(serializer),
             ObType::DICT => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
@@ -203,6 +186,7 @@ impl<'p> Serialize for SerializePyObject {
                         }
                         map.serialize_key(str_from_slice!(data, str_size)).unwrap();
                     }
+
                     map.serialize_value(&SerializePyObject {
                         ptr: value,
                         obtype: None,

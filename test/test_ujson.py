@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# coding=UTF-8
 
 from __future__ import division, print_function, unicode_literals
 
