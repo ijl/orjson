@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
+import inspect
 import json
 import unittest
-import inspect
 
 import orjson
 

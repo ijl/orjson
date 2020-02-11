@@ -17,8 +17,6 @@ steps:
   displayName: install
 - bash: pytest -v test
   displayName: pytest
-- bash: mypy ./orjson.pyi
-  displayName: mypy
 - bash: ./integration/run thread
   displayName: thread
 - bash: ./integration/run http

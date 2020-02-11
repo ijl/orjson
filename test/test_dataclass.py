@@ -44,8 +44,9 @@ class Dataclass4:
     c: float = 1.1
 
 
+@dataclass
 class Datasubclass(Dataclass1):
-    number: float
+    additional: bool
 
 
 @dataclass
@@ -99,9 +100,9 @@ class DataclassTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(obj1)
 
-    def test_dataclass_default(self):
+    def test_dataclass_default_arg(self):
         """
-        dumps() dataclass default
+        dumps() dataclass default arg
         """
         obj = Dataclass2()
         self.assertEqual(
@@ -142,10 +143,10 @@ class DataclassTests(unittest.TestCase):
         """
         dumps() dataclass subclass
         """
-        obj = Datasubclass("a", 1.0, None)
+        obj = Datasubclass("a", 1, None, False)
         self.assertEqual(
             orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"name":"a","number":1.0,"sub":null}',
+            b'{"name":"a","number":1,"sub":null,"additional":false}',
         )
 
     def test_dataclass_slots(self):

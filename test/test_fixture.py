@@ -32,6 +32,14 @@ class FixtureTests(unittest.TestCase):
         read = orjson.loads(val)
         orjson.dumps(read)
 
+    def test_github(self):
+        """
+        loads(), dumps() github.json
+        """
+        val = read_fixture_str("github.json.xz")
+        read = orjson.loads(val)
+        orjson.dumps(read)
+
     def test_blns(self):
         """
         loads() blns.json JSONDecodeError

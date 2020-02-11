@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-from json import dumps as _json_dumps, loads as json_loads
+from json import dumps as _json_dumps
+from json import loads as json_loads
+
 from orjson import dumps as _orjson_dumps
 from rapidjson import dumps as _rapidjson_dumps
 from simplejson import dumps as _simplejson_dumps

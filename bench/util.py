@@ -1,16 +1,17 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import os
 import lzma
+import os
 from pathlib import Path
+from typing import Any, Dict
 
 import orjson
 
 dirname = os.path.join(os.path.dirname(__file__), "../data")
 
-STR_CACHE = {}
+STR_CACHE: Dict[str, str] = {}
 
-OBJ_CACHE = {}
+OBJ_CACHE: Dict[str, Any] = {}
 
 
 os.sched_setaffinity(os.getpid(), {0, 1})

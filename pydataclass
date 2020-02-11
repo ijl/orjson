@@ -13,7 +13,6 @@ import rapidjson
 import simplejson
 from tabulate import tabulate
 
-
 os.sched_setaffinity(os.getpid(), {0, 1})
 
 
