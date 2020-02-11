@@ -199,6 +199,47 @@ Serialize `dataclasses.dataclass` instances. For more, see
 Serialize `uuid.UUID` instances. For more, see
 [UUID](https://github.com/ijl/orjson#UUID).
 
+##### OPT_SORT_KEYS
+
+Serialize `dict` keys in sorted order. The default is to serialize in an
+unspecified order.
+
+This can be used to ensure the order is deterministic for hashing or tests.
+It has a substantial performance penalty and is not recommended in general.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"b": 1, "c": 2, "a": 3})
+b'{"b":1,"c":2,"a":3}'
+>>> orjson.dumps({"b": 1, "c": 2, "a": 3}, option=orjson.OPT_SORT_KEYS)
+b'{"a":3,"b":1,"c":2}'
+```
+
+This measures serializing the twitter.json fixture unsorted and sorted:
+
+| Library    |   unsorted (ms) |   sorted (ms) |   vs. orjson |
+|------------|-----------------|---------------|--------------|
+| orjson     |            0.68 |          1.01 |            1 |
+| ujson      |            1.7  |          2.65 |            2 |
+| rapidjson  |            2.23 |          2.91 |            2 |
+| simplejson |            3.19 |          4.49 |            4 |
+| json       |            3.04 |          3.9  |            3 |
+
+The benchmark can be reproduced using the `pysort` script.
+
+The sorting is not collation/locale-aware:
+
+```python
+>>> import orjson
+>>> orjson.dumps({"a": 1, "ä": 2, "A": 3}, option=orjson.OPT_SORT_KEYS)
+b'{"A":3,"a":1,"\xc3\xa4":2}'
+```
+
+This is the same sorting behavior as the standard library, rapidjson,
+simplejson, and ujson.
+
+`dataclass` also serialize as maps but this has no effect on them.
+
 ##### OPT_STRICT_INTEGER
 
 Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as

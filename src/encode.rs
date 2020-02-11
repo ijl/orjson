@@ -21,6 +21,7 @@ const RECURSION_LIMIT: u8 = 255;
 
 pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
 pub const SERIALIZE_UUID: u8 = 1 << 5;
+pub const SORT_KEYS: u8 = 1 << 6;
 pub const STRICT_INTEGER: u8 = 1;
 
 macro_rules! obj_name {
@@ -120,6 +121,80 @@ fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u8) -> ObType {
     }
 }
 
+struct DictSortedKey {
+    ptr: *mut pyo3::ffi::PyObject,
+    opts: u8,
+    default_calls: u8,
+    recursion: u8,
+    default: Option<NonNull<pyo3::ffi::PyObject>>,
+}
+
+impl DictSortedKey {
+    #[inline(never)]
+    pub fn new(
+        ptr: *mut pyo3::ffi::PyObject,
+        opts: u8,
+        default_calls: u8,
+        recursion: u8,
+        default: Option<NonNull<pyo3::ffi::PyObject>>,
+    ) -> Self {
+        DictSortedKey {
+            ptr: ptr,
+            opts: opts,
+            default_calls: default_calls,
+            recursion: recursion,
+            default: default,
+        }
+    }
+}
+
+impl<'p> Serialize for DictSortedKey {
+    #[inline(never)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let len = ffi!(PyDict_Size(self.ptr)) as usize;
+        if len == 0 {
+            serializer.serialize_map(Some(0)).unwrap().end()
+        } else {
+            let mut items = Vec::with_capacity(len);
+            let mut pos = 0isize;
+            let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+            let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+            let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+            while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
+                if unlikely!((*key).ob_type != STR_TYPE) {
+                    err!("Dict key must be str")
+                }
+                let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
+                if unlikely!(data.is_null()) {
+                    err!(INVALID_STR)
+                }
+                items.push((str_from_slice!(data, str_size), value));
+            }
+
+            items.sort_unstable_by(|a, b| a.0.partial_cmp(b.0).unwrap());
+
+            let mut map = serializer.serialize_map(None).unwrap();
+            for (key, val) in items.iter() {
+                map.serialize_entry(
+                    key,
+                    &SerializePyObject {
+                        ptr: *val,
+                        obtype: None,
+                        default: self.default,
+                        opts: self.opts,
+                        default_calls: self.default_calls,
+                        recursion: self.recursion + 1,
+                    },
+                )?;
+            }
+            map.end()
+        }
+    }
+}
+
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
     obtype: Option<ObType>,
@@ -168,35 +243,46 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                let mut map = serializer.serialize_map(None).unwrap();
-                let mut pos = 0isize;
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                while unsafe {
-                    pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0
-                } {
-                    if unlikely!((*key).ob_type != STR_TYPE) {
-                        err!("Dict key must be str")
-                    }
-                    {
-                        let data = read_utf8_from_str(key, &mut str_size);
-                        if unlikely!(data.is_null()) {
-                            err!(INVALID_STR)
+                if unlikely!(self.opts & SORT_KEYS == SORT_KEYS) {
+                    DictSortedKey::new(
+                        self.ptr,
+                        self.opts,
+                        self.default_calls,
+                        self.recursion,
+                        self.default,
+                    )
+                    .serialize(serializer)
+                } else {
+                    let mut map = serializer.serialize_map(None).unwrap();
+                    let mut pos = 0isize;
+                    let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                    let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                    let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                    while unsafe {
+                        pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0
+                    } {
+                        if unlikely!((*key).ob_type != STR_TYPE) {
+                            err!("Dict key must be str")
                         }
-                        map.serialize_key(str_from_slice!(data, str_size)).unwrap();
-                    }
+                        {
+                            let data = read_utf8_from_str(key, &mut str_size);
+                            if unlikely!(data.is_null()) {
+                                err!(INVALID_STR)
+                            }
+                            map.serialize_key(str_from_slice!(data, str_size)).unwrap();
+                        }
 
-                    map.serialize_value(&SerializePyObject {
-                        ptr: value,
-                        obtype: None,
-                        default: self.default,
-                        opts: self.opts,
-                        default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    })?;
+                        map.serialize_value(&SerializePyObject {
+                            ptr: value,
+                            obtype: None,
+                            default: self.default,
+                            opts: self.opts,
+                            default_calls: self.default_calls,
+                            recursion: self.recursion + 1,
+                        })?;
+                    }
+                    map.end()
                 }
-                map.end()
             }
             ObType::LIST => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {

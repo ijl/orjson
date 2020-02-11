@@ -23,12 +23,13 @@ mod typeref;
 mod unicode;
 mod uuid;
 
-const MAX_OPT: i8 = (encode::STRICT_INTEGER
-    | datetime::NAIVE_UTC
+const MAX_OPT: i8 = (datetime::NAIVE_UTC
     | datetime::OMIT_MICROSECONDS
     | datetime::UTC_Z
     | encode::SERIALIZE_DATACLASS
-    | encode::SERIALIZE_UUID) as i8;
+    | encode::SERIALIZE_UUID
+    | encode::SORT_KEYS
+    | encode::STRICT_INTEGER) as i8;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
@@ -62,6 +63,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
     m.add("OPT_SERIALIZE_DATACLASS", encode::SERIALIZE_DATACLASS)?;
     m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;
+    m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
     m.add("OPT_UTC_Z", datetime::UTC_Z)?;
 
