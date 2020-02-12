@@ -140,7 +140,7 @@ JSONEncodeError: Type is not JSON serializable: decimal.Decimal
 >>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
 b'"0.0842389659712649442845"'
 >>> orjson.dumps({1, 2}, default=default)
-JSONEncodeError: Type raised exception in default function: set
+orjson.JSONEncodeError: Type is not JSON serializable: set
 ```
 
 The `default` callable may return an object that itself
