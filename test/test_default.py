@@ -35,6 +35,15 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=NotImplementedError)
 
+        ran = False
+        try:
+            orjson.dumps(Custom(), default=NotImplementedError)
+        except Exception as err:
+            self.assertIsInstance(err, orjson.JSONEncodeError)
+            self.assertEqual(str(err), "default serializer exceeds recursion limit")
+            ran = True
+        self.assertTrue(ran)
+
     def test_default_func(self):
         """
         dumps() default function
@@ -54,6 +63,19 @@ class TypeTests(unittest.TestCase):
         """
         self.assertEqual(orjson.dumps(Custom(), default=lambda x: None), b"null")
 
+    def test_default_func_empty(self):
+        """
+        dumps() default function no explicit return
+        """
+        ref = Custom()
+
+        def default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+
+        self.assertEqual(orjson.dumps(ref, default=default), b"null")
+        self.assertEqual(orjson.dumps({ref}, default=default), b"[null]")
+
     def test_default_func_exc(self):
         """
         dumps() default function raises exception
@@ -64,6 +86,15 @@ class TypeTests(unittest.TestCase):
 
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=default)
+
+        ran = False
+        try:
+            orjson.dumps(Custom(), default=default)
+        except Exception as err:
+            self.assertIsInstance(err, orjson.JSONEncodeError)
+            self.assertEqual(str(err), "Type is not JSON serializable: Custom")
+            ran = True
+        self.assertTrue(ran)
 
     def test_default_func_nested_str(self):
         """
@@ -120,6 +151,15 @@ class TypeTests(unittest.TestCase):
 
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
+
+        ran = False
+        try:
+            orjson.dumps(ref, default=default)
+        except Exception as err:
+            self.assertIsInstance(err, orjson.JSONEncodeError)
+            self.assertEqual(str(err), "Type is not JSON serializable: Custom")
+            ran = True
+        self.assertTrue(ran)
 
     def test_default_func_invalid_str(self):
         """

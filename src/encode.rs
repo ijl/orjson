@@ -390,20 +390,30 @@ impl<'p> Serialize for SerializePyObject {
                     map.end()
                 }
             }
-            ObType::UNKNOWN => {
-                if self.default.is_some() {
+            ObType::UNKNOWN => match self.default {
+                Some(callable) => {
                     if unlikely!(self.default_calls == RECURSION_LIMIT) {
                         err!("default serializer exceeds recursion limit")
                     }
                     let obj_ptr = unsafe { (*self.ptr).ob_type };
                     let default_obj = unsafe {
                         pyo3::ffi::PyObject_CallFunctionObjArgs(
-                            self.default.unwrap().as_ptr(),
+                            callable.as_ptr(),
                             self.ptr,
                             std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
                         )
                     };
-                    if !default_obj.is_null() {
+                    if default_obj.is_null() {
+                        err!(format_args!(
+                            "Type is not JSON serializable: {}",
+                            obj_name!(obj_ptr)
+                        ))
+                    } else if !ffi!(PyErr_Occurred()).is_null() {
+                        err!(format_args!(
+                            "Type raised exception in default function: {}",
+                            obj_name!(obj_ptr)
+                        ))
+                    } else {
                         let res = SerializePyObject {
                             ptr: default_obj,
                             obtype: None,
@@ -415,25 +425,16 @@ impl<'p> Serialize for SerializePyObject {
                         .serialize(serializer);
                         ffi!(Py_DECREF(default_obj));
                         res
-                    } else if !ffi!(PyErr_Occurred()).is_null() {
-                        err!(format_args!(
-                            "Type raised exception in default function: {}",
-                            obj_name!(obj_ptr)
-                        ))
-                    } else {
-                        err!(format_args!(
-                            "Type is not JSON serializable: {}",
-                            obj_name!(obj_ptr)
-                        ))
                     }
-                } else {
+                }
+                None => {
                     let obj_ptr = unsafe { (*self.ptr).ob_type };
                     err!(format_args!(
                         "Type is not JSON serializable: {}",
                         obj_name!(obj_ptr)
                     ))
                 }
-            }
+            },
         }
     }
 }

@@ -125,27 +125,47 @@ with the standard library.
 
 To serialize a subclass or arbitrary types, specify `default` as a
 callable that returns a supported type. `default` may be a function,
-lambda, or callable class instance.
+lambda, or callable class instance. To specify that a type was not
+handled by `default`, raise an exception such as `TypeError`.
 
 ```python
->>> import orjson, numpy
+>>> import orjson, decimal
 >>>
 def default(obj):
-    if isinstance(obj, numpy.ndarray):
-        return obj.tolist()
->>> orjson.dumps(numpy.random.rand(2, 2), default=default)
-b'[[0.08423896597867486,0.854121264944197],[0.8452845446981371,0.19227780743524303]]'
-```
+    if isinstance(obj, decimal.Decimal):
+        return str(obj)
+    raise TypeError
 
-If the `default` callable does not return an object, and an exception
-was raised within the `default` function, an exception describing this is
-raised. If no object is returned by the `default` callable but also
-no exception was raised, it falls through to raising `JSONEncodeError` on an
-unsupported type.
+>>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"))
+JSONEncodeError: Type is not JSON serializable: decimal.Decimal
+>>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
+b'"0.0842389659712649442845"'
+>>> orjson.dumps({1, 2}, default=default)
+JSONEncodeError: Type raised exception in default function: set
+```
 
 The `default` callable may return an object that itself
 must be handled by `default` up to 254 times before an exception
 is raised.
+
+It is important that `default` raise an exception if a type cannot be handled.
+Python otherwise implicitly returns `None`, which appears to the caller
+like a legitimate value and is serialized:
+
+```python
+>>> import orjson, json, rapidjson
+>>>
+def default(obj):
+    if isinstance(obj, decimal.Decimal):
+        return str(obj)
+
+>>> orjson.dumps({"set":{1, 2}}, default=default)
+b'{"set":null}'
+>>> json.dumps({"set":{1, 2}}, default=default)
+'{"set":null}'
+>>> rapidjson.dumps({"set":{1, 2}}, default=default)
+'{"set":null}'
+```
 
 #### option
 
