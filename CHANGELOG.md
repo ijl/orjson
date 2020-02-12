@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.3.0 - 2020-02-12
+
+### Added
+
+- `orjson.dumps()` serializes `dict` instances sorted by keys, equivalent to
+`sort_keys` in other implementations, if `option=orjson.OPT_SORT_KEYS` is
+specified.
+
+### Changed
+
+- `dataclasses.dataclass` instances without `__slots__` now serialize faster.
+
+### Fixed
+
+- Fix documentation on `default`, in particular documenting the need to raise
+an exception if the type cannot be handled.
+
 ## 2.2.2 - 2020-02-10
 
 ### Changed

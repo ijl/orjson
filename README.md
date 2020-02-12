@@ -24,7 +24,6 @@ libraries
 support for 64-bit
 * does not support subclasses by default, requiring use of `default` hook
 * does not support pretty printing
-* does not support sorting `dict` by keys
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
@@ -222,7 +221,8 @@ Serialize `uuid.UUID` instances. For more, see
 ##### OPT_SORT_KEYS
 
 Serialize `dict` keys in sorted order. The default is to serialize in an
-unspecified order.
+unspecified order. This is equivalent to `sort_keys=True` in the standard
+library.
 
 This can be used to ensure the order is deterministic for hashing or tests.
 It has a substantial performance penalty and is not recommended in general.
@@ -629,8 +629,6 @@ format, containing floats and arrays, indented.
 | rapidjson  |                           42.02 |                    23.9 |                 2.14 |
 | simplejson |                           40.19 |                    24.9 |                 2.05 |
 | json       |                           41.5  |                    24.1 |                 2.12 |
-
-
 
 If a row is blank, the library did not serialize and deserialize the fixture without
 modifying it, e.g., returning different values for floating point numbers.
