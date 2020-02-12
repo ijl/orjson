@@ -112,8 +112,6 @@ It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
 with `OPT_STRICT_INTEGER`, 53 bits.
 
-It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
-
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than 254 levels deep.
 

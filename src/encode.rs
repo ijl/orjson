@@ -256,7 +256,7 @@ impl<'p> Serialize for DictSortedKey {
             let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
             while unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0 } {
                 if unlikely!((*key).ob_type != STR_TYPE) {
-                    err!("Dict key must be str")
+                    key = ffi!(PyObject_Str(key))
                 }
                 let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
                 if unlikely!(data.is_null()) {
@@ -353,7 +353,7 @@ impl<'p> Serialize for SerializePyObject {
                         pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0
                     } {
                         if unlikely!((*key).ob_type != STR_TYPE) {
-                            err!("Dict key must be str")
+                            key = ffi!(PyObject_Str(key))
                         }
                         {
                             let data = read_utf8_from_str(key, &mut str_size);
