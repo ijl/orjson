@@ -9,7 +9,7 @@ third-party libraries. It serializes
 
 Its features and drawbacks compared to other Python JSON libraries:
 
-* serializes `dataclass` instances 30x faster than other libraries
+* serializes `dataclass` instances 40-50x as fast as other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 e.g., "1970-01-01T00:00:00+00:00"
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
@@ -292,23 +292,24 @@ This is for compatibility with the standard library.
 ### dataclass
 
 orjson serializes instances of `dataclasses.dataclass` natively. It serializes
-instances 30x as fast as other libraries and avoids a severe slowdown seen
+instances 40-50x as fast as other libraries and avoids a severe slowdown seen
 in other libraries compared to serializing `dict`. To serialize
 instances, specify `option=orjson.OPT_SERIALIZE_DATACLASS`. The option
 is required so that users may continue to use `default` until the
 implementation allows customizing instances' serialization.
 
 It is supported to pass all variants of dataclasses, including dataclasses
-using `__slots__` (which yields a modest performance improvement), frozen
-dataclasses, those with optional or default attributes, and subclasses.
+using `__slots__`, frozen dataclasses, those with optional or default
+attributes, and subclasses. There is a performance benefit to not
+using `__slots__`.
 
 | Library    | dict (ms)   | dataclass (ms)   | vs. orjson   |
 |------------|-------------|------------------|--------------|
-| orjson     | 1.80        | 2.87             | 1            |
+| orjson     | 1.64        | 1.86             | 1            |
 | ujson      |             |                  |              |
-| rapidjson  | 4.23        | 91.79            | 31           |
-| simplejson | 19.26       | 113.70           | 39           |
-| json       | 14.37       | 107.38           | 37           |
+| rapidjson  | 3.90        | 86.75            | 46           |
+| simplejson | 17.40       | 103.84           | 55           |
+| json       | 12.90       | 98.37            | 52           |
 
 This measures serializing 555KiB of JSON, orjson natively and other libraries
 using `default` to serialize the output of `dataclasses.asdict()`. This can be

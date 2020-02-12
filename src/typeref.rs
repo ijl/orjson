@@ -27,6 +27,7 @@ pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut NORMALIZE_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut CONVERT_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
 
@@ -62,6 +63,7 @@ pub fn init_typerefs() {
             PyUnicode_FromStringAndSize("normalize".as_ptr() as *const c_char, 9);
         CONVERT_METHOD_STR = PyUnicode_FromStringAndSize("convert".as_ptr() as *const c_char, 7);
         DST_STR = PyUnicode_FromStringAndSize("dst".as_ptr() as *const c_char, 3);
+        DICT_STR = PyUnicode_FromStringAndSize("__dict__".as_ptr() as *const c_char, 8);
         DATACLASS_FIELDS_STR =
             PyUnicode_FromStringAndSize("__dataclass_fields__".as_ptr() as *const c_char, 20);
     });

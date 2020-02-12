@@ -24,6 +24,8 @@ pub const SERIALIZE_UUID: u8 = 1 << 5;
 pub const SORT_KEYS: u8 = 1 << 6;
 pub const STRICT_INTEGER: u8 = 1;
 
+const NOT_SORT_KEYS: u8 = 0b10111111;
+
 macro_rules! obj_name {
     ($obj:ident) => {
         unsafe { CStr::from_ptr((*$obj).tp_name).to_string_lossy() }
@@ -341,37 +343,52 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
-                ffi!(Py_DECREF(fields));
-                let mut map = serializer.serialize_map(None).unwrap();
-                let mut pos = 0isize;
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                while unsafe {
-                    pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
-                } {
-                    {
-                        let data = read_utf8_from_str(attr, &mut str_size);
-                        if unlikely!(data.is_null()) {
-                            err!(INVALID_STR);
-                        }
-                        map.serialize_key(str_from_slice!(data, str_size)).unwrap();
-                    }
-
-                    let value = ffi!(PyObject_GetAttr(self.ptr, attr));
-                    ffi!(Py_DECREF(value));
-
-                    map.serialize_value(&SerializePyObject {
-                        ptr: value,
-                        obtype: None,
+                let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
+                if !dict.is_null() {
+                    ffi!(Py_DECREF(dict));
+                    SerializePyObject {
+                        ptr: dict,
+                        obtype: Some(ObType::DICT),
                         default: self.default,
-                        opts: self.opts,
+                        opts: self.opts & NOT_SORT_KEYS,
                         default_calls: self.default_calls,
-                        recursion: self.recursion + 1,
-                    })?;
+                        recursion: self.recursion,
+                    }
+                    .serialize(serializer)
+                } else {
+                    unsafe { pyo3::ffi::PyErr_Clear() };
+                    let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
+                    ffi!(Py_DECREF(fields));
+                    let mut map = serializer.serialize_map(None).unwrap();
+                    let mut pos = 0isize;
+                    let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                    let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                    let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+                    while unsafe {
+                        pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
+                    } {
+                        {
+                            let data = read_utf8_from_str(attr, &mut str_size);
+                            if unlikely!(data.is_null()) {
+                                err!(INVALID_STR);
+                            }
+                            map.serialize_key(str_from_slice!(data, str_size)).unwrap();
+                        }
+
+                        let value = ffi!(PyObject_GetAttr(self.ptr, attr));
+                        ffi!(Py_DECREF(value));
+
+                        map.serialize_value(&SerializePyObject {
+                            ptr: value,
+                            obtype: None,
+                            default: self.default,
+                            opts: self.opts,
+                            default_calls: self.default_calls,
+                            recursion: self.recursion + 1,
+                        })?;
+                    }
+                    map.end()
                 }
-                map.end()
             }
             ObType::UNKNOWN => {
                 if self.default.is_some() {

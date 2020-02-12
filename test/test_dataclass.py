@@ -62,6 +62,13 @@ class Defaultdataclass:
     b: AnEnum
 
 
+@dataclass
+class UnsortedDataclass:
+    c: int
+    b: int
+    a: int
+
+
 class DataclassTests(unittest.TestCase):
     def test_dataclass_error(self):
         """
@@ -154,6 +161,7 @@ class DataclassTests(unittest.TestCase):
         dumps() dataclass with __slots__
         """
         obj = Slotsdataclass("a", 1)
+        assert "__dict__" not in dir(obj)
         self.assertEqual(
             orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS), b'{"a":"a","b":1}'
         )
@@ -175,4 +183,16 @@ class DataclassTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps(obj, default=default, option=orjson.OPT_SERIALIZE_DATACLASS),
             b'{"a":"808989c0-00d5-48a8-b5c4-c804bf9032f2","b":1}',
+        )
+
+    def test_dataclass_sort(self):
+        """
+        OPT_SORT_KEYS has no effect on dataclasses
+        """
+        obj = UnsortedDataclass(1, 2, 3)
+        self.assertEqual(
+            orjson.dumps(
+                obj, option=orjson.OPT_SERIALIZE_DATACLASS | orjson.OPT_SORT_KEYS
+            ),
+            b'{"c":1,"b":2,"a":3}',
         )
