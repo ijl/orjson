@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::array::*;
 use crate::datetime::*;
 use crate::exc::*;
 use crate::iter::*;
@@ -20,6 +21,7 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 const RECURSION_LIMIT: u8 = 255;
 
 pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
+pub const SERIALIZE_NUMPY: u8 = 1 << 7;
 pub const SERIALIZE_UUID: u8 = 1 << 5;
 pub const SORT_KEYS: u8 = 1 << 6;
 pub const STRICT_INTEGER: u8 = 1;
@@ -83,6 +85,7 @@ enum ObType {
     TIME,
     UUID,
     DATACLASS,
+    ARRAY,
 }
 
 #[inline]
@@ -117,6 +120,11 @@ fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u8) -> ObType {
             && ffi!(PyObject_HasAttr(obj, DATACLASS_FIELDS_STR)) == 1
         {
             ObType::DATACLASS
+        } else if opts & SERIALIZE_NUMPY == SERIALIZE_NUMPY
+            && ARRAY_TYPE.is_some()
+            && ob_type == ARRAY_TYPE.unwrap().as_ptr()
+        {
+            ObType::ARRAY
         } else {
             ObType::UNKNOWN
         }
@@ -471,6 +479,13 @@ impl<'p> Serialize for SerializePyObject {
                     map.end()
                 }
             }
+            ObType::ARRAY => match PyArray::new(self.ptr) {
+                Ok(val) => val.serialize(serializer),
+                Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
+                // default?
+                Err(PyArrayError::NotContiguous) => err!("numpy array must have contiguous layout"),
+                Err(PyArrayError::UnsupportedDataType) => err!("numpy dtype is unsupported"),
+            },
             ObType::UNKNOWN => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

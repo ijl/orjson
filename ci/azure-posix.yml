@@ -18,6 +18,10 @@ steps:
   displayName: install
 - bash: pytest -s -rxX -v test
   displayName: pytest
+- bash: pip uninstall -y numpy
+  displayName: remove optional packages
+- bash: pytest -s -rxX -v test
+  displayName: pytest without optional packages
 - bash: ./integration/run thread
   displayName: thread
 - bash: ./integration/run http

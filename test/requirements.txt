@@ -1,5 +1,6 @@
 arrow
 dataclasses;python_version<"3.7"
+numpy;python_version<="3.9"
 pendulum;sys_platform!="win" and python_version<"3.9"
 psutil
 pytest

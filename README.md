@@ -2,16 +2,19 @@
 
 orjson is a fast, correct JSON library for Python. It
 [benchmarks](https://github.com/ijl/orjson#performance) as the fastest Python
-library for JSON and is more correct than the standard json library or
+library for JSON and is more correct than the standard json library or other
 third-party libraries. It serializes
-[dataclass](https://github.com/ijl/orjson#dataclass) and
-[datetime](https://github.com/ijl/orjson#datetime) instances.
+[dataclass](https://github.com/ijl/orjson#dataclass),
+[datetime](https://github.com/ijl/orjson#datetime),
+[numpy](https://github.com/ijl/orjson#numpy), and
+[UUID](https://github.com/ijl/orjson#UUID) instances natively.
 
 Its features and drawbacks compared to other Python JSON libraries:
 
 * serializes `dataclass` instances 40-50x as fast as other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 e.g., "1970-01-01T00:00:00+00:00"
+* serializes `numpy.ndarray` instances 3-10x faster than other libraries
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
 "\\\u597d"
@@ -49,8 +52,9 @@ available in the repository.
     2. [datetime](https://github.com/ijl/orjson#datetime)
     3. [float](https://github.com/ijl/orjson#float)
     4. [int](https://github.com/ijl/orjson#int)
-    5. [str](https://github.com/ijl/orjson#str)
-    6. [UUID](https://github.com/ijl/orjson#UUID)
+    5. [numpy](https://github.com/ijl/orjson#numpy)
+    6. [str](https://github.com/ijl/orjson#str)
+    7. [UUID](https://github.com/ijl/orjson#UUID)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -212,6 +216,11 @@ b'"1970-01-01T00:00:00"'
 
 Serialize `dataclasses.dataclass` instances. For more, see
 [dataclass](https://github.com/ijl/orjson#dataclass).
+
+##### OPT_SERIALIZE_NUMPY
+
+Serialize `numpy.ndarray` instances. For more, see
+[numpy](https://github.com/ijl/orjson#numpy).
 
 ##### OPT_SERIALIZE_UUID
 
@@ -415,10 +424,10 @@ before calling `dumps()`. If using an unsupported type such as
 
 ### float
 
-orjson serializes and deserializes floats with no loss of precision and
-consistent rounding. The same behavior is observed in rapidjson, simplejson,
-and json. ujson is inaccurate in both serialization and deserialization,
-i.e., it modifies the data.
+orjson serializes and deserializes double precision floats with no loss of
+precision and consistent rounding. The same behavior is observed in rapidjson,
+simplejson, and json. ujson is inaccurate in both serialization and
+deserialization, i.e., it modifies the data.
 
 `orjson.dumps()` serializes Nan, Infinity, and -Infinity, which are not
 compliant JSON, as `null`:
@@ -453,6 +462,70 @@ JSONEncodeError: Integer exceeds 53-bit range
 >>> orjson.dumps(-9007199254740992, option=orjson.OPT_STRICT_INTEGER)
 JSONEncodeError: Integer exceeds 53-bit range
 ```
+
+### numpy
+
+orjson natively serializes `numpy.ndarray` instances. Arrays may have a
+`dtype` of `numpy.int32`, `numpy.int64`, `numpy.float32`, `numpy.float64`,
+or `numpy.bool`. orjson is faster than all compared libraries at serializing
+numpy instances.
+
+Serializing numpy data requires specifying
+`option=orjson.OPT_SERIALIZE_NUMPY`.
+
+```python
+>>> import orjson, numpy
+>>> orjson.dumps(
+        numpy.array([[1, 2, 3], [4, 5, 6]]),
+        option=orjson.OPT_SERIALIZE_NUMPY,
+)
+b'[[1,2,3],[4,5,6]]'
+```
+
+The array must be a contiguous C array (`C_CONTIGUOUS`).
+
+This measures serializing 92MiB of JSON from an `numpy.ndarray` with
+dimensions of `(50000, 100)` and `numpy.float64` values:
+
+| Library    | Latency (ms)   | RSS diff (MiB)   | vs. orjson   |
+|------------|----------------|------------------|--------------|
+| orjson     | 286            | 182              | 1            |
+| nujson     |                |                  |              |
+| rapidjson  | 3,582          | 270              | 12           |
+| simplejson | 3,494          | 259              | 12           |
+| json       | 3,476          | 260              | 12           |
+
+This measures serializing 100MiB of JSON from an `numpy.ndarray` with
+dimensions of `(100000, 100)` and `numpy.int32` values:
+
+| Library    | Latency (ms)   |   RSS diff (MiB) |   vs. orjson |
+|------------|----------------|------------------|--------------|
+| orjson     | 225            |              198 |            1 |
+| nujson     | 2,240          |              246 |            9 |
+| rapidjson  | 2,235          |              462 |            9 |
+| simplejson | 1,686          |              430 |            7 |
+| json       | 1,626          |              430 |            7 |
+
+This measures serializing 53MiB of JSON from an `numpy.ndarray` with
+dimensions of `(100000, 100)` and `numpy.bool` values:
+
+| Library    | Latency (ms)   |   RSS diff (MiB) |   vs. orjson |
+|------------|----------------|------------------|--------------|
+| orjson     | 121            |               53 |            1 |
+| nujson     | 5,958          |               43 |           49 |
+| rapidjson  | 482            |              101 |            3 |
+| simplejson | 671            |              126 |            5 |
+| json       | 609            |              127 |            5 |
+
+In these benchmarks, nujson is used instead of ujson, orjson and nujson
+serialize natively, and the other libraries use `ndarray.tolist()`. `nujson`
+is blank when it did not roundtrip the data accurately. The RSS
+column measures peak memory usage during serialization. The odd
+bool result for nujson is consistent.
+
+orjson does not have an installation or compilation dependency on numpy. The
+implementation is independent, reading `numpy.ndarray` using
+`PyArrayInterface`.
 
 ### str
 

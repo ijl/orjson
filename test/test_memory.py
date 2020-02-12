@@ -9,6 +9,12 @@ from typing import List
 
 import orjson
 import psutil
+import pytest
+
+try:
+    import numpy
+except ImportError:
+    numpy = None
 
 FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 
@@ -122,5 +128,20 @@ class MemoryTests(unittest.TestCase):
         mem = proc.memory_info().rss
         for _ in range(100):
             loaded = orjson.loads(val)
+        gc.collect()
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_memory_dumps_numpy(self):
+        """
+        dumps() dataclass memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = numpy.random.rand(4, 4, 4)
+        val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)

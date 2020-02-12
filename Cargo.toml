@@ -2,7 +2,7 @@
 name = "orjson"
 version = "2.3.0"
 authors = ["ijl <ijl@mailbox.org>"]
-description = "Fast, correct Python JSON library supporting dataclasses and datetimes"
+description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2018"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"

@@ -241,9 +241,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.3.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3197e20c7edb283f87c071ddfc7a2cca8f8e0b888c242959846a6fce03c72223"
+checksum = "1406817d4e80bb8acc9f0219187396db83252515b51314771f26975e515b9e30"
 
 [[package]]
 name = "num-traits"

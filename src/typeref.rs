@@ -2,6 +2,7 @@
 
 use pyo3::ffi::*;
 use std::os::raw::c_char;
+use std::ptr::NonNull;
 use std::sync::Once;
 
 pub static mut HASH_SEED: u64 = 0;
@@ -22,6 +23,7 @@ pub static mut DATETIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut ARRAY_TYPE: Option<NonNull<PyTypeObject>> = None;
 pub static mut INT_ATTR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut NORMALIZE_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
@@ -29,6 +31,7 @@ pub static mut CONVERT_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
 
 static INIT: Once = Once::new();
@@ -56,6 +59,7 @@ pub fn init_typerefs() {
         DATE_TYPE = look_up_date_type();
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
+        ARRAY_TYPE = look_up_array_type();
         INT_ATTR_STR = PyUnicode_FromStringAndSize("int".as_ptr() as *const c_char, 3);
         UTCOFFSET_METHOD_STR =
             PyUnicode_FromStringAndSize("utcoffset".as_ptr() as *const c_char, 9);
@@ -66,7 +70,26 @@ pub fn init_typerefs() {
         DICT_STR = PyUnicode_FromStringAndSize("__dict__".as_ptr() as *const c_char, 8);
         DATACLASS_FIELDS_STR =
             PyUnicode_FromStringAndSize("__dataclass_fields__".as_ptr() as *const c_char, 20);
+        ARRAY_STRUCT_STR = pyo3::ffi::PyUnicode_FromStringAndSize(
+            "__array_struct__".as_ptr() as *const c_char,
+            16,
+        );
     });
+}
+
+unsafe fn look_up_array_type() -> Option<NonNull<PyTypeObject>> {
+    let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
+    if numpy.is_null() {
+        PyErr_Clear();
+        return None;
+    } else {
+        let mod_dict = PyModule_GetDict(numpy);
+        let ptr = PyMapping_GetItemString(mod_dict, "ndarray\0".as_ptr() as *const c_char);
+        Py_XDECREF(ptr);
+        // Py_XDECREF(mod_dict) causes segfault when pytest exits
+        Py_XDECREF(numpy);
+        Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
+    }
 }
 
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {

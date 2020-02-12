@@ -19,6 +19,10 @@ steps:
   displayName: install
 - bash: PATH=$(path) pytest -s -rxX -v test
   displayName: pytest
+- bash: pip uninstall -y numpy
+  displayName: remove optional packages
+- bash: pytest -s -rxX -v test
+  displayName: pytest without optional packages
 - bash: PATH=$(path) ./integration/run thread
   displayName: thread
 - bash: PATH=$(path) ./integration/run http

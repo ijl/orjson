@@ -22,6 +22,10 @@ steps:
   displayName: install
 - script: python.exe -m pytest -s -rxX -v test
   displayName: pytest
+- script: python.exe -m pip uninstall -y numpy
+  displayName: remove optional packages
+- script: python.exe -m pytest -s -rxX -v test
+  displayName: pytest without optional packages
 - script: python.exe integration\thread
   displayName: thread
 - bash: ./deploy /d/a/1/s/target/wheels/*.whl

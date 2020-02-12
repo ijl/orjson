@@ -13,6 +13,7 @@ use std::ptr::NonNull;
 #[macro_use]
 mod util;
 
+mod array;
 mod bytes;
 mod datetime;
 mod decode;
@@ -23,13 +24,14 @@ mod typeref;
 mod unicode;
 mod uuid;
 
-const MAX_OPT: i8 = (datetime::NAIVE_UTC
+const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | datetime::OMIT_MICROSECONDS
     | datetime::UTC_Z
     | encode::SERIALIZE_DATACLASS
+    | encode::SERIALIZE_NUMPY
     | encode::SERIALIZE_UUID
     | encode::SORT_KEYS
-    | encode::STRICT_INTEGER) as i8;
+    | encode::STRICT_INTEGER) as i32;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
@@ -62,6 +64,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_NAIVE_UTC", datetime::NAIVE_UTC)?;
     m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
     m.add("OPT_SERIALIZE_DATACLASS", encode::SERIALIZE_DATACLASS)?;
+    m.add("OPT_SERIALIZE_NUMPY", encode::SERIALIZE_NUMPY)?;
     m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;
     m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
@@ -100,13 +103,13 @@ pub fn dumps(
     } else {
         pydef = None
     };
-    let optsbits: i8;
+    let optsbits: i32;
     if let Some(value) = option {
         let optsptr = value.as_ptr();
         if unsafe { (*optsptr).ob_type != typeref::INT_TYPE } {
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
-            optsbits = ffi!(PyLong_AsLong(optsptr)) as i8;
+            optsbits = ffi!(PyLong_AsLong(optsptr)) as i32;
             if optsbits <= 0 || optsbits > MAX_OPT {
                 // -1
                 return Err(exc::JSONEncodeError::py_err("Invalid opts"));
