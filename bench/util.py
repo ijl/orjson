@@ -13,8 +13,8 @@ STR_CACHE: Dict[str, str] = {}
 
 OBJ_CACHE: Dict[str, Any] = {}
 
-
-os.sched_setaffinity(os.getpid(), {0, 1})
+if hasattr(os, "sched_setaffinity"):
+    os.sched_setaffinity(os.getpid(), {0, 1})
 
 
 def read_fixture_str(filename):
