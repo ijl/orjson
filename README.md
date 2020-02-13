@@ -112,6 +112,8 @@ It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
 with `OPT_STRICT_INTEGER`, 53 bits.
 
+It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
+
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than 254 levels deep.
 
@@ -288,6 +290,17 @@ b'"1970-01-01T00:00:00+00:00"'
         option=orjson.OPT_UTC_Z
     )
 b'"1970-01-01T00:00:00Z"'
+```
+
+##### OPT_NON_STRING_KEYS
+
+Call `__str__` on non-`str` `dict` keys instead of raising `orjson.JSONEncodeError`.
+Makes it possible to have duplicate keys.
+
+```python
+>>> import orjson
+>>> orjson.dumps({1: "int", "1": "str"}, option=orjson.OPT_NON_STRING_KEYS)
+b'{"1":"int","1":"str"}'
 ```
 
 ### Deserialize

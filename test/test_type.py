@@ -317,12 +317,27 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(orjson.loads(ref), obj)
         self.assertEqual(orjson.loads(ref)["🐈"], "value")
 
+    def test_dict_invalid_key_dumps(self):
+        """
+        dict non-string key dumps() without NON_STRING_KEYS option
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps({1: "value"})
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps({b"key": "value"})
+
     def test_dict_non_str_key_dumps(self):
         """
-        dict invalid key dumps()
+        dict non-string key dumps() with NON_STRING_KEYS option
         """
-        self.assertEqual(orjson.dumps({1: "value"}), b'{"1":"value"}')
-        self.assertEqual(orjson.dumps({b"key": "value"}), b'{"b\'key\'":"value"}')
+        self.assertEqual(
+            orjson.dumps({1: "value"}, option=orjson.OPT_NON_STRING_KEYS), 
+            b'{"1":"value"}', 
+        )
+        self.assertEqual(
+            orjson.dumps({b"key": "value"}, option=orjson.OPT_NON_STRING_KEYS), 
+            b'{"b\'key\'":"value"}'
+        )
 
     def test_dict_invalid_key_loads(self):
         """

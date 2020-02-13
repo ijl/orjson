@@ -31,7 +31,8 @@ const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | encode::SERIALIZE_NUMPY
     | encode::SERIALIZE_UUID
     | encode::SORT_KEYS
-    | encode::STRICT_INTEGER) as i32;
+    | encode::STRICT_INTEGER
+    | encode::NON_STRING_KEYS) as i32;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
@@ -69,6 +70,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
     m.add("OPT_UTC_Z", datetime::UTC_Z)?;
+    m.add("OPT_NON_STRING_KEYS", encode::NON_STRING_KEYS)?;
 
     Ok(())
 }
@@ -118,7 +120,7 @@ pub fn dumps(
     } else {
         optsbits = 0
     };
-    match encode::serialize(obj.as_ptr(), pydef, optsbits as u8) {
+    match encode::serialize(obj.as_ptr(), pydef, optsbits as u32) {
         Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
         Err(err) => Err(err),
     }
