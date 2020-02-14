@@ -11,6 +11,10 @@ except ImportError:
     numpy = None
 
 
+def numpy_default(obj):
+    return obj.tolist()
+
+
 @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
 class NumpyTests(unittest.TestCase):
     def test_numpy_array_d1_i64(self):
@@ -116,11 +120,23 @@ class NumpyTests(unittest.TestCase):
         assert array.flags["F_CONTIGUOUS"] == True
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+        self.assertEqual(
+            orjson.dumps(
+                array, default=numpy_default, option=orjson.OPT_SERIALIZE_NUMPY
+            ),
+            orjson.dumps(array.tolist()),
+        )
 
     def test_numpy_array_unsupported_dtype(self):
         array = numpy.array([[1, 2], [3, 4]], numpy.int8)
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+        self.assertEqual(
+            orjson.dumps(
+                array, default=numpy_default, option=orjson.OPT_SERIALIZE_NUMPY
+            ),
+            orjson.dumps(array.tolist()),
+        )
 
     def test_numpy_array_d1(self):
         array = numpy.array([1])

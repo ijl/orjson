@@ -14,11 +14,11 @@ Its features and drawbacks compared to other Python JSON libraries:
 * serializes `dataclass` instances 40-50x as fast as other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 e.g., "1970-01-01T00:00:00+00:00"
-* serializes `numpy.ndarray` instances 3-10x faster than other libraries
+* serializes `numpy.ndarray` instances 3-10x as fast as other libraries
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
 "\\\u597d"
-* serializes `float` 10x faster and deserializes twice as fast as other
+* serializes `float` 10x as fast and deserializes twice as fast as other
 libraries
 * serializes arbitrary types using a `default` hook
 * has strict UTF-8 conformance, more correct than the standard library
@@ -468,9 +468,7 @@ JSONEncodeError: Integer exceeds 53-bit range
 orjson natively serializes `numpy.ndarray` instances. Arrays may have a
 `dtype` of `numpy.int32`, `numpy.int64`, `numpy.float32`, `numpy.float64`,
 or `numpy.bool`. orjson is faster than all compared libraries at serializing
-numpy instances.
-
-Serializing numpy data requires specifying
+numpy instances. Serializing numpy data requires specifying
 `option=orjson.OPT_SERIALIZE_NUMPY`.
 
 ```python
@@ -482,7 +480,14 @@ Serializing numpy data requires specifying
 b'[[1,2,3],[4,5,6]]'
 ```
 
-The array must be a contiguous C array (`C_CONTIGUOUS`).
+The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
+supported datatypes. Individual items (e.g., `numpy.float64(1)`) are
+not supported.
+
+If an array is not a contiguous C array or contains an supported datatype,
+orjson falls through to `default`. In `default`, `obj.tolist()` can be
+specified. If an array is malformed, which is not expected,
+`orjson.JSONEncodeError` is raised.
 
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:

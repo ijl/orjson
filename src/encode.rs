@@ -485,9 +485,16 @@ impl<'p> Serialize for SerializePyObject {
             ObType::ARRAY => match PyArray::new(self.ptr) {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
-                // default?
-                Err(PyArrayError::NotContiguous) => err!("numpy array must have contiguous layout"),
-                Err(PyArrayError::UnsupportedDataType) => err!("numpy dtype is unsupported"),
+                Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType) => {
+                    DefaultSerializer::new(
+                        self.ptr,
+                        self.opts,
+                        self.default_calls,
+                        self.recursion,
+                        self.default,
+                    )
+                    .serialize(serializer)
+                }
             },
             ObType::UNKNOWN => DefaultSerializer::new(
                 self.ptr,
