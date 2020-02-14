@@ -20,13 +20,12 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 const RECURSION_LIMIT: u8 = 255;
 
-pub const SERIALIZE_DATACLASS: u8 = 1 << 4;
-pub const SERIALIZE_NUMPY: u8 = 1 << 7;
-pub const SERIALIZE_UUID: u8 = 1 << 5;
-pub const SORT_KEYS: u8 = 1 << 6;
-pub const STRICT_INTEGER: u8 = 1;
-
-const NOT_SORT_KEYS: u8 = 0b10111111;
+pub const SERIALIZE_DATACLASS: u16 = 1 << 4;
+pub const SERIALIZE_NUMPY: u16 = 1 << 7;
+pub const SERIALIZE_UUID: u16 = 1 << 5;
+pub const SORT_KEYS: u16 = 1 << 6;
+pub const STRICT_INTEGER: u16 = 1;
+const DATACLASS_DICT_PATH: u16 = 1 << 8;
 
 macro_rules! obj_name {
     ($obj:ident) => {
@@ -43,7 +42,7 @@ macro_rules! err {
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
-    opts: u8,
+    opts: u16,
 ) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let mut buf: Vec<u8> = Vec::with_capacity(1024);
     match serde_json::to_writer(
@@ -51,8 +50,8 @@ pub fn serialize(
         &SerializePyObject {
             ptr,
             obtype: None,
-            default,
             opts,
+            default,
             default_calls: 0,
             recursion: 0,
         },
@@ -89,7 +88,7 @@ enum ObType {
 }
 
 #[inline]
-fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u8) -> ObType {
+fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u16) -> ObType {
     unsafe {
         let ob_type = (*obj).ob_type;
         if ob_type == STR_TYPE {
@@ -133,7 +132,7 @@ fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: u8) -> ObType {
 
 struct DefaultSerializer {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u8,
+    opts: u16,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -143,7 +142,7 @@ impl DefaultSerializer {
     #[inline(never)]
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u8,
+        opts: u16,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -214,7 +213,7 @@ impl<'p> Serialize for DefaultSerializer {
 
 struct DictSortedKey {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u8,
+    opts: u16,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -224,7 +223,7 @@ impl DictSortedKey {
     #[inline(never)]
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u8,
+        opts: u16,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -258,7 +257,7 @@ impl<'p> Serialize for DictSortedKey {
                 if unlikely!((*key).ob_type != STR_TYPE) {
                     err!("Dict key must be str")
                 }
-                let data = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
+                let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
                     err!(INVALID_STR)
                 }
@@ -289,7 +288,7 @@ impl<'p> Serialize for DictSortedKey {
 struct SerializePyObject {
     ptr: *mut pyo3::ffi::PyObject,
     obtype: Option<ObType>,
-    opts: u8,
+    opts: u16,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -334,7 +333,10 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                if unlikely!(self.opts & SORT_KEYS == SORT_KEYS) {
+                if unlikely!(
+                    self.opts & SORT_KEYS == SORT_KEYS
+                        && self.opts & DATACLASS_DICT_PATH != DATACLASS_DICT_PATH
+                ) {
                     DictSortedKey::new(
                         self.ptr,
                         self.opts,
@@ -344,6 +346,7 @@ impl<'p> Serialize for SerializePyObject {
                     )
                     .serialize(serializer)
                 } else {
+                    let opts = self.opts & !DATACLASS_DICT_PATH;
                     let mut map = serializer.serialize_map(None).unwrap();
                     let mut pos = 0isize;
                     let mut str_size: pyo3::ffi::Py_ssize_t = 0;
@@ -367,7 +370,7 @@ impl<'p> Serialize for SerializePyObject {
                             ptr: value,
                             obtype: None,
                             default: self.default,
-                            opts: self.opts,
+                            opts: opts,
                             default_calls: self.default_calls,
                             recursion: self.recursion + 1,
                         })?;
@@ -439,7 +442,7 @@ impl<'p> Serialize for SerializePyObject {
                         ptr: dict,
                         obtype: Some(ObType::DICT),
                         default: self.default,
-                        opts: self.opts & NOT_SORT_KEYS,
+                        opts: self.opts | DATACLASS_DICT_PATH,
                         default_calls: self.default_calls,
                         recursion: self.recursion,
                     }

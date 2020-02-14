@@ -4,7 +4,7 @@ import unittest
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Dict, Optional
 
 import orjson
 
@@ -67,6 +67,7 @@ class UnsortedDataclass:
     c: int
     b: int
     a: int
+    d: Optional[Dict]
 
 
 class DataclassTests(unittest.TestCase):
@@ -189,10 +190,22 @@ class DataclassTests(unittest.TestCase):
         """
         OPT_SORT_KEYS has no effect on dataclasses
         """
-        obj = UnsortedDataclass(1, 2, 3)
+        obj = UnsortedDataclass(1, 2, 3, None)
         self.assertEqual(
             orjson.dumps(
                 obj, option=orjson.OPT_SERIALIZE_DATACLASS | orjson.OPT_SORT_KEYS
             ),
-            b'{"c":1,"b":2,"a":3}',
+            b'{"c":1,"b":2,"a":3,"d":null}',
+        )
+
+    def test_dataclass_sort_sub(self):
+        """
+        dataclass fast path does not prevent OPT_SORT_KEYS from cascading
+        """
+        obj = UnsortedDataclass(1, 2, 3, {"f": 2, "e": 1})
+        self.assertEqual(
+            orjson.dumps(
+                obj, option=orjson.OPT_SERIALIZE_DATACLASS | orjson.OPT_SORT_KEYS
+            ),
+            b'{"c":1,"b":2,"a":3,"d":{"e":1,"f":2}}',
         )

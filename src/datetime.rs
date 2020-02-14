@@ -3,9 +3,9 @@
 use crate::typeref::*;
 use serde::ser::{Error, Serialize, Serializer};
 
-pub const NAIVE_UTC: u8 = 1 << 1;
-pub const OMIT_MICROSECONDS: u8 = 1 << 2;
-pub const UTC_Z: u8 = 1 << 3;
+pub const NAIVE_UTC: u16 = 1 << 1;
+pub const OMIT_MICROSECONDS: u16 = 1 << 2;
+pub const UTC_Z: u16 = 1 << 3;
 
 pub const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
@@ -83,11 +83,11 @@ impl<'p> Serialize for Date {
 
 pub struct Time {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u8,
+    opts: u16,
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u8) -> Self {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Self {
         Time {
             ptr: ptr,
             opts: opts,
@@ -128,11 +128,11 @@ impl<'p> Serialize for Time {
 
 pub struct DateTime {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u8,
+    opts: u16,
 }
 
 impl DateTime {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u8) -> Self {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
