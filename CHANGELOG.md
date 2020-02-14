@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.0 - 2020-02-14
+
+### Added
+
+- `orjson.dumps()` serializes `numpy.ndarray` instances if
+`option=orjson.OPT_SERIALIZE_NUMPY` is specified.
+
+### Fixed
+
+- Fix `dataclasses.dataclass` attributes that are `dict` to be effected by
+`orjson.OPT_SORT_KEYS`.
+
 ## 2.3.0 - 2020-02-12
 
 ### Added
