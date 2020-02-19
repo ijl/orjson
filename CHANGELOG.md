@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.0 - 2020-02-19
+
+### Added
+
+- `orjson.dumps()` serializes `dict` keys of type other than `str` if
+`option=orjson.OPT_NON_STR_KEYS` is specified.
+
 ## 2.4.0 - 2020-02-14
 
 ### Added
