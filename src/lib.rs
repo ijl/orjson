@@ -17,6 +17,8 @@ mod array;
 mod bytes;
 mod datetime;
 mod decode;
+mod default;
+mod dict;
 mod encode;
 mod exc;
 mod iter;

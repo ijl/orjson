@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::exc::*;
 use crate::typeref::*;
-use serde::ser::{Error, Serialize, Serializer};
+use serde::ser::{Serialize, Serializer};
 
 pub const NAIVE_UTC: u16 = 1 << 1;
 pub const OMIT_MICROSECONDS: u16 = 1 << 2;
@@ -14,12 +15,6 @@ const T: u8 = 84; // "T"
 const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // ":"
 const Z: u8 = 90; // "Z"
-
-macro_rules! err {
-    ($msg:expr) => {
-        return Err(Error::custom($msg));
-    };
-}
 
 pub type DateTimeBuffer = heapless::Vec<u8, heapless::consts::U32>;
 
@@ -55,13 +50,7 @@ impl Date {
     pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
         Date { ptr: ptr }
     }
-}
-impl<'p> Serialize for Date {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+    pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
             buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes())
@@ -77,8 +66,21 @@ impl<'p> Serialize for Date {
             let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u32;
             write_double_digit!(buf, day);
         }
+    }
+}
+impl<'p> Serialize for Date {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
+}
+
+pub enum TimeError {
+    HasTimezone,
 }
 
 pub struct Time {
@@ -87,23 +89,16 @@ pub struct Time {
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Self {
-        Time {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Result<Self, TimeError> {
+        if unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
+            return Err(TimeError::HasTimezone);
+        }
+        Ok(Time {
             ptr: ptr,
             opts: opts,
-        }
+        })
     }
-}
-
-impl<'p> Serialize for Time {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
-            err!("datetime.time must not have tzinfo set")
-        }
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+    pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
             write_double_digit!(buf, hour);
@@ -122,8 +117,22 @@ impl<'p> Serialize for Time {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
         }
+    }
+}
+
+impl<'p> Serialize for Time {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
+}
+
+pub enum DateTimeError {
+    LibraryUnsupported,
 }
 
 pub struct DateTime {
@@ -138,14 +147,7 @@ impl DateTime {
             opts: opts,
         }
     }
-}
-
-impl<'p> Serialize for DateTime {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+    pub fn write_buf(&self, buf: &mut DateTimeBuffer) -> Result<(), DateTimeError> {
         let has_tz = unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
         let offset_day: i32;
         let mut offset_second: i32;
@@ -195,7 +197,7 @@ impl<'p> Serialize for DateTime {
                     offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                     offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
                 } else {
-                    err!("datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil")
+                    return Err(DateTimeError::LibraryUnsupported);
                 }
             } else {
                 offset_second = 0;
@@ -284,6 +286,19 @@ impl<'p> Serialize for DateTime {
                     .unwrap();
                 }
             }
+        }
+        Ok(())
+    }
+}
+
+impl<'p> Serialize for DateTime {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        if self.write_buf(&mut buf).is_err() {
+            err!(DATETIME_LIBRARY_UNSUPPORTED)
         }
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }

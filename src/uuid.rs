@@ -7,7 +7,7 @@ use smallvec::SmallVec;
 use std::io::Write;
 use std::os::raw::c_uchar;
 
-type UUIDBuffer = heapless::Vec<u8, heapless::consts::U64>;
+pub type UUIDBuffer = heapless::Vec<u8, heapless::consts::U64>;
 
 pub struct UUID {
     ptr: *mut pyo3::ffi::PyObject,
@@ -17,12 +17,7 @@ impl UUID {
     pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
         UUID { ptr: ptr }
     }
-}
-impl<'p> Serialize for UUID {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    pub fn write_buf(&self, buf: &mut UUIDBuffer) {
         let value: u128;
         {
             // test_uuid_immutable, test_uuid_int
@@ -45,7 +40,6 @@ impl<'p> Serialize for UUID {
         let mut hexadecimal: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
         write!(hexadecimal, "{:032x}", value).unwrap();
 
-        let mut buf: UUIDBuffer = heapless::Vec::new();
         buf.extend_from_slice(&hexadecimal[..8]).unwrap();
         buf.push(HYPHEN).unwrap();
         buf.extend_from_slice(&hexadecimal[8..12]).unwrap();
@@ -55,6 +49,15 @@ impl<'p> Serialize for UUID {
         buf.extend_from_slice(&hexadecimal[16..20]).unwrap();
         buf.push(HYPHEN).unwrap();
         buf.extend_from_slice(&hexadecimal[20..]).unwrap();
+    }
+}
+impl<'p> Serialize for UUID {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut buf: UUIDBuffer = heapless::Vec::new();
+        self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }
