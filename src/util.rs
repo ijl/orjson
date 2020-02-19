@@ -18,6 +18,12 @@ macro_rules! unlikely {
     };
 }
 
+macro_rules! likely {
+    ($exp:expr) => {
+        unsafe { std::intrinsics::likely($exp) }
+    };
+}
+
 macro_rules! str_from_slice {
     ($ptr:expr, $size:expr) => {
         unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts($ptr, $size as usize)) }

@@ -35,7 +35,7 @@ headers = ("Library", "unsorted (ms)", "sorted (ms)", "vs. orjson")
 
 LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
-ITERATIONS = 100
+ITERATIONS = 500
 
 
 def per_iter_latency(val):

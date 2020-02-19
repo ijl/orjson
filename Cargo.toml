@@ -48,9 +48,11 @@ classifier = [
 ]
 
 [dependencies]
+ryu = { version = "1" }
 associative-cache = { version = "1" }
 heapless = { version = "0.5", default_features = false }
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
+inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 lazy_static = { version = "1.4", default_features = false }
 parking_lot = {version = "0.10", features = ["nightly"]}

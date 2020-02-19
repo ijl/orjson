@@ -29,6 +29,7 @@ mod uuid;
 const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | datetime::OMIT_MICROSECONDS
     | datetime::UTC_Z
+    | encode::NON_STR_KEYS
     | encode::SERIALIZE_DATACLASS
     | encode::SERIALIZE_NUMPY
     | encode::SERIALIZE_UUID
@@ -65,6 +66,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
     m.add("OPT_NAIVE_UTC", datetime::NAIVE_UTC)?;
     m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
+    m.add("OPT_NON_STR_KEYS", encode::NON_STR_KEYS)?;
     m.add("OPT_SERIALIZE_DATACLASS", encode::SERIALIZE_DATACLASS)?;
     m.add("OPT_SERIALIZE_NUMPY", encode::SERIALIZE_NUMPY)?;
     m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;

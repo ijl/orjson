@@ -99,8 +99,8 @@ def dumps(
 It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, and `None` instances. It supports
-arbitrary types through `default`. It does not serialize subclasses of
+`datetime.date`, `datetime.time`, `uuid.UUID`, and `None` instances. It
+supports arbitrary types through `default`. It does not serialize subclasses of
 supported types natively, with the exception of `dataclasses.dataclass`
 subclasses.
 
@@ -194,6 +194,73 @@ b'"1970-01-01T00:00:00"'
 b'"1970-01-01T00:00:00+00:00"'
 ```
 
+##### OPT_NON_STR_KEYS
+
+Serialize `dict` keys of type other than `str`. This allows `dict` keys
+to be one of `str`, `int`, `float`, `bool`, `None`, `datetime.datetime`,
+`datetime.date`, `datetime.time`, and `uuid.UUID`. For comparison,
+the standard library serializes `str`, `int`, `float`, `bool` or `None` by
+default. orjson benchmarks as being faster at serializing non-`str` keys
+than other libraries. This option is slower for `str` keys than the default
+and is not recommended generally.
+
+```python
+>>> import orjson, datetime, uuid
+>>> orjson.dumps(
+        {uuid.UUID("7202d115-7ff3-4c81-a7c1-2a1f067b1ece"): [1, 2, 3]},
+        option=orjson.OPT_NON_STR_KEYS,
+    )
+b'{"7202d115-7ff3-4c81-a7c1-2a1f067b1ece":[1,2,3]}'
+>>> orjson.dumps(
+        {datetime.datetime(1970, 1, 1, 0, 0, 0): [1, 2, 3]},
+        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_NAIVE_UTC,
+    )
+b'{"1970-01-01T00:00:00+00:00":[1,2,3]}'
+```
+
+These types are generally serialized how they would be as
+values, e.g., `datetime.datetime` is still an RFC 3339 string and respects
+options affecting it. The exception is that `int` serialization does not
+respect `OPT_STRICT_INTEGER`.
+
+This option has the risk of creating duplicate keys. This is because non-`str`
+objects may serialize to the same `str` as an existing key, e.g.,
+`{"1": true, 1: false}`. The last key to be inserted to the `dict` will be
+serialized last and a JSON deserializer will presumably take the last
+occurrence of a key (in the above, `false`). The first value will be lost.
+
+This option is compatible with `orjson.OPT_SORT_KEYS`. If sorting is used,
+note the sort is unstable and will be unpredictable for duplicate keys.
+
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(
+    {"other": 1, datetime.date(1970, 1, 5): 2, datetime.date(1970, 1, 3): 3},
+    option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS
+)
+b'{"1970-01-03":3,"1970-01-05":2,"other":1}'
+```
+
+This measures serializing 589KiB of JSON comprising a `list` of 100 `dict`
+in which each `dict` has both 365 randomly-sorted `int` keys representing epoch
+timestamps as well as one `str` key and the value for each key is a
+single integer. In "str keys", the keys were converted to `str` before
+serialization, and orjson still specifes `option=orjson.OPT_NON_STR_KEYS`
+(which is always somewhat slower).
+
+| Library    |   str keys (ms) | int keys (ms)   | int keys sorted (ms)   |
+|------------|-----------------|-----------------|------------------------|
+| orjson     |            2.32 | 2.85            | 5.80                   |
+| ujson      |            3.15 | 5.07            |                        |
+| rapidjson  |            4.73 |                 |                        |
+| simplejson |           11.74 | 15.58           | 24.38                  |
+| json       |            6.94 | 8.97            |                        |
+
+ujson is blank for sorting because it segfaults. json is blank because it
+raises `TypeError` on attempting to sort before converting all keys to `str`.
+rapidjson is blank because it does not support non-`str` keys. This can
+be reproduced using the `pynonstr` script.
+
 ##### OPT_OMIT_MICROSECONDS
 
 Do not serialize the `microsecond` field on `datetime.datetime` and
@@ -248,11 +315,11 @@ This measures serializing the twitter.json fixture unsorted and sorted:
 
 | Library    |   unsorted (ms) |   sorted (ms) |   vs. orjson |
 |------------|-----------------|---------------|--------------|
-| orjson     |            0.68 |          1.01 |            1 |
-| ujson      |            1.7  |          2.65 |            2 |
-| rapidjson  |            2.23 |          2.91 |            2 |
-| simplejson |            3.19 |          4.49 |            4 |
-| json       |            3.04 |          3.9  |            3 |
+| orjson     |            0.96 |          1.49 |            1 |
+| ujson      |            2.57 |          3.62 |            2 |
+| rapidjson  |            3.43 |          4.44 |            2 |
+| simplejson |            4.83 |          6.97 |            4 |
+| json       |            4.77 |          6.29 |            4 |
 
 The benchmark can be reproduced using the `pysort` script.
 

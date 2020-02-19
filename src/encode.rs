@@ -21,13 +21,15 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const RECURSION_LIMIT: u8 = 255;
 
+pub const NON_STR_KEYS: u16 = 1 << 8;
 pub const SERIALIZE_DATACLASS: u16 = 1 << 4;
 pub const SERIALIZE_NUMPY: u16 = 1 << 7;
 pub const SERIALIZE_UUID: u16 = 1 << 5;
 pub const SORT_KEYS: u16 = 1 << 6;
 pub const STRICT_INTEGER: u16 = 1;
 
-const DATACLASS_DICT_PATH: u16 = 1 << 8;
+const DATACLASS_DICT_PATH: u16 = 1 << 9;
+const SORT_OR_NON_STR_KEYS: u16 = SORT_KEYS | NON_STR_KEYS;
 
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
@@ -181,9 +183,10 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                if self.opts & SORT_KEYS == 0
-                    || self.opts & DATACLASS_DICT_PATH == DATACLASS_DICT_PATH
-                {
+                if likely!(
+                    self.opts & SORT_OR_NON_STR_KEYS == 0
+                        || self.opts & DATACLASS_DICT_PATH == DATACLASS_DICT_PATH
+                ) {
                     let opts = self.opts & !DATACLASS_DICT_PATH;
                     let mut map = serializer.serialize_map(None).unwrap();
                     let mut pos = 0isize;
@@ -214,6 +217,15 @@ impl<'p> Serialize for SerializePyObject {
                         ))?;
                     }
                     map.end()
+                } else if self.opts & NON_STR_KEYS == NON_STR_KEYS {
+                    NonStrKey::new(
+                        self.ptr,
+                        self.opts,
+                        self.default_calls,
+                        self.recursion,
+                        self.default,
+                    )
+                    .serialize(serializer)
                 } else {
                     DictSortedKey::new(
                         self.ptr,

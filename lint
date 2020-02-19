@@ -1,6 +1,6 @@
 #!/usr/bin/bash -e
 
 autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports .
-isort ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy
-black ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy
+isort ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr
+black ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr
 mypy --ignore-missing-imports ./bench/*.py ./orjson.pyi ./test/*.py

@@ -13,7 +13,7 @@ const PLUS: u8 = 43; // "+"
 const ZERO: u8 = 48; // "0"
 const T: u8 = 84; // "T"
 const COLON: u8 = 58; // ":"
-const PERIOD: u8 = 46; // ":"
+const PERIOD: u8 = 46; // "."
 const Z: u8 = 90; // "Z"
 
 pub type DateTimeBuffer = heapless::Vec<u8, heapless::consts::U32>;

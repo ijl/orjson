@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# coding=UTF-8
 
 import unittest
 import uuid
@@ -12,7 +11,7 @@ class Custom:
         self.name = uuid.uuid4().hex
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}({self.name})"
 
 
 class Recursive:
@@ -136,8 +135,7 @@ class TypeTests(unittest.TestCase):
 
         self.assertEqual(
             orjson.dumps([ref] * 100, default=default),
-            b"[%s]"
-            % b",".join((b'"%s"' % str(ref).encode("utf-8") for _ in range(100))),
+            b"[%s]" % b",".join(b'"%s"' % str(ref).encode("utf-8") for _ in range(100)),
         )
 
     def test_default_func_bytes(self):
