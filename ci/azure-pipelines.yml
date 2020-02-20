@@ -21,8 +21,9 @@ jobs:
   variables:
     interpreter: python3.9
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: $HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
+    verifyManylinux: false
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -30,11 +31,11 @@ jobs:
 - job: linux_python38
   pool:
     vmImage: ubuntu-18.04
-  container: python:3.8-buster
+  container: quay.io/pypa/manylinux1_x86_64
   variables:
     interpreter: python3.8
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: $HOME/.local/bin:$HOME/.cargo/bin:/opt/python/cp38-cp38/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
@@ -43,11 +44,11 @@ jobs:
 - job: linux_python37
   pool:
     vmImage: ubuntu-18.04
-  container: python:3.7-buster
+  container: quay.io/pypa/manylinux1_x86_64
   variables:
     interpreter: python3.7
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: $HOME/.local/bin:$HOME/.cargo/bin:/opt/python/cp37-cp37m/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
@@ -56,11 +57,11 @@ jobs:
 - job: linux_python36
   pool:
     vmImage: ubuntu-18.04
-  container: python:3.6-buster
+  container: quay.io/pypa/manylinux1_x86_64
   variables:
     interpreter: python3.6
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: $HOME/.local/bin:$HOME/.cargo/bin:/opt/python/cp36-cp36m/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
