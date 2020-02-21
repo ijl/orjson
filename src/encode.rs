@@ -21,12 +21,13 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const RECURSION_LIMIT: u8 = 255;
 
-pub const NON_STR_KEYS: u16 = 1 << 8;
+pub const STRICT_INTEGER: u16 = 1;
 pub const SERIALIZE_DATACLASS: u16 = 1 << 4;
-pub const SERIALIZE_NUMPY: u16 = 1 << 7;
 pub const SERIALIZE_UUID: u16 = 1 << 5;
 pub const SORT_KEYS: u16 = 1 << 6;
-pub const STRICT_INTEGER: u16 = 1;
+pub const SERIALIZE_NUMPY: u16 = 1 << 7;
+pub const NON_STR_KEYS: u16 = 1 << 8;
+pub const PRETTY: u16 = 1 << 11;
 
 const DATACLASS_DICT_PATH: u16 = 1 << 9;
 const SORT_OR_NON_STR_KEYS: u16 = SORT_KEYS | NON_STR_KEYS;
@@ -37,10 +38,19 @@ pub fn serialize(
     opts: u16,
 ) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let mut buf: Vec<u8> = Vec::with_capacity(1024);
-    match serde_json::to_writer(
-        &mut buf,
-        &SerializePyObject::new(ptr, None, opts, 0, 0, default),
-    ) {
+
+    let res = if opts & PRETTY == PRETTY {
+        serde_json::to_writer_pretty(
+            &mut buf,
+            &SerializePyObject::new(ptr, None, opts, 0, 0, default),
+        )
+    } else {
+        serde_json::to_writer(
+            &mut buf,
+            &SerializePyObject::new(ptr, None, opts, 0, 0, default),
+        )
+    };
+    match res {
         Ok(_) => Ok(unsafe {
             NonNull::new_unchecked(pyo3::ffi::PyBytes_FromStringAndSize(
                 buf.as_ptr() as *const c_char,

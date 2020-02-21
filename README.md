@@ -311,6 +311,25 @@ b'{"b":1,"c":2,"a":3}'
 b'{"a":3,"b":1,"c":2}'
 ```
 
+##### OPT_PRETTY
+
+Output indented json. This is equivalent to `indent=2` in the standard library.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"list": [1, 2, 3]})
+b'{"list":[1,2,3]}'
+>>> orjson.dumps({"list": [1, 2, 3]}, option=orjson.OPT_PRETTY)
+b'{
+  "list": [
+    1,
+    2,
+    3
+  ]
+}'
+
+```
+
 This measures serializing the twitter.json fixture unsorted and sorted:
 
 | Library    |   unsorted (ms) |   sorted (ms) |   vs. orjson |

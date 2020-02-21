@@ -1,5 +1,9 @@
 # Changelog
 
+### Added
+
+- add `OPT_PRETTY` option to output indented json
+
 ## 2.5.0 - 2020-02-19
 
 ### Added

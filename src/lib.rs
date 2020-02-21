@@ -34,6 +34,7 @@ const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | encode::SERIALIZE_NUMPY
     | encode::SERIALIZE_UUID
     | encode::SORT_KEYS
+    | encode::PRETTY
     | encode::STRICT_INTEGER) as i32;
 
 #[pymodule]
@@ -71,6 +72,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_SERIALIZE_NUMPY", encode::SERIALIZE_NUMPY)?;
     m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;
     m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
+    m.add("OPT_PRETTY", encode::PRETTY)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
     m.add("OPT_UTC_Z", datetime::UTC_Z)?;
 
