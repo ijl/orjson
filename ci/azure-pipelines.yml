@@ -1,3 +1,8 @@
+pr:
+  branches:
+    include:
+    - '*'
+
 variables:
   toolchain: nightly-2020-02-18
 
