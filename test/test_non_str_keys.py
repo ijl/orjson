@@ -132,7 +132,11 @@ class NonStrKeyTests(unittest.TestCase):
     def test_dict_non_str_and_sort_keys(self):
         self.assertEqual(
             orjson.dumps(
-                {"other": 1, datetime.date(1970, 1, 5): 2, datetime.date(1970, 1, 3): 3},
+                {
+                    "other": 1,
+                    datetime.date(1970, 1, 5): 2,
+                    datetime.date(1970, 1, 3): 3,
+                },
                 option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS,
             ),
             b'{"1970-01-03":3,"1970-01-05":2,"other":1}',

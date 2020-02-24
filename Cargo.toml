@@ -22,6 +22,7 @@ include = [
     "test/*.py",
     "test/requirements.txt",
 ]
+exclude = [".pytest_cache"]
 
 [lib]
 name = "orjson"

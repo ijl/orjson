@@ -1,20 +1,21 @@
 parameters:
   interpreter: ''
   target: ''
+  toolchain: ''
 
 steps:
 - script: |
     curl https://win.rustup.rs/x86_64 -o rustup-init.exe
-    rustup-init.exe -y --default-host $(target) --default-toolchain nightly --profile minimal
+    rustup-init.exe -y --default-host $(target) --default-toolchain $(toolchain) --profile minimal
     set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-    rustup default nightly
+    rustup default $(toolchain)
     echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
   displayName: rustup
-- script: python.exe -m pip install --upgrade pip wheel twine maturin
+- script: python.exe -m pip install --upgrade pip maturin twine
   displayName: build dependencies
 - script: python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
   displayName: test dependencies
-- script: maturin.exe build --release --strip --interpreter $(interpreter)
+- script: maturin.exe build --no-sdist --release --strip --interpreter $(interpreter)
   env:
     RUSTFLAGS: "-Zmutable-noalias -C target-feature=+sse2"
   displayName: build

@@ -1,3 +1,6 @@
+variables:
+  toolchain: nightly-2020-02-18
+
 jobs:
 
 - job: linux_sdist
@@ -9,7 +12,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: '3.8'
       addToPath: true
   - checkout: self
   - template: ./azure-sdist.yml
@@ -21,7 +24,7 @@ jobs:
   variables:
     interpreter: python3.9
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
@@ -34,7 +37,7 @@ jobs:
   variables:
     interpreter: python3.8
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
@@ -47,7 +50,7 @@ jobs:
   variables:
     interpreter: python3.7
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self
@@ -60,7 +63,7 @@ jobs:
   variables:
     interpreter: python3.6
     manylinux: 1
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
   steps:
   - checkout: self

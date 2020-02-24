@@ -3,17 +3,18 @@ parameters:
   manylinux: ''
   path: ''
   target: ''
+  toolchain: ''
 
 steps:
-- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
+- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $(toolchain) --profile minimal -y
   displayName: rustup
-- bash: PATH=$(path) rustup default nightly
-  displayName: ensure nightly
-- bash: PATH=$(path) pip install --user --upgrade pip wheel maturin twine
+- bash: PATH=$(path) rustup default $(toolchain)
+  displayName: ensure toolchain
+- bash: PATH=$(path) pip install --user --upgrade pip maturin twine
   displayName: build dependencies
 - bash: PATH=$(path) pip install --user -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
-- bash: PATH=$(path) RUSTFLAGS="-Zmutable-noalias -C target-feature=+sse2" maturin build --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
+- bash: PATH=$(path) RUSTFLAGS="-Zmutable-noalias -C target-feature=+sse2" maturin build --no-sdist --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: PATH=$(path) pip install --user target/wheels/orjson*.whl
   displayName: install
