@@ -31,8 +31,7 @@ support for 64-bit
 file-like objects
 
 orjson supports CPython 3.6, 3.7, 3.8, and 3.9. It distributes wheels for
-Linux, macOS, and Windows. The manylinux1 wheel differs from PEP 513 in
-requiring glibc 2.18, released 2013, or later. orjson does not support PyPy.
+Linux, macOS, and Windows. orjson does not support PyPy.
 
 orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is
@@ -630,6 +629,17 @@ JSONDecodeError: unexpected end of hex escape at line 1 column 8: line 1 column 
 ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
 >>> json.loads('"\\ud800"')
 '\ud800'
+```
+
+To make a best effort at deserializing bad input, first decode `bytes` using
+the `replace` or `lossy` argument for `errors`:
+
+```python
+>>> import orjson
+>>> orjson.loads(b'"\xed\xa0\x80"')
+JSONDecodeError: str is not valid UTF-8: surrogates not allowed
+>>> orjson.loads(b'"\xed\xa0\x80"'.decode("utf-8", "replace"))
+'���'
 ```
 
 ### UUID

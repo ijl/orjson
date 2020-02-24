@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.1 - 2020-02-24
+
+### Changed
+
+- `manylinux1` wheels for 3.6, 3.7, and 3.8 are now compliant with the spec by
+not depending on glibc 2.18.
+
 ## 2.5.0 - 2020-02-19
 
 ### Added

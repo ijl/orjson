@@ -79,7 +79,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
         data = unsafe { std::str::from_utf8_unchecked(slice) };
     } else {
         return Err(JSONDecodeError::py_err((
-            "Input must be str or bytes",
+            "Input must be bytes, bytearray, or str",
             "",
             0,
         )));
