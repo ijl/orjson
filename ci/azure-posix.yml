@@ -27,7 +27,7 @@ steps:
   displayName: thread
 - bash: ./integration/run http
   displayName: http
-- bash: ./deploy target/wheels/*.whl
+- bash: ./ci/deploy target/wheels/*.whl
   displayName: deploy
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)

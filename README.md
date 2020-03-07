@@ -30,8 +30,9 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.6, 3.7, 3.8, and 3.9. It distributes wheels for
-Linux, macOS, and Windows. orjson does not support PyPy.
+orjson supports CPython 3.6, 3.7, 3.8, and 3.9. It distributes x86_64/amd64
+and aarch64/armv8 wheels for Linux. It distributes x86_64/amd64 wheels for
+macOS and Windows. orjson does not support PyPy.
 
 orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is

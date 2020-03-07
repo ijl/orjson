@@ -1,0 +1,79 @@
+# the repetition should be a function using jsonnet, but drone still
+# expects YAML even with .jsonnet extension, yielding a parse error
+kind: pipeline
+name: linux_python38_aarch64
+platform:
+  arch: arm64
+steps:
+- name: test
+  image: python:3.8-buster
+  environment:
+    RUSTFLAGS: "-Zmutable-noalias"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    TWINE_USERNAME:
+      from_secret: twine_username
+    TWINE_PASSWORD:
+      from_secret: twine_password
+  commands:
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
+    - python3.8 -m pip install --upgrade pip twine
+    - python3.8 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.8
+    - python3.8 -m pip install target/wheels/orjson*.whl
+    - python3.8 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - pytest -s -rxX -v test
+    - ./integration/run thread
+    - ./integration/run http
+    - ./ci/deploy target/wheels/*.whl
+---
+kind: pipeline
+name: linux_python37_aarch64
+platform:
+  arch: arm64
+steps:
+- name: test
+  image: python:3.7-buster
+  environment:
+    RUSTFLAGS: "-Zmutable-noalias"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    TWINE_USERNAME:
+      from_secret: twine_username
+    TWINE_PASSWORD:
+      from_secret: twine_password
+  commands:
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
+    - python3.7 -m pip install --upgrade pip twine
+    - python3.7 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.7
+    - python3.7 -m pip install target/wheels/orjson*.whl
+    - python3.7 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - pytest -s -rxX -v test
+    - ./integration/run thread
+    - ./integration/run http
+    - ./ci/deploy target/wheels/*.whl
+---
+kind: pipeline
+name: linux_python36_aarch64
+platform:
+  arch: arm64
+steps:
+- name: test
+  image: python:3.6-buster
+  environment:
+    RUSTFLAGS: "-Zmutable-noalias"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    TWINE_USERNAME:
+      from_secret: twine_username
+    TWINE_PASSWORD:
+      from_secret: twine_password
+  commands:
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
+    - python3.6 -m pip install --upgrade pip twine
+    - python3.6 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.6
+    - python3.6 -m pip install target/wheels/orjson*.whl
+    - python3.6 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - pytest -s -rxX -v test
+    - ./integration/run thread
+    - ./integration/run http
+    - ./ci/deploy target/wheels/*.whl

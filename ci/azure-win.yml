@@ -29,7 +29,7 @@ steps:
   displayName: pytest without optional packages
 - script: python.exe integration\thread
   displayName: thread
-- bash: ./deploy /d/a/1/s/target/wheels/*.whl
+- bash: ./ci/deploy /d/a/1/s/target/wheels/*.whl
   displayName: deploy
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)

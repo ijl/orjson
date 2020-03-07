@@ -32,7 +32,7 @@ steps:
   displayName: thread
 - bash: PATH=$(path) ./integration/run http
   displayName: http
-- bash: PATH=$(path) ./deploy target/wheels/*.whl
+- bash: PATH=$(path) ./ci/deploy target/wheels/*.whl
   displayName: deploy
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)

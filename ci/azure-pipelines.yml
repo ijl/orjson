@@ -22,7 +22,7 @@ jobs:
   - checkout: self
   - template: ./azure-sdist.yml
 
-- job: linux_python39
+- job: linux_python39_amd64
   pool:
     vmImage: ubuntu-18.04
   container: python:3.9-rc-buster
@@ -36,7 +36,7 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
-- job: linux_python38
+- job: linux_python38_amd64
   pool:
     vmImage: ubuntu-18.04
   container: quay.io/pypa/manylinux1_x86_64:latest
@@ -50,7 +50,7 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
-- job: linux_python37
+- job: linux_python37_amd64
   pool:
     vmImage: ubuntu-18.04
   container: quay.io/pypa/manylinux1_x86_64:latest
@@ -64,7 +64,7 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
-- job: linux_python36
+- job: linux_python36_amd64
   pool:
     vmImage: ubuntu-18.04
   container: quay.io/pypa/manylinux1_x86_64:latest
@@ -78,7 +78,7 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
-- job: macos_python38
+- job: macos_python38_amd64
   pool:
     vmImage: macOS-10.14
   variables:
@@ -93,7 +93,7 @@ jobs:
   - checkout: self
   - template: ./azure-posix.yml
 
-- job: macos_python37
+- job: macos_python37_amd64
   pool:
     vmImage: macOS-10.14
   variables:
@@ -108,7 +108,7 @@ jobs:
   - checkout: self
   - template: ./azure-posix.yml
 
-- job: macos_python36
+- job: macos_python36_amd64
   pool:
     vmImage: macOS-10.14
   variables:
@@ -123,7 +123,7 @@ jobs:
   - checkout: self
   - template: ./azure-posix.yml
 
-- job: win_python38
+- job: win_python38_amd64
   pool:
     vmImage: windows-2019
   variables:
@@ -138,7 +138,7 @@ jobs:
   - checkout: self
   - template: ./azure-win.yml
 
-- job: win_python37
+- job: win_python37_amd64
   pool:
     vmImage: windows-2019
   variables:
@@ -153,7 +153,7 @@ jobs:
   - checkout: self
   - template: ./azure-win.yml
 
-- job: win_python36
+- job: win_python36_amd64
   pool:
     vmImage: windows-2019
   variables:
