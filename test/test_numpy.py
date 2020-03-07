@@ -17,24 +17,58 @@ def numpy_default(obj):
 
 @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
 class NumpyTests(unittest.TestCase):
+    def test_numpy_array_d1_uintp(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([0, 18446744073709551615], numpy.uintp),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[0,18446744073709551615]",
+        )
+
+    def test_numpy_array_d1_intp(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([-9223372036854775807, 9223372036854775807], numpy.intp),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[-9223372036854775807,9223372036854775807]",
+        )
+
     def test_numpy_array_d1_i64(self):
         self.assertEqual(
             orjson.dumps(
-                numpy.array(
-                    [-9223372036854775807, 0, 9223372036854775807], numpy.int64
-                ),
+                numpy.array([-9223372036854775807, 9223372036854775807], numpy.int64),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             ),
-            b"[-9223372036854775807,0,9223372036854775807]",
+            b"[-9223372036854775807,9223372036854775807]",
+        )
+
+    def test_numpy_array_d1_u64(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([0, 18446744073709551615], numpy.uint64),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[0,18446744073709551615]",
         )
 
     def test_numpy_array_d1_i32(self):
         self.assertEqual(
             orjson.dumps(
-                numpy.array([-2147483647, 0, 2147483647], numpy.int32),
+                numpy.array([-2147483647, 2147483647], numpy.int32),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             ),
-            b"[-2147483647,0,2147483647]",
+            b"[-2147483647,2147483647]",
+        )
+
+    def test_numpy_array_d1_u32(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([0, 4294967295], numpy.uint32),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[0,4294967295]",
         )
 
     def test_numpy_array_d1_f32(self):

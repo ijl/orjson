@@ -43,6 +43,8 @@ pub enum ItemType {
     F64,
     I32,
     I64,
+    U32,
+    U64,
 }
 
 pub enum PyArrayError {
@@ -51,6 +53,13 @@ pub enum PyArrayError {
     UnsupportedDataType,
 }
 
+// >>> arr = numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.int32)
+// >>> arr.ndim
+// 3
+// >>> arr.shape
+// (2, 2, 2)
+// >>> arr.strides
+// (16, 8, 4)
 pub struct PyArray {
     array: *mut PyArrayInterface,
     position: Vec<isize>,
@@ -60,7 +69,7 @@ pub struct PyArray {
 }
 
 impl<'a> PyArray {
-    #[inline(never)]
+    #[cold]
     pub fn new(ptr: *mut PyObject) -> Result<Self, PyArrayError> {
         let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
         let array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
@@ -82,40 +91,24 @@ impl<'a> PyArray {
             if pyarray.kind().is_none() {
                 Err(PyArrayError::UnsupportedDataType)
             } else {
-                pyarray.build();
+                if pyarray.dimensions() > 1 {
+                    pyarray.build();
+                }
                 Ok(pyarray)
             }
         }
     }
 
-    fn from_parent(&self, position: Vec<isize>) -> Self {
+    fn from_parent(&self, position: Vec<isize>, num_children: usize) -> Self {
         let mut arr = PyArray {
             array: self.array,
             position: position,
-            children: Vec::new(),
+            children: Vec::with_capacity(num_children),
             depth: self.depth + 1,
             capsule: self.capsule,
         };
         arr.build();
         arr
-    }
-
-    // iterator()?
-    fn build(&mut self) {
-        // >>> arr = numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.int32)
-        // >>> arr.ndim
-        // 3
-        // >>> arr.shape
-        // (2, 2, 2)
-        // >>> arr.strides
-        // (16, 8, 4)
-        if self.dimensions() > 1 && self.depth < self.dimensions() - 1 {
-            for i in 0..=self.shape()[self.depth] - 1 {
-                let mut position: Vec<isize> = self.position.iter().copied().collect();
-                position[self.depth] = i;
-                self.children.push(self.from_parent(position))
-            }
-        }
     }
 
     fn kind(&self) -> Option<ItemType> {
@@ -125,21 +118,36 @@ impl<'a> PyArray {
             (102, 8) => Some(ItemType::F64),
             (105, 4) => Some(ItemType::I32),
             (105, 8) => Some(ItemType::I64),
+            (117, 4) => Some(ItemType::U32),
+            (117, 8) => Some(ItemType::U64),
             _ => None,
         }
     }
 
+    fn build(&mut self) {
+        if self.depth < self.dimensions() - 1 {
+            for i in 0..=self.shape()[self.depth] - 1 {
+                let mut position: Vec<isize> = self.position.iter().copied().collect();
+                position[self.depth] = i;
+                let num_children: usize;
+                if self.depth < self.dimensions() - 2 {
+                    num_children = self.shape()[self.depth + 1] as usize;
+                } else {
+                    num_children = 0;
+                }
+                self.children.push(self.from_parent(position, num_children))
+            }
+        }
+    }
+
     fn data(&self) -> *mut c_void {
-        let mut offset = self
+        let offset = self
             .strides()
             .iter()
             .zip(self.position.iter().copied())
             .take(self.depth)
             .map(|(a, b)| a * b)
             .sum::<isize>();
-        if self.depth != self.dimensions() - 1 {
-            offset += self.position[self.depth] * self.strides()[self.depth];
-        }
         unsafe { (*self.array).data.offset(offset) }
     }
 
@@ -169,7 +177,6 @@ impl Drop for PyArray {
 }
 
 impl<'p> Serialize for PyArray {
-    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -207,6 +214,18 @@ impl<'p> Serialize for PyArray {
                         seq.serialize_element(&DataTypeI32 { obj: each }).unwrap();
                     }
                 }
+                ItemType::U64 => {
+                    let slice: &[u64] = slice!(data_ptr as *const u64, num_items);
+                    for &each in slice.iter() {
+                        seq.serialize_element(&DataTypeU64 { obj: each }).unwrap();
+                    }
+                }
+                ItemType::U32 => {
+                    let slice: &[u32] = slice!(data_ptr as *const u32, num_items);
+                    for &each in slice.iter() {
+                        seq.serialize_element(&DataTypeU32 { obj: each }).unwrap();
+                    }
+                }
                 ItemType::BOOL => {
                     let slice: &[u8] = slice!(data_ptr as *const u8, num_items);
                     for &each in slice.iter() {
@@ -216,20 +235,6 @@ impl<'p> Serialize for PyArray {
             }
         }
         seq.end()
-    }
-}
-
-#[repr(transparent)]
-struct DataTypeF64 {
-    pub obj: f64,
-}
-
-impl<'p> Serialize for DataTypeF64 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_f64(self.obj)
     }
 }
 
@@ -248,16 +253,16 @@ impl<'p> Serialize for DataTypeF32 {
 }
 
 #[repr(transparent)]
-struct DataTypeI64 {
-    pub obj: i64,
+struct DataTypeF64 {
+    pub obj: f64,
 }
 
-impl<'p> Serialize for DataTypeI64 {
+impl<'p> Serialize for DataTypeF64 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_i64(self.obj)
+        serializer.serialize_f64(self.obj)
     }
 }
 
@@ -272,6 +277,48 @@ impl<'p> Serialize for DataTypeI32 {
         S: Serializer,
     {
         serializer.serialize_i32(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct DataTypeI64 {
+    pub obj: i64,
+}
+
+impl<'p> Serialize for DataTypeI64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i64(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct DataTypeU32 {
+    pub obj: u32,
+}
+
+impl<'p> Serialize for DataTypeU32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u32(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct DataTypeU64 {
+    pub obj: u64,
+}
+
+impl<'p> Serialize for DataTypeU64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u64(self.obj)
     }
 }
 
