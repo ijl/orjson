@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.2 - 2020-03-07
+
+### Changed
+
+- Publish `manylinux2014` wheels for `aarch64`.
+- numpy support now includes `numpy.uint32` and `numpy.uint64`.
+
 ## 2.5.1 - 2020-02-24
 
 ### Changed
