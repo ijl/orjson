@@ -183,7 +183,10 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                if likely!(
+                let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
+                if unlikely!(len == 0) {
+                    serializer.serialize_map(Some(0)).unwrap().end()
+                } else if likely!(
                     self.opts & SORT_OR_NON_STR_KEYS == 0
                         || self.opts & DATACLASS_DICT_PATH == DATACLASS_DICT_PATH
                 ) {
@@ -193,9 +196,8 @@ impl<'p> Serialize for SerializePyObject {
                     let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                     let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
                     let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    while unsafe {
-                        pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) != 0
-                    } {
+                    for _ in 0..=len - 1 {
+                        unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) };
                         if unlikely!((*key).ob_type != STR_TYPE) {
                             err!(KEY_MUST_BE_STR)
                         }
@@ -224,6 +226,7 @@ impl<'p> Serialize for SerializePyObject {
                         self.default_calls,
                         self.recursion,
                         self.default,
+                        len,
                     )
                     .serialize(serializer)
                 } else {
@@ -233,6 +236,7 @@ impl<'p> Serialize for SerializePyObject {
                         self.default_calls,
                         self.recursion,
                         self.default,
+                        len,
                     )
                     .serialize(serializer)
                 }
@@ -310,14 +314,14 @@ impl<'p> Serialize for SerializePyObject {
                     unsafe { pyo3::ffi::PyErr_Clear() };
                     let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
                     ffi!(Py_DECREF(fields));
+                    let len = unsafe { PyDict_GET_SIZE(fields) as usize };
                     let mut map = serializer.serialize_map(None).unwrap();
                     let mut pos = 0isize;
                     let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                     let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
                     let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    while unsafe {
-                        pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) != 0
-                    } {
+                    for _ in 0..=len - 1 {
+                        unsafe { pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) };
                         {
                             let data = read_utf8_from_str(attr, &mut str_size);
                             if unlikely!(data.is_null()) {
