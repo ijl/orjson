@@ -17,7 +17,7 @@ steps:
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
     - python3.8 -m pip install --upgrade pip twine
-    - python3.8 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - python3.8 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.8
     - python3.8 -m pip install target/wheels/orjson*.whl
     - python3.8 -m pip install -r test/requirements.txt -r integration/requirements.txt
@@ -43,7 +43,7 @@ steps:
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
     - python3.7 -m pip install --upgrade pip twine
-    - python3.7 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - python3.7 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.7
     - python3.7 -m pip install target/wheels/orjson*.whl
     - python3.7 -m pip install -r test/requirements.txt -r integration/requirements.txt
@@ -69,7 +69,7 @@ steps:
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
     - python3.6 -m pip install --upgrade pip twine
-    - python3.6 -m pip install --upgrade git+https://github.com/ijl/maturin.git@b0227e4db851e30248c7e8535db55c8f52b9af36
+    - python3.6 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.6
     - python3.6 -m pip install target/wheels/orjson*.whl
     - python3.6 -m pip install -r test/requirements.txt -r integration/requirements.txt
