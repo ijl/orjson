@@ -11,7 +11,7 @@ from dateutil import tz
 try:
     import pendulum
 except ImportError:
-    pendulum = None
+    pendulum = None  # type: ignore
 
 
 class DatetimeTests(unittest.TestCase):

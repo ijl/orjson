@@ -92,7 +92,7 @@ for lib_name in LIBRARIES:
     if lib_name == "orjson":
         compared_to_orjson = 1
     elif time_unsorted:
-        compared_to_orjson = int(time_sorted / orjson_time_sorted)
+        compared_to_orjson = time_sorted / orjson_time_sorted
     else:
         compared_to_orjson = None
 
@@ -101,7 +101,7 @@ for lib_name in LIBRARIES:
             lib_name,
             f"{time_unsorted:,.2f}" if time_unsorted else "",
             f"{time_sorted:,.2f}" if time_sorted else "",
-            f"{compared_to_orjson:d}" if compared_to_orjson else "",
+            f"{compared_to_orjson:,.1f}" if compared_to_orjson else "",
         )
     )
 

@@ -33,6 +33,7 @@ const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | encode::SERIALIZE_DATACLASS
     | encode::SERIALIZE_NUMPY
     | encode::SERIALIZE_UUID
+    | encode::INDENT_2
     | encode::SORT_KEYS
     | encode::STRICT_INTEGER) as i32;
 
@@ -71,6 +72,7 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("OPT_SERIALIZE_NUMPY", encode::SERIALIZE_NUMPY)?;
     m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;
     m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
+    m.add("OPT_INDENT_2", encode::INDENT_2)?;
     m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
     m.add("OPT_UTC_Z", datetime::UTC_Z)?;
 
@@ -122,8 +124,15 @@ pub fn dumps(
     } else {
         optsbits = 0
     };
-    match encode::serialize(obj.as_ptr(), pydef, optsbits as u16) {
-        Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
-        Err(err) => Err(err),
+    if optsbits as u16 & encode::INDENT_2 == encode::INDENT_2 {
+        match encode::serialize_pretty(obj.as_ptr(), pydef, optsbits as u16) {
+            Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
+            Err(err) => Err(err),
+        }
+    } else {
+        match encode::serialize(obj.as_ptr(), pydef, optsbits as u16) {
+            Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
+            Err(err) => Err(err),
+        }
     }
 }

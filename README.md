@@ -15,6 +15,7 @@ Its features and drawbacks compared to other Python JSON libraries:
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 e.g., "1970-01-01T00:00:00+00:00"
 * serializes `numpy.ndarray` instances 3-10x as fast as other libraries
+* pretty prints 10x to 20x as fast as the standard library
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
 "\\\u597d"
@@ -26,7 +27,6 @@ libraries
 * has an option for strict JSON conformance on 53-bit integers with default
 support for 64-bit
 * does not support subclasses by default, requiring use of `default` hook
-* does not support pretty printing
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
@@ -175,6 +175,66 @@ b'{"set":null}'
 To modify how data is serialized, specify `option`. Each `option` is an integer
 constant in `orjson`. To specify multiple options, mask them together, e.g.,
 `option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
+
+##### OPT_INDENT_2
+
+Pretty-print output with an indent of two spaces. This is equivalent to
+`indent=2` in the standard library. Pretty printing is slower and the output
+larger. orjson is the fastest compared library at pretty printing and has
+much less of a slowdown to pretty print than the standard library does. This
+option is compatible with all other options.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"a": "b", "c": {"d": True}, "e": [1, 2]})
+b'{"a":"b","c":{"d":true},"e":[1,2]}'
+>>> orjson.dumps(
+    {"a": "b", "c": {"d": True}, "e": [1, 2]},
+    option=orjson.OPT_INDENT_2
+)
+b'{\n  "a": "b",\n  "c": {\n    "d": true\n  },\n  "e": [\n    1,\n    2\n  ]\n}'
+```
+
+If displayed, the indentation and linebreaks appear like this:
+
+```json
+{
+  "a": "b",
+  "c": {
+    "d": true
+  },
+  "e": [
+    1,
+    2
+  ]
+}
+```
+
+This measures serializing the github.json fixture as compact (52KiB) or
+pretty (64KiB):
+
+| Library    |   compact (ms) | pretty (ms)   | vs. orjson   |
+|------------|----------------|---------------|--------------|
+| orjson     |           0.07 | 0.09          | 1.0          |
+| ujson      |           0.17 | 0.18          | 2.1          |
+| rapidjson  |           0.25 |               |              |
+| simplejson |           0.42 | 1.50          | 17.0         |
+| json       |           0.41 | 1.29          | 14.6         |
+
+This measures serializing the citm_catalog.json fixture, more of a worst
+case due to the amount of nesting and newlines, as compact (489KiB) or
+pretty (1.1MiB):
+
+| Library    |   compact (ms) | pretty (ms)   | vs. orjson   |
+|------------|----------------|---------------|--------------|
+| orjson     |           1.11 | 2.49          | 1.0          |
+| ujson      |           3.44 | 5.19          | 2.1          |
+| rapidjson  |           3.61 |               |              |
+| simplejson |          11.43 | 77.88         | 31.3         |
+| json       |           7.41 | 56.34         | 22.6         |
+
+rapidjson is blank because it does not support pretty printing. This can be
+reproduced using the `pyindent` script.
 
 ##### OPT_NAIVE_UTC
 

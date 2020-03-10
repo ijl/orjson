@@ -88,7 +88,7 @@ for lib_name in LIBRARIES:
         compared_to_orjson = 1
         orjson_latency = latency
     elif latency:
-        compared_to_orjson = int(latency / orjson_latency)
+        compared_to_orjson = latency / orjson_latency
     else:
         compared_to_orjson = None
 
@@ -103,7 +103,7 @@ for lib_name in LIBRARIES:
             lib_name,
             f"{latency:,.0f}" if latency else "",
             f"{mem_diff:,.0f}" if mem else "",
-            f"{compared_to_orjson}" if (latency and compared_to_orjson) else "",
+            f"{compared_to_orjson:,.1f}" if (latency and compared_to_orjson) else "",
         )
     )
 
