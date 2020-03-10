@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.0 - 2020-03-10
+
+### Added
+
+- `orjson.dumps()` pretty prints with an indentation of two spaces if
+`option=orjson.OPT_INDENT_2` is specified.
+
 ## 2.5.2 - 2020-03-07
 
 ### Changed
