@@ -51,15 +51,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08c48aae112d48ed9f069b33538ea9e3e90aa263cfa3d1c24309612b1f7472de"
 
 [[package]]
-name = "c2-chacha"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "214238caa1bf3a496ec3392968969cab8549f96ff30652c9e56885329315f6bb"
-dependencies = [
- "ppv-lite86",
-]
-
-[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -429,11 +420,11 @@ dependencies = [
 
 [[package]]
 name = "rand_chacha"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03a2a90da8c7523f554344f921aa97283eadf6ac484a6d2a7d0212fa7f8d6853"
+checksum = "f4c8ed856279c9737206bf725bf36935d8666ead7aa69b52be55af369d193402"
 dependencies = [
- "c2-chacha",
+ "ppv-lite86",
  "rand_core 0.5.1",
 ]
 
@@ -469,9 +460,9 @@ checksum = "2439c63f3f6139d1b57529d16bc3b8bb855230c8efcc5d3a896c8bea7c3b1e84"
 
 [[package]]
 name = "regex"
-version = "1.3.4"
+version = "1.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "322cf97724bea3ee221b78fe25ac9c46114ebb51747ad5babd51a2fc6a8235a8"
+checksum = "8900ebc1363efa7ea1c399ccc32daed870b4002651e0bed86e72d501ebbe0048"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -481,15 +472,15 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.16"
+version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1132f845907680735a84409c3bebc64d1364a5683ffbce899550cd09d5eaefc1"
+checksum = "7fe5bd57d1d7414c6b5ed48563a2c855d995ff777729dcd91c369ec7fea395ae"
 
 [[package]]
 name = "ryu"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa8506c1de11c9c4e4c38863ccbe02a305c8188e85a05a784c9e11e1c3910c8"
+checksum = "535622e6be132bccd223f4bb2b8ac8d53cda3c7a6394944d3b2b33fb974f9d76"
 
 [[package]]
 name = "scopeguard"
