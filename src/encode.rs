@@ -32,39 +32,20 @@ pub const INDENT_2: u16 = 1 << 9;
 const DATACLASS_DICT_PATH: u16 = 1 << 10;
 const SORT_OR_NON_STR_KEYS: u16 = SORT_KEYS | NON_STR_KEYS;
 
-pub fn serialize_pretty(
-    ptr: *mut pyo3::ffi::PyObject,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
-    opts: u16,
-) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
-    let mut buf: Vec<u8> = Vec::with_capacity(1024);
-    match serde_json::to_writer_pretty(
-        &mut buf,
-        &SerializePyObject::new(ptr, None, opts, 0, 0, default),
-    ) {
-        Ok(_) => {
-            Ok(unsafe {
-                NonNull::new_unchecked(pyo3::ffi::PyBytes_FromStringAndSize(
-                    buf.as_ptr() as *const c_char,
-                    buf.len() as pyo3::ffi::Py_ssize_t,
-                ))
-            })
-        }
-
-        Err(err) => Err(JSONEncodeError::py_err(err.to_string())),
-    }
-}
-
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
     opts: u16,
 ) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let mut buf: Vec<u8> = Vec::with_capacity(1024);
-    match serde_json::to_writer(
-        &mut buf,
-        &SerializePyObject::new(ptr, None, opts, 0, 0, default),
-    ) {
+    let obj = SerializePyObject::new(ptr, None, opts, 0, 0, default);
+    let res;
+    if likely!(opts & INDENT_2 != INDENT_2) {
+        res = serde_json::to_writer(&mut buf, &obj);
+    } else {
+        res = serde_json::to_writer_pretty(&mut buf, &obj);
+    }
+    match res {
         Ok(_) => Ok(unsafe {
             NonNull::new_unchecked(pyo3::ffi::PyBytes_FromStringAndSize(
                 buf.as_ptr() as *const c_char,

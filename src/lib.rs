@@ -124,15 +124,8 @@ pub fn dumps(
     } else {
         optsbits = 0
     };
-    if optsbits as u16 & encode::INDENT_2 == encode::INDENT_2 {
-        match encode::serialize_pretty(obj.as_ptr(), pydef, optsbits as u16) {
-            Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
-            Err(err) => Err(err),
-        }
-    } else {
-        match encode::serialize(obj.as_ptr(), pydef, optsbits as u16) {
-            Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
-            Err(err) => Err(err),
-        }
+    match encode::serialize(obj.as_ptr(), pydef, optsbits as u16) {
+        Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
+        Err(err) => Err(err),
     }
 }
