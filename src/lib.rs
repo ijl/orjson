@@ -15,6 +15,7 @@ mod util;
 
 mod array;
 mod bytes;
+mod dataclass;
 mod datetime;
 mod decode;
 mod default;
