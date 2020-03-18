@@ -9,7 +9,6 @@ import sys
 import time
 from timeit import timeit
 
-import nujson
 import numpy
 import orjson
 import psutil
@@ -48,12 +47,12 @@ def default(__obj):
 
 headers = ("Library", "Latency (ms)", "RSS diff (MiB)", "vs. orjson")
 
-LIBRARIES = ("orjson", "nujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
 ITERATIONS = 10
 
 orjson_dumps = lambda: orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
-nujson_dumps = lambda: nujson.dumps(array).encode("utf-8")
+ujson_dumps = None
 rapidjson_dumps = lambda: rapidjson.dumps(array, default=default).encode("utf-8")
 simplejson_dumps = lambda: simplejson.dumps(array, default=default).encode("utf-8")
 json_dumps = lambda: json.dumps(array, default=default).encode("utf-8")
@@ -78,11 +77,17 @@ for lib_name in LIBRARIES:
 
     print(f"{lib_name}...")
     func = locals()[f"{lib_name}_dumps"]
-    total_latency = timeit(func, number=ITERATIONS,)
-    latency = per_iter_latency(total_latency)
-    time.sleep(1)
-    mem = max(memory_usage((func,), interval=0.001, timeout=latency * 2))
-    correct = test_correctness(func)
+    if func is None:
+        total_latency = None
+        latency = None
+        mem = None
+        correct = False
+    else:
+        total_latency = timeit(func, number=ITERATIONS,)
+        latency = per_iter_latency(total_latency)
+        time.sleep(1)
+        mem = max(memory_usage((func,), interval=0.001, timeout=latency * 2))
+        correct = test_correctness(func)
 
     if lib_name == "orjson":
         compared_to_orjson = 1

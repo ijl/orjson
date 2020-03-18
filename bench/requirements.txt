@@ -1,6 +1,5 @@
 matplotlib
 memory-profiler
-nujson
 pytest-benchmark
 python-rapidjson
 simplejson

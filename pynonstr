@@ -41,12 +41,6 @@ output_in_kib = len(orjson.dumps(data_as_str)) / 1024
 
 print(f"{output_in_kib:,.0f}KiB output (orjson)")
 
-orjson_dumps = lambda data: orjson.dumps(data_as_str, None, orjson.OPT_NON_STR_KEYS)
-nujson_dumps = lambda: nujson.dumps(array).encode("utf-8")
-rapidjson_dumps = lambda: rapidjson.dumps(array, default=default).encode("utf-8")
-simplejson_dumps = lambda: simplejson.dumps(array, default=default).encode("utf-8")
-json_dumps = lambda: json.dumps(array, default=default).encode("utf-8")
-
 
 def per_iter_latency(val):
     if val is None:

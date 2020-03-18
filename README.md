@@ -623,7 +623,7 @@ dimensions of `(50000, 100)` and `numpy.float64` values:
 | Library    | Latency (ms)   | RSS diff (MiB)   | vs. orjson   |
 |------------|----------------|------------------|--------------|
 | orjson     | 286            | 182              | 1            |
-| nujson     |                |                  |              |
+| ujson      |                |                  |              |
 | rapidjson  | 3,582          | 270              | 12           |
 | simplejson | 3,494          | 259              | 12           |
 | json       | 3,476          | 260              | 12           |
@@ -634,7 +634,7 @@ dimensions of `(100000, 100)` and `numpy.int32` values:
 | Library    | Latency (ms)   |   RSS diff (MiB) |   vs. orjson |
 |------------|----------------|------------------|--------------|
 | orjson     | 225            |              198 |            1 |
-| nujson     | 2,240          |              246 |            9 |
+| ujson      |                |                  |              |
 | rapidjson  | 2,235          |              462 |            9 |
 | simplejson | 1,686          |              430 |            7 |
 | json       | 1,626          |              430 |            7 |
@@ -645,16 +645,15 @@ dimensions of `(100000, 100)` and `numpy.bool` values:
 | Library    | Latency (ms)   |   RSS diff (MiB) |   vs. orjson |
 |------------|----------------|------------------|--------------|
 | orjson     | 121            |               53 |            1 |
-| nujson     | 5,958          |               43 |           49 |
+| ujson      |                |                  |              |
 | rapidjson  | 482            |              101 |            3 |
 | simplejson | 671            |              126 |            5 |
 | json       | 609            |              127 |            5 |
 
-In these benchmarks, nujson is used instead of ujson, orjson and nujson
-serialize natively, and the other libraries use `ndarray.tolist()`. `nujson`
-is blank when it did not roundtrip the data accurately. The RSS
-column measures peak memory usage during serialization. The odd
-bool result for nujson is consistent.
+In these benchmarks, orjson serializes natively, ujson is blank because it
+does not support a `default` parameter, and the other libraries serialize
+`ndarray.tolist()` via `default`. The RSS column measures peak memory
+usage during serialization.
 
 orjson does not have an installation or compilation dependency on numpy. The
 implementation is independent, reading `numpy.ndarray` using
