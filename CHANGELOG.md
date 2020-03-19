@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.1 - 2020-03-19
+
+### Changed
+
+- Serialization is 10-20% faster and uses about 50% less memory by writing
+directly to the returned `bytes` object.
+
 ## 2.6.0 - 2020-03-10
 
 ### Added

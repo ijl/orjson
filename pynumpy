@@ -9,13 +9,14 @@ import sys
 import time
 from timeit import timeit
 
-import numpy
 import orjson
 import psutil
 import rapidjson
 import simplejson
 from memory_profiler import memory_usage
 from tabulate import tabulate
+
+import numpy
 
 os.sched_setaffinity(os.getpid(), {0, 1})
 
@@ -28,15 +29,10 @@ elif kind == "float64":
     array = numpy.random.random(size=(50000, 100))
     assert array.dtype == numpy.float64
 elif kind == "bool":
-    array = numpy.random.choice((True, False), size=(100000, 100))
+    array = numpy.random.choice((True, False), size=(100000, 200))
 else:
     print("usage: pynumpy (bool|int32|float64)")
     sys.exit(1)
-
-output_in_mib = len(orjson.dumps(array.tolist())) / 1024 / 1024
-
-print(f"{output_in_mib:,.1f}MiB {kind} output (orjson)")
-
 proc = psutil.Process()
 
 
@@ -56,6 +52,10 @@ ujson_dumps = None
 rapidjson_dumps = lambda: rapidjson.dumps(array, default=default).encode("utf-8")
 simplejson_dumps = lambda: simplejson.dumps(array, default=default).encode("utf-8")
 json_dumps = lambda: json.dumps(array, default=default).encode("utf-8")
+
+output_in_mib = len(orjson_dumps()) / 1024 / 1024
+
+print(f"{output_in_mib:,.1f}MiB {kind} output (orjson)")
 
 gc.collect()
 mem_before = proc.memory_full_info().rss / 1024 / 1024
