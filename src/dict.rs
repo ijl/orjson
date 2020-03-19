@@ -72,7 +72,15 @@ impl<'p> Serialize for DictSortedKey {
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=self.len - 1 {
-            unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) };
+            unsafe {
+                pyo3::ffi::_PyDict_Next(
+                    self.ptr,
+                    &mut pos,
+                    &mut key,
+                    &mut value,
+                    std::ptr::null_mut(),
+                )
+            };
             if unlikely!((*key).ob_type != STR_TYPE) {
                 err!("Dict key must be str")
             }
@@ -145,7 +153,15 @@ impl<'p> Serialize for NonStrKey {
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=self.len - 1 {
-            unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) };
+            unsafe {
+                pyo3::ffi::_PyDict_Next(
+                    self.ptr,
+                    &mut pos,
+                    &mut key,
+                    &mut value,
+                    std::ptr::null_mut(),
+                )
+            };
             if unsafe { (*key).ob_type == STR_TYPE } {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {

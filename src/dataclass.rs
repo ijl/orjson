@@ -51,7 +51,15 @@ impl<'p> Serialize for DataclassSerializer {
         let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=len - 1 {
-            unsafe { pyo3::ffi::PyDict_Next(fields, &mut pos, &mut attr, &mut field) };
+            unsafe {
+                pyo3::ffi::_PyDict_Next(
+                    fields,
+                    &mut pos,
+                    &mut attr,
+                    &mut field,
+                    std::ptr::null_mut(),
+                )
+            };
             {
                 let data = read_utf8_from_str(attr, &mut str_size);
                 if unlikely!(data.is_null()) {

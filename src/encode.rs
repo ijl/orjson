@@ -203,7 +203,15 @@ impl<'p> Serialize for SerializePyObject {
                     let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
                     let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
                     for _ in 0..=len - 1 {
-                        unsafe { pyo3::ffi::PyDict_Next(self.ptr, &mut pos, &mut key, &mut value) };
+                        unsafe {
+                            pyo3::ffi::_PyDict_Next(
+                                self.ptr,
+                                &mut pos,
+                                &mut key,
+                                &mut value,
+                                std::ptr::null_mut(),
+                            )
+                        };
                         if unlikely!((*key).ob_type != STR_TYPE) {
                             err!(KEY_MUST_BE_STR)
                         }
