@@ -26,6 +26,7 @@ mod iter;
 mod typeref;
 mod unicode;
 mod uuid;
+mod writer;
 
 const MAX_OPT: i32 = (datetime::NAIVE_UTC
     | datetime::OMIT_MICROSECONDS

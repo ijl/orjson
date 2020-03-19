@@ -116,3 +116,14 @@ class ApiTests(unittest.TestCase):
         loads() valid __text_signature__
         """
         self.assertEqual(str(inspect.signature(orjson.loads)), "(obj, /)")
+
+    def test_bytes_buffer(self):
+        """
+        dumps() trigger buffer growing where length is greater than growth
+        """
+        a = "a" * 900
+        b = "b" * 4096
+        c = "c" * 4096 * 4096
+        self.assertEqual(
+            orjson.dumps([a, b, c]), f'["{a}","{b}","{c}"]'.encode("utf-8")
+        )

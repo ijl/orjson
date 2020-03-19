@@ -7,7 +7,6 @@ use crate::exc::*;
 use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
-use core::ffi::c_void;
 use inlinable_string::InlinableString;
 use pyo3::ffi::*;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -20,8 +19,8 @@ pub struct PyDictObject {
     pub ob_type: *mut PyTypeObject,
     pub ma_used: Py_ssize_t,
     pub ma_version_tag: u64,
-    pub ma_keys: c_void,
-    pub ma_values: c_void,
+    pub ma_keys: *mut pyo3::ffi::PyObject,
+    pub ma_values: *mut *mut pyo3::ffi::PyObject,
 }
 
 #[allow(non_snake_case)]

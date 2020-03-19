@@ -10,9 +10,9 @@ use crate::iter::*;
 use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
+use crate::writer::*;
 use pyo3::prelude::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
-use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -38,7 +38,7 @@ pub fn serialize(
     default: Option<NonNull<pyo3::ffi::PyObject>>,
     opts: u16,
 ) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
-    let mut buf: Vec<u8> = Vec::with_capacity(1024);
+    let mut buf = BytesWriter::new();
     let obj = SerializePyObject::new(ptr, None, opts, 0, 0, default);
     let res;
     if likely!(opts & INDENT_2 != INDENT_2) {
@@ -47,12 +47,7 @@ pub fn serialize(
         res = serde_json::to_writer_pretty(&mut buf, &obj);
     }
     match res {
-        Ok(_) => Ok(unsafe {
-            NonNull::new_unchecked(pyo3::ffi::PyBytes_FromStringAndSize(
-                buf.as_ptr() as *const c_char,
-                buf.len() as pyo3::ffi::Py_ssize_t,
-            ))
-        }),
+        Ok(_) => Ok(unsafe { NonNull::new_unchecked(buf.finish()) }),
 
         Err(err) => Err(JSONEncodeError::py_err(err.to_string())),
     }
