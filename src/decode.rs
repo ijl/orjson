@@ -141,28 +141,14 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        #[cfg(target_os = "windows")]
-        {
-            Ok(ffi!(PyLong_FromLongLong(value)))
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            Ok(ffi!(PyLong_FromLong(value)))
-        }
+        Ok(ffi!(PyLong_FromLongLong(value)))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        #[cfg(target_os = "windows")]
-        {
-            Ok(ffi!(PyLong_FromUnsignedLongLong(value)))
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            Ok(ffi!(PyLong_FromUnsignedLong(value)))
-        }
+        Ok(ffi!(PyLong_FromUnsignedLongLong(value)))
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
