@@ -28,7 +28,7 @@ jobs:
   container: python:3.9-rc-buster
   variables:
     interpreter: python3.9
-    manylinux: 1
+    manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
     verifyManylinux: false
