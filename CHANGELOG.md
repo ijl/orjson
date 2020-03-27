@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.6.2 - 2020-03-27
+
+### Changed
+
+- Publish python3.9 `manylinux2014` wheel instead of `manylinux1` for `x86_64`.
+- Publish python3.9 `manylinux2014` wheel for `aarch64`.
+
+### Fixed
+
+- Fix compilation failure on 32-bit.
+
 ## 2.6.1 - 2020-03-19
 
 ### Changed
