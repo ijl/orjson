@@ -68,6 +68,6 @@ wyhash = { version = "0.3" }
 codegen-units = 1
 debug = false
 incremental = false
-lto = true
+lto = "thin"
 opt-level = 3
 panic = "abort"
