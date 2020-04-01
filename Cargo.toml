@@ -10,6 +10,7 @@ homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
+    "build.rs",
     "Cargo.toml",
     "CHANGELOG.md",
     "data/*",
