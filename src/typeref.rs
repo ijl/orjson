@@ -23,6 +23,7 @@ pub static mut DATE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ARRAY_TYPE: Option<NonNull<PyTypeObject>> = None;
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -36,6 +37,7 @@ pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
 
 static INIT: Once = Once::new();
@@ -63,6 +65,7 @@ pub fn init_typerefs() {
         DATE_TYPE = look_up_date_type();
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
+        ENUM_TYPE = look_up_enum_type();
         ARRAY_TYPE = look_up_array_type();
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
@@ -74,6 +77,7 @@ pub fn init_typerefs() {
             PyUnicode_InternFromString("__dataclass_fields__\0".as_ptr() as *const c_char);
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
+        VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
     });
 }
 
@@ -90,6 +94,16 @@ unsafe fn look_up_array_type() -> Option<NonNull<PyTypeObject>> {
         Py_XDECREF(numpy);
         Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
     }
+}
+
+unsafe fn look_up_enum_type() -> *mut PyTypeObject {
+    let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
+    let module_dict = PyModule_GetDict(module);
+    let ptr = PyMapping_GetItemString(module_dict, "EnumMeta\0".as_ptr() as *const c_char)
+        as *mut PyTypeObject;
+    Py_DECREF(module_dict);
+    Py_DECREF(module);
+    ptr
 }
 
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {

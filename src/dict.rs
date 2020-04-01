@@ -110,6 +110,14 @@ impl<'p> Serialize for DictSortedKey {
     }
 }
 
+enum NonStrError {
+    DatetimeLibraryUnsupported,
+    IntegerRange,
+    InvalidStr,
+    TimeTzinfo,
+    UnsupportedType,
+}
+
 pub struct NonStrKey {
     ptr: *mut pyo3::ffi::PyObject,
     opts: Opt,
@@ -135,6 +143,90 @@ impl NonStrKey {
             recursion: recursion,
             default: default,
             len: len,
+        }
+    }
+
+    fn pyobject_to_string(
+        &self,
+        key: *mut pyo3::ffi::PyObject,
+    ) -> Result<InlinableString, NonStrError> {
+        match pyobject_to_obtype(key, self.opts | SERIALIZE_UUID) {
+            ObType::None => Ok(InlinableString::from("null")),
+            ObType::Bool => {
+                let key_as_str: &str;
+                if unsafe { key == TRUE } {
+                    key_as_str = "true";
+                } else {
+                    key_as_str = "false";
+                }
+                Ok(InlinableString::from(key_as_str))
+            }
+            ObType::Int => {
+                let val = ffi!(PyLong_AsLongLong(key));
+                if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
+                    return Err(NonStrError::IntegerRange);
+                }
+                Ok(InlinableString::from(itoa::Buffer::new().format(val)))
+            }
+            ObType::Float => {
+                let val = ffi!(PyFloat_AS_DOUBLE(key));
+                if !val.is_finite() {
+                    Ok(InlinableString::from("null"))
+                } else {
+                    Ok(InlinableString::from(ryu::Buffer::new().format_finite(val)))
+                }
+            }
+            ObType::Datetime => {
+                let mut buf: DateTimeBuffer = heapless::Vec::new();
+                let dt = DateTime::new(key, self.opts);
+                if dt.write_buf(&mut buf).is_err() {
+                    return Err(NonStrError::DatetimeLibraryUnsupported);
+                }
+                let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                Ok(InlinableString::from(key_as_str))
+            }
+            ObType::Date => {
+                let mut buf: DateTimeBuffer = heapless::Vec::new();
+                Date::new(key).write_buf(&mut buf);
+                let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                Ok(InlinableString::from(key_as_str))
+            }
+            ObType::Time => match Time::new(key, self.opts) {
+                Ok(val) => {
+                    let mut buf: DateTimeBuffer = heapless::Vec::new();
+                    val.write_buf(&mut buf);
+                    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                    Ok(InlinableString::from(key_as_str))
+                }
+                Err(TimeError::HasTimezone) => Err(NonStrError::TimeTzinfo),
+            },
+            ObType::Uuid => {
+                let mut buf: UUIDBuffer = heapless::Vec::new();
+                UUID::new(key).write_buf(&mut buf);
+                let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                Ok(InlinableString::from(key_as_str))
+            }
+            ObType::Enum => {
+                let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
+                ffi!(Py_DECREF(value));
+                self.pyobject_to_string(value)
+            }
+            ObType::Str => {
+                // because of ENUM
+                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                let data = read_utf8_from_str(key, &mut str_size);
+                if unlikely!(data.is_null()) {
+                    Err(NonStrError::InvalidStr)
+                } else {
+                    Ok(InlinableString::from(str_from_slice!(data, str_size)))
+                }
+            }
+            ObType::Tuple
+            | ObType::Array
+            | ObType::Dict
+            | ObType::List
+            | ObType::Dataclass
+            | ObType::Unknown => Err(NonStrError::UnsupportedType),
         }
     }
 }
@@ -171,79 +263,19 @@ impl<'p> Serialize for NonStrKey {
                     value,
                 ));
             } else {
-                match pyobject_to_obtype(key, self.opts | SERIALIZE_UUID) {
-                    ObType::None => {
-                        items.push((InlinableString::from("null"), value));
+                match self.pyobject_to_string(key) {
+                    Ok(key_as_str) => items.push((key_as_str, value)),
+                    Err(NonStrError::TimeTzinfo) => err!(TIME_HAS_TZINFO),
+                    Err(NonStrError::IntegerRange) => {
+                        err!("Dict integer key must be within 64-bit range")
                     }
-                    ObType::Bool => {
-                        let key_as_str: &str;
-                        if unsafe { key == TRUE } {
-                            key_as_str = "true";
-                        } else {
-                            key_as_str = "false";
-                        }
-                        items.push((InlinableString::from(key_as_str), value));
+                    Err(NonStrError::DatetimeLibraryUnsupported) => {
+                        err!(DATETIME_LIBRARY_UNSUPPORTED)
                     }
-                    ObType::Int => {
-                        let val = ffi!(PyLong_AsLongLong(key));
-                        if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
-                            err!("Dict integer key must be within 64-bit range")
-                        }
-                        items.push((
-                            InlinableString::from(itoa::Buffer::new().format(val)),
-                            value,
-                        ));
-                    }
-                    ObType::Float => {
-                        let val = ffi!(PyFloat_AS_DOUBLE(key));
-                        if !val.is_finite() {
-                            items.push((InlinableString::from("null"), value));
-                        } else {
-                            items.push((
-                                InlinableString::from(ryu::Buffer::new().format_finite(val)),
-                                value,
-                            ));
-                        }
-                    }
-                    ObType::Datetime => {
-                        let mut buf: DateTimeBuffer = heapless::Vec::new();
-                        let dt = DateTime::new(key, self.opts);
-                        if dt.write_buf(&mut buf).is_err() {
-                            err!(DATETIME_LIBRARY_UNSUPPORTED)
-                        }
-                        let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-                        items.push((InlinableString::from(key_as_str), value));
-                    }
-                    ObType::Date => {
-                        let mut buf: DateTimeBuffer = heapless::Vec::new();
-                        Date::new(key).write_buf(&mut buf);
-                        let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-                        items.push((InlinableString::from(key_as_str), value));
-                    }
-                    ObType::Time => match Time::new(key, self.opts) {
-                        Ok(val) => {
-                            let mut buf: DateTimeBuffer = heapless::Vec::new();
-                            val.write_buf(&mut buf);
-                            let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-                            items.push((InlinableString::from(key_as_str), value));
-                        }
-                        Err(TimeError::HasTimezone) => err!(TIME_HAS_TZINFO),
-                    },
-                    ObType::Uuid => {
-                        let mut buf: UUIDBuffer = heapless::Vec::new();
-                        UUID::new(key).write_buf(&mut buf);
-                        let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-                        items.push((InlinableString::from(key_as_str), value));
-                    }
-                    ObType::Tuple
-                    | ObType::Array
-                    | ObType::Dict
-                    | ObType::List
-                    | ObType::Dataclass
-                    | ObType::Unknown => {
+                    Err(NonStrError::InvalidStr) => err!(INVALID_STR),
+                    Err(NonStrError::UnsupportedType) => {
                         err!("Dict key must a type serializable with NON_STR_KEYS")
                     }
-                    ObType::Str => unsafe { std::hint::unreachable_unchecked() },
                 }
             }
         }

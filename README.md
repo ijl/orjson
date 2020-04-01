@@ -52,11 +52,12 @@ available in the repository.
 2. [Types](https://github.com/ijl/orjson#types)
     1. [dataclass](https://github.com/ijl/orjson#dataclass)
     2. [datetime](https://github.com/ijl/orjson#datetime)
-    3. [float](https://github.com/ijl/orjson#float)
-    4. [int](https://github.com/ijl/orjson#int)
-    5. [numpy](https://github.com/ijl/orjson#numpy)
-    6. [str](https://github.com/ijl/orjson#str)
-    7. [uuid](https://github.com/ijl/orjson#uuid)
+    3. [enum](https://github.com/ijl/orjson#enum)
+    4. [float](https://github.com/ijl/orjson#float)
+    5. [int](https://github.com/ijl/orjson#int)
+    6. [numpy](https://github.com/ijl/orjson#numpy)
+    7. [str](https://github.com/ijl/orjson#str)
+    8. [uuid](https://github.com/ijl/orjson#uuid)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -281,7 +282,7 @@ b'"1970-01-01T00:00:00+00:00"'
 
 Serialize `dict` keys of type other than `str`. This allows `dict` keys
 to be one of `str`, `int`, `float`, `bool`, `None`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, and `uuid.UUID`. For comparison,
+`datetime.date`, `datetime.time`, `enum.Enum`, and `uuid.UUID`. For comparison,
 the standard library serializes `str`, `int`, `float`, `bool` or `None` by
 default. orjson benchmarks as being faster at serializing non-`str` keys
 than other libraries. This option is slower for `str` keys than the default
@@ -571,6 +572,43 @@ Errors with `tzinfo` result in `JSONEncodeError` being raised.
 It is faster to have orjson serialize datetime objects than to do so
 before calling `dumps()`. If using an unsupported type such as
 `pendulum.datetime`, use `default`.
+
+### enum
+
+orjson serializes enums natively. Options apply to their values.
+
+```python
+>>> import enum, datetime, orjson
+>>>
+class DatetimeEnum(enum.Enum):
+    EPOCH = datetime.datetime(1970, 1, 1, 0, 0, 0)
+>>> orjson.dumps(DatetimeEnum.EPOCH)
+b'"1970-01-01T00:00:00"'
+>>> orjson.dumps(DatetimeEnum.EPOCH, option=orjson.OPT_NAIVE_UTC)
+b'"1970-01-01T00:00:00+00:00"'
+```
+
+Enums with members that are not supported types can be serialized using
+`default`:
+
+```python
+>>> import enum, orjson
+>>>
+class Custom:
+    def __init__(self, val):
+        self.val = val
+
+def default(obj):
+    if isinstance(obj, Custom):
+        return obj.val
+    raise TypeError
+
+class CustomEnum(enum.Enum):
+    ONE = Custom(1)
+
+>>> orjson.dumps(CustomEnum.ONE, default=default)
+b'1'
+```
 
 ### float
 

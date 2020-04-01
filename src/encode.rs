@@ -14,6 +14,7 @@ use crate::uuid::*;
 use crate::writer::*;
 use pyo3::prelude::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -69,7 +70,18 @@ pub enum ObType {
     Uuid,
     Dataclass,
     Array,
+    Enum,
     Unknown,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LocalPyTypeObject {
+    pub ob_refcnt: pyo3::ffi::Py_ssize_t,
+    pub ob_type: *mut pyo3::ffi::PyTypeObject,
+    pub ma_used: pyo3::ffi::Py_ssize_t,
+    pub tp_name: *const c_char,
+    // ...
 }
 
 #[inline]
@@ -108,6 +120,8 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Time
         } else if ob_type == TUPLE_TYPE {
             ObType::Tuple
+        } else if unlikely!((*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE) {
+            ObType::Enum
         } else if opts & SERIALIZE_UUID == SERIALIZE_UUID && ob_type == UUID_TYPE {
             ObType::Uuid
         } else if opts & SERIALIZE_DATACLASS == SERIALIZE_DATACLASS
@@ -350,6 +364,18 @@ impl<'p> Serialize for SerializePyObject {
                     )
                     .serialize(serializer)
                 }
+            }
+            ObType::Enum => {
+                let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
+                ffi!(Py_DECREF(value));
+                SerializePyObject::new(
+                    value,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
             }
             ObType::Array => match PyArray::new(self.ptr) {
                 Ok(val) => val.serialize(serializer),
