@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::encode::*;
+use crate::opt::*;
 
 use serde::ser::{Serialize, Serializer};
 use std::ffi::CStr;
@@ -8,14 +9,14 @@ use std::ffi::CStr;
 use std::ptr::NonNull;
 
 macro_rules! obj_name {
-    ($obj:ident) => {
+    ($obj:expr) => {
         unsafe { CStr::from_ptr((*$obj).tp_name).to_string_lossy() }
     };
 }
 
 pub struct DefaultSerializer {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -24,7 +25,7 @@ pub struct DefaultSerializer {
 impl DefaultSerializer {
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u16,
+        opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -50,28 +51,24 @@ impl<'p> Serialize for DefaultSerializer {
                 if unlikely!(self.default_calls == RECURSION_LIMIT) {
                     err!("default serializer exceeds recursion limit")
                 }
-                let obj_ptr = unsafe { (*self.ptr).ob_type };
-                let default_obj = unsafe {
-                    pyo3::ffi::PyObject_CallFunctionObjArgs(
-                        callable.as_ptr(),
-                        self.ptr,
-                        std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                    )
-                };
+                let default_obj = ffi!(PyObject_CallFunctionObjArgs(
+                    callable.as_ptr(),
+                    self.ptr,
+                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                ));
                 if default_obj.is_null() {
                     err!(format_args!(
                         "Type is not JSON serializable: {}",
-                        obj_name!(obj_ptr)
+                        obj_name!(ob_type!(self.ptr))
                     ))
                 } else if !ffi!(PyErr_Occurred()).is_null() {
                     err!(format_args!(
                         "Type raised exception in default function: {}",
-                        obj_name!(obj_ptr)
+                        obj_name!(ob_type!(self.ptr))
                     ))
                 } else {
                     let res = SerializePyObject::new(
                         default_obj,
-                        None,
                         self.opts,
                         self.default_calls + 1,
                         self.recursion,
@@ -82,13 +79,10 @@ impl<'p> Serialize for DefaultSerializer {
                     res
                 }
             }
-            None => {
-                let obj_ptr = unsafe { (*self.ptr).ob_type };
-                err!(format_args!(
-                    "Type is not JSON serializable: {}",
-                    obj_name!(obj_ptr)
-                ))
-            }
+            None => err!(format_args!(
+                "Type is not JSON serializable: {}",
+                obj_name!(ob_type!(self.ptr))
+            )),
         }
     }
 }

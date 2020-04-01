@@ -3,6 +3,7 @@
 use crate::dict::*;
 use crate::encode::*;
 use crate::exc::*;
+use crate::opt::*;
 use crate::typeref::*;
 use crate::unicode::*;
 
@@ -12,7 +13,7 @@ use std::ptr::NonNull;
 
 pub struct DataclassSerializer {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -21,7 +22,7 @@ pub struct DataclassSerializer {
 impl DataclassSerializer {
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u16,
+        opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -73,7 +74,6 @@ impl<'p> Serialize for DataclassSerializer {
 
             map.serialize_value(&SerializePyObject::new(
                 value,
-                None,
                 self.opts,
                 self.default_calls,
                 self.recursion + 1,

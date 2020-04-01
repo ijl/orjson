@@ -35,10 +35,10 @@ const STATE_COMPACT: u32 = 0b00000000000000000000000000100000;
 #[inline]
 pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
     unsafe {
-        if (*op.cast::<PyASCIIObject>()).state & STATE_ASCII == STATE_ASCII {
+        if likely!((*op.cast::<PyASCIIObject>()).state & STATE_ASCII == STATE_ASCII) {
             *str_size = (*op.cast::<PyASCIIObject>()).length;
             op.cast::<PyASCIIObject>().offset(1) as *const u8
-        } else if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT
+        } else if likely!((*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT)
             && !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null()
         {
             *str_size = (*op.cast::<PyCompactUnicodeObject>()).utf8_length;
@@ -52,9 +52,7 @@ pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *cons
 #[inline]
 pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
     unsafe {
-        if (*op.cast::<PyASCIIObject>()).hash == -1 {
-            (*op.cast::<PyASCIIObject>()).hash = STR_HASH_FUNCTION.unwrap()(op);
-        }
+        (*op.cast::<PyASCIIObject>()).hash = STR_HASH_FUNCTION.unwrap()(op);
         (*op.cast::<PyASCIIObject>()).hash
     }
 }

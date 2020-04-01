@@ -1,4 +1,6 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
+
+set -eou pipefail
 
 pytest \
     --verbose \
@@ -7,4 +9,4 @@ pytest \
     --benchmark-disable-gc \
     --benchmark-autosave \
     --benchmark-save-data \
-    bench/benchmark_*
+    "bench/benchmark_$1.py"

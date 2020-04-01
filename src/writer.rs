@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::bytes::PyBytesObject;
+use core::ptr::NonNull;
 use pyo3::ffi::*;
 use std::os::raw::c_char;
-
-const INITIAL_BUFFER: [c_char; 1024] = [0; 1024];
 
 pub struct BytesWriter {
     cap: usize,
@@ -15,22 +14,21 @@ pub struct BytesWriter {
 impl BytesWriter {
     #[inline]
     pub fn new() -> Self {
+        let buf = [0; 64];
         BytesWriter {
-            cap: 1024,
+            cap: 64,
             len: 0,
-            bytes: unsafe {
-                PyBytes_FromStringAndSize(INITIAL_BUFFER.as_ptr(), 1024) as *mut PyBytesObject
-            },
+            bytes: unsafe { PyBytes_FromStringAndSize(buf.as_ptr(), 64) as *mut PyBytesObject },
         }
     }
 
     #[inline]
-    pub fn finish(&mut self) -> *mut PyObject {
+    pub fn finish(&mut self) -> NonNull<PyObject> {
         unsafe {
             (*self.bytes).ob_size = self.len as isize;
             self.resize(self.len as isize);
-        };
-        self.bytes as *mut PyObject
+            NonNull::new_unchecked(self.bytes as *mut PyObject)
+        }
     }
 
     #[inline]
@@ -44,7 +42,7 @@ impl BytesWriter {
     }
 
     #[inline]
-    fn resize(&mut self, len: isize) {
+    pub fn resize(&mut self, len: isize) {
         unsafe {
             _PyBytes_Resize(
                 &mut self.bytes as *mut *mut PyBytesObject as *mut *mut PyObject,
@@ -54,23 +52,16 @@ impl BytesWriter {
     }
 
     #[inline]
+    pub fn prefetch(&self) {
+        unsafe { core::intrinsics::prefetch_write_data(self.buffer_ptr(), 3) };
+    }
+
+    #[inline]
     fn grow(&mut self, len: usize) {
         while self.cap - self.len < len {
             self.cap *= 2;
         }
-        let old_ptr = self.bytes.clone();
         self.resize(self.cap as isize);
-        if old_ptr != self.bytes {
-            unsafe {
-                #[cfg(x86_64)]
-                core::arch::x86_64::_mm_prefetch(
-                    self.buffer_ptr() as *const i8,
-                    core::arch::x86_64::_MM_HINT_T1,
-                );
-                #[cfg(not(x86_64))]
-                core::intrinsics::prefetch_write_data(self.buffer_ptr(), 2);
-            }
-        };
     }
 }
 
@@ -82,7 +73,7 @@ impl std::io::Write for BytesWriter {
             self.grow(to_write);
         }
         unsafe {
-            std::ptr::copy_nonoverlapping(buf.as_ptr() as *mut u8, self.buffer_ptr(), to_write);
+            std::ptr::copy_nonoverlapping(buf.as_ptr() as *const u8, self.buffer_ptr(), to_write);
         };
         self.len += to_write;
         Ok(to_write)
@@ -92,6 +83,7 @@ impl std::io::Write for BytesWriter {
         self.write(buf).unwrap();
         Ok(())
     }
+    #[inline]
     fn flush(&mut self) -> std::result::Result<(), std::io::Error> {
         Ok(())
     }

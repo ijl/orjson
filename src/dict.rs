@@ -4,6 +4,7 @@ use crate::datetime::*;
 use crate::encode::pyobject_to_obtype;
 use crate::encode::*;
 use crate::exc::*;
+use crate::opt::*;
 use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
@@ -31,7 +32,7 @@ pub unsafe fn PyDict_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
 
 pub struct DictSortedKey {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -41,7 +42,7 @@ pub struct DictSortedKey {
 impl DictSortedKey {
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u16,
+        opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -80,7 +81,7 @@ impl<'p> Serialize for DictSortedKey {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!((*key).ob_type != STR_TYPE) {
+            if unlikely!(ob_type!(key) != STR_TYPE) {
                 err!("Dict key must be str")
             }
             let data = read_utf8_from_str(key, &mut str_size);
@@ -98,7 +99,6 @@ impl<'p> Serialize for DictSortedKey {
                 key,
                 &SerializePyObject::new(
                     *val,
-                    None,
                     self.opts,
                     self.default_calls,
                     self.recursion + 1,
@@ -112,7 +112,7 @@ impl<'p> Serialize for DictSortedKey {
 
 pub struct NonStrKey {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -122,7 +122,7 @@ pub struct NonStrKey {
 impl NonStrKey {
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
-        opts: u16,
+        opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
@@ -161,7 +161,7 @@ impl<'p> Serialize for NonStrKey {
                     std::ptr::null_mut(),
                 )
             };
-            if unsafe { (*key).ob_type == STR_TYPE } {
+            if is_type!(ob_type!(key), STR_TYPE) {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
                     err!(INVALID_STR)
@@ -172,10 +172,10 @@ impl<'p> Serialize for NonStrKey {
                 ));
             } else {
                 match pyobject_to_obtype(key, self.opts | SERIALIZE_UUID) {
-                    ObType::NONE => {
+                    ObType::None => {
                         items.push((InlinableString::from("null"), value));
                     }
-                    ObType::BOOL => {
+                    ObType::Bool => {
                         let key_as_str: &str;
                         if unsafe { key == TRUE } {
                             key_as_str = "true";
@@ -184,7 +184,7 @@ impl<'p> Serialize for NonStrKey {
                         }
                         items.push((InlinableString::from(key_as_str), value));
                     }
-                    ObType::INT => {
+                    ObType::Int => {
                         let val = ffi!(PyLong_AsLongLong(key));
                         if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
                             err!("Dict integer key must be within 64-bit range")
@@ -194,7 +194,7 @@ impl<'p> Serialize for NonStrKey {
                             value,
                         ));
                     }
-                    ObType::FLOAT => {
+                    ObType::Float => {
                         let val = ffi!(PyFloat_AS_DOUBLE(key));
                         if !val.is_finite() {
                             items.push((InlinableString::from("null"), value));
@@ -205,7 +205,7 @@ impl<'p> Serialize for NonStrKey {
                             ));
                         }
                     }
-                    ObType::DATETIME => {
+                    ObType::Datetime => {
                         let mut buf: DateTimeBuffer = heapless::Vec::new();
                         let dt = DateTime::new(key, self.opts);
                         if dt.write_buf(&mut buf).is_err() {
@@ -214,13 +214,13 @@ impl<'p> Serialize for NonStrKey {
                         let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                         items.push((InlinableString::from(key_as_str), value));
                     }
-                    ObType::DATE => {
+                    ObType::Date => {
                         let mut buf: DateTimeBuffer = heapless::Vec::new();
                         Date::new(key).write_buf(&mut buf);
                         let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                         items.push((InlinableString::from(key_as_str), value));
                     }
-                    ObType::TIME => match Time::new(key, self.opts) {
+                    ObType::Time => match Time::new(key, self.opts) {
                         Ok(val) => {
                             let mut buf: DateTimeBuffer = heapless::Vec::new();
                             val.write_buf(&mut buf);
@@ -229,21 +229,21 @@ impl<'p> Serialize for NonStrKey {
                         }
                         Err(TimeError::HasTimezone) => err!(TIME_HAS_TZINFO),
                     },
-                    ObType::UUID => {
+                    ObType::Uuid => {
                         let mut buf: UUIDBuffer = heapless::Vec::new();
                         UUID::new(key).write_buf(&mut buf);
                         let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                         items.push((InlinableString::from(key_as_str), value));
                     }
-                    ObType::TUPLE
-                    | ObType::ARRAY
-                    | ObType::DICT
-                    | ObType::LIST
-                    | ObType::DATACLASS
-                    | ObType::UNKNOWN => {
+                    ObType::Tuple
+                    | ObType::Array
+                    | ObType::Dict
+                    | ObType::List
+                    | ObType::Dataclass
+                    | ObType::Unknown => {
                         err!("Dict key must a type serializable with NON_STR_KEYS")
                     }
-                    ObType::STR => unsafe { std::hint::unreachable_unchecked() },
+                    ObType::Str => unsafe { std::hint::unreachable_unchecked() },
                 }
             }
         }
@@ -258,7 +258,6 @@ impl<'p> Serialize for NonStrKey {
                 str_from_slice!(key.as_ptr(), key.len()),
                 &SerializePyObject::new(
                     *val,
-                    None,
                     self.opts,
                     self.default_calls,
                     self.recursion + 1,

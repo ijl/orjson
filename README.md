@@ -7,14 +7,15 @@ third-party libraries. It serializes
 [dataclass](https://github.com/ijl/orjson#dataclass),
 [datetime](https://github.com/ijl/orjson#datetime),
 [numpy](https://github.com/ijl/orjson#numpy), and
-[UUID](https://github.com/ijl/orjson#UUID) instances natively.
+[UUID](https://github.com/ijl/orjson#uuid) instances natively.
 
 Its features and drawbacks compared to other Python JSON libraries:
 
 * serializes `dataclass` instances 40-50x as fast as other libraries
 * serializes `datetime`, `date`, and `time` instances to RFC 3339 format,
 e.g., "1970-01-01T00:00:00+00:00"
-* serializes `numpy.ndarray` instances 3-10x as fast as other libraries
+* serializes `numpy.ndarray` instances 4-12x as fast with 0.3x the memory
+usage of other libraries
 * pretty prints 10x to 20x as fast as the standard library
 * serializes to `bytes` rather than `str`, i.e., is not a drop-in replacement
 * serializes `str` without escaping unicode to ASCII, e.g., "好" rather than
@@ -43,10 +44,11 @@ available in the repository.
 
 1. [Usage](https://github.com/ijl/orjson#usage)
     1. [Install](https://github.com/ijl/orjson#install)
-    2. [Serialize](https://github.com/ijl/orjson#serialize)
+    1. [Quickstart](https://github.com/ijl/orjson#quickstart)
+    3. [Serialize](https://github.com/ijl/orjson#serialize)
         1. [default](https://github.com/ijl/orjson#default)
         2. [option](https://github.com/ijl/orjson#option)
-    3. [Deserialize](https://github.com/ijl/orjson#deserialize)
+    4. [Deserialize](https://github.com/ijl/orjson#deserialize)
 2. [Types](https://github.com/ijl/orjson#types)
     1. [dataclass](https://github.com/ijl/orjson#dataclass)
     2. [datetime](https://github.com/ijl/orjson#datetime)
@@ -54,7 +56,7 @@ available in the repository.
     4. [int](https://github.com/ijl/orjson#int)
     5. [numpy](https://github.com/ijl/orjson#numpy)
     6. [str](https://github.com/ijl/orjson#str)
-    7. [UUID](https://github.com/ijl/orjson#UUID)
+    7. [uuid](https://github.com/ijl/orjson#uuid)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -81,6 +83,25 @@ orjson>=2.6,<3
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
 
+
+### Quickstart
+
+This is an example of serializing, with options specified, and deserializing:
+
+```python
+>>> import orjson, datetime, numpy
+>>> data = {
+    "type": "job",
+    "created_at": datetime.datetime(1970, 1, 1),
+    "status": "🆗",
+    "payload": numpy.array([[1, 2], [3, 4]]),
+}
+>>> orjson.dumps(data, option=orjson.OPT_NAIVE_UTC | orjson.OPT_SERIALIZE_NUMPY)
+b'{"type":"job","created_at":"1970-01-01T00:00:00+00:00","status":"\xf0\x9f\x86\x97","payload":[[1,2],[3,4]]}'
+>>> orjson.loads(_)
+{'type': 'job', 'created_at': '1970-01-01T00:00:00+00:00', 'status': '🆗', 'payload': [[1, 2], [3, 4]]}
+```
+
 ### Serialize
 
 ```python
@@ -102,6 +123,8 @@ It does not serialize subclasses of
 supported types natively, with the exception of `dataclasses.dataclass`
 subclasses.
 
+The output is a `bytes` object containing UTF-8.
+
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object.
 
@@ -110,14 +133,16 @@ It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
 with `OPT_STRICT_INTEGER`, 53 bits.
 
-It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`.
+It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`,
+unless `OPT_NON_STR_KEYS` is specified.
 
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than 254 levels deep.
 
 It raises `JSONEncodeError` on circular references.
 
-It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is incorrect.
+It raises `JSONEncodeError`  if a `tzinfo` on a datetime object is
+unsupported.
 
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
 with the standard library.
@@ -430,6 +455,8 @@ def loads(__obj: Union[bytes, bytearray, str]) -> Any: ...
 `bytes` (was read directly from a source), it is recommended to
 pass `bytes`. This has lower memory usage and lower latency.
 
+The input must be valid UTF-8.
+
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
 keys must be at most 64 chars to be cached and 512 entries are stored.
@@ -699,7 +726,7 @@ JSONDecodeError: str is not valid UTF-8: surrogates not allowed
 '���'
 ```
 
-### UUID
+### uuid
 
 orjson serializes `uuid.UUID` instances to
 [RFC 4122](https://tools.ietf.org/html/rfc4122) format, e.g.,
@@ -913,11 +940,11 @@ well. maturin can be invoked like:
 maturin build --no-sdist --release --strip --manylinux off
 ```
 
-If building for musl libc, specify `-C target-feature=-crt-static`.
-
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
 may not work on 32-bit targets. It should be compiled with
-`-C target-feature=+sse2` on amd64 and `+neon` on arm7.
+`-C target-feature=+sse2` on amd64 and `-C target-feature=+neon` on arm7. musl
+libc is not supported, but building with `-C target-feature=-crt-static`
+will probably work.
 
 There are no runtime dependencies other than libc.
 

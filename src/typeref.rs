@@ -6,24 +6,28 @@ use std::ptr::NonNull;
 use std::sync::Once;
 
 pub static mut HASH_SEED: u64 = 0;
+
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
 pub static mut TRUE: *mut PyObject = 0 as *mut PyObject;
 pub static mut FALSE: *mut PyObject = 0 as *mut PyObject;
+
 pub static mut STR_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut DICT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut LIST_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut NONE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut BOOL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut INT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut BOOL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut NONE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut FLOAT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut LIST_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut DICT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATETIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ARRAY_TYPE: Option<NonNull<PyTypeObject>> = None;
+
+pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+
 pub static mut INT_ATTR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut NORMALIZE_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
@@ -60,20 +64,16 @@ pub fn init_typerefs() {
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ARRAY_TYPE = look_up_array_type();
-        INT_ATTR_STR = PyUnicode_FromStringAndSize("int".as_ptr() as *const c_char, 3);
-        UTCOFFSET_METHOD_STR =
-            PyUnicode_FromStringAndSize("utcoffset".as_ptr() as *const c_char, 9);
-        NORMALIZE_METHOD_STR =
-            PyUnicode_FromStringAndSize("normalize".as_ptr() as *const c_char, 9);
-        CONVERT_METHOD_STR = PyUnicode_FromStringAndSize("convert".as_ptr() as *const c_char, 7);
-        DST_STR = PyUnicode_FromStringAndSize("dst".as_ptr() as *const c_char, 3);
-        DICT_STR = PyUnicode_FromStringAndSize("__dict__".as_ptr() as *const c_char, 8);
+        INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
+        UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
+        NORMALIZE_METHOD_STR = PyUnicode_InternFromString("normalize\0".as_ptr() as *const c_char);
+        CONVERT_METHOD_STR = PyUnicode_InternFromString("convert\0".as_ptr() as *const c_char);
+        DST_STR = PyUnicode_InternFromString("dst\0".as_ptr() as *const c_char);
+        DICT_STR = PyUnicode_InternFromString("__dict__\0".as_ptr() as *const c_char);
         DATACLASS_FIELDS_STR =
-            PyUnicode_FromStringAndSize("__dataclass_fields__".as_ptr() as *const c_char, 20);
-        ARRAY_STRUCT_STR = pyo3::ffi::PyUnicode_FromStringAndSize(
-            "__array_struct__".as_ptr() as *const c_char,
-            16,
-        );
+            PyUnicode_InternFromString("__dataclass_fields__\0".as_ptr() as *const c_char);
+        ARRAY_STRUCT_STR =
+            pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
     });
 }
 

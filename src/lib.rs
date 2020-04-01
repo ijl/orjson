@@ -23,21 +23,11 @@ mod dict;
 mod encode;
 mod exc;
 mod iter;
+mod opt;
 mod typeref;
 mod unicode;
 mod uuid;
 mod writer;
-
-const MAX_OPT: i32 = (datetime::NAIVE_UTC
-    | datetime::OMIT_MICROSECONDS
-    | datetime::UTC_Z
-    | encode::NON_STR_KEYS
-    | encode::SERIALIZE_DATACLASS
-    | encode::SERIALIZE_NUMPY
-    | encode::SERIALIZE_UUID
-    | encode::INDENT_2
-    | encode::SORT_KEYS
-    | encode::STRICT_INTEGER) as i32;
 
 #[pymodule]
 fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
@@ -67,16 +57,16 @@ fn orjson(py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add("JSONDecodeError", py.get_type::<exc::JSONDecodeError>())?;
     m.add("JSONEncodeError", py.get_type::<exc::JSONEncodeError>())?;
-    m.add("OPT_NAIVE_UTC", datetime::NAIVE_UTC)?;
-    m.add("OPT_OMIT_MICROSECONDS", datetime::OMIT_MICROSECONDS)?;
-    m.add("OPT_NON_STR_KEYS", encode::NON_STR_KEYS)?;
-    m.add("OPT_SERIALIZE_DATACLASS", encode::SERIALIZE_DATACLASS)?;
-    m.add("OPT_SERIALIZE_NUMPY", encode::SERIALIZE_NUMPY)?;
-    m.add("OPT_SERIALIZE_UUID", encode::SERIALIZE_UUID)?;
-    m.add("OPT_SORT_KEYS", encode::SORT_KEYS)?;
-    m.add("OPT_INDENT_2", encode::INDENT_2)?;
-    m.add("OPT_STRICT_INTEGER", encode::STRICT_INTEGER)?;
-    m.add("OPT_UTC_Z", datetime::UTC_Z)?;
+    m.add("OPT_NAIVE_UTC", opt::NAIVE_UTC)?;
+    m.add("OPT_OMIT_MICROSECONDS", opt::OMIT_MICROSECONDS)?;
+    m.add("OPT_NON_STR_KEYS", opt::NON_STR_KEYS)?;
+    m.add("OPT_SERIALIZE_DATACLASS", opt::SERIALIZE_DATACLASS)?;
+    m.add("OPT_SERIALIZE_NUMPY", opt::SERIALIZE_NUMPY)?;
+    m.add("OPT_SERIALIZE_UUID", opt::SERIALIZE_UUID)?;
+    m.add("OPT_SORT_KEYS", opt::SORT_KEYS)?;
+    m.add("OPT_INDENT_2", opt::INDENT_2)?;
+    m.add("OPT_STRICT_INTEGER", opt::STRICT_INTEGER)?;
+    m.add("OPT_UTC_Z", opt::UTC_Z)?;
 
     Ok(())
 }
@@ -114,11 +104,11 @@ pub fn dumps(
     let optsbits: i32;
     if let Some(value) = option {
         let optsptr = value.as_ptr();
-        if unsafe { (*optsptr).ob_type != typeref::INT_TYPE } {
+        if !is_type!(ob_type!(optsptr), typeref::INT_TYPE) {
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
             optsbits = ffi!(PyLong_AsLong(optsptr)) as i32;
-            if optsbits <= 0 || optsbits > MAX_OPT {
+            if optsbits <= 0 || optsbits > opt::MAX_OPT {
                 // -1
                 return Err(exc::JSONEncodeError::py_err("Invalid opts"));
             }
@@ -126,7 +116,7 @@ pub fn dumps(
     } else {
         optsbits = 0
     };
-    match encode::serialize(obj.as_ptr(), pydef, optsbits as u16) {
+    match encode::serialize(obj.as_ptr(), pydef, optsbits as opt::Opt) {
         Ok(val) => unsafe { Ok(PyObject::from_owned_ptr(py, val.as_ptr())) },
         Err(err) => Err(err),
     }

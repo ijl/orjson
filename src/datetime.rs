@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
+use crate::opt::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
-
-pub const NAIVE_UTC: u16 = 1 << 1;
-pub const OMIT_MICROSECONDS: u16 = 1 << 2;
-pub const UTC_Z: u16 = 1 << 3;
 
 pub const HYPHEN: u8 = 45; // "-"
 const PLUS: u8 = 43; // "+"
@@ -85,11 +82,11 @@ pub enum TimeError {
 
 pub struct Time {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Result<Self, TimeError> {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: Opt) -> Result<Self, TimeError> {
         if unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
@@ -137,11 +134,11 @@ pub enum DateTimeError {
 
 pub struct DateTime {
     ptr: *mut pyo3::ffi::PyObject,
-    opts: u16,
+    opts: Opt,
 }
 
 impl DateTime {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: u16) -> Self {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: Opt) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
@@ -156,52 +153,42 @@ impl DateTime {
             offset_day = 0;
         } else {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
-            if unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 } {
-                if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
-                    // pendulum
-                    let offset = unsafe {
-                        pyo3::ffi::PyObject_CallMethodObjArgs(
-                            self.ptr,
-                            UTCOFFSET_METHOD_STR,
-                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                        )
-                    };
-                    offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                    offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
-                } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
-                    // pytz
-                    let offset = unsafe {
-                        pyo3::ffi::PyObject_CallMethodObjArgs(
-                            pyo3::ffi::PyObject_CallMethodObjArgs(
-                                tzinfo,
-                                NORMALIZE_METHOD_STR,
-                                self.ptr,
-                                std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                            ),
-                            UTCOFFSET_METHOD_STR,
-                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                        )
-                    };
-                    offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                    offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
-                } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
-                    // dateutil/arrow, datetime.timezone.utc
-                    let offset = unsafe {
-                        pyo3::ffi::PyObject_CallMethodObjArgs(
-                            tzinfo,
-                            UTCOFFSET_METHOD_STR,
-                            self.ptr,
-                            std::ptr::null_mut() as *mut pyo3::ffi::PyObject,
-                        )
-                    };
-                    offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                    offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
-                } else {
-                    return Err(DateTimeError::LibraryUnsupported);
-                }
+            if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
+                // pendulum
+                let offset = ffi!(PyObject_CallMethodObjArgs(
+                    self.ptr,
+                    UTCOFFSET_METHOD_STR,
+                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                ));
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+            } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
+                // pytz
+                let method_ptr = ffi!(PyObject_CallMethodObjArgs(
+                    tzinfo,
+                    NORMALIZE_METHOD_STR,
+                    self.ptr,
+                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                ));
+                let offset = ffi!(PyObject_CallMethodObjArgs(
+                    method_ptr,
+                    UTCOFFSET_METHOD_STR,
+                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                ));
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+            } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
+                // dateutil/arrow, datetime.timezone.utc
+                let offset = ffi!(PyObject_CallMethodObjArgs(
+                    tzinfo,
+                    UTCOFFSET_METHOD_STR,
+                    self.ptr,
+                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                ));
+                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
+                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
             } else {
-                offset_second = 0;
-                offset_day = 0;
+                return Err(DateTimeError::LibraryUnsupported);
             }
         };
 
@@ -252,7 +239,7 @@ impl DateTime {
                 if offset_day == -1 {
                     // datetime.timedelta(days=-1, seconds=68400) -> -05:00
                     buf.push(HYPHEN).unwrap();
-                    offset_second = 86400 - offset_second
+                    offset_second = 86400 - offset_second;
                 } else {
                     // datetime.timedelta(seconds=37800) -> +10:30
                     buf.push(PLUS).unwrap();
