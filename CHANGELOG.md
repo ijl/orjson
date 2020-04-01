@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.3 - 2020-04-01
+
+### Changed
+
+- Serialize `enum.Enum` objects.
+- Minor performance improvements.
+
 ## 2.6.2 - 2020-03-27
 
 ### Changed
