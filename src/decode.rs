@@ -93,7 +93,7 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
             deserializer
                 .end()
                 .map_err(|e| JSONDecodeError::py_err((e.to_string(), "", 0)))?;
-            Ok(unsafe { NonNull::new_unchecked(obj) })
+            Ok(obj)
         }
         Err(e) => Err(JSONDecodeError::py_err((e.to_string(), "", 0))),
     }
@@ -102,8 +102,8 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
 #[derive(Clone, Copy)]
 struct JsonValue;
 
-impl<'de, 'a> DeserializeSeed<'de> for JsonValue {
-    type Value = *mut pyo3::ffi::PyObject;
+impl<'de> DeserializeSeed<'de> for JsonValue {
+    type Value = NonNull<pyo3::ffi::PyObject>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -113,8 +113,8 @@ impl<'de, 'a> DeserializeSeed<'de> for JsonValue {
     }
 }
 
-impl<'de, 'a> Visitor<'de> for JsonValue {
-    type Value = *mut pyo3::ffi::PyObject;
+impl<'de> Visitor<'de> for JsonValue {
+    type Value = NonNull<pyo3::ffi::PyObject>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("JSON")
@@ -122,7 +122,7 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {
         ffi!(Py_INCREF(NONE));
-        Ok(unsafe { NONE })
+        Ok(nonnull!(NONE))
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
@@ -131,10 +131,10 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     {
         if value {
             ffi!(Py_INCREF(TRUE));
-            Ok(unsafe { TRUE })
+            Ok(nonnull!(TRUE))
         } else {
             ffi!(Py_INCREF(FALSE));
-            Ok(unsafe { FALSE })
+            Ok(nonnull!(FALSE))
         }
     }
 
@@ -142,50 +142,65 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        Ok(ffi!(PyLong_FromLongLong(value)))
+        Ok(nonnull!(ffi!(PyLong_FromLongLong(value))))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(ffi!(PyLong_FromUnsignedLongLong(value)))
+        Ok(nonnull!(ffi!(PyLong_FromUnsignedLongLong(value))))
     }
 
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(ffi!(PyFloat_FromDouble(value)))
+        Ok(nonnull!(ffi!(PyFloat_FromDouble(value))))
+    }
+
+    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        Ok(nonnull!(str_to_pyobject!(value.as_str())))
     }
 
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(str_to_pyobject!(value))
+        Ok(nonnull!(str_to_pyobject!(value)))
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(str_to_pyobject!(value))
+        Ok(nonnull!(str_to_pyobject!(value)))
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
     where
         A: SeqAccess<'de>,
     {
-        let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> = SmallVec::with_capacity(8);
-        while let Some(elem) = seq.next_element_seed(self)? {
-            elements.push(elem);
+        match seq.next_element_seed(self) {
+            Ok(None) => Ok(nonnull!(ffi!(PyList_New(0)))),
+            Ok(Some(elem)) => {
+                let mut elements: SmallVec<[*mut pyo3::ffi::PyObject; 8]> =
+                    SmallVec::with_capacity(8);
+                elements.push(elem.as_ptr());
+                while let Some(elem) = seq.next_element_seed(self)? {
+                    elements.push(elem.as_ptr());
+                }
+                let ptr = ffi!(PyList_New(elements.len() as pyo3::ffi::Py_ssize_t));
+                for (i, &obj) in elements.iter().enumerate() {
+                    ffi!(PyList_SET_ITEM(ptr, i as pyo3::ffi::Py_ssize_t, obj));
+                }
+                Ok(nonnull!(ptr))
+            }
+            Err(err) => std::result::Result::Err(err),
         }
-        let ptr = ffi!(PyList_New(elements.len() as pyo3::ffi::Py_ssize_t));
-        for (i, obj) in elements.iter().enumerate() {
-            ffi!(PyList_SET_ITEM(ptr, i as pyo3::ffi::Py_ssize_t, *obj));
-        }
-        Ok(ptr)
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -220,11 +235,16 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
                 pyhash = hash_str(pykey);
             }
             let value = map.next_value_seed(self)?;
-            let _ = ffi!(_PyDict_SetItem_KnownHash(dict_ptr, pykey, value, pyhash));
+            let _ = ffi!(_PyDict_SetItem_KnownHash(
+                dict_ptr,
+                pykey,
+                value.as_ptr(),
+                pyhash
+            ));
             // counter Py_INCREF in insertdict
             ffi!(Py_DECREF(pykey));
-            ffi!(Py_DECREF(value));
+            ffi!(Py_DECREF(value.as_ptr()));
         }
-        Ok(dict_ptr)
+        Ok(nonnull!(dict_ptr))
     }
 }

@@ -26,9 +26,7 @@ impl Iterator for PyTupleIterator {
         if self.len == self.idx {
             None
         } else {
-            let item = unsafe {
-                NonNull::new_unchecked(ffi!(PyTuple_GET_ITEM(self.list, self.idx as isize)))
-            };
+            let item = nonnull!(ffi!(PyTuple_GET_ITEM(self.list, self.idx as isize)));
             self.idx += 1;
             Some(item)
         }

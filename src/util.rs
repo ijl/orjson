@@ -30,6 +30,12 @@ macro_rules! likely {
     };
 }
 
+macro_rules! nonnull {
+    ($exp:expr) => {
+        unsafe { std::ptr::NonNull::new_unchecked($exp) }
+    };
+}
+
 macro_rules! str_from_slice {
     ($ptr:expr, $size:expr) => {
         unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts($ptr, $size as usize)) }

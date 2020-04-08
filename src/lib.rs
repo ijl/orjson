@@ -97,7 +97,7 @@ pub fn dumps(
 ) -> PyResult<PyObject> {
     let pydef: Option<NonNull<pyo3::ffi::PyObject>>;
     if let Some(value) = default {
-        pydef = Some(unsafe { NonNull::new_unchecked(value.as_ptr()) });
+        pydef = Some(nonnull!(value.as_ptr()));
     } else {
         pydef = None
     };
