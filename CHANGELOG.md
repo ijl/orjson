@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.5 - 2020-04-08
+
+### Fixed
+
+- Fix deserialization raising `JSONDecodeError` on some valid negative
+floats with large exponents.
+
 ## 2.6.4 - 2020-04-08
 
 ### Changed

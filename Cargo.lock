@@ -193,7 +193,7 @@ checksum = "b1c601810575c99596d4afc46f78a678c80105117c379eb3650cf99b8a21ce5b"
 
 [[package]]
 name = "orjson"
-version = "2.6.4"
+version = "2.6.5"
 dependencies = [
  "associative-cache",
  "encoding_rs",
