@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.3 - 2020-04-08
+
+### Changed
+
+- Improve deserialization performance of floats by about 40%.
+
 ## 2.6.3 - 2020-04-01
 
 ### Changed

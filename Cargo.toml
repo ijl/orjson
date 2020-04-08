@@ -1,6 +1,6 @@
 [package]
 name = "orjson"
-version = "2.6.3"
+version = "2.6.4"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2018"
@@ -23,7 +23,6 @@ include = [
     "test/*.py",
     "test/requirements.txt",
 ]
-exclude = [".pytest_cache"]
 
 [lib]
 name = "orjson"
