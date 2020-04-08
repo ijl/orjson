@@ -16,8 +16,7 @@ steps:
       from_secret: twine_password
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.9 -m pip install --upgrade pip twine
-    - python3.9 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
+    - python3.9 -m pip install --upgrade pip twine maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.9
     - python3.9 -m pip install target/wheels/orjson*.whl
     - python3.9 -m pip install -r test/requirements.txt -r integration/requirements.txt
@@ -42,8 +41,7 @@ steps:
       from_secret: twine_password
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.8 -m pip install --upgrade pip twine
-    - python3.8 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
+    - python3.8 -m pip install --upgrade pip twine maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.8
     - python3.8 -m pip install target/wheels/orjson*.whl
     - python3.8 -m pip install -r test/requirements.txt -r integration/requirements.txt
@@ -68,8 +66,7 @@ steps:
       from_secret: twine_password
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.7 -m pip install --upgrade pip twine
-    - python3.7 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
+    - python3.7 -m pip install --upgrade pip twine maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.7
     - python3.7 -m pip install target/wheels/orjson*.whl
     - python3.7 -m pip install -r test/requirements.txt -r integration/requirements.txt
@@ -94,8 +91,7 @@ steps:
       from_secret: twine_password
   commands:
     - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.6 -m pip install --upgrade pip twine
-    - python3.6 -m pip install --upgrade "maturin>=v0.8.0-alpha.2"
+    - python3.6 -m pip install --upgrade pip twine maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.6
     - python3.6 -m pip install target/wheels/orjson*.whl
     - python3.6 -m pip install -r test/requirements.txt -r integration/requirements.txt
