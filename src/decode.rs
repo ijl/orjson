@@ -6,7 +6,7 @@ use crate::typeref::*;
 use crate::unicode::*;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
-use lazy_static::lazy_static;
+use once_cell::unsync::OnceCell;
 use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
@@ -18,7 +18,7 @@ use std::ptr::NonNull;
 use wyhash::wyhash;
 
 #[derive(Clone)]
-struct CachedKey {
+pub struct CachedKey {
     ptr: *mut c_void,
     hash: pyo3::ffi::Py_hash_t,
 }
@@ -47,12 +47,10 @@ impl Drop for CachedKey {
     }
 }
 
-type KeyMap =
+pub type KeyMap =
     AssociativeCache<u64, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
 
-lazy_static! {
-    static ref KEY_MAP: parking_lot::Mutex<KeyMap> = { parking_lot::Mutex::new(KeyMap::default()) };
-}
+pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
     let obj_type_ptr = ob_type!(ptr);
@@ -198,13 +196,14 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
         while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
-            if unlikely!(key.len() > 64) {
-                pykey = str_to_pyobject!(key);
-                pyhash = hash_str(pykey);
-            } else {
+            if likely!(key.len() <= 64) {
                 let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
                 {
-                    let mut map = KEY_MAP.lock();
+                    let map = unsafe {
+                        KEY_MAP
+                            .get_mut()
+                            .unwrap_or_else(|| unsafe { std::hint::unreachable_unchecked() })
+                    };
                     let entry = map.entry(&hash).or_insert_with(
                         || hash,
                         || {
@@ -216,7 +215,10 @@ impl<'de, 'a> Visitor<'de> for JsonValue {
                     pykey = tmp.0;
                     pyhash = tmp.1;
                 }
-            };
+            } else {
+                pykey = str_to_pyobject!(key);
+                pyhash = hash_str(pykey);
+            }
             let value = map.next_value_seed(self)?;
             let _ = ffi!(_PyDict_SetItem_KnownHash(dict_ptr, pykey, value, pyhash));
             // counter Py_INCREF in insertdict

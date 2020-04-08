@@ -44,8 +44,10 @@ static INIT: Once = Once::new();
 
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
+        assert!(crate::decode::KEY_MAP
+            .set(crate::decode::KeyMap::default())
+            .is_ok());
         PyDateTime_IMPORT();
-        HASH_SEED = rand::random::<u64>();
         NONE = Py_None();
         TRUE = Py_True();
         FALSE = Py_False();
@@ -78,6 +80,7 @@ pub fn init_typerefs() {
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
+        HASH_SEED = VALUE_STR as u64 * DICT_TYPE as u64;
     });
 }
 

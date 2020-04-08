@@ -50,20 +50,20 @@ classifier = [
 ]
 
 [dependencies]
-ryu = { version = "1" }
 associative-cache = { version = "1" }
-heapless = { version = "0.5", default_features = false }
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
-lazy_static = { version = "1.4", default_features = false }
-parking_lot = {version = "0.10", features = ["nightly"]}
-pyo3 = { version = "0.9.0", default_features = false, features = ["extension-module"]}
-rand = { version = "0.7", default_features = false, features = ["getrandom", "std"] }
+once_cell = { version = "1", default_features = false }
+pyo3 = { version = "0.9", default_features = false, features = ["extension-module"]}
+ryu = { version = "1" }
 serde = { version = "1", default_features = false }
-serde_json = { git = "https://github.com/ijl/json.git", rev = "f24505b31bd9e5f41701dc9f5ac7d76813d139b5", default_features = false, features = ["std", "perfect_float"] }
+serde_json = { version = "1", default_features = false, features = ["std", "perfect_float"] }
 smallvec = { version = "1", default_features = false, features = ["union", "specialization", "write"] }
 wyhash = { version = "0.3" }
+
+[patch.crates-io]
+serde_json = { git = "https://github.com/ijl/json.git", rev = "f24505b31bd9e5f41701dc9f5ac7d76813d139b5" }
 
 [profile.release]
 codegen-units = 1

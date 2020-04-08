@@ -177,7 +177,7 @@ impl NonStrKey {
                 }
             }
             ObType::Datetime => {
-                let mut buf: DateTimeBuffer = heapless::Vec::new();
+                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
                 let dt = DateTime::new(key, self.opts);
                 if dt.write_buf(&mut buf).is_err() {
                     return Err(NonStrError::DatetimeLibraryUnsupported);
@@ -186,14 +186,14 @@ impl NonStrKey {
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Date => {
-                let mut buf: DateTimeBuffer = heapless::Vec::new();
+                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
                 Date::new(key).write_buf(&mut buf);
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Time => match Time::new(key, self.opts) {
                 Ok(val) => {
-                    let mut buf: DateTimeBuffer = heapless::Vec::new();
+                    let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
                     val.write_buf(&mut buf);
                     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                     Ok(InlinableString::from(key_as_str))
@@ -201,7 +201,7 @@ impl NonStrKey {
                 Err(TimeError::HasTimezone) => Err(NonStrError::TimeTzinfo),
             },
             ObType::Uuid => {
-                let mut buf: UUIDBuffer = heapless::Vec::new();
+                let mut buf: UUIDBuffer = smallvec::SmallVec::with_capacity(64);
                 UUID::new(key).write_buf(&mut buf);
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))

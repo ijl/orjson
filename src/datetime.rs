@@ -13,27 +13,25 @@ const COLON: u8 = 58; // ":"
 const PERIOD: u8 = 46; // "."
 const Z: u8 = 90; // "Z"
 
-pub type DateTimeBuffer = heapless::Vec<u8, heapless::consts::U32>;
+pub type DateTimeBuffer = smallvec::SmallVec<[u8; 32]>;
 
 macro_rules! write_double_digit {
     ($buf:ident, $value:ident) => {
         if $value < 10 {
-            $buf.push(ZERO).unwrap();
+            $buf.push(ZERO);
         }
-        $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes())
-            .unwrap();
+        $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
     };
 }
 
 macro_rules! write_microsecond {
     ($buf:ident, $microsecond:ident) => {
         if $microsecond != 0 {
-            $buf.push(PERIOD).unwrap();
+            $buf.push(PERIOD);
             let mut buf = itoa::Buffer::new();
             let formatted = buf.format($microsecond);
-            $buf.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())])
-                .unwrap();
-            $buf.extend_from_slice(formatted.as_bytes()).unwrap();
+            $buf.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())]);
+            $buf.extend_from_slice(formatted.as_bytes());
         }
     };
 }
@@ -50,15 +48,14 @@ impl Date {
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
-            buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes())
-                .unwrap();
+            buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
         }
-        buf.push(HYPHEN).unwrap();
+        buf.push(HYPHEN);
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u32;
             write_double_digit!(buf, month);
         }
-        buf.push(HYPHEN).unwrap();
+        buf.push(HYPHEN);
         {
             let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u32;
             write_double_digit!(buf, day);
@@ -70,7 +67,7 @@ impl<'p> Serialize for Date {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -100,12 +97,12 @@ impl Time {
             let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
             write_double_digit!(buf, hour);
         }
-        buf.push(COLON).unwrap();
+        buf.push(COLON);
         {
             let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
             write_double_digit!(buf, minute);
         }
-        buf.push(COLON).unwrap();
+        buf.push(COLON);
         {
             let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
             write_double_digit!(buf, second);
@@ -122,7 +119,7 @@ impl<'p> Serialize for Time {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -196,29 +193,28 @@ impl DateTime {
             itoa::Buffer::new()
                 .format(ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32)
                 .as_bytes(),
-        )
-        .unwrap();
-        buf.push(HYPHEN).unwrap();
+        );
+        buf.push(HYPHEN);
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;
             write_double_digit!(buf, month);
         }
-        buf.push(HYPHEN).unwrap();
+        buf.push(HYPHEN);
         {
             let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u8;
             write_double_digit!(buf, day);
         }
-        buf.push(T).unwrap();
+        buf.push(T);
         {
             let hour = ffi!(PyDateTime_DATE_GET_HOUR(self.ptr)) as u8;
             write_double_digit!(buf, hour);
         }
-        buf.push(COLON).unwrap();
+        buf.push(COLON);
         {
             let minute = ffi!(PyDateTime_DATE_GET_MINUTE(self.ptr)) as u8;
             write_double_digit!(buf, minute);
         }
-        buf.push(COLON).unwrap();
+        buf.push(COLON);
         {
             let second = ffi!(PyDateTime_DATE_GET_SECOND(self.ptr)) as u8;
             write_double_digit!(buf, second);
@@ -230,25 +226,24 @@ impl DateTime {
         if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
             if offset_second == 0 {
                 if self.opts & UTC_Z == UTC_Z {
-                    buf.push(Z).unwrap();
+                    buf.push(Z);
                 } else {
-                    buf.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO])
-                        .unwrap();
+                    buf.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO]);
                 }
             } else {
                 if offset_day == -1 {
                     // datetime.timedelta(days=-1, seconds=68400) -> -05:00
-                    buf.push(HYPHEN).unwrap();
+                    buf.push(HYPHEN);
                     offset_second = 86400 - offset_second;
                 } else {
                     // datetime.timedelta(seconds=37800) -> +10:30
-                    buf.push(PLUS).unwrap();
+                    buf.push(PLUS);
                 }
                 {
                     let offset_minute = offset_second / 60;
                     let offset_hour = offset_minute / 60;
                     write_double_digit!(buf, offset_hour);
-                    buf.push(COLON).unwrap();
+                    buf.push(COLON);
 
                     let mut offset_minute_print = offset_minute % 60;
 
@@ -265,12 +260,11 @@ impl DateTime {
                     }
 
                     if offset_minute_print < 10 {
-                        buf.push(ZERO).unwrap();
+                        buf.push(ZERO);
                     }
                     buf.extend_from_slice(
                         itoa::Buffer::new().format(offset_minute_print).as_bytes(),
-                    )
-                    .unwrap();
+                    );
                 }
             }
         }
@@ -283,7 +277,7 @@ impl<'p> Serialize for DateTime {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = heapless::Vec::new();
+        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
         if self.write_buf(&mut buf).is_err() {
             err!(DATETIME_LIBRARY_UNSUPPORTED)
         }
