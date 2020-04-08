@@ -222,14 +222,22 @@ class TypeTests(unittest.TestCase):
         float precision loads()
         """
         self.assertEqual(orjson.loads("31.245270191439438"), 31.245270191439438)
+        self.assertEqual(orjson.loads("-31.245270191439438"), -31.245270191439438)
         self.assertEqual(orjson.loads("121.48791951161945"), 121.48791951161945)
+        self.assertEqual(orjson.loads("-121.48791951161945"), -121.48791951161945)
+        self.assertEqual(orjson.loads("100.78399658203125"), 100.78399658203125)
+        self.assertEqual(orjson.loads("-100.78399658203125"), -100.78399658203125)
 
     def test_float_precision_dumps(self):
         """
         float precision dumps()
         """
         self.assertEqual(orjson.dumps(31.245270191439438), b"31.245270191439438")
+        self.assertEqual(orjson.dumps(-31.245270191439438), b"-31.245270191439438")
         self.assertEqual(orjson.dumps(121.48791951161945), b"121.48791951161945")
+        self.assertEqual(orjson.dumps(-121.48791951161945), b"-121.48791951161945")
+        self.assertEqual(orjson.dumps(100.78399658203125), b"100.78399658203125")
+        self.assertEqual(orjson.dumps(-100.78399658203125), b"-100.78399658203125")
 
     def test_float_edge(self):
         """

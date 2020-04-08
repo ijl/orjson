@@ -62,7 +62,7 @@ smallvec = { version = "1", default_features = false, features = ["union", "spec
 wyhash = { version = "0.3" }
 
 [patch.crates-io]
-serde_json = { git = "https://github.com/ijl/json.git", rev = "382619b4dbc6700141c29e1366df20f5ef14c809" }
+serde_json = { git = "https://github.com/ijl/json.git", rev = "9e9a959fce6075e90526bc3af4bde509a9af17dd" }
 
 [profile.release]
 codegen-units = 1
