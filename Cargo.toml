@@ -10,7 +10,6 @@ homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
-    "build.rs",
     "Cargo.toml",
     "CHANGELOG.md",
     "data/*",
@@ -58,7 +57,7 @@ pyo3 = { version = "0.9", default_features = false, features = ["extension-modul
 ryu = { version = "1" }
 serde = { version = "1", default_features = false }
 serde_json = { version = "1", default_features = false, features = ["std"] }
-smallvec = { version = "1", default_features = false, features = ["union", "specialization", "write"] }
+smallvec = { version = "1", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
 wyhash = { version = "0.3" }
 
 [patch.crates-io]
@@ -71,3 +70,6 @@ incremental = false
 lto = "thin"
 opt-level = 3
 panic = "abort"
+
+[profile.release.build-override]
+opt-level = 0
