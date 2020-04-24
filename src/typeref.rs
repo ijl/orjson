@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use once_cell::unsync::Lazy;
 use pyo3::ffi::*;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
@@ -24,7 +25,8 @@ pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut ARRAY_TYPE: Option<NonNull<PyTypeObject>> = None;
+pub static mut ARRAY_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_array_type() });
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -68,7 +70,6 @@ pub fn init_typerefs() {
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
-        ARRAY_TYPE = look_up_array_type();
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
         NORMALIZE_METHOD_STR = PyUnicode_InternFromString("normalize\0".as_ptr() as *const c_char);

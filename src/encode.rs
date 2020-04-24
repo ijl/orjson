@@ -128,7 +128,9 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
         {
             ObType::Dataclass
-        } else if opts & SERIALIZE_NUMPY != 0 && Some(NonNull::new_unchecked(ob_type)) == ARRAY_TYPE
+        } else if opts & SERIALIZE_NUMPY != 0
+            && ARRAY_TYPE.is_some()
+            && ob_type == ARRAY_TYPE.unwrap().as_ptr()
         {
             ObType::Array
         } else {
