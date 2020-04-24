@@ -10,16 +10,16 @@ from .util import read_fixture_bytes
 class JSONTestSuiteParsingTests(unittest.TestCase):
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
         data = read_fixture_bytes(filename, "parsing")
-        with self.assertRaises(exc):
+        with self.assertRaises(exc, msg=data):
             res = orjson.loads(data)
-        with self.assertRaises(exc):
+        with self.assertRaises(exc, msg=data):
             res = orjson.loads(bytearray(data))
         try:
             decoded = data.decode("utf-8")
         except UnicodeDecodeError:
             pass
         else:
-            with self.assertRaises(exc):
+            with self.assertRaises(exc, msg=decoded):
                 res = orjson.loads(decoded)
 
     def _run_pass_json(self, filename, match=""):

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::datetime::HYPHEN;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 use smallvec::SmallVec;
@@ -41,13 +40,13 @@ impl UUID {
         write!(hexadecimal, "{:032x}", value).unwrap();
 
         buf.extend_from_slice(&hexadecimal[..8]);
-        buf.push(HYPHEN);
+        buf.push(b'-');
         buf.extend_from_slice(&hexadecimal[8..12]);
-        buf.push(HYPHEN);
+        buf.push(b'-');
         buf.extend_from_slice(&hexadecimal[12..16]);
-        buf.push(HYPHEN);
+        buf.push(b'-');
         buf.extend_from_slice(&hexadecimal[16..20]);
-        buf.push(HYPHEN);
+        buf.push(b'-');
         buf.extend_from_slice(&hexadecimal[20..]);
     }
 }

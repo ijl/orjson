@@ -5,20 +5,12 @@ use crate::opt::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 
-pub const HYPHEN: u8 = 45; // "-"
-const PLUS: u8 = 43; // "+"
-const ZERO: u8 = 48; // "0"
-const T: u8 = 84; // "T"
-const COLON: u8 = 58; // ":"
-const PERIOD: u8 = 46; // "."
-const Z: u8 = 90; // "Z"
-
 pub type DateTimeBuffer = smallvec::SmallVec<[u8; 32]>;
 
 macro_rules! write_double_digit {
     ($buf:ident, $value:ident) => {
         if $value < 10 {
-            $buf.push(ZERO);
+            $buf.push(b'0');
         }
         $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
     };
@@ -27,10 +19,11 @@ macro_rules! write_double_digit {
 macro_rules! write_microsecond {
     ($buf:ident, $microsecond:ident) => {
         if $microsecond != 0 {
-            $buf.push(PERIOD);
             let mut buf = itoa::Buffer::new();
             let formatted = buf.format($microsecond);
-            $buf.extend_from_slice(&[ZERO; 6][..(6 - formatted.len())]);
+            $buf.extend_from_slice(
+                &[b'.', b'0', b'0', b'0', b'0', b'0', b'0'][..(7 - formatted.len())],
+            );
             $buf.extend_from_slice(formatted.as_bytes());
         }
     };
@@ -50,12 +43,12 @@ impl Date {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
             buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
         }
-        buf.push(HYPHEN);
+        buf.push(b'-');
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u32;
             write_double_digit!(buf, month);
         }
-        buf.push(HYPHEN);
+        buf.push(b'-');
         {
             let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u32;
             write_double_digit!(buf, day);
@@ -97,17 +90,17 @@ impl Time {
             let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
             write_double_digit!(buf, hour);
         }
-        buf.push(COLON);
+        buf.push(b':');
         {
             let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
             write_double_digit!(buf, minute);
         }
-        buf.push(COLON);
+        buf.push(b':');
         {
             let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
             write_double_digit!(buf, second);
         }
-        if self.opts & OMIT_MICROSECONDS != OMIT_MICROSECONDS {
+        if self.opts & OMIT_MICROSECONDS == 0 {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
         }
@@ -194,56 +187,56 @@ impl DateTime {
                 .format(ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32)
                 .as_bytes(),
         );
-        buf.push(HYPHEN);
+        buf.push(b'-');
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;
             write_double_digit!(buf, month);
         }
-        buf.push(HYPHEN);
+        buf.push(b'-');
         {
             let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u8;
             write_double_digit!(buf, day);
         }
-        buf.push(T);
+        buf.push(b'T');
         {
             let hour = ffi!(PyDateTime_DATE_GET_HOUR(self.ptr)) as u8;
             write_double_digit!(buf, hour);
         }
-        buf.push(COLON);
+        buf.push(b':');
         {
             let minute = ffi!(PyDateTime_DATE_GET_MINUTE(self.ptr)) as u8;
             write_double_digit!(buf, minute);
         }
-        buf.push(COLON);
+        buf.push(b':');
         {
             let second = ffi!(PyDateTime_DATE_GET_SECOND(self.ptr)) as u8;
             write_double_digit!(buf, second);
         }
-        if self.opts & OMIT_MICROSECONDS != OMIT_MICROSECONDS {
+        if self.opts & OMIT_MICROSECONDS == 0 {
             let microsecond = ffi!(PyDateTime_DATE_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
         }
-        if has_tz || self.opts & NAIVE_UTC == NAIVE_UTC {
+        if has_tz || self.opts & NAIVE_UTC != 0 {
             if offset_second == 0 {
-                if self.opts & UTC_Z == UTC_Z {
-                    buf.push(Z);
+                if self.opts & UTC_Z != 0 {
+                    buf.push(b'Z');
                 } else {
-                    buf.extend_from_slice(&[PLUS, ZERO, ZERO, COLON, ZERO, ZERO]);
+                    buf.extend_from_slice(&[b'+', b'0', b'0', b':', b'0', b'0']);
                 }
             } else {
                 if offset_day == -1 {
                     // datetime.timedelta(days=-1, seconds=68400) -> -05:00
-                    buf.push(HYPHEN);
+                    buf.push(b'-');
                     offset_second = 86400 - offset_second;
                 } else {
                     // datetime.timedelta(seconds=37800) -> +10:30
-                    buf.push(PLUS);
+                    buf.push(b'+');
                 }
                 {
                     let offset_minute = offset_second / 60;
                     let offset_hour = offset_minute / 60;
                     write_double_digit!(buf, offset_hour);
-                    buf.push(COLON);
+                    buf.push(b':');
 
                     let mut offset_minute_print = offset_minute % 60;
 
@@ -260,7 +253,7 @@ impl DateTime {
                     }
 
                     if offset_minute_print < 10 {
-                        buf.push(ZERO);
+                        buf.push(b'0');
                     }
                     buf.extend_from_slice(
                         itoa::Buffer::new().format(offset_minute_print).as_bytes(),

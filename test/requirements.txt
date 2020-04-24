@@ -1,6 +1,6 @@
 arrow
 dataclasses;python_version<"3.7"
-numpy;platform_machine=="x86_64"
+numpy;platform_machine=="x86_64" and python_version<"3.9"
 pendulum;sys_platform!="win" and python_version<"3.9" and platform_machine=="x86_64"
 psutil
 pytest

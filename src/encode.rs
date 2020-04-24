@@ -120,16 +120,15 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Time
         } else if ob_type == TUPLE_TYPE {
             ObType::Tuple
-        } else if unlikely!((*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE) {
-            ObType::Enum
-        } else if opts & SERIALIZE_UUID == SERIALIZE_UUID && ob_type == UUID_TYPE {
+        } else if opts & SERIALIZE_UUID != 0 && ob_type == UUID_TYPE {
             ObType::Uuid
-        } else if opts & SERIALIZE_DATACLASS == SERIALIZE_DATACLASS
+        } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
+            ObType::Enum
+        } else if opts & SERIALIZE_DATACLASS != 0
             && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
         {
             ObType::Dataclass
-        } else if opts & SERIALIZE_NUMPY == SERIALIZE_NUMPY
-            && Some(NonNull::new_unchecked(ob_type)) == ARRAY_TYPE
+        } else if opts & SERIALIZE_NUMPY != 0 && Some(NonNull::new_unchecked(ob_type)) == ARRAY_TYPE
         {
             ObType::Array
         } else {
@@ -204,7 +203,7 @@ impl<'p> Serialize for SerializePyObject {
                 let val = ffi!(PyLong_AsLongLong(self.ptr));
                 if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
                     err!("Integer exceeds 64-bit range")
-                } else if unlikely!(self.opts & STRICT_INTEGER == STRICT_INTEGER)
+                } else if unlikely!(self.opts & STRICT_INTEGER != 0)
                     && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
                 {
                     err!("Integer exceeds 53-bit range")
@@ -229,8 +228,7 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(len == 0) {
                     serializer.serialize_map(Some(0)).unwrap().end()
                 } else if likely!(
-                    self.opts & SORT_OR_NON_STR_KEYS == 0
-                        || self.opts & DATACLASS_DICT_PATH == DATACLASS_DICT_PATH
+                    self.opts & SORT_OR_NON_STR_KEYS == 0 || self.opts & DATACLASS_DICT_PATH != 0
                 ) {
                     let opts = self.opts & !DATACLASS_DICT_PATH;
                     let mut map = serializer.serialize_map(None).unwrap();
@@ -268,7 +266,7 @@ impl<'p> Serialize for SerializePyObject {
                         ))?;
                     }
                     map.end()
-                } else if self.opts & NON_STR_KEYS == NON_STR_KEYS {
+                } else if self.opts & NON_STR_KEYS != 0 {
                     NonStrKey::new(
                         self.ptr,
                         self.opts,

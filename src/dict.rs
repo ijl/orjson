@@ -214,11 +214,11 @@ impl NonStrKey {
             ObType::Str => {
                 // because of ENUM
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let data = read_utf8_from_str(key, &mut str_size);
-                if unlikely!(data.is_null()) {
+                let uni = read_utf8_from_str(key, &mut str_size);
+                if unlikely!(uni.is_null()) {
                     Err(NonStrError::InvalidStr)
                 } else {
-                    Ok(InlinableString::from(str_from_slice!(data, str_size)))
+                    Ok(InlinableString::from(str_from_slice!(uni, str_size)))
                 }
             }
             ObType::Tuple
@@ -280,7 +280,7 @@ impl<'p> Serialize for NonStrKey {
             }
         }
 
-        if self.opts & SORT_KEYS == SORT_KEYS {
+        if self.opts & SORT_KEYS != 0 {
             items.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         }
 
