@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.6.6 - 2020-04-24
+
+### Fixed
+
+- Import `numpy` only on first use of `OPT_SERIALIZE_NUMPY` to reduce
+interpreter start time when not used.
+- Reduce build time by half.
+
 ## 2.6.5 - 2020-04-08
 
 ### Fixed
