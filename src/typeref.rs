@@ -81,7 +81,7 @@ pub fn init_typerefs() {
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
-        HASH_SEED = VALUE_STR as u64 * DICT_TYPE as u64;
+        HASH_SEED = (VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64);
     });
 }
 
