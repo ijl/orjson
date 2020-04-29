@@ -8,7 +8,6 @@ requires = ["maturin>=0.8,<0.9"]
 
 [tool.maturin]
 manylinux = "off"
-rustc-extra-args = "-Zmutable-noalias -C target-feature=+sse2"
 strip = "on"
 
 [tool.black]

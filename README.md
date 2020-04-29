@@ -985,7 +985,8 @@ orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
 may not work on 32-bit targets. It should be compiled with
 `-C target-feature=+sse2` on amd64 and `-C target-feature=+neon` on arm7. musl
 libc is not supported, but building with `-C target-feature=-crt-static`
-will probably work.
+will probably work. The recommended flags are specified in `.cargo/config`
+and will apply unless `RUSTFLAGS` is set.
 
 There are no runtime dependencies other than libc.
 
