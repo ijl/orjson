@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.6.7 - 2020-04-30
+
+### Fixed
+
+- Fix integer overflows in debug builds.
+
+### Changed
+
+- The source distribution sets the recommended RUSTFLAGS in `.cargo/config`.
+
 ## 2.6.6 - 2020-04-24
 
 ### Fixed
