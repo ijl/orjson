@@ -1,0 +1,79 @@
+[package]
+name = "serde_json"
+version = "1.0.52" # remember to update html_root_url
+authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>", "David Tolnay <dtolnay@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "A JSON serialization file format"
+repository = "https://github.com/serde-rs/json"
+documentation = "http://docs.serde.rs/serde_json/"
+keywords = ["json", "serde", "serialization"]
+categories = ["encoding"]
+readme = "README.md"
+include = ["Cargo.toml", "src/**/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
+edition = "2018"
+
+[badges]
+travis-ci = { repository = "serde-rs/json" }
+appveyor = { repository = "serde-rs/json" }
+
+[dependencies]
+serde = { version = "1.0.100", default-features = false }
+indexmap = { version = "1.2", optional = true }
+itoa = { version = "0.4.3", default-features = false }
+ryu = "1.0"
+lexical-core = { version = "0.7", default_features = false, features = ["correct", "format", "ryu"]}
+
+[dev-dependencies]
+automod = "0.1"
+rustversion = "1.0"
+serde_bytes = "0.11"
+serde_derive = "1.0"
+serde_stacker = "0.1"
+trybuild = { version = "1.0.19", features = ["diff"] }
+
+[workspace]
+members = ["tests/crate"]
+
+[package.metadata.docs.rs]
+features = ["raw_value", "unbounded_depth"]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[package.metadata.playground]
+features = ["raw_value"]
+
+
+### FEATURES #################################################################
+
+[features]
+default = ["std"]
+
+std = ["serde/std"]
+
+# Provide integration for heap-allocated collections without depending on the
+# rest of the Rust standard library.
+# NOTE: Disabling both `std` *and* `alloc` features is not supported yet.
+# Available on Rust 1.36+.
+alloc = ["serde/alloc"]
+
+# Use a different representation for the map type of serde_json::Value.
+# This allows data to be read into a Value and written back to a JSON string
+# while preserving the order of map keys in the input.
+preserve_order = ["indexmap"]
+
+# Use an arbitrary precision number representation for serde_json::Number. This
+# allows JSON numbers of arbitrary size/precision to be read into a Number and
+# written back to a JSON string without loss of precision.
+arbitrary_precision = []
+
+# Provide a RawValue type that can hold unprocessed JSON during deserialization.
+raw_value = []
+
+# Provide a method disable_recursion_limit to parse arbitrarily deep JSON
+# structures without any consideration for overflowing the stack. When using
+# this feature, you will want to provide some other way to protect against stack
+# overflows, such as by wrapping your Deserializer in the dynamically growing
+# stack adapter provided by the serde_stacker crate. Additionally you will need
+# to be careful around other recursive operations on the parsed result which may
+# overflow the stack after deserialization has completed, including, but not
+# limited to, Display and Debug and Drop impls.
+unbounded_depth = []

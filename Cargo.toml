@@ -57,9 +57,12 @@ once_cell = { version = "1", default_features = false }
 pyo3 = { version = "0.9", default_features = false, features = ["extension-module"]}
 ryu = { version = "1" }
 serde = { version = "1", default_features = false }
-serde_json = { git = "https://github.com/ijl/json.git", rev = "62ef02bd14d2772c23915005700756dfafbe44d7", default_features = false, features = ["std"] }
+serde_json = { version = "1", default_features = false, features = ["std"] }
 smallvec = { version = "1", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
 wyhash = { version = "0.3" }
+
+[patch.crates-io]
+serde_json = { path = "./json" }
 
 [profile.release]
 codegen-units = 1
