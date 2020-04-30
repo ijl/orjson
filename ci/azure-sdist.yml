@@ -10,11 +10,11 @@ steps:
   displayName: ensure toolchain
 - bash: pip install --upgrade pip maturin twine
   displayName: build dependencies
-- bash: pip install -r test/requirements.txt -r integration/requirements.txt
+- bash: python3 -m pip install -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
 - bash: maturin sdist
   displayName: package sdist
-- bash: pip install target/wheels/orjson*.tar.gz
+- bash: python3 -m pip install target/wheels/orjson*.tar.gz
   displayName: install
 - bash: pytest -v test
   displayName: pytest

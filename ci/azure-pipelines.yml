@@ -12,7 +12,7 @@ jobs:
   pool:
     vmImage: ubuntu-18.04
   variables:
-    interpreter: python3.7
+    interpreter: python3.8
     target: x86_64-unknown-linux-gnu
   steps:
   - task: UsePythonVersion@0
@@ -21,6 +21,20 @@ jobs:
       addToPath: true
   - checkout: self
   - template: ./azure-sdist.yml
+
+- job: linux_debug
+  pool:
+    vmImage: ubuntu-18.04
+  container: quay.io/pypa/manylinux1_x86_64:latest
+  variables:
+    interpreter: python3.8
+    manylinux: off
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-2/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: false
+  steps:
+  - checkout: self
+  - template: ./azure-debug.yml
 
 - job: linux_python39_amd64
   pool:
