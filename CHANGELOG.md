@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.8 - 2020-04-30
+
+### Changed
+
+- The source distribution vendors a forked dependency.
+
 ## 2.6.7 - 2020-04-30
 
 ### Fixed
