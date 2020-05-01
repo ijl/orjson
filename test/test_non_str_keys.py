@@ -15,6 +15,10 @@ except ImportError:
     numpy = None
 
 
+class SubStr(str):
+    pass
+
+
 class NonStrKeyTests(unittest.TestCase):
     def test_dict_keys_duplicate(self):
         """
@@ -30,6 +34,16 @@ class NonStrKeyTests(unittest.TestCase):
             orjson.dumps({1: True, 2: False}, option=orjson.OPT_NON_STR_KEYS),
             b'{"1":true,"2":false}',
         )
+
+    def test_dict_keys_substr(self):
+        self.assertEqual(
+            orjson.dumps({SubStr("aaa"): True}, option=orjson.OPT_NON_STR_KEYS),
+            b'{"aaa":true}',
+        )
+
+    def test_dict_keys_substr_invalid(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps({SubStr("\ud800"): True}, option=orjson.OPT_NON_STR_KEYS)
 
     def test_dict_keys_strict(self):
         """

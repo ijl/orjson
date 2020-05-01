@@ -71,6 +71,7 @@ pub enum ObType {
     Dataclass,
     Array,
     Enum,
+    StrSubclass,
     Unknown,
 }
 
@@ -110,6 +111,12 @@ pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
     }
 }
 
+macro_rules! is_subclass {
+    ($ob_type:expr, $flag:ident) => {
+        unsafe { (((*$ob_type).tp_flags & pyo3::ffi::$flag) != 0) }
+    };
+}
+
 #[inline(never)]
 pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
@@ -124,6 +131,14 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Uuid
         } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
+        } else if is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS) {
+            ObType::StrSubclass
+        } else if is_subclass!(ob_type, Py_TPFLAGS_LONG_SUBCLASS) {
+            ObType::Int
+        } else if is_subclass!(ob_type, Py_TPFLAGS_LIST_SUBCLASS) {
+            ObType::List
+        } else if is_subclass!(ob_type, Py_TPFLAGS_DICT_SUBCLASS) {
+            ObType::Dict
         } else if ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1 {
             ObType::Dataclass
         } else if opts & SERIALIZE_NUMPY != 0
@@ -194,6 +209,14 @@ impl<'p> Serialize for SerializePyObject {
             ObType::Str => {
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                 let uni = read_utf8_from_str(self.ptr, &mut str_size);
+                if unlikely!(uni.is_null()) {
+                    err!(INVALID_STR)
+                }
+                serializer.serialize_str(str_from_slice!(uni, str_size))
+            }
+            ObType::StrSubclass => {
+                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
                 if unlikely!(uni.is_null()) {
                     err!(INVALID_STR)
                 }

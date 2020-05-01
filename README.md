@@ -22,12 +22,13 @@ usage of other libraries
 "\\\u597d"
 * serializes `float` 10x as fast and deserializes twice as fast as other
 libraries
+* serializes subclasses of `str`, `int`, `list`, and `dict` natively,
+requiring `default` to specify how to serialize others
 * serializes arbitrary types using a `default` hook
 * has strict UTF-8 conformance, more correct than the standard library
 * has strict JSON conformance in not supporting Nan/Infinity/-Infinity
 * has an option for strict JSON conformance on 53-bit integers with default
 support for 64-bit
-* does not support subclasses by default, requiring use of `default` hook
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
@@ -121,10 +122,10 @@ It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
-`None` instances. It supports arbitrary types through `default`.
-It does not serialize subclasses of
-supported types natively, with the exception of `dataclasses.dataclass`
-subclasses.
+`None` instances. It supports arbitrary types through `default`. It
+serializes subclasses of `str`, `dict`, `lists`, `int`,
+`dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
+of `tuple` to avoid serializing `namedtuple` objects as arrays.
 
 The output is a `bytes` object containing UTF-8.
 
