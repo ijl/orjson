@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.0 - 2020-05-01
+
+### Added
+
+- `orjson.dumps()` serializes subclasses of `str`, `int`, `list`, and `dict`.
+
+### Changed
+
+- `orjson.dumps()` serializes `dataclasses.dataclass` and `uuid.UUID`
+instances by default. The options `OPT_SERIALIZE_DATACLASS` and
+`OPT_SERIALIZE_UUID` can still be specified but have no effect.
+
 ## 2.6.8 - 2020-04-30
 
 ### Changed
