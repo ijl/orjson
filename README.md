@@ -83,7 +83,7 @@ pip install --upgrade orjson
 To depend on orjson in a project:
 
 ```txt
-orjson>=2.6,<3
+orjson>=3,<4
 ```
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
