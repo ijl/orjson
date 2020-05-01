@@ -367,7 +367,8 @@ b'"1970-01-01T00:00:00"'
 
 ##### OPT_SERIALIZE_DATACLASS
 
-Serialize `dataclasses.dataclass` instances. For more, see
+This is deprecated and has no effect in version 3. In version 2 this was
+required to serialize  `dataclasses.dataclass` instances. For more, see
 [dataclass](https://github.com/ijl/orjson#dataclass).
 
 ##### OPT_SERIALIZE_NUMPY
@@ -377,7 +378,8 @@ Serialize `numpy.ndarray` instances. For more, see
 
 ##### OPT_SERIALIZE_UUID
 
-Serialize `uuid.UUID` instances. For more, see
+This is deprecated and has no effect in version 3. In version 2 this was
+required to serialize `uuid.UUID` instances. For more, see
 [UUID](https://github.com/ijl/orjson#UUID).
 
 ##### OPT_SORT_KEYS
@@ -477,8 +479,7 @@ This is for compatibility with the standard library.
 
 orjson serializes instances of `dataclasses.dataclass` natively. It serializes
 instances 40-50x as fast as other libraries and avoids a severe slowdown seen
-in other libraries compared to serializing `dict`. To serialize
-instances, specify `option=orjson.OPT_SERIALIZE_DATACLASS`.
+in other libraries compared to serializing `dict`.
 
 It is supported to pass all variants of dataclasses, including dataclasses
 using `__slots__`, frozen dataclasses, those with optional or default
@@ -514,10 +515,7 @@ class Object:
     name: str
     members: typing.List[Member]
 
->>> orjson.dumps(
-        Object(1, "a", [Member(1, True), Member(2)]),
-        option=orjson.OPT_SERIALIZE_DATACLASS,
-    )
+>>> orjson.dumps(Object(1, "a", [Member(1, True), Member(2)]))
 b'{"id":1,"name":"a","members":[{"id":1,"active":true},{"id":2,"active":false}]}'
 ```
 Users may wish to control how dataclass instances are serialized, e.g.,
@@ -771,20 +769,13 @@ JSONDecodeError: str is not valid UTF-8: surrogates not allowed
 
 orjson serializes `uuid.UUID` instances to
 [RFC 4122](https://tools.ietf.org/html/rfc4122) format, e.g.,
-"f81d4fae-7dec-11d0-a765-00a0c91e6bf6". This requires specifying
-`option=orjson.OPT_SERIALIZE_UUID`.
+"f81d4fae-7dec-11d0-a765-00a0c91e6bf6".
 
 ``` python
 >>> import orjson, uuid
->>> orjson.dumps(
-    uuid.UUID('f81d4fae-7dec-11d0-a765-00a0c91e6bf6'),
-    option=orjson.OPT_SERIALIZE_UUID,
-)
+>>> orjson.dumps(uuid.UUID('f81d4fae-7dec-11d0-a765-00a0c91e6bf6'))
 b'"f81d4fae-7dec-11d0-a765-00a0c91e6bf6"'
->>> orjson.dumps(
-    uuid.uuid5(uuid.NAMESPACE_DNS, "python.org"),
-    option=orjson.OPT_SERIALIZE_UUID,
-)
+>>> orjson.dumps(uuid.uuid5(uuid.NAMESPACE_DNS, "python.org"))
 b'"886313e1-3b8a-5372-9b90-0c9aee199e5d"'
 ```
 

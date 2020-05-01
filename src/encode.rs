@@ -120,13 +120,11 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Time
         } else if ob_type == TUPLE_TYPE {
             ObType::Tuple
-        } else if opts & SERIALIZE_UUID != 0 && ob_type == UUID_TYPE {
+        } else if ob_type == UUID_TYPE {
             ObType::Uuid
         } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
-        } else if opts & SERIALIZE_DATACLASS != 0
-            && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
-        {
+        } else if ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1 {
             ObType::Dataclass
         } else if opts & SERIALIZE_NUMPY != 0
             && ARRAY_TYPE.is_some()

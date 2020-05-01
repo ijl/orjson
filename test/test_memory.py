@@ -108,10 +108,10 @@ class MemoryTests(unittest.TestCase):
         """
         proc = psutil.Process()
         gc.collect()
-        val = orjson.dumps(DATACLASS_FIXTURE, option=orjson.OPT_SERIALIZE_DATACLASS)
+        val = orjson.dumps(DATACLASS_FIXTURE)
         mem = proc.memory_info().rss
         for _ in range(100):
-            val = orjson.dumps(DATACLASS_FIXTURE, option=orjson.OPT_SERIALIZE_DATACLASS)
+            val = orjson.dumps(DATACLASS_FIXTURE)
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 

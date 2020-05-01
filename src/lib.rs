@@ -108,8 +108,7 @@ pub fn dumps(
             return Err(exc::JSONEncodeError::py_err("Invalid opts"));
         } else {
             optsbits = ffi!(PyLong_AsLong(optsptr)) as i32;
-            if optsbits <= 0 || optsbits > opt::MAX_OPT {
-                // -1
+            if optsbits < 0 || optsbits > opt::MAX_OPT {
                 return Err(exc::JSONEncodeError::py_err("Invalid opts"));
             }
         }

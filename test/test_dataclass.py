@@ -71,21 +71,13 @@ class UnsortedDataclass:
 
 
 class DataclassTests(unittest.TestCase):
-    def test_dataclass_error(self):
-        """
-        dumps() dataclass error without option
-        """
-        with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps(Dataclass1("a", 1, None))
-
     def test_dataclass(self):
         """
         dumps() dataclass
         """
         obj = Dataclass1("a", 1, None)
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"name":"a","number":1,"sub":null}',
+            orjson.dumps(obj), b'{"name":"a","number":1,"sub":null}',
         )
 
     def test_dataclass_recursive(self):
@@ -94,7 +86,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass1("a", 1, Dataclass1("b", 2, None))
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            orjson.dumps(obj),
             b'{"name":"a","number":1,"sub":{"name":"b","number":2,"sub":null}}',
         )
 
@@ -113,9 +105,7 @@ class DataclassTests(unittest.TestCase):
         dumps() dataclass default arg
         """
         obj = Dataclass2()
-        self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS), b'{"name":"?"}'
-        )
+        self.assertEqual(orjson.dumps(obj), b'{"name":"?"}')
 
     def test_dataclass_types(self):
         """
@@ -123,7 +113,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass3("a", 1, {"a": "b"}, True, 1.1, [1, 2], (3, 4))
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            orjson.dumps(obj),
             b'{"a":"a","b":1,"c":{"a":"b"},"d":true,"e":1.1,"f":[1,2],"g":[3,4]}',
         )
 
@@ -133,8 +123,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass4("a", 1, 2.1)
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"a":"a","b":1,"c":2.1}',
+            orjson.dumps(obj), b'{"a":"a","b":1,"c":2.1}',
         )
 
     def test_dataclass_classvar(self):
@@ -143,8 +132,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass4("a", 1)
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"a":"a","b":1,"c":1.1}',
+            orjson.dumps(obj), b'{"a":"a","b":1,"c":1.1}',
         )
 
     def test_dataclass_subclass(self):
@@ -153,8 +141,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Datasubclass("a", 1, None, False)
         self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
-            b'{"name":"a","number":1,"sub":null,"additional":false}',
+            orjson.dumps(obj), b'{"name":"a","number":1,"sub":null,"additional":false}',
         )
 
     def test_dataclass_slots(self):
@@ -163,9 +150,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Slotsdataclass("a", 1)
         assert "__dict__" not in dir(obj)
-        self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS), b'{"a":"a","b":1}'
-        )
+        self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1}')
 
     def test_dataclass_default(self):
         """
@@ -182,7 +167,7 @@ class DataclassTests(unittest.TestCase):
             uuid.UUID("808989c0-00d5-48a8-b5c4-c804bf9032f2"), AnEnum.ONE
         )
         self.assertEqual(
-            orjson.dumps(obj, default=default, option=orjson.OPT_SERIALIZE_DATACLASS),
+            orjson.dumps(obj, default=default),
             b'{"a":"808989c0-00d5-48a8-b5c4-c804bf9032f2","b":1}',
         )
 
@@ -192,9 +177,7 @@ class DataclassTests(unittest.TestCase):
         """
         obj = UnsortedDataclass(1, 2, 3, None)
         self.assertEqual(
-            orjson.dumps(
-                obj, option=orjson.OPT_SERIALIZE_DATACLASS | orjson.OPT_SORT_KEYS
-            ),
+            orjson.dumps(obj, option=orjson.OPT_SORT_KEYS),
             b'{"c":1,"b":2,"a":3,"d":null}',
         )
 
@@ -204,8 +187,16 @@ class DataclassTests(unittest.TestCase):
         """
         obj = UnsortedDataclass(1, 2, 3, {"f": 2, "e": 1})
         self.assertEqual(
-            orjson.dumps(
-                obj, option=orjson.OPT_SERIALIZE_DATACLASS | orjson.OPT_SORT_KEYS
-            ),
+            orjson.dumps(obj, option=orjson.OPT_SORT_KEYS),
             b'{"c":1,"b":2,"a":3,"d":{"e":1,"f":2}}',
+        )
+
+    def test_dataclass_option(self):
+        """
+        dumps() accepts deprecated OPT_SERIALIZE_DATACALSS
+        """
+        obj = Dataclass1("a", 1, None)
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
+            b'{"name":"a","number":1,"sub":null}',
         )

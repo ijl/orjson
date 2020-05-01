@@ -150,7 +150,7 @@ impl NonStrKey {
         &self,
         key: *mut pyo3::ffi::PyObject,
     ) -> Result<InlinableString, NonStrError> {
-        match pyobject_to_obtype(key, self.opts | SERIALIZE_UUID) {
+        match pyobject_to_obtype(key, self.opts) {
             ObType::None => Ok(InlinableString::from("null")),
             ObType::Bool => {
                 let key_as_str: &str;
