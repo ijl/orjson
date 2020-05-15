@@ -470,7 +470,7 @@ where
             F: Formatter,
         {
             fn write_str(&mut self, s: &str) -> fmt::Result {
-                assert!(self.error.is_none());
+                debug_assert!(self.error.is_none());
                 match format_escaped_str_contents(self.writer, self.formatter, s) {
                     Ok(()) => Ok(()),
                     Err(err) => {
@@ -492,7 +492,7 @@ where
                 error: None,
             };
             match write!(adapter, "{}", value) {
-                Ok(()) => assert!(adapter.error.is_none()),
+                Ok(()) => debug_assert!(adapter.error.is_none()),
                 Err(fmt::Error) => {
                     return Err(Error::io(adapter.error.expect("there should be an error")));
                 }

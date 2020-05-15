@@ -11,3 +11,4 @@ benchmark_*.svg
 .mypy_cache
 vendor
 build
+!json/perfect_float.patch

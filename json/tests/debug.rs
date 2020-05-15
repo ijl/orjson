@@ -49,3 +49,20 @@ fn error() {
     let expected = "Error(\"key must be a string\", line: 1, column: 2)";
     assert_eq!(format!("{:?}", err), expected);
 }
+
+const INDENTED_EXPECTED: &str = r#"Object({
+    "array": Array([
+        Number(
+            0,
+        ),
+        Number(
+            1,
+        ),
+    ]),
+})"#;
+
+#[test]
+fn indented() {
+    let j = json!({ "array": [0, 1] });
+    assert_eq!(format!("{:#?}", j), INDENTED_EXPECTED);
+}

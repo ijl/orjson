@@ -177,8 +177,16 @@ impl Debug for Value {
             Value::Bool(v) => formatter.debug_tuple("Bool").field(&v).finish(),
             Value::Number(ref v) => Debug::fmt(v, formatter),
             Value::String(ref v) => formatter.debug_tuple("String").field(v).finish(),
-            Value::Array(ref v) => formatter.debug_tuple("Array").field(v).finish(),
-            Value::Object(ref v) => formatter.debug_tuple("Object").field(v).finish(),
+            Value::Array(ref v) => {
+                formatter.write_str("Array(")?;
+                Debug::fmt(v, formatter)?;
+                formatter.write_str(")")
+            }
+            Value::Object(ref v) => {
+                formatter.write_str("Object(")?;
+                Debug::fmt(v, formatter)?;
+                formatter.write_str(")")
+            }
         }
     }
 }

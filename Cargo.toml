@@ -54,15 +54,12 @@ encoding_rs = { version = "0.8", default_features = false, features = ["simd-acc
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 once_cell = { version = "1", default_features = false }
-pyo3 = { version = "0.9", default_features = false, features = ["extension-module"]}
+pyo3 = { version = "0.10", default_features = false, features = ["extension-module", "macros"]}
 ryu = { version = "1" }
 serde = { version = "1", default_features = false }
-serde_json = { version = "1", default_features = false, features = ["std"] }
+serde_json = { path = "./json", default_features = false, features = ["std"] }
 smallvec = { version = "1", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
 wyhash = { version = "0.3" }
-
-[patch.crates-io]
-serde_json = { path = "./json" }
 
 [profile.release]
 codegen-units = 1

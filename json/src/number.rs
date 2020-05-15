@@ -291,7 +291,10 @@ impl Debug for Number {
 
     #[cfg(feature = "arbitrary_precision")]
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "Number({})", &self.n)
+        formatter
+            .debug_tuple("Number")
+            .field(&format_args!("{}", self.n))
+            .finish()
     }
 }
 
