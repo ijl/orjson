@@ -6,15 +6,14 @@ use crate::datetime::*;
 use crate::default::*;
 use crate::dict::*;
 use crate::exc::*;
+use crate::ffi::*;
 use crate::iter::*;
 use crate::opt::*;
 use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
 use crate::writer::*;
-use pyo3::prelude::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
-use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -28,7 +27,7 @@ pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
     opts: Opt,
-) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
+) -> Result<NonNull<pyo3::ffi::PyObject>, String> {
     let mut buf = BytesWriter::new();
     let obtype = pyobject_to_obtype(ptr, opts);
     match obtype {
@@ -49,7 +48,7 @@ pub fn serialize(
         Ok(_) => Ok(buf.finish()),
         Err(err) => {
             ffi!(_Py_Dealloc(buf.finish().as_ptr()));
-            Err(JSONEncodeError::py_err(err.to_string()))
+            Err(err.to_string())
         }
     }
 }
@@ -73,16 +72,6 @@ pub enum ObType {
     Enum,
     StrSubclass,
     Unknown,
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct LocalPyTypeObject {
-    pub ob_refcnt: pyo3::ffi::Py_ssize_t,
-    pub ob_type: *mut pyo3::ffi::PyTypeObject,
-    pub ma_used: pyo3::ffi::Py_ssize_t,
-    pub tp_name: *const c_char,
-    // ...
 }
 
 #[inline]

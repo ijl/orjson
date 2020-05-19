@@ -51,6 +51,10 @@ DATACLASS_FIXTURE = [
 MAX_INCREASE = 1048576  # 1MiB
 
 
+class Unsupported:
+    pass
+
+
 class MemoryTests(unittest.TestCase):
     def test_memory_loads(self):
         """
@@ -78,6 +82,43 @@ class MemoryTests(unittest.TestCase):
             val = orjson.dumps(fixture)
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+
+    def test_memory_loads_exc(self):
+        """
+        loads() memory leak exception without a GC pause
+        """
+        proc = psutil.Process()
+        gc.disable()
+        mem = proc.memory_info().rss
+        n = 10000
+        i = 0
+        for _ in range(n):
+            try:
+                orjson.loads("")
+            except orjson.JSONDecodeError:
+                i += 1
+        assert n == i
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        gc.enable()
+
+    def test_memory_dumps_exc(self):
+        """
+        dumps() memory leak exception without a GC pause
+        """
+        proc = psutil.Process()
+        gc.disable()
+        data = Unsupported()
+        mem = proc.memory_info().rss
+        n = 10000
+        i = 0
+        for _ in range(n):
+            try:
+                orjson.dumps(data)
+            except orjson.JSONEncodeError:
+                i += 1
+        assert n == i
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        gc.enable()
 
     def test_memory_dumps_default(self):
         """

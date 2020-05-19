@@ -41,6 +41,13 @@ pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
+pub static mut DEFAULT: *mut PyObject = 0 as *mut PyObject;
+pub static mut OPTION: *mut PyObject = 0 as *mut PyObject;
+
+#[allow(non_upper_case_globals)]
+pub static mut JsonEncodeError: *mut PyObject = 0 as *mut PyObject;
+#[allow(non_upper_case_globals)]
+pub static mut JsonDecodeError: *mut PyObject = 0 as *mut PyObject;
 
 static INIT: Once = Once::new();
 
@@ -82,7 +89,27 @@ pub fn init_typerefs() {
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
         HASH_SEED = (VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64);
+        DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
+        OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
+        JsonEncodeError = pyo3::ffi::PyExc_TypeError;
+        JsonDecodeError = look_up_json_exc();
     });
+}
+
+unsafe fn look_up_json_exc() -> *mut PyObject {
+    let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
+    let module_dict = PyModule_GetDict(module);
+    let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char)
+        as *mut PyObject;
+    let res = pyo3::ffi::PyErr_NewException(
+        "orjson.JSONDecodeError\0".as_ptr() as *const c_char,
+        ptr,
+        std::ptr::null_mut(),
+    );
+    Py_DECREF(ptr);
+    Py_DECREF(module_dict);
+    Py_DECREF(module);
+    res
 }
 
 unsafe fn look_up_array_type() -> Option<NonNull<PyTypeObject>> {

@@ -7,7 +7,6 @@ use crate::unicode::*;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
 use once_cell::unsync::OnceCell;
-use pyo3::prelude::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
 use std::borrow::Cow;
@@ -52,14 +51,16 @@ pub type KeyMap =
 
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
-pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi::PyObject>> {
+pub fn deserialize(
+    ptr: *mut pyo3::ffi::PyObject,
+) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, String> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
+            return Err(INVALID_STR.to_string());
         }
         contents = unsafe { std::slice::from_raw_parts(uni, str_size as usize) };
     } else {
@@ -72,15 +73,11 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err(JSONDecodeError::py_err((
-                "Input must be bytes, bytearray, or str",
-                "",
-                0,
-            )));
+            return Err("Input must be bytes, bytearray, or str".to_string());
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
-            return Err(JSONDecodeError::py_err((INVALID_STR, "", 0)));
+            return Err(INVALID_STR.to_string());
         }
     }
 
@@ -90,12 +87,10 @@ pub fn deserialize(ptr: *mut pyo3::ffi::PyObject) -> PyResult<NonNull<pyo3::ffi:
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
-            deserializer
-                .end()
-                .map_err(|e| JSONDecodeError::py_err((e.to_string(), "", 0)))?;
+            deserializer.end().map_err(|e| e.to_string())?;
             Ok(obj)
         }
-        Err(e) => Err(JSONDecodeError::py_err((e.to_string(), "", 0))),
+        Err(e) => Err(e.to_string()),
     }
 }
 
