@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.0.1 - 2020-05-19
+
+### Fixed
+
+- `orjson.dumps()` raises an exception if the object to be serialized
+is not given as a positional argument. `orjson.dumps({})` is intended and ok
+while `orjson.dumps(obj={})` is an error. This makes it consistent with the
+documentation, `help()` annotation, and type annotation.
+- Fix orphan reference in exception creation that leaks memory until the
+garbage collector runs.
+
+### Changed
+
+- Improve serialization performance marginally by using the fastcall/vectorcall
+calling convention on python3.7 and above.
+- Reduce build time.
+
 ## 3.0.0 - 2020-05-01
 
 ### Added

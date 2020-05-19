@@ -67,8 +67,9 @@ available in the repository.
     1. [Latency](https://github.com/ijl/orjson#latency)
     2. [Memory](https://github.com/ijl/orjson#memory)
     3. [Reproducing](https://github.com/ijl/orjson#reproducing)
-5. [Packaging](https://github.com/ijl/orjson#packaging)
-6. [License](https://github.com/ijl/orjson#license)
+5. [Questions](https://github.com/ijl/orjson#questions)
+6. [Packaging](https://github.com/ijl/orjson#packaging)
+7. [License](https://github.com/ijl/orjson#license)
 
 ## Usage
 
@@ -977,6 +978,22 @@ orjson 3.0.0, ujson 2.0.3, python-rapidson 0.9.1, and simplejson 3.17.0.
 
 The latency results can be reproduced using the `pybench` and `graph`
 scripts. The memory results can be reproduced using the `pymem` script.
+
+## Questions
+
+### Will it deserialize to dataclasses, UUIDs, decimals, etc or support object_hook?
+
+No. This requires a schema specifying what types are expected and how to
+handle errors etc. This is addressed by data validation libraries a
+level above this.
+
+### Will it serialize to `str`?
+
+No. `bytes` is the correct type for a serialized blob.
+
+### Will it support PyPy?
+
+If someone implements it well.
 
 ## Packaging
 
