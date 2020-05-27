@@ -141,7 +141,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.8.2\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.8.3\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0

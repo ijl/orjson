@@ -27,6 +27,7 @@ pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ARRAY_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
     Lazy::new(|| unsafe { look_up_array_type() });
+pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -38,6 +39,7 @@ pub static mut CONVERT_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut FIELD_TYPE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
@@ -85,6 +87,7 @@ pub fn init_typerefs() {
         DICT_STR = PyUnicode_InternFromString("__dict__\0".as_ptr() as *const c_char);
         DATACLASS_FIELDS_STR =
             PyUnicode_InternFromString("__dataclass_fields__\0".as_ptr() as *const c_char);
+        FIELD_TYPE_STR = PyUnicode_InternFromString("_field_type\0".as_ptr() as *const c_char);
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
@@ -125,6 +128,16 @@ unsafe fn look_up_array_type() -> Option<NonNull<PyTypeObject>> {
         Py_XDECREF(numpy);
         Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
     }
+}
+
+unsafe fn look_up_field_type() -> NonNull<PyObject> {
+    let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
+    let module_dict = PyModule_GetDict(module);
+    let ptr = PyMapping_GetItemString(module_dict, "_FIELD\0".as_ptr() as *const c_char)
+        as *mut PyTypeObject;
+    Py_DECREF(module_dict);
+    Py_DECREF(module);
+    NonNull::new_unchecked(ptr as *mut PyObject)
 }
 
 unsafe fn look_up_enum_type() -> *mut PyTypeObject {

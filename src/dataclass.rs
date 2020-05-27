@@ -61,12 +61,19 @@ impl<'p> Serialize for DataclassSerializer {
                     std::ptr::null_mut(),
                 )
             };
+            if unsafe { ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR)) != FIELD_TYPE.as_ptr() } {
+                continue;
+            }
             {
                 let data = read_utf8_from_str(attr, &mut str_size);
                 if unlikely!(data.is_null()) {
                     err!(INVALID_STR);
                 }
-                map.serialize_key(str_from_slice!(data, str_size)).unwrap();
+                let key_as_str = str_from_slice!(data, str_size);
+                if key_as_str.as_bytes()[0] == b'_' {
+                    continue;
+                }
+                map.serialize_key(key_as_str).unwrap();
             }
 
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));

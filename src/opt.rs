@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-pub type Opt = u16;
+pub type Opt = u8;
 
 pub const INDENT_2: Opt = 1;
 pub const NAIVE_UTC: Opt = 1 << 1;
@@ -15,7 +15,6 @@ pub const UTC_Z: Opt = 1 << 7;
 pub const SERIALIZE_DATACLASS: Opt = 0;
 pub const SERIALIZE_UUID: Opt = 0;
 
-pub const DATACLASS_DICT_PATH: Opt = 1 << 8;
 pub const SORT_OR_NON_STR_KEYS: Opt = SORT_KEYS | NON_STR_KEYS;
 
 pub const MAX_OPT: i32 = (INDENT_2

@@ -11,6 +11,7 @@ from typing import List
 import orjson
 import rapidjson
 import simplejson
+import ujson
 from tabulate import tabulate
 
 os.sched_setaffinity(os.getpid(), {0, 1})
@@ -63,8 +64,7 @@ table = []
 for lib_name in LIBRARIES:
     if lib_name == "json":
         as_dict = timeit(
-            lambda: json.dumps(objects_as_dict, default=default).encode("utf-8"),
-            number=ITERATIONS,
+            lambda: json.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
         )
         as_dataclass = timeit(
             lambda: json.dumps(objects_as_dataclass, default=default).encode("utf-8"),
@@ -72,7 +72,7 @@ for lib_name in LIBRARIES:
         )
     elif lib_name == "simplejson":
         as_dict = timeit(
-            lambda: simplejson.dumps(objects_as_dict, default=default).encode("utf-8"),
+            lambda: simplejson.dumps(objects_as_dict).encode("utf-8"),
             number=ITERATIONS,
         )
         as_dataclass = timeit(
@@ -82,12 +82,13 @@ for lib_name in LIBRARIES:
             number=ITERATIONS,
         )
     elif lib_name == "ujson":
-        as_dict = None
+        as_dict = timeit(
+            lambda: ujson.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
+        )
         as_dataclass = None
     elif lib_name == "rapidjson":
         as_dict = timeit(
-            lambda: rapidjson.dumps(objects_as_dict, default=default).encode("utf-8"),
-            number=ITERATIONS,
+            lambda: rapidjson.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
         )
         as_dataclass = timeit(
             lambda: rapidjson.dumps(objects_as_dataclass, default=default).encode(
@@ -112,7 +113,7 @@ for lib_name in LIBRARIES:
 
     if lib_name == "orjson":
         compared_to_orjson = 1
-    elif as_dict:
+    elif as_dataclass:
         compared_to_orjson = int(as_dataclass / orjson_as_dataclass)
     else:
         compared_to_orjson = None

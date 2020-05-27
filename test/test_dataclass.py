@@ -2,9 +2,9 @@
 
 import unittest
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from enum import Enum
-from typing import Dict, Optional
+from typing import ClassVar, Dict, Optional
 
 import orjson
 
@@ -51,9 +51,12 @@ class Datasubclass(Dataclass1):
 
 @dataclass
 class Slotsdataclass:
-    __slots__ = ("a", "b")
+    __slots__ = ("a", "b", "_c", "d")
     a: str
     b: int
+    _c: str
+    d: InitVar[str]
+    cls_var: ClassVar[str] = "cls"
 
 
 @dataclass
@@ -68,6 +71,18 @@ class UnsortedDataclass:
     b: int
     a: int
     d: Optional[Dict]
+
+
+@dataclass
+class InitDataclass:
+    a: InitVar[str]
+    b: InitVar[str]
+    cls_var: ClassVar[str] = "cls"
+    ab: str = ""
+
+    def __post_init__(self, a: str, b: str):
+        self._other = 1
+        self.ab = f"{a} {b}"
 
 
 class DataclassTests(unittest.TestCase):
@@ -146,9 +161,9 @@ class DataclassTests(unittest.TestCase):
 
     def test_dataclass_slots(self):
         """
-        dumps() dataclass with __slots__
+        dumps() dataclass with __slots__ does not include under attributes, InitVar, or ClassVar
         """
-        obj = Slotsdataclass("a", 1)
+        obj = Slotsdataclass("a", 1, "c", "d")
         assert "__dict__" not in dir(obj)
         self.assertEqual(orjson.dumps(obj), b'{"a":"a","b":1}')
 
@@ -191,9 +206,18 @@ class DataclassTests(unittest.TestCase):
             b'{"c":1,"b":2,"a":3,"d":{"e":1,"f":2}}',
         )
 
+    def test_dataclass_under(self):
+        """
+        dumps() does not include under attributes, InitVar, or ClassVar
+        """
+        obj = InitDataclass("zxc", "vbn")
+        self.assertEqual(
+            orjson.dumps(obj), b'{"ab":"zxc vbn"}',
+        )
+
     def test_dataclass_option(self):
         """
-        dumps() accepts deprecated OPT_SERIALIZE_DATACALSS
+        dumps() accepts deprecated OPT_SERIALIZE_DATACLASS
         """
         obj = Dataclass1("a", 1, None)
         self.assertEqual(
