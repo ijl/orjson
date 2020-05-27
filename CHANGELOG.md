@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.2 - 2020-05-27
+
+### Changed
+
+- `orjson.dumps()` does not serialize `dataclasses.dataclass` attributes
+that begin with a leading underscore, e.g., `_attr`. This is because of the
+Python idiom that a leading underscores marks an attribute as "private."
+- `orjson.dumps()` does not serialize `dataclasses.dataclass` attributes that
+are `InitVar` or `ClassVar` whether using `__slots__` or not.
+
 ## 3.0.1 - 2020-05-19
 
 ### Fixed
