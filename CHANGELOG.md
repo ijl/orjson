@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.0 - 2020-06-08
+
+### Added
+
+- `orjson.OPT_PASSTHROUGH_SUBCLASS` causes `orjson.dumps()` to pass
+subclasses of builtin types to `default` so the caller can customize the
+output.
+- `orjson.OPT_PASSTHROUGH_DATETIME` causes `orjson.dumps()` to pass
+`datetime` objects to `default` so the caller can customize the
+output.
+
 ## 3.0.2 - 2020-05-27
 
 ### Changed
