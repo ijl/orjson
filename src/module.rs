@@ -89,14 +89,19 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         )
     };
 
+    opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
     opt!(mptr, "OPT_NAIVE_UTC\0", opt::NAIVE_UTC);
-    opt!(mptr, "OPT_OMIT_MICROSECONDS\0", opt::OMIT_MICROSECONDS);
     opt!(mptr, "OPT_NON_STR_KEYS\0", opt::NON_STR_KEYS);
+    opt!(mptr, "OPT_OMIT_MICROSECONDS\0", opt::OMIT_MICROSECONDS);
+    opt!(
+        mptr,
+        "OPT_PASSTHROUGH_SUBCLASS\0",
+        opt::PASSTHROUGH_SUBCLASS
+    );
     opt!(mptr, "OPT_SERIALIZE_DATACLASS\0", opt::SERIALIZE_DATACLASS);
     opt!(mptr, "OPT_SERIALIZE_NUMPY\0", opt::SERIALIZE_NUMPY);
     opt!(mptr, "OPT_SERIALIZE_UUID\0", opt::SERIALIZE_UUID);
     opt!(mptr, "OPT_SORT_KEYS\0", opt::SORT_KEYS);
-    opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
     opt!(mptr, "OPT_STRICT_INTEGER\0", opt::STRICT_INTEGER);
     opt!(mptr, "OPT_UTC_Z\0", opt::UTC_Z);
 

@@ -120,13 +120,21 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Uuid
         } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
-        } else if is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS) {
+        } else if is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
+            && opts & PASSTHROUGH_SUBCLASS == 0
+        {
             ObType::StrSubclass
-        } else if is_subclass!(ob_type, Py_TPFLAGS_LONG_SUBCLASS) {
+        } else if is_subclass!(ob_type, Py_TPFLAGS_LONG_SUBCLASS)
+            && opts & PASSTHROUGH_SUBCLASS == 0
+        {
             ObType::Int
-        } else if is_subclass!(ob_type, Py_TPFLAGS_LIST_SUBCLASS) {
+        } else if is_subclass!(ob_type, Py_TPFLAGS_LIST_SUBCLASS)
+            && opts & PASSTHROUGH_SUBCLASS == 0
+        {
             ObType::List
-        } else if is_subclass!(ob_type, Py_TPFLAGS_DICT_SUBCLASS) {
+        } else if is_subclass!(ob_type, Py_TPFLAGS_DICT_SUBCLASS)
+            && opts & PASSTHROUGH_SUBCLASS == 0
+        {
             ObType::Dict
         } else if ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1 {
             ObType::Dataclass

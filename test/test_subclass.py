@@ -101,3 +101,21 @@ class SubclassTests(unittest.TestCase):
         obj["list"] = SubList([{"obj": obj}])
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(obj)
+
+
+class SubclassPassthroughTests(unittest.TestCase):
+    def test_subclass_str(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(SubStr("zxc"), option=orjson.OPT_PASSTHROUGH_SUBCLASS)
+
+    def test_subclass_int(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(SubInt(1), option=orjson.OPT_PASSTHROUGH_SUBCLASS)
+
+    def test_subclass_dict(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(SubDict({"a": "b"}), option=orjson.OPT_PASSTHROUGH_SUBCLASS)
+
+    def test_subclass_list(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(SubList(["a", "b"]), option=orjson.OPT_PASSTHROUGH_SUBCLASS)

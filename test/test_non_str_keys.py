@@ -41,6 +41,18 @@ class NonStrKeyTests(unittest.TestCase):
             b'{"aaa":true}',
         )
 
+    def test_dict_keys_substr_passthrough(self):
+        """
+        OPT_PASSTHROUGH_SUBCLASS does not affect OPT_NON_STR_KEYS
+        """
+        self.assertEqual(
+            orjson.dumps(
+                {SubStr("aaa"): True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_PASSTHROUGH_SUBCLASS,
+            ),
+            b'{"aaa":true}',
+        )
+
     def test_dict_keys_substr_invalid(self):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({SubStr("\ud800"): True}, option=orjson.OPT_NON_STR_KEYS)

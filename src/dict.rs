@@ -149,8 +149,9 @@ impl NonStrKey {
     fn pyobject_to_string(
         &self,
         key: *mut pyo3::ffi::PyObject,
+        opts: crate::opt::Opt,
     ) -> Result<InlinableString, NonStrError> {
-        match pyobject_to_obtype(key, self.opts) {
+        match pyobject_to_obtype(key, opts) {
             ObType::None => Ok(InlinableString::from("null")),
             ObType::Bool => {
                 let key_as_str: &str;
@@ -178,7 +179,7 @@ impl NonStrKey {
             }
             ObType::Datetime => {
                 let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
-                let dt = DateTime::new(key, self.opts);
+                let dt = DateTime::new(key, opts);
                 if dt.write_buf(&mut buf).is_err() {
                     return Err(NonStrError::DatetimeLibraryUnsupported);
                 }
@@ -191,7 +192,7 @@ impl NonStrKey {
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
-            ObType::Time => match Time::new(key, self.opts) {
+            ObType::Time => match Time::new(key, opts) {
                 Ok(val) => {
                     let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
                     val.write_buf(&mut buf);
@@ -209,7 +210,7 @@ impl NonStrKey {
             ObType::Enum => {
                 let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
                 ffi!(Py_DECREF(value));
-                self.pyobject_to_string(value)
+                self.pyobject_to_string(value, opts)
             }
             ObType::Str => {
                 // because of ObType::Enum
@@ -252,6 +253,7 @@ impl<'p> Serialize for NonStrKey {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let opts = self.opts & NOT_PASSTHROUGH;
         for _ in 0..=self.len - 1 {
             unsafe {
                 pyo3::ffi::_PyDict_Next(
@@ -272,7 +274,7 @@ impl<'p> Serialize for NonStrKey {
                     value,
                 ));
             } else {
-                match self.pyobject_to_string(key) {
+                match self.pyobject_to_string(key, opts) {
                     Ok(key_as_str) => items.push((key_as_str, value)),
                     Err(NonStrError::TimeTzinfo) => err!(TIME_HAS_TZINFO),
                     Err(NonStrError::IntegerRange) => {
@@ -283,13 +285,13 @@ impl<'p> Serialize for NonStrKey {
                     }
                     Err(NonStrError::InvalidStr) => err!(INVALID_STR),
                     Err(NonStrError::UnsupportedType) => {
-                        err!("Dict key must a type serializable with NON_STR_KEYS")
+                        err!("Dict key must a type serializable with OPT_NON_STR_KEYS")
                     }
                 }
             }
         }
 
-        if self.opts & SORT_KEYS != 0 {
+        if opts & SORT_KEYS != 0 {
             items.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         }
 

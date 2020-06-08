@@ -112,9 +112,11 @@ b'{"type":"job","created_at":"1970-01-01T00:00:00+00:00","status":"\xf0\x9f\x86\
 
 orjson version 3 serializes more types than version 2. Subclasses of `str`,
 `int`, `dict`, and `list` are now serialized. This is faster and more similar
-to the standard library. `dataclasses.dataclass` instances are now serialized
-by default and cannot be customized in a `default` function. `uuid.UUID`
-instances are serialized by default. For any type that is now serialized,
+to the standard library. It can be disabled with
+`orjson.OPT_PASSTHROUGH_SUBCLASS`.`dataclasses.dataclass` instances
+are now serialized by default and cannot be customized in a
+`default` function. `uuid.UUID` instances are serialized by default.
+For any type that is now serialized,
 implementations in a `default` function and options enabling them can be
 removed but do not need to be. There was no change in deserialization.
 
@@ -145,12 +147,15 @@ It natively serializes
 `None` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
-of `tuple` to avoid serializing `namedtuple` objects as arrays.
+of `tuple` to avoid serializing `namedtuple` objects as arrays. To avoid
+serializing subclasses, specify the option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
 
 The output is a `bytes` object containing UTF-8.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
-describes the invalid object.
+describes the invalid object with the error message
+`Type is not JSON serializable: ...`. To fix this, specify
+[default](https://github.com/ijl/orjson#default).
 
 It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 
@@ -308,8 +313,7 @@ to be one of `str`, `int`, `float`, `bool`, `None`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, `enum.Enum`, and `uuid.UUID`. For comparison,
 the standard library serializes `str`, `int`, `float`, `bool` or `None` by
 default. orjson benchmarks as being faster at serializing non-`str` keys
-than other libraries. This option is slower for `str` keys than the default
-and is not recommended generally.
+than other libraries. This option is slower for `str` keys than the default.
 
 ```python
 >>> import orjson, datetime, uuid
@@ -385,6 +389,32 @@ b'"1970-01-01T00:00:00.000001"'
     )
 b'"1970-01-01T00:00:00"'
 ```
+
+##### OPT_PASSTHROUGH_SUBCLASS
+
+Passthrough subclasses of builtin types to `default`.
+
+```python
+>>> import orjson
+>>>
+class Secret(str):
+    pass
+
+def default(obj):
+    if isinstance(obj, Secret):
+        return "******"
+    raise TypeError
+
+>>> orjson.dumps(Secret("zxc"))
+b'"zxc"'
+>>> orjson.dumps(Secret("zxc"), option=orjson.OPT_PASSTHROUGH_SUBCLASS)
+TypeError: Type is not JSON serializable: Secret
+>>> orjson.dumps(Secret("zxc"), option=orjson.OPT_PASSTHROUGH_SUBCLASS, default=default)
+b'"******"'
+```
+
+This does not affect serializing subclasses as `dict` keys if using
+OPT_NON_STR_KEYS.
 
 ##### OPT_SERIALIZE_DATACLASS
 
