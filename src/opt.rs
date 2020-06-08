@@ -11,6 +11,7 @@ pub const SORT_KEYS: Opt = 1 << 5;
 pub const STRICT_INTEGER: Opt = 1 << 6;
 pub const UTC_Z: Opt = 1 << 7;
 pub const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
+pub const PASSTHROUGH_DATETIME: Opt = 1 << 9;
 
 // deprecated
 pub const SERIALIZE_DATACLASS: Opt = 0;
@@ -18,12 +19,13 @@ pub const SERIALIZE_UUID: Opt = 0;
 
 pub const SORT_OR_NON_STR_KEYS: Opt = SORT_KEYS | NON_STR_KEYS;
 
-pub const NOT_PASSTHROUGH: Opt = !PASSTHROUGH_SUBCLASS;
+pub const NOT_PASSTHROUGH: Opt = !(PASSTHROUGH_DATETIME | PASSTHROUGH_SUBCLASS);
 
 pub const MAX_OPT: i32 = (INDENT_2
     | NAIVE_UTC
     | NON_STR_KEYS
     | OMIT_MICROSECONDS
+    | PASSTHROUGH_DATETIME
     | PASSTHROUGH_SUBCLASS
     | SERIALIZE_DATACLASS
     | SERIALIZE_NUMPY

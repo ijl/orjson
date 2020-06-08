@@ -92,7 +92,7 @@ pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
             ObType::List
         } else if ob_type == DICT_TYPE {
             ObType::Dict
-        } else if ob_type == DATETIME_TYPE {
+        } else if ob_type == DATETIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
             ObType::Datetime
         } else {
             pyobject_to_obtype_unlikely(obj, opts)
@@ -110,9 +110,9 @@ macro_rules! is_subclass {
 pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
-        if ob_type == DATE_TYPE {
+        if ob_type == DATE_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
             ObType::Date
-        } else if ob_type == TIME_TYPE {
+        } else if ob_type == TIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
             ObType::Time
         } else if ob_type == TUPLE_TYPE {
             ObType::Tuple

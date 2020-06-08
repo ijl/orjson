@@ -127,6 +127,18 @@ class NonStrKeyTests(unittest.TestCase):
             b'{"2000-01-01T02:03:04Z":true}',
         )
 
+    def test_dict_keys_datetime_passthrough(self):
+        """
+        OPT_PASSTHROUGH_DATETIME does not affect OPT_NON_STR_KEYS
+        """
+        self.assertEqual(
+            orjson.dumps(
+                {datetime.datetime(2000, 1, 1, 2, 3, 4, 123): True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_PASSTHROUGH_DATETIME,
+            ),
+            b'{"2000-01-01T02:03:04.000123":true}',
+        )
+
     def test_dict_keys_uuid(self):
         """
         OPT_NON_STR_KEYS always serializes UUID as keys

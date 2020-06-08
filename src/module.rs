@@ -95,6 +95,11 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     opt!(mptr, "OPT_OMIT_MICROSECONDS\0", opt::OMIT_MICROSECONDS);
     opt!(
         mptr,
+        "OPT_PASSTHROUGH_DATETIME\0",
+        opt::PASSTHROUGH_DATETIME
+    );
+    opt!(
+        mptr,
         "OPT_PASSTHROUGH_SUBCLASS\0",
         opt::PASSTHROUGH_SUBCLASS
     );

@@ -566,3 +566,36 @@ class TimeTests(unittest.TestCase):
         datetime.time microsecond min
         """
         self.assertEqual(orjson.dumps(datetime.time(0, 0, 0, 1)), b'"00:00:00.000001"')
+
+
+class DateclassPassthroughTests(unittest.TestCase):
+    def test_passthrough_datetime(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(
+                datetime.datetime(1970, 1, 1), option=orjson.OPT_PASSTHROUGH_DATETIME
+            )
+
+    def test_passthrough_date(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(
+                datetime.date(1970, 1, 1), option=orjson.OPT_PASSTHROUGH_DATETIME
+            )
+
+    def test_passthrough_time(self):
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(
+                datetime.time(12, 0, 0), option=orjson.OPT_PASSTHROUGH_DATETIME
+            )
+
+    def test_passthrough_datetime_default(self):
+        def default(obj):
+            return obj.strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+        self.assertEqual(
+            orjson.dumps(
+                datetime.datetime(1970, 1, 1),
+                option=orjson.OPT_PASSTHROUGH_DATETIME,
+                default=default,
+            ),
+            b'"Thu, 01 Jan 1970 00:00:00 GMT"',
+        )

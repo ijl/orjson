@@ -390,6 +390,34 @@ b'"1970-01-01T00:00:00.000001"'
 b'"1970-01-01T00:00:00"'
 ```
 
+##### OPT_PASSTHROUGH_DATETIME
+
+Passthrough `datetime.datetime`, `datetime.date`, and `datetime.time` instances
+to `default`. This allows serializing datetimes to a custom format, e.g.,
+HTTP dates:
+
+```python
+>>> import orjson, datetime
+>>>
+def default(obj):
+    if isinstance(obj, datetime.datetime):
+        return obj.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    raise TypeError
+
+>>> orjson.dumps({"created_at": datetime.datetime(1970, 1, 1)})
+b'{"created_at":"1970-01-01T00:00:00"}'
+>>> orjson.dumps({"created_at": datetime.datetime(1970, 1, 1)}, option=orjson.OPT_PASSTHROUGH_DATETIME)
+TypeError: Type is not JSON serializable: datetime.datetime
+>>> orjson.dumps(
+        {"created_at": datetime.datetime(1970, 1, 1)},
+        option=orjson.OPT_PASSTHROUGH_DATETIME,
+        default=default,
+    )
+b'{"created_at":"Thu, 01 Jan 1970 00:00:00 GMT"}'
+```
+
+This does not affect datetimes in `dict` keys if using OPT_NON_STR_KEYS.
+
 ##### OPT_PASSTHROUGH_SUBCLASS
 
 Passthrough subclasses of builtin types to `default`.
@@ -623,6 +651,9 @@ Errors with `tzinfo` result in `JSONEncodeError` being raised.
 It is faster to have orjson serialize datetime objects than to do so
 before calling `dumps()`. If using an unsupported type such as
 `pendulum.datetime`, use `default`.
+
+To disable serialization of `datetime` objects specify the option
+`orjson.OPT_PASSTHROUGH_DATETIME`.
 
 ### enum
 
