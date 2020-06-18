@@ -17,4 +17,4 @@ if [[ "$tag" == "undefined" ]]; then
     exit 0
 fi
 
-twine upload --non-interactive "$1"
+twine upload --non-interactive --skip-existing "$1"

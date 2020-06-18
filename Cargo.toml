@@ -19,7 +19,6 @@ include = [
     "LICENSE-MIT",
     "pyproject.toml",
     "README.md",
-    "rust-toolchain",
     "src/*",
     "test/*.py",
     "test/requirements.txt",

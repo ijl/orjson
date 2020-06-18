@@ -1067,6 +1067,9 @@ well. maturin can be invoked like:
 maturin build --no-sdist --release --strip --manylinux off
 ```
 
+Problems with the Rust nightly channel may require pinning a version.
+`nightly-2020-06-09` is known to be ok.
+
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
 may not work on 32-bit targets. It should be compiled with
 `-C target-feature=+sse2` on amd64 and `-C target-feature=+neon` on arm7. musl

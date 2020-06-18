@@ -14,11 +14,11 @@ steps:
     TWINE_PASSWORD:
       from_secret: twine_password
   commands:
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.9 -m pip install --upgrade pip twine maturin
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-06-09 --profile minimal -y
+    - python3.9 -m pip install --upgrade pip maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.9
     - python3.9 -m pip install target/wheels/orjson*.whl
-    - python3.9 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - python3.9 -m pip install -r test/requirements.txt -r integration/requirements.txt twine
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
@@ -38,11 +38,11 @@ steps:
     TWINE_PASSWORD:
       from_secret: twine_password
   commands:
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.8 -m pip install --upgrade pip twine maturin
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-06-09 --profile minimal -y
+    - python3.8 -m pip install --upgrade pip maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.8
     - python3.8 -m pip install target/wheels/orjson*.whl
-    - python3.8 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - python3.8 -m pip install -r test/requirements.txt -r integration/requirements.txt twine
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
@@ -62,11 +62,11 @@ steps:
     TWINE_PASSWORD:
       from_secret: twine_password
   commands:
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.7 -m pip install --upgrade pip twine maturin
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-06-09 --profile minimal -y
+    - python3.7 -m pip install --upgrade pip maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.7
     - python3.7 -m pip install target/wheels/orjson*.whl
-    - python3.7 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - python3.7 -m pip install -r test/requirements.txt -r integration/requirements.txt twine
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
@@ -86,11 +86,11 @@ steps:
     TWINE_PASSWORD:
       from_secret: twine_password
   commands:
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly --profile minimal -y
-    - python3.6 -m pip install --upgrade pip twine maturin
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-06-09 --profile minimal -y
+    - python3.6 -m pip install --upgrade pip maturin
     - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.6
     - python3.6 -m pip install target/wheels/orjson*.whl
-    - python3.6 -m pip install -r test/requirements.txt -r integration/requirements.txt
+    - python3.6 -m pip install -r test/requirements.txt -r integration/requirements.txt twine
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
