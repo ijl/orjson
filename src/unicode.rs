@@ -29,16 +29,16 @@ pub struct PyCompactUnicodeObject {
     pub wstr_length: Py_ssize_t,
 }
 
-const STATE_ASCII: u32 = 0b00000000000000000000000001000000;
+const STATE_COMPACT_ASCII: u32 = 0b00000000000000000000000001100000;
 const STATE_COMPACT: u32 = 0b00000000000000000000000000100000;
 
 #[inline]
 pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
     unsafe {
-        if likely!((*op.cast::<PyASCIIObject>()).state & STATE_ASCII == STATE_ASCII) {
+        if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
             *str_size = (*op.cast::<PyASCIIObject>()).length;
             op.cast::<PyASCIIObject>().offset(1) as *const u8
-        } else if likely!((*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT)
+        } else if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT
             && !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null()
         {
             *str_size = (*op.cast::<PyCompactUnicodeObject>()).utf8_length;

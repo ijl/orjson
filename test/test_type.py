@@ -3,6 +3,7 @@
 import unittest
 
 import orjson
+import xxhash
 
 
 class TypeTests(unittest.TestCase):
@@ -57,6 +58,14 @@ class TypeTests(unittest.TestCase):
         self.assertRaises(
             orjson.JSONEncodeError, orjson.dumps, b"\xed\xa0\xbd\xed\xba\x80"
         )  # \ud83d\ude80
+
+    def test_str_ascii(self):
+        """
+        str is ASCII but not compact
+        """
+        digest = xxhash.xxh32_hexdigest("12345")
+        for _ in range(2):
+            self.assertEqual(orjson.dumps(digest), b'"b30d56b4"')
 
     def test_bytes_dumps(self):
         """

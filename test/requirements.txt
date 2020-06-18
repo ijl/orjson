@@ -6,3 +6,4 @@ psutil
 pytest
 pytz
 typing_extensions;python_version>="3.6" and python_version<"3.8"
+xxhash==1.4.3 # creates non-compact ASCII for test_str_ascii
