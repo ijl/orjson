@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.1 - 2020-06-20
+
+### Fixed
+
+- Fix repeated serialization of `str` that are ASCII-only and have a legacy
+(non-compact) layout.
+
 ## 3.1.0 - 2020-06-08
 
 ### Added
