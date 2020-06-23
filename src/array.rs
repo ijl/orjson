@@ -81,6 +81,9 @@ impl<'a> PyArray {
             Err(PyArrayError::NotContiguous)
         } else {
             let num_dimensions = unsafe { (*array).nd as usize };
+            if num_dimensions == 0 {
+                return Err(PyArrayError::UnsupportedDataType);
+            }
             let mut pyarray = PyArray {
                 array: array,
                 position: vec![0; num_dimensions],

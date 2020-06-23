@@ -207,6 +207,12 @@ class NumpyTests(unittest.TestCase):
             array.tolist(),
         )
 
+    def test_numpy_array_dimension_zero(self):
+        array = numpy.array(0)
+        assert array.ndim == 0
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+
     def test_numpy_array_dimension_max(self):
         array = numpy.random.rand(
             1,
