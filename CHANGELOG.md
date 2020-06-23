@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2 - 2020-06-23
+
+### Fixed
+
+- Fix serializing zero-dimension `numpy.ndarray`.
+
 ## 3.1.1 - 2020-06-20
 
 ### Fixed
