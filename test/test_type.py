@@ -29,6 +29,19 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(orjson.dumps(obj), ref)
             self.assertEqual(orjson.loads(ref), obj)
 
+    def test_str_latin1(self):
+        """
+        str latin1
+        """
+        self.assertEqual(orjson.loads(orjson.dumps("üýþÿ")), "üýþÿ")
+
+    def test_str_long(self):
+        """
+        str long
+        """
+        for obj in ("aaaa" * 1024, "üýþÿ" * 1024, "好" * 1024, "�" * 1024):
+            self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
+
     def test_str_replacement(self):
         """
         str roundtrip �

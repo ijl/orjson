@@ -11,7 +11,6 @@ use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visit
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
-use std::os::raw::c_char;
 use std::os::raw::c_void;
 use std::ptr::NonNull;
 use wyhash::wyhash;
@@ -217,7 +216,7 @@ impl<'de> Visitor<'de> for JsonValue {
                     let entry = map.entry(&hash).or_insert_with(
                         || hash,
                         || {
-                            let pyob = str_to_pyobject!(key);
+                            let pyob = str_to_pyobject!(&key);
                             CachedKey::new(pyob, hash_str(pyob))
                         },
                     );
@@ -226,7 +225,7 @@ impl<'de> Visitor<'de> for JsonValue {
                     pyhash = tmp.1;
                 }
             } else {
-                pykey = str_to_pyobject!(key);
+                pykey = str_to_pyobject!(&key);
                 pyhash = hash_str(pykey);
             }
             let value = map.next_value_seed(self)?;
