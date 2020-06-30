@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.2.0 - 2020-06-30
+
+### Added
+
+- `orjson.OPT_APPEND_NEWLINE` appends a newline to output.
+
+### Changed
+
+- Improve deserialization performance of `str`.
+
 ## 3.1.2 - 2020-06-23
 
 ### Fixed
