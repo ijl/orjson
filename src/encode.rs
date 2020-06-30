@@ -14,6 +14,7 @@ use crate::unicode::*;
 use crate::uuid::*;
 use crate::writer::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use std::io::Write;
 use std::ptr::NonNull;
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -45,7 +46,12 @@ pub fn serialize(
         res = serde_json::to_writer_pretty(&mut buf, &obj);
     }
     match res {
-        Ok(_) => Ok(buf.finish()),
+        Ok(_) => {
+            if opts & APPEND_NEWLINE != 0 {
+                buf.write(b"\n").unwrap();
+            }
+            Ok(buf.finish())
+        }
         Err(err) => {
             ffi!(_Py_Dealloc(buf.finish().as_ptr()));
             Err(err.to_string())

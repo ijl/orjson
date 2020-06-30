@@ -89,6 +89,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         )
     };
 
+    opt!(mptr, "OPT_APPEND_NEWLINE\0", opt::APPEND_NEWLINE);
     opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
     opt!(mptr, "OPT_NAIVE_UTC\0", opt::NAIVE_UTC);
     opt!(mptr, "OPT_NON_STR_KEYS\0", opt::NON_STR_KEYS);

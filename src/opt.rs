@@ -12,6 +12,7 @@ pub const STRICT_INTEGER: Opt = 1 << 6;
 pub const UTC_Z: Opt = 1 << 7;
 pub const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
 pub const PASSTHROUGH_DATETIME: Opt = 1 << 9;
+pub const APPEND_NEWLINE: Opt = 1 << 10;
 
 // deprecated
 pub const SERIALIZE_DATACLASS: Opt = 0;
@@ -21,7 +22,8 @@ pub const SORT_OR_NON_STR_KEYS: Opt = SORT_KEYS | NON_STR_KEYS;
 
 pub const NOT_PASSTHROUGH: Opt = !(PASSTHROUGH_DATETIME | PASSTHROUGH_SUBCLASS);
 
-pub const MAX_OPT: i32 = (INDENT_2
+pub const MAX_OPT: i32 = (APPEND_NEWLINE
+    | INDENT_2
     | NAIVE_UTC
     | NON_STR_KEYS
     | OMIT_MICROSECONDS

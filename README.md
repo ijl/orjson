@@ -228,6 +228,20 @@ To modify how data is serialized, specify `option`. Each `option` is an integer
 constant in `orjson`. To specify multiple options, mask them together, e.g.,
 `option=orjson.OPT_STRICT_INTEGER | orjson.OPT_NAIVE_UTC`.
 
+##### OPT_APPEND_NEWLINE
+
+Append `\n` to the output. This is a convenience and optimization for the
+pattern of `dumps(...) + "\n"`. `bytes` objects are immutable and this
+pattern copies the original contents.
+
+```python
+>>> import orjson
+>>> orjson.dumps([])
+b"[]"
+>>> orjson.dumps([], option=orjson.OPT_APPEND_NEWLINE)
+b"[]\n"
+```
+
 ##### OPT_INDENT_2
 
 Pretty-print output with an indent of two spaces. This is equivalent to
