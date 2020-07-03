@@ -123,6 +123,12 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             orjson.dumps({}, zxc=default)
 
+    def test_default_empty_kwarg(self):
+        """
+        dumps() empty kwarg
+        """
+        self.assertEqual(orjson.dumps(None, **{}), b"null")
+
     def test_default_twice(self):
         """
         dumps() default twice

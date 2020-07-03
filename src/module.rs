@@ -274,6 +274,8 @@ pub unsafe extern "C" fn dumps(
                     ));
                 }
                 optsptr = Some(NonNull::new_unchecked(val));
+            } else if arg.is_null() {
+                break;
             } else {
                 return raise_dumps_exception(Cow::Borrowed(
                     "dumps() got an unexpected keyword argument",
