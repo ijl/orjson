@@ -116,3 +116,63 @@ class EnumTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps({IntEnum.ONE: 1}, option=orjson.OPT_NON_STR_KEYS), b'{"1":1}'
         )
+
+
+class EnumPassthroughTests(unittest.TestCase):
+    def test_passthrough_int_enum(self):
+        """
+        int, float, int- & float-derived Enums should not be unaffected by the passthrough flag
+        """
+        self.assertEqual(
+            orjson.dumps(IntEnumEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM), b"1"
+        )
+
+    def test_passthrough_int_flag_enum(self):
+        """
+        int, float, int- & float-derived Enums should not be unaffected by the passthrough flag
+        """
+        self.assertEqual(
+            orjson.dumps(IntFlagEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM), b"1"
+        )
+
+    def test_passthrough_flag_enum(self):
+        """
+        FlagEnum is a subclass of Enum meaning it has the following metaclass=EnumMeta.
+        It should be affected by the passthrough.
+        """
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(FlagEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_passthrough_enum_callable(self):
+        """
+        names is a subclass of Enum meaning it has the following metaclass=EnumMeta.
+        It should be affected by the passthrough.
+        """
+        names = enum.Enum("names", ("john", "alice"))
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(names.alice, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_passthrough_enum_inherit(self):
+        class FooEnum(enum.Enum):
+            name = "alice"
+
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(FooEnum.name, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_passthrough_default_enum_default(self):
+        def default(obj):
+            return str(obj)
+
+        names = enum.Enum("names", ("john", "alice"))
+        self.assertEqual(
+            orjson.dumps(
+                names.alice, option=orjson.OPT_PASSTHROUGH_ENUM, default=default
+            ),
+            b'"names.alice"',
+        )
+        self.assertEqual(
+            orjson.dumps(
+                names.john, option=orjson.OPT_PASSTHROUGH_ENUM, default=default
+            ),
+            b'"names.john"',
+        )

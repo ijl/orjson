@@ -124,7 +124,7 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Tuple
         } else if ob_type == UUID_TYPE {
             ObType::Uuid
-        } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
+        } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE && opts & PASSTHROUGH_ENUM == 0 {
             ObType::Enum
         } else if is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
             && opts & PASSTHROUGH_SUBCLASS == 0

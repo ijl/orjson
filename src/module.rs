@@ -104,6 +104,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         "OPT_PASSTHROUGH_SUBCLASS\0",
         opt::PASSTHROUGH_SUBCLASS
     );
+    opt!(mptr, "OPT_PASSTHROUGH_ENUM\0", opt::PASSTHROUGH_ENUM);
     opt!(mptr, "OPT_SERIALIZE_DATACLASS\0", opt::SERIALIZE_DATACLASS);
     opt!(mptr, "OPT_SERIALIZE_NUMPY\0", opt::SERIALIZE_NUMPY);
     opt!(mptr, "OPT_SERIALIZE_UUID\0", opt::SERIALIZE_UUID);

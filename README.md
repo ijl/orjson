@@ -458,6 +458,32 @@ b'"******"'
 This does not affect serializing subclasses as `dict` keys if using
 OPT_NON_STR_KEYS.
 
+##### OPT_PASSTHROUGH_ENUM
+Passthrough Non int, float, int- & float-derived Enums types to `default`
+
+Enum Classes that CAN be passed through:
+* `enum.Enum`
+* `enum.Flag`
+
+Enum Classes that CANNOT be passed through:
+* `enum.IntFlag`
+* `enum.IntEnum`
+* `enum.IntFlag`
+
+```python
+>>> import orjson
+>>> import enum
+>>> names = enum.Enum('names', ('alice', 'bob'))
+def default(obj):
+    return str(obj)
+>>> orjson.dumps(names.alice)
+b'1'
+>>> orjson.dumps(names.alice, option=orjson.OPT_PASSTHROUGH_ENUM)
+TypeError: Type is not JSON serializable: names
+>>> orjson.dumps(names.alice, option=orjson.OPT_PASSTHROUGH_ENUM, default=default)
+b'"names.alice"'
+```
+
 ##### OPT_SERIALIZE_DATACLASS
 
 This is deprecated and has no effect in version 3. In version 2 this was
