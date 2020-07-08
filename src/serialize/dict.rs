@@ -215,7 +215,8 @@ impl NonStrKey {
                 }
             }
             ObType::Tuple
-            | ObType::Array
+            | ObType::NumpyScalar
+            | ObType::NumpyArray
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass

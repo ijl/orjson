@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: (Apache-2.0 OR MIT)
-
-use crate::typeref::ARRAY_STRUCT_STR;
+use crate::typeref::{ARRAY_STRUCT_STR, NUMPY_TYPES};
 use pyo3::ffi::*;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
+use std::ops::DerefMut;
 use std::os::raw::{c_char, c_int, c_void};
 
 macro_rules! slice {
@@ -20,8 +19,6 @@ pub struct PyCapsule {
     pub context: *mut c_void,
     pub destructor: *mut c_void, // should be typedef void (*PyCapsule_Destructor)(PyObject *);
 }
-
-// https://docs.scipy.org/doc/numpy/reference/arrays.interface.html#c.__array_struct__
 
 #[repr(C)]
 pub struct PyArrayInterface {
@@ -51,6 +48,11 @@ pub enum PyArrayError {
     Malformed,
     NotContiguous,
     UnsupportedDataType,
+}
+
+pub enum NumpyError {
+    NotAvailable,
+    InvalidType,
 }
 
 // >>> arr = numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.int32)
@@ -256,7 +258,7 @@ impl<'p> Serialize for DataTypeF32 {
 }
 
 #[repr(transparent)]
-struct DataTypeF64 {
+pub struct DataTypeF64 {
     pub obj: f64,
 }
 
@@ -270,7 +272,7 @@ impl<'p> Serialize for DataTypeF64 {
 }
 
 #[repr(transparent)]
-struct DataTypeI32 {
+pub struct DataTypeI32 {
     pub obj: i32,
 }
 
@@ -284,7 +286,7 @@ impl<'p> Serialize for DataTypeI32 {
 }
 
 #[repr(transparent)]
-struct DataTypeI64 {
+pub struct DataTypeI64 {
     pub obj: i64,
 }
 
@@ -298,7 +300,7 @@ impl<'p> Serialize for DataTypeI64 {
 }
 
 #[repr(transparent)]
-struct DataTypeU32 {
+pub struct DataTypeU32 {
     pub obj: u32,
 }
 
@@ -312,7 +314,7 @@ impl<'p> Serialize for DataTypeU32 {
 }
 
 #[repr(transparent)]
-struct DataTypeU64 {
+pub struct DataTypeU64 {
     pub obj: u64,
 }
 
@@ -326,7 +328,7 @@ impl<'p> Serialize for DataTypeU64 {
 }
 
 #[repr(transparent)]
-struct DataTypeBOOL {
+pub struct DataTypeBOOL {
     pub obj: u8,
 }
 
@@ -336,5 +338,187 @@ impl<'p> Serialize for DataTypeBOOL {
         S: Serializer,
     {
         serializer.serialize_bool(self.obj == 1)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyInt32 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: i32,
+}
+
+impl<'p> Serialize for NumpyInt32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i32(self.value)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyInt64 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: i64,
+}
+
+impl<'p> Serialize for NumpyInt64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i64(self.value)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyUint32 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: u32,
+}
+
+impl<'p> Serialize for NumpyUint32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u32(self.value)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyUint64 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: u64,
+}
+
+impl<'p> Serialize for NumpyUint64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u64(self.value)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyFloat32 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: f32,
+}
+
+impl<'p> Serialize for NumpyFloat32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f32(self.value)
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct NumpyFloat64 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: f64,
+}
+
+impl<'p> Serialize for NumpyFloat64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f64(self.value)
+    }
+}
+
+pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
+    let available_types;
+    unsafe {
+        match NUMPY_TYPES.deref_mut() {
+            Some(v) => available_types = v,
+            _ => return false,
+        }
+    }
+
+    let numpy_scalars = [
+        available_types.float32,
+        available_types.float64,
+        available_types.int32,
+        available_types.int64,
+        available_types.uint32,
+        available_types.uint64,
+    ];
+    numpy_scalars.contains(&ob_type)
+}
+
+pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
+    let available_types;
+    unsafe {
+        match NUMPY_TYPES.deref_mut() {
+            Some(v) => available_types = v,
+            _ => return false,
+        }
+    }
+    available_types.array == ob_type
+}
+
+// pub fn serialize_numpy_scalar<S>(obj: *mut pyo3::ffi::PyObject, serializer: S) -> Result<S::Ok, S::Error>
+// where
+//     S: Serializer,
+//     {
+//         let ob_type = ob_type!(obj);
+//         let numpy = match ob_type {
+
+//         }
+//     }
+
+pub enum NumpyObjects {
+    Float32(NumpyFloat32),
+    Float64(NumpyFloat64),
+    Int32(NumpyInt32),
+    Int64(NumpyInt64),
+    Uint32(NumpyUint32),
+    Uint64(NumpyUint64),
+}
+
+pub fn pyobj_to_numpy_obj(obj: *mut pyo3::ffi::PyObject) -> Result<NumpyObjects, NumpyError> {
+    let available_types;
+    unsafe {
+        match NUMPY_TYPES.deref_mut() {
+            Some(v) => available_types = v,
+            _ => return Err(NumpyError::NotAvailable),
+        }
+    }
+
+    let ob_type = ob_type!(obj);
+
+    unsafe {
+        if ob_type == available_types.float32 {
+            return Ok(NumpyObjects::Float32(*(obj as *mut NumpyFloat32)));
+        } else if ob_type == available_types.float64 {
+            return Ok(NumpyObjects::Float64(*(obj as *mut NumpyFloat64)));
+        } else if ob_type == available_types.int32 {
+            return Ok(NumpyObjects::Int32(*(obj as *mut NumpyInt32)));
+        } else if ob_type == available_types.int64 {
+            return Ok(NumpyObjects::Int64(*(obj as *mut NumpyInt64)));
+        } else if ob_type == available_types.uint32 {
+            return Ok(NumpyObjects::Uint32(*(obj as *mut NumpyUint32)));
+        } else if ob_type == available_types.uint64 {
+            return Ok(NumpyObjects::Uint64(*(obj as *mut NumpyUint64)));
+        } else {
+            return Err(NumpyError::InvalidType);
+        }
     }
 }

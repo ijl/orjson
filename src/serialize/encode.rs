@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
-use crate::ffi::PyDict_GET_SIZE;
 use crate::ffi::*;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
@@ -33,7 +32,7 @@ pub fn serialize(
     let mut buf = BytesWriter::new();
     let obtype = pyobject_to_obtype(ptr, opts);
     match obtype {
-        ObType::List | ObType::Dict | ObType::Dataclass | ObType::Array => {
+        ObType::List | ObType::Dict | ObType::Dataclass | ObType::NumpyArray => {
             buf.resize(1024);
         }
         _ => {}
@@ -75,7 +74,8 @@ pub enum ObType {
     Tuple,
     Uuid,
     Dataclass,
-    Array,
+    NumpyScalar,
+    NumpyArray,
     Enum,
     StrSubclass,
     Unknown,
@@ -145,11 +145,10 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Dict
         } else if ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1 {
             ObType::Dataclass
-        } else if opts & SERIALIZE_NUMPY != 0
-            && ARRAY_TYPE.is_some()
-            && ob_type == ARRAY_TYPE.unwrap().as_ptr()
-        {
-            ObType::Array
+        } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_scalar(ob_type) {
+            ObType::NumpyScalar
+        } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_array(ob_type) {
+            ObType::NumpyArray
         } else {
             ObType::Unknown
         }
@@ -433,7 +432,7 @@ impl<'p> Serialize for SerializePyObject {
                 )
                 .serialize(serializer)
             }
-            ObType::Array => match PyArray::new(self.ptr) {
+            ObType::NumpyArray => match PyArray::new(self.ptr) {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
                 Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType) => {
@@ -446,6 +445,18 @@ impl<'p> Serialize for SerializePyObject {
                     )
                     .serialize(serializer)
                 }
+            },
+            ObType::NumpyScalar => match pyobj_to_numpy_obj(self.ptr) {
+                Ok(numpy_obj) => match numpy_obj {
+                    NumpyObjects::Float32(obj) => obj.serialize(serializer),
+                    NumpyObjects::Float64(obj) => obj.serialize(serializer),
+                    NumpyObjects::Int32(obj) => obj.serialize(serializer),
+                    NumpyObjects::Int64(obj) => obj.serialize(serializer),
+                    NumpyObjects::Uint32(obj) => obj.serialize(serializer),
+                    NumpyObjects::Uint64(obj) => obj.serialize(serializer),
+                },
+                Err(NumpyError::InvalidType) => err!("invalid numpy type"),
+                Err(NumpyError::NotAvailable) => err!("numpy not available"),
             },
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
