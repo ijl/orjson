@@ -26,7 +26,19 @@ pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ARRAY_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_array_type() });
+    Lazy::new(|| unsafe { look_up_numpy_type("ndarray\0") });
+pub static mut NP_F32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("float32\0") });
+pub static mut NP_F64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("float64\0") });
+pub static mut NP_I32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("int32\0") });
+pub static mut NP_I64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("int64\0") });
+pub static mut NP_U32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("uint32\0") });
+pub static mut NP_U64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
+    Lazy::new(|| unsafe { look_up_numpy_type("uint64\0") });
 pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -116,14 +128,14 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     res
 }
 
-unsafe fn look_up_array_type() -> Option<NonNull<PyTypeObject>> {
+unsafe fn look_up_numpy_type(np_type: &str) -> Option<NonNull<PyTypeObject>> {
     let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
     if numpy.is_null() {
         PyErr_Clear();
         return None;
     } else {
         let mod_dict = PyModule_GetDict(numpy);
-        let ptr = PyMapping_GetItemString(mod_dict, "ndarray\0".as_ptr() as *const c_char);
+        let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
         Py_XDECREF(ptr);
         // Py_XDECREF(mod_dict) causes segfault when pytest exits
         Py_XDECREF(numpy);

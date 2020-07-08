@@ -2,8 +2,9 @@
 
 import unittest
 
-import orjson
 import pytest
+
+import orjson
 
 try:
     import numpy
@@ -145,10 +146,6 @@ class NumpyTests(unittest.TestCase):
             b"[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]",
         )
 
-    def test_numpy_array_d0(self):
-        with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps(numpy.int32(1), option=orjson.OPT_SERIALIZE_NUMPY)
-
     def test_numpy_array_fotran(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
         assert array.flags["F_CONTIGUOUS"] == True
@@ -252,4 +249,51 @@ class NumpyTests(unittest.TestCase):
         self.assertEqual(
             orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
             array.tolist(),
+        )
+
+    def test_numpy_primitives(self):
+        # int32
+        self.assertEqual(
+            orjson.dumps(numpy.int32(1), option=orjson.OPT_SERIALIZE_NUMPY), b"1"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.int32(2147483647), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"2147483647",
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.int32(-2147483648), option=orjson.OPT_SERIALIZE_NUMPY), b"-2147483648"
+        )
+        # int 64
+        self.assertEqual(
+            orjson.dumps(numpy.int64(-9223372036854775808), option=orjson.OPT_SERIALIZE_NUMPY), b"-9223372036854775808"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.int64(9223372036854775807), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"9223372036854775807",
+        )
+        # uint32
+        self.assertEqual(
+            orjson.dumps(numpy.uint32(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.uint32(4294967295), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"4294967295",
+        )
+        # uint64
+        self.assertEqual(
+            orjson.dumps(numpy.uint64(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.uint64(18446744073709551615), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"18446744073709551615",
+        )
+
+        # float32
+        self.assertEqual(
+            orjson.dumps(numpy.float32(1.0), option=orjson.OPT_SERIALIZE_NUMPY), b"1.0"
+        )
+
+        # float64
+        self.assertEqual(
+            orjson.dumps(numpy.float64(123.123), option=orjson.OPT_SERIALIZE_NUMPY), b"123.123"
         )

@@ -13,9 +13,11 @@ use crate::typeref::*;
 use crate::unicode::*;
 use crate::uuid::*;
 use crate::writer::*;
+use crate::numpy::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
+
 
 // https://tools.ietf.org/html/rfc7159#section-6
 // "[-(2**53)+1, (2**53)-1]"
@@ -23,6 +25,7 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const RECURSION_LIMIT: u8 = 255;
+
 
 pub fn serialize(
     ptr: *mut pyo3::ffi::PyObject,
@@ -75,10 +78,19 @@ pub enum ObType {
     Uuid,
     Dataclass,
     Array,
+    NumpyFloat32,
+    NumpyFloat64,
+    NumpyInt32,
+    NumpyInt64,
+    NumpyUint32,
+    NumpyUint64,
     Enum,
     StrSubclass,
     Unknown,
 }
+
+
+
 
 #[inline]
 pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
@@ -149,6 +161,41 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             && ob_type == ARRAY_TYPE.unwrap().as_ptr()
         {
             ObType::Array
+        } else if opts & SERIALIZE_NUMPY != 0
+            && NP_I32_TYPE.is_some()
+            && ob_type == NP_I32_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyInt32
+        }
+        else if opts & SERIALIZE_NUMPY != 0
+            && NP_I64_TYPE.is_some()
+            && ob_type == NP_I64_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyInt64
+        }
+        else if opts & SERIALIZE_NUMPY != 0
+            && NP_U32_TYPE.is_some()
+            && ob_type == NP_U32_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyUint32
+        }
+        else if opts & SERIALIZE_NUMPY != 0
+            && NP_U64_TYPE.is_some()
+            && ob_type == NP_U64_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyUint64
+        }
+        else if opts & SERIALIZE_NUMPY != 0
+            && NP_F32_TYPE.is_some()
+            && ob_type == NP_F32_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyFloat32
+        }
+        else if opts & SERIALIZE_NUMPY != 0
+            && NP_F64_TYPE.is_some()
+            && ob_type == NP_F64_TYPE.unwrap().as_ptr()
+        {
+            ObType::NumpyFloat64
         } else {
             ObType::Unknown
         }
@@ -442,7 +489,31 @@ impl<'p> Serialize for SerializePyObject {
                     )
                     .serialize(serializer)
                 }
-            },
+            }
+            ObType::NumpyInt32 => {
+                let obj = self.ptr as *mut NumpyInt32;
+                unsafe {(*obj).serialize(serializer)}
+            }
+            ObType::NumpyInt64 => {
+                let obj = self.ptr as *mut NumpyInt64;
+                unsafe {(*obj).serialize(serializer)}
+            }
+            ObType::NumpyUint32 => {
+                let obj = self.ptr as *mut NumpyUint32;
+                unsafe {(*obj).serialize(serializer)}
+            }
+            ObType::NumpyUint64 => {
+                let obj = self.ptr as *mut NumpyUint64;
+                unsafe {(*obj).serialize(serializer)}
+            }
+            ObType::NumpyFloat32 => {
+                let obj = self.ptr as *mut NumpyFloat32;
+                unsafe {(*obj).serialize(serializer)}
+            }
+            ObType::NumpyFloat64 => {
+                let obj = self.ptr as *mut NumpyFloat64;
+                unsafe {(*obj).serialize(serializer)}
+            }
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

@@ -24,6 +24,7 @@ mod typeref;
 mod unicode;
 mod uuid;
 mod writer;
+mod numpy;
 
 pub use module::dumps;
 pub use module::loads;
