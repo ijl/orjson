@@ -46,6 +46,9 @@ impl<'p> Serialize for DataclassSerializer {
         let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
         ffi!(Py_DECREF(fields));
         let len = unsafe { PyDict_GET_SIZE(fields) as usize };
+        if unlikely!(len == 0) {
+            return serializer.serialize_map(Some(0)).unwrap().end();
+        }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;

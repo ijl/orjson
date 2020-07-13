@@ -15,6 +15,18 @@ class AnEnum(Enum):
 
 
 @dataclass
+class EmptyDataclass:
+    pass
+
+
+@dataclass
+class EmptyDataclassSlots:
+    __slots__ = ()
+    pass
+
+
+
+@dataclass
 class Dataclass1:
     name: str
     number: int
@@ -114,6 +126,22 @@ class DataclassTests(unittest.TestCase):
         obj1.sub = obj2
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(obj1)
+
+    def test_dataclass_empty(self):
+        """
+        dumps() no attributes
+        """
+        self.assertEqual(
+            orjson.dumps(EmptyDataclass()), b"{}",
+        )
+
+    def test_dataclass_empty_slots(self):
+        """
+        dumps() no attributes slots
+        """
+        self.assertEqual(
+            orjson.dumps(EmptyDataclassSlots()), b"{}",
+        )
 
     def test_dataclass_default_arg(self):
         """

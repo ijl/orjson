@@ -366,6 +366,9 @@ impl<'p> Serialize for SerializePyObject {
                 if !dict.is_null() {
                     ffi!(Py_DECREF(dict));
                     let len = unsafe { PyDict_GET_SIZE(dict) as usize };
+                    if unlikely!(len == 0) {
+                        return serializer.serialize_map(Some(0)).unwrap().end();
+                    }
                     let mut map = serializer.serialize_map(None).unwrap();
                     let mut pos = 0isize;
                     let mut str_size: pyo3::ffi::Py_ssize_t = 0;
