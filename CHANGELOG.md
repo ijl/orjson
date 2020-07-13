@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.2.2 - 2020-07-13
+
+### Fixed
+
+- Fix serializing `dataclasses.dataclass` that have no attributes.
+
+### Changed
+
+- Improve deserialization performance of `str`.
+
 ## 3.2.1 - 2020-07-03
 
 ### Fixed
