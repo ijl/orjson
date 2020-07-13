@@ -8,11 +8,12 @@ import os
 from pathlib import Path
 from timeit import timeit
 
-import orjson
 import rapidjson
 import simplejson
 import ujson
 from tabulate import tabulate
+
+import orjson
 
 os.sched_setaffinity(os.getpid(), {0, 1})
 

@@ -3,10 +3,11 @@
 import datetime
 import unittest
 
-import orjson
 import pytest
 import pytz
 from dateutil import tz
+
+import orjson
 
 try:
     import pendulum

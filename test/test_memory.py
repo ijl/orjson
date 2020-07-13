@@ -7,9 +7,10 @@ import random
 import unittest
 from typing import List
 
-import orjson
 import psutil
 import pytest
+
+import orjson
 
 try:
     import numpy

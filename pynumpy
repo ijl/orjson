@@ -10,12 +10,13 @@ import time
 from timeit import timeit
 
 import numpy
-import orjson
 import psutil
 import rapidjson
 import simplejson
 from memory_profiler import memory_usage
 from tabulate import tabulate
+
+import orjson
 
 os.sched_setaffinity(os.getpid(), {0, 1})
 

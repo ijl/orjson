@@ -2,8 +2,9 @@
 
 import unittest
 
-import orjson
 import xxhash
+
+import orjson
 
 
 class TypeTests(unittest.TestCase):

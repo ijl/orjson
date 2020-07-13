@@ -60,7 +60,7 @@ ryu = { version = "1" }
 serde = { version = "1", default_features = false }
 serde_json = { path = "./json", default_features = false, features = ["std"] }
 smallvec = { version = "1", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
-wyhash = { version = "0.3" }
+wyhash = { version = "0.4" }
 
 [profile.release]
 codegen-units = 1

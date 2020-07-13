@@ -5,9 +5,10 @@ import datetime
 import unittest
 import uuid
 
-import orjson
 import pytest
 import pytz
+
+import orjson
 
 try:
     import numpy
