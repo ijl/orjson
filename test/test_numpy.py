@@ -260,14 +260,20 @@ class NumpyTests(unittest.TestCase):
             b"2147483647",
         )
         self.assertEqual(
-            orjson.dumps(numpy.int32(-2147483648), option=orjson.OPT_SERIALIZE_NUMPY), b"-2147483648"
+            orjson.dumps(numpy.int32(-2147483648), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"-2147483648",
         )
         # int 64
         self.assertEqual(
-            orjson.dumps(numpy.int64(-9223372036854775808), option=orjson.OPT_SERIALIZE_NUMPY), b"-9223372036854775808"
+            orjson.dumps(
+                numpy.int64(-9223372036854775808), option=orjson.OPT_SERIALIZE_NUMPY
+            ),
+            b"-9223372036854775808",
         )
         self.assertEqual(
-            orjson.dumps(numpy.int64(9223372036854775807), option=orjson.OPT_SERIALIZE_NUMPY),
+            orjson.dumps(
+                numpy.int64(9223372036854775807), option=orjson.OPT_SERIALIZE_NUMPY
+            ),
             b"9223372036854775807",
         )
         # uint32
@@ -283,7 +289,9 @@ class NumpyTests(unittest.TestCase):
             orjson.dumps(numpy.uint64(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
         )
         self.assertEqual(
-            orjson.dumps(numpy.uint64(18446744073709551615), option=orjson.OPT_SERIALIZE_NUMPY),
+            orjson.dumps(
+                numpy.uint64(18446744073709551615), option=orjson.OPT_SERIALIZE_NUMPY
+            ),
             b"18446744073709551615",
         )
 
@@ -294,5 +302,6 @@ class NumpyTests(unittest.TestCase):
 
         # float64
         self.assertEqual(
-            orjson.dumps(numpy.float64(123.123), option=orjson.OPT_SERIALIZE_NUMPY), b"123.123"
+            orjson.dumps(numpy.float64(123.123), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"123.123",
         )

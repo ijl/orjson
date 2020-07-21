@@ -232,16 +232,11 @@ impl NonStrKey {
                 }
             }
             ObType::Tuple
-            | ObType::Array
+            | ObType::NumpyScalar
+            | ObType::NumpyArray
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
-            | ObType::NumpyFloat32
-            | ObType::NumpyFloat64
-            | ObType::NumpyInt32
-            | ObType::NumpyInt64
-            | ObType::NumpyUint32
-            | ObType::NumpyUint64
             | ObType::Unknown => Err(NonStrError::UnsupportedType),
         }
     }

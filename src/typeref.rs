@@ -6,6 +6,15 @@ use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::Once;
 
+pub struct NumpyTypes {
+    pub float32: *mut PyTypeObject,
+    pub array: *mut PyTypeObject,
+    pub float64: *mut PyTypeObject,
+    pub int32: *mut PyTypeObject,
+    pub int64: *mut PyTypeObject,
+    pub uint32: *mut PyTypeObject,
+    pub uint64: *mut PyTypeObject,
+}
 pub static mut HASH_SEED: u64 = 0;
 
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
@@ -25,20 +34,7 @@ pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut ARRAY_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("ndarray\0") });
-pub static mut NP_F32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("float32\0") });
-pub static mut NP_F64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("float64\0") });
-pub static mut NP_I32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("int32\0") });
-pub static mut NP_I64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("int64\0") });
-pub static mut NP_U32_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("uint32\0") });
-pub static mut NP_U64_TYPE: Lazy<Option<NonNull<PyTypeObject>>> =
-    Lazy::new(|| unsafe { look_up_numpy_type("uint64\0") });
+pub static mut NUMPY_TYPES: Lazy<Option<NumpyTypes>> = Lazy::new(|| unsafe { load_numpy_types() });
 pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -128,19 +124,35 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     res
 }
 
-unsafe fn look_up_numpy_type(np_type: &str) -> Option<NonNull<PyTypeObject>> {
+unsafe fn look_up_numpy_type(
+    numpy_module: *mut PyObject,
+    np_type: &str,
+) -> Option<NonNull<PyTypeObject>> {
+    let mod_dict = PyModule_GetDict(numpy_module);
+    let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
+    Py_XDECREF(ptr);
+    // Py_XDECREF(mod_dict) causes segfault when pytest exits
+    Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
+}
+
+unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
     if numpy.is_null() {
         PyErr_Clear();
         return None;
-    } else {
-        let mod_dict = PyModule_GetDict(numpy);
-        let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
-        Py_XDECREF(ptr);
-        // Py_XDECREF(mod_dict) causes segfault when pytest exits
-        Py_XDECREF(numpy);
-        Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
     }
+
+    let types = Some(NumpyTypes {
+        array: look_up_numpy_type(numpy, "ndarray\0")?.as_ptr(),
+        float32: look_up_numpy_type(numpy, "float32\0")?.as_ptr(),
+        float64: look_up_numpy_type(numpy, "float64\0")?.as_ptr(),
+        int32: look_up_numpy_type(numpy, "int32\0")?.as_ptr(),
+        int64: look_up_numpy_type(numpy, "int64\0")?.as_ptr(),
+        uint32: look_up_numpy_type(numpy, "uint32\0")?.as_ptr(),
+        uint64: look_up_numpy_type(numpy, "uint64\0")?.as_ptr(),
+    });
+    Py_XDECREF(numpy);
+    types
 }
 
 unsafe fn look_up_field_type() -> NonNull<PyObject> {

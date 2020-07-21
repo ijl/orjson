@@ -19,12 +19,12 @@ mod exc;
 mod ffi;
 mod iter;
 mod module;
+mod numpy;
 mod opt;
 mod typeref;
 mod unicode;
 mod uuid;
 mod writer;
-mod numpy;
 
 pub use module::dumps;
 pub use module::loads;
