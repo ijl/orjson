@@ -1,34 +1,17 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::datetime::*;
-use crate::encode::pyobject_to_obtype;
-use crate::encode::*;
 use crate::exc::*;
 use crate::opt::*;
+use crate::serialize::datetime::*;
+use crate::serialize::encode::pyobject_to_obtype;
+use crate::serialize::encode::*;
+use crate::serialize::uuid::*;
 use crate::typeref::*;
 use crate::unicode::*;
-use crate::uuid::*;
 use inlinable_string::InlinableString;
-use pyo3::ffi::*;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
 use std::ptr::NonNull;
-
-#[repr(C)]
-pub struct PyDictObject {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub ma_used: Py_ssize_t,
-    pub ma_version_tag: u64,
-    pub ma_keys: *mut pyo3::ffi::PyObject,
-    pub ma_values: *mut *mut pyo3::ffi::PyObject,
-}
-
-#[allow(non_snake_case)]
-#[inline(always)]
-pub unsafe fn PyDict_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
-    (*op.cast::<PyDictObject>()).ma_used
-}
 
 pub struct DictSortedKey {
     ptr: *mut pyo3::ffi::PyObject,

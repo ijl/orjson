@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::array::*;
-use crate::dataclass::*;
-use crate::datetime::*;
-use crate::default::*;
-use crate::dict::*;
 use crate::exc::*;
+use crate::ffi::PyDict_GET_SIZE;
 use crate::ffi::*;
-use crate::iter::*;
 use crate::opt::*;
+use crate::serialize::dataclass::*;
+use crate::serialize::datetime::*;
+use crate::serialize::default::*;
+use crate::serialize::dict::*;
+use crate::serialize::numpy::*;
+use crate::serialize::tuple::*;
+use crate::serialize::uuid::*;
+use crate::serialize::writer::*;
 use crate::typeref::*;
 use crate::unicode::*;
-use crate::uuid::*;
-use crate::writer::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;

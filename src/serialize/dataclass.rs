@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::dict::*;
-use crate::encode::*;
 use crate::exc::*;
+use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
+use crate::serialize::encode::*;
 use crate::typeref::*;
 use crate::unicode::*;
 

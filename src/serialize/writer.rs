@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::bytes::PyBytesObject;
+use crate::ffi::PyBytesObject;
 use core::ptr::NonNull;
 use pyo3::ffi::*;
 use std::os::raw::c_char;

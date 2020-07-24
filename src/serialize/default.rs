@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::encode::*;
 use crate::opt::*;
+use crate::serialize::encode::*;
 
 use serde::ser::{Serialize, Serializer};
 use std::ffi::CStr;

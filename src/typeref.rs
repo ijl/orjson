@@ -56,8 +56,8 @@ static INIT: Once = Once::new();
 
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
-        assert!(crate::decode::KEY_MAP
-            .set(crate::decode::KeyMap::default())
+        assert!(crate::deserialize::KEY_MAP
+            .set(crate::deserialize::KeyMap::default())
             .is_ok());
         PyDateTime_IMPORT();
         NONE = Py_None();
