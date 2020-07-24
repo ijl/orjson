@@ -152,8 +152,8 @@ buf.write(
         failure_results,
         [
             "Library",
-            "Invalid JSON fixtures not rejected",
-            "Valid JSON fixtures not deserialized",
+            "Invalid JSON documents not rejected",
+            "Valid JSON documents not deserialized",
         ],
         tablefmt="github",
     )
@@ -163,4 +163,4 @@ print(buf.getvalue())
 
 num_results = len([each for each in tab_results if len(each) > 1])
 
-print(f"{num_results} fixtures tested")
+print(f"{num_results} documents tested")

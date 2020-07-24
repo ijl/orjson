@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.0 - 2020-07-24
+
+### Added
+
+- `orjson.dumps()` now serializes individual numpy floats and integers, e.g.,
+`numpy.float64(1.0)`.
+- `orjson.OPT_PASSTHROUGH_DATACLASS` causes `orjson.dumps()` to pass
+`dataclasses.dataclass` instances to `default`.
+
 ## 3.2.2 - 2020-07-13
 
 ### Fixed
