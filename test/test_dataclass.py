@@ -22,8 +22,6 @@ class EmptyDataclass:
 @dataclass
 class EmptyDataclassSlots:
     __slots__ = ()
-    pass
-
 
 
 @dataclass

@@ -3,6 +3,6 @@
 set -eou pipefail
 
 autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports .
-isort ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr
-black ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr
+isort ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr pycorrectness
+black ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr pycorrectness
 mypy --ignore-missing-imports ./bench/*.py ./orjson.pyi ./test/*.py

@@ -888,6 +888,25 @@ exercising the library's use in web servers (gunicorn using multiprocess/forked
 workers) and when
 multithreaded. It also uses some tests from the ultrajson library.
 
+orjson is the most correct of the compared libraries. This graph shows how each
+library fares handles a combined 342 JSON fixtures from the
+[JSONTestSuite](https://github.com/nst/JSONTestSuite) and
+[nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) tests:
+
+| Library    |   Invalid JSON fixtures not rejected |   Valid JSON fixtures not deserialized |
+|------------|--------------------------------------|----------------------------------------|
+| orjson     |                                    0 |                                      0 |
+| ujson      |                                   38 |                                      0 |
+| rapidjson  |                                    6 |                                      0 |
+| simplejson |                                   13 |                                      0 |
+| json       |                                   17 |                                      0 |
+
+This shows that all libraries deserialize valid JSON but only orjson
+correctly rejects the given invalid JSON fixtures. Errors are largely due to
+accepting invalid strings and numbers.
+
+The graph above can be reproduced using the `pycorrectness` script.
+
 ## Performance
 
 Serialization and deserialization performance of orjson is better than
