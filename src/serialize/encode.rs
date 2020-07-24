@@ -432,7 +432,7 @@ impl<'p> Serialize for SerializePyObject {
                 )
                 .serialize(serializer)
             }
-            ObType::NumpyArray => match PyArray::new(self.ptr) {
+            ObType::NumpyArray => match NumpyArray::new(self.ptr) {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
                 Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType) => {
@@ -446,18 +446,7 @@ impl<'p> Serialize for SerializePyObject {
                     .serialize(serializer)
                 }
             },
-            ObType::NumpyScalar => match pyobj_to_numpy_obj(self.ptr) {
-                Ok(numpy_obj) => match numpy_obj {
-                    NumpyObjects::Float32(obj) => obj.serialize(serializer),
-                    NumpyObjects::Float64(obj) => obj.serialize(serializer),
-                    NumpyObjects::Int32(obj) => obj.serialize(serializer),
-                    NumpyObjects::Int64(obj) => obj.serialize(serializer),
-                    NumpyObjects::Uint32(obj) => obj.serialize(serializer),
-                    NumpyObjects::Uint64(obj) => obj.serialize(serializer),
-                },
-                Err(NumpyError::InvalidType) => err!("invalid numpy type"),
-                Err(NumpyError::NotAvailable) => err!("numpy not available"),
-            },
+            ObType::NumpyScalar => NumpyScalar::new(self.ptr).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

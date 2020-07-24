@@ -7,13 +7,13 @@ use std::ptr::NonNull;
 use std::sync::Once;
 
 pub struct NumpyTypes {
-    pub float32: *mut PyTypeObject,
-    pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
-    pub int32: *mut PyTypeObject,
+    pub float32: *mut PyTypeObject,
     pub int64: *mut PyTypeObject,
-    pub uint32: *mut PyTypeObject,
+    pub int32: *mut PyTypeObject,
     pub uint64: *mut PyTypeObject,
+    pub uint32: *mut PyTypeObject,
+    pub array: *mut PyTypeObject,
 }
 pub static mut HASH_SEED: u64 = 0;
 
