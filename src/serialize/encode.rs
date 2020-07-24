@@ -143,7 +143,9 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             && opts & PASSTHROUGH_SUBCLASS == 0
         {
             ObType::Dict
-        } else if ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1 {
+        } else if opts & PASSTHROUGH_DATACLASS == 0
+            && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
+        {
             ObType::Dataclass
         } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_scalar(ob_type) {
             ObType::NumpyScalar

@@ -115,7 +115,8 @@ orjson version 3 serializes more types than version 2. Subclasses of `str`,
 to the standard library. It can be disabled with
 `orjson.OPT_PASSTHROUGH_SUBCLASS`.`dataclasses.dataclass` instances
 are now serialized by default and cannot be customized in a
-`default` function. `uuid.UUID` instances are serialized by default.
+`default` function unless `option=orjson.OPT_PASSTHROUGH_DATACLASS` is
+specified. `uuid.UUID` instances are serialized by default.
 For any type that is now serialized,
 implementations in a `default` function and options enabling them can be
 removed but do not need to be. There was no change in deserialization.
@@ -402,6 +403,38 @@ b'"1970-01-01T00:00:00.000001"'
         option=orjson.OPT_OMIT_MICROSECONDS,
     )
 b'"1970-01-01T00:00:00"'
+```
+
+##### OPT_PASSTHROUGH_DATACLASS
+
+Passthrough `dataclasses.dataclass` instances to `default`. This allows
+customizing their output but is much slower.
+
+
+```python
+>>> import orjson, dataclasses
+>>>
+@dataclasses.dataclass
+class User:
+    id: str
+    name: str
+    password: str
+
+def default(obj):
+    if isinstance(obj, User):
+        return {"id": obj.id, "name": obj.name}
+    raise TypeError
+
+>>> orjson.dumps(User("3b1", "asd", "zxc"))
+b'{"id":"3b1","name":"asd","password":"zxc"}'
+>>> orjson.dumps(User("3b1", "asd", "zxc"), option=orjson.OPT_PASSTHROUGH_DATACLASS)
+TypeError: Type is not JSON serializable: User
+>>> orjson.dumps(
+        User("3b1", "asd", "zxc"),
+        option=orjson.OPT_PASSTHROUGH_DATACLASS,
+        default=default,
+    )
+b'{"id":"3b1","name":"asd"}'
 ```
 
 ##### OPT_PASSTHROUGH_DATETIME

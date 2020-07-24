@@ -2,7 +2,7 @@
 
 import unittest
 import uuid
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import ClassVar, Dict, Optional
 
@@ -249,4 +249,38 @@ class DataclassTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps(obj, option=orjson.OPT_SERIALIZE_DATACLASS),
             b'{"name":"a","number":1,"sub":null}',
+        )
+
+
+class DataclassPassthroughTests(unittest.TestCase):
+    def test_dataclass_passthrough_raise(self):
+        """
+        dumps() dataclass passes to default with OPT_PASSTHROUGH_DATACLASS
+        """
+        obj = Dataclass1("a", 1, None)
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_DATACLASS)
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(
+                InitDataclass("zxc", "vbn"), option=orjson.OPT_PASSTHROUGH_DATACLASS
+            )
+
+    def test_dataclass_passthrough_default(self):
+        """
+        dumps() dataclass passes to default with OPT_PASSTHROUGH_DATACLASS
+        """
+        obj = Dataclass1("a", 1, None)
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_DATACLASS, default=asdict),
+            b'{"name":"a","number":1,"sub":null}',
+        )
+
+        def default(obj):
+            if isinstance(obj, Dataclass1):
+                return {"name": obj.name, "number": obj.number}
+            raise TypeError
+
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_DATACLASS, default=default),
+            b'{"name":"a","number":1}',
         )

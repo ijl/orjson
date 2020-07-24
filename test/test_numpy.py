@@ -2,8 +2,9 @@
 
 import unittest
 
-import orjson
 import pytest
+
+import orjson
 
 try:
     import numpy
