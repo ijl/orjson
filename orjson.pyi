@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional, Union
 
-__version__ = str
+__version__: str
 
 def dumps(
     __obj: Any,
