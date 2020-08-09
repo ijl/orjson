@@ -20,7 +20,7 @@ use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
-const DUMPS_DOC: &str = "dumps(obj, /, default, option)\n--\n\nSerialize Python objects to JSON.\0";
+const DUMPS_DOC: &str = "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
 const LOADS_DOC: &str = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
 
 macro_rules! opt {

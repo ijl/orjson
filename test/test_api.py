@@ -166,14 +166,17 @@ class ApiTests(unittest.TestCase):
         dumps() valid __text_signature__
         """
         self.assertEqual(
-            str(inspect.signature(orjson.dumps)), "(obj, /, default, option)"
+            str(inspect.signature(orjson.dumps)), "(obj, /, default=None, option=None)"
         )
+        inspect.signature(orjson.dumps).bind("str")
+        inspect.signature(orjson.dumps).bind("str", default=default, option=1)
 
     def test_loads_signature(self):
         """
         loads() valid __text_signature__
         """
         self.assertEqual(str(inspect.signature(orjson.loads)), "(obj, /)")
+        inspect.signature(orjson.loads).bind("[]")
 
     def test_bytes_buffer(self):
         """
