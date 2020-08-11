@@ -10,7 +10,7 @@ jobs:
 
 - job: linux_sdist
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   variables:
     interpreter: python3.8
     target: x86_64-unknown-linux-gnu
@@ -24,7 +24,7 @@ jobs:
 
 - job: linux_debug
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux1_x86_64:latest
   variables:
     interpreter: python3.8
@@ -38,7 +38,7 @@ jobs:
 
 - job: linux_python39_amd64
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   container: python:3.9-rc-buster
   variables:
     interpreter: python3.9
@@ -52,7 +52,7 @@ jobs:
 
 - job: linux_python38_amd64
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux1_x86_64:latest
   variables:
     interpreter: python3.8
@@ -66,7 +66,7 @@ jobs:
 
 - job: linux_python37_amd64
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux1_x86_64:latest
   variables:
     interpreter: python3.7
@@ -80,7 +80,7 @@ jobs:
 
 - job: linux_python36_amd64
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux1_x86_64:latest
   variables:
     interpreter: python3.6
@@ -94,7 +94,7 @@ jobs:
 
 - job: macos_python38_amd64
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   variables:
     interpreter: python3.8
     manylinux: off
@@ -109,7 +109,7 @@ jobs:
 
 - job: macos_python37_amd64
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   variables:
     interpreter: python3.7
     manylinux: off
@@ -124,7 +124,7 @@ jobs:
 
 - job: macos_python36_amd64
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   variables:
     interpreter: python3.6
     manylinux: off
@@ -141,7 +141,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.8.3\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.8.5\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
