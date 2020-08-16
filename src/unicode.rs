@@ -34,12 +34,11 @@ const STATE_COMPACT_ASCII: u32 = 0b00000000000000000000000001100000;
 const STATE_COMPACT: u32 = 0b00000000000000000000000000100000;
 
 fn is_four_byte(buf: &str) -> bool {
+    let mut ret = false;
     for &each in buf.as_bytes() {
-        if unlikely!(each >= 240) {
-            return true;
-        }
+        ret |= each >= 240;
     }
-    false
+    ret
 }
 
 enum PyUnicodeKind {
