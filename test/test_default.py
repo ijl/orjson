@@ -26,6 +26,10 @@ def default(obj):
     return obj.cur
 
 
+def default_raises(obj):
+    raise TypeError
+
+
 class TypeTests(unittest.TestCase):
     def test_default_not_callable(self):
         """
@@ -94,6 +98,15 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(str(err), "Type is not JSON serializable: Custom")
             ran = True
         self.assertTrue(ran)
+
+    def test_default_exception_type(self):
+        """
+        dumps() TypeError in default() raises orjson.JSONEncodeError
+        """
+        ref = Custom()
+
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps(ref, default=default_raises)
 
     def test_default_func_nested_str(self):
         """

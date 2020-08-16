@@ -27,7 +27,7 @@ impl UUID {
                 // test_uuid_overflow
                 pyo3::ffi::_PyLong_AsByteArray(
                     py_int as *mut pyo3::ffi::PyLongObject,
-                    buffer.as_ptr() as *const c_uchar,
+                    buffer.as_ptr() as *mut c_uchar,
                     16,
                     1, // little_endian
                     0, // is_signed

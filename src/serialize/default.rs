@@ -56,14 +56,9 @@ impl<'p> Serialize for DefaultSerializer {
                     self.ptr,
                     std::ptr::null_mut() as *mut pyo3::ffi::PyObject
                 ));
-                if default_obj.is_null() {
+                if unlikely!(default_obj.is_null()) {
                     err!(format_args!(
                         "Type is not JSON serializable: {}",
-                        obj_name!(ob_type!(self.ptr))
-                    ))
-                } else if !ffi!(PyErr_Occurred()).is_null() {
-                    err!(format_args!(
-                        "Type raised exception in default function: {}",
                         obj_name!(ob_type!(self.ptr))
                     ))
                 } else {
