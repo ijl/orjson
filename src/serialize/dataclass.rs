@@ -64,7 +64,9 @@ impl<'p> Serialize for DataclassSerializer {
                     std::ptr::null_mut(),
                 )
             };
-            if unsafe { ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR)) != FIELD_TYPE.as_ptr() } {
+            let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
+            ffi!(Py_DECREF(field_type));
+            if unsafe { field_type != FIELD_TYPE.as_ptr() } {
                 continue;
             }
             {
