@@ -77,15 +77,11 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
                 ptr
             },
             PyUnicodeKind::OneByte => unsafe {
-                let ptr = ffi!(PyUnicode_New(num_chars, 255));
-                (*ptr.cast::<PyCompactUnicodeObject>()).length = num_chars;
-                let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u8;
-                for each in buf.chars() {
-                    core::ptr::write(data_ptr, each as u8);
-                    data_ptr = data_ptr.offset(1);
-                }
-                core::ptr::write(data_ptr, 0);
-                ptr
+                PyUnicode_DecodeUTF8(
+                    buf.as_bytes().as_ptr() as *const c_char,
+                    buf.as_bytes().len() as isize,
+                    "ignore\0".as_ptr() as *const c_char,
+                )
             },
             PyUnicodeKind::TwoByte => unsafe {
                 let ptr = ffi!(PyUnicode_New(num_chars, 65535));
