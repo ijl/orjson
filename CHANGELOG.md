@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.3.1 - 2020-08-17
+
+### Fixed
+
+- Fix failure to deserialize some latin1 strings on some platforms. This
+was introduced in 3.2.0.
+- Fix annotation of optional parameters on `orjson.dumps()` for `help()`.
+
+### Changed
+
+- Publish `manylinux2014` wheels for amd64 in addition to `manylinux1`.
+
 ## 3.3.0 - 2020-07-24
 
 ### Added
