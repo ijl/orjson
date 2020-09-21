@@ -210,6 +210,24 @@ class NumpyTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
 
+        array = numpy.empty(( 0, 4, 2 ))
+        self.assertEqual(
+            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            array.tolist(),
+        )
+
+        array = numpy.empty(( 4, 0, 2 ))
+        self.assertEqual(
+            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            array.tolist(),
+        )
+
+        array = numpy.empty(( 2, 4, 0 ))
+        self.assertEqual(
+            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            array.tolist(),
+        )
+
     def test_numpy_array_dimension_max(self):
         array = numpy.random.rand(
             1,

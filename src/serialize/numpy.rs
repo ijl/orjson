@@ -242,54 +242,58 @@ impl<'p> Serialize for NumpyArray {
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(None).unwrap();
-        if !self.children.is_empty() {
-            for child in &self.children {
-                seq.serialize_element(child).unwrap();
-            }
-        } else {
-            let data_ptr = self.data();
-            let num_items = self.num_items();
-            match self.kind().unwrap() {
-                ItemType::F64 => {
-                    let slice: &[f64] = slice!(data_ptr as *const f64, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeF64 { obj: each }).unwrap();
-                    }
+
+        if self.depth >= self.shape().len() || self.shape()[self.depth] != 0 {
+            if !self.children.is_empty() {
+                for child in &self.children {
+                    seq.serialize_element(child).unwrap();
                 }
-                ItemType::F32 => {
-                    let slice: &[f32] = slice!(data_ptr as *const f32, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeF32 { obj: each }).unwrap();
+
+            } else {
+                let data_ptr = self.data();
+                let num_items = self.num_items();
+                match self.kind().unwrap() {
+                    ItemType::F64 => {
+                        let slice: &[f64] = slice!(data_ptr as *const f64, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeF64 { obj: each }).unwrap();
+                        }
                     }
-                }
-                ItemType::I64 => {
-                    let slice: &[i64] = slice!(data_ptr as *const i64, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeI64 { obj: each }).unwrap();
+                    ItemType::F32 => {
+                        let slice: &[f32] = slice!(data_ptr as *const f32, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeF32 { obj: each }).unwrap();
+                        }
                     }
-                }
-                ItemType::I32 => {
-                    let slice: &[i32] = slice!(data_ptr as *const i32, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeI32 { obj: each }).unwrap();
+                    ItemType::I64 => {
+                        let slice: &[i64] = slice!(data_ptr as *const i64, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeI64 { obj: each }).unwrap();
+                        }
                     }
-                }
-                ItemType::U64 => {
-                    let slice: &[u64] = slice!(data_ptr as *const u64, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeU64 { obj: each }).unwrap();
+                    ItemType::I32 => {
+                        let slice: &[i32] = slice!(data_ptr as *const i32, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeI32 { obj: each }).unwrap();
+                        }
                     }
-                }
-                ItemType::U32 => {
-                    let slice: &[u32] = slice!(data_ptr as *const u32, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeU32 { obj: each }).unwrap();
+                    ItemType::U64 => {
+                        let slice: &[u64] = slice!(data_ptr as *const u64, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeU64 { obj: each }).unwrap();
+                        }
                     }
-                }
-                ItemType::BOOL => {
-                    let slice: &[u8] = slice!(data_ptr as *const u8, num_items);
-                    for &each in slice.iter() {
-                        seq.serialize_element(&DataTypeBOOL { obj: each }).unwrap();
+                    ItemType::U32 => {
+                        let slice: &[u32] = slice!(data_ptr as *const u32, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeU32 { obj: each }).unwrap();
+                        }
+                    }
+                    ItemType::BOOL => {
+                        let slice: &[u8] = slice!(data_ptr as *const u8, num_items);
+                        for &each in slice.iter() {
+                            seq.serialize_element(&DataTypeBOOL { obj: each }).unwrap();
+                        }
                     }
                 }
             }
