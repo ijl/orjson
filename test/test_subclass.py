@@ -34,7 +34,8 @@ class SubTuple(tuple):
 class SubclassTests(unittest.TestCase):
     def test_subclass_str(self):
         self.assertEqual(
-            orjson.dumps(SubStr("zxc")), b'"zxc"',
+            orjson.dumps(SubStr("zxc")),
+            b'"zxc"',
         )
 
     def test_subclass_str_invalid(self):
@@ -55,12 +56,14 @@ class SubclassTests(unittest.TestCase):
 
     def test_subclass_dict(self):
         self.assertEqual(
-            orjson.dumps(SubDict({"a": "b"})), b'{"a":"b"}',
+            orjson.dumps(SubDict({"a": "b"})),
+            b'{"a":"b"}',
         )
 
     def test_subclass_list(self):
         self.assertEqual(
-            orjson.dumps(SubList(["a", "b"])), b'["a","b"]',
+            orjson.dumps(SubList(["a", "b"])),
+            b'["a","b"]',
         )
         ref = [True] * 512
         self.assertEqual(orjson.loads(orjson.dumps(SubList(ref))), ref)
@@ -69,14 +72,16 @@ class SubclassTests(unittest.TestCase):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(SubFloat(1.1))
         self.assertEqual(
-            json.dumps(SubFloat(1.1)), "1.1",
+            json.dumps(SubFloat(1.1)),
+            "1.1",
         )
 
     def test_subclass_tuple(self):
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(SubTuple((1, 2)))
         self.assertEqual(
-            json.dumps(SubTuple((1, 2))), "[1, 2]",
+            json.dumps(SubTuple((1, 2))),
+            "[1, 2]",
         )
 
     def test_namedtuple(self):

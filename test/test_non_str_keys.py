@@ -163,7 +163,8 @@ class NonStrKeyTests(unittest.TestCase):
     def test_dict_keys_time(self):
         self.assertEqual(
             orjson.dumps(
-                {datetime.time(12, 15, 59, 111): True}, option=orjson.OPT_NON_STR_KEYS,
+                {datetime.time(12, 15, 59, 111): True},
+                option=orjson.OPT_NON_STR_KEYS,
             ),
             b'{"12:15:59.000111":true}',
         )
@@ -191,7 +192,8 @@ class NonStrKeyTests(unittest.TestCase):
 
     def test_dict_keys_str(self):
         self.assertEqual(
-            orjson.dumps({"1": True}, option=orjson.OPT_NON_STR_KEYS), b'{"1":true}',
+            orjson.dumps({"1": True}, option=orjson.OPT_NON_STR_KEYS),
+            b'{"1":true}',
         )
 
     def test_dict_keys_type(self):

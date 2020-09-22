@@ -58,10 +58,12 @@ for lib_name in LIBRARIES:
     print(f"{lib_name}...")
     if lib_name == "json":
         time_as_str = timeit(
-            lambda: json.dumps(data_as_str).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data_as_str).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj = timeit(
-            lambda: json.dumps(data_as_obj).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data_as_obj).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj_sorted = (
             None  # TypeError: '<' not supported between instances of 'str' and 'int'
@@ -69,10 +71,12 @@ for lib_name in LIBRARIES:
         correct = False
     elif lib_name == "simplejson":
         time_as_str = timeit(
-            lambda: simplejson.dumps(data_as_str).encode("utf-8"), number=ITERATIONS,
+            lambda: simplejson.dumps(data_as_str).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj = timeit(
-            lambda: simplejson.dumps(data_as_obj).encode("utf-8"), number=ITERATIONS,
+            lambda: simplejson.dumps(data_as_obj).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj_sorted = timeit(
             lambda: simplejson.dumps(data_as_obj, sort_keys=True).encode("utf-8"),
@@ -83,16 +87,19 @@ for lib_name in LIBRARIES:
         )
     elif lib_name == "ujson":
         time_as_str = timeit(
-            lambda: ujson.dumps(data_as_str).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(data_as_str).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj = timeit(
-            lambda: ujson.dumps(data_as_obj).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(data_as_obj).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj_sorted = None  # segfault
         correct = False
     elif lib_name == "rapidjson":
         time_as_str = timeit(
-            lambda: rapidjson.dumps(data_as_str).encode("utf-8"), number=ITERATIONS,
+            lambda: rapidjson.dumps(data_as_str).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_as_obj = None
         time_as_obj_sorted = None

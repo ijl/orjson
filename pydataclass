@@ -65,7 +65,8 @@ table = []
 for lib_name in LIBRARIES:
     if lib_name == "json":
         as_dict = timeit(
-            lambda: json.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(objects_as_dict).encode("utf-8"),
+            number=ITERATIONS,
         )
         as_dataclass = timeit(
             lambda: json.dumps(objects_as_dataclass, default=default).encode("utf-8"),
@@ -84,12 +85,14 @@ for lib_name in LIBRARIES:
         )
     elif lib_name == "ujson":
         as_dict = timeit(
-            lambda: ujson.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(objects_as_dict).encode("utf-8"),
+            number=ITERATIONS,
         )
         as_dataclass = None
     elif lib_name == "rapidjson":
         as_dict = timeit(
-            lambda: rapidjson.dumps(objects_as_dict).encode("utf-8"), number=ITERATIONS,
+            lambda: rapidjson.dumps(objects_as_dict).encode("utf-8"),
+            number=ITERATIONS,
         )
         as_dataclass = timeit(
             lambda: rapidjson.dumps(objects_as_dataclass, default=default).encode(

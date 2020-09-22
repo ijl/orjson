@@ -89,7 +89,8 @@ class UUIDTests(unittest.TestCase):
     def test_serializes_correctly_with_leading_zeroes(self):
         instance = uuid.UUID(int=0x00345678123456781234567812345678)
         self.assertEqual(
-            orjson.dumps(instance), ('"%s"' % str(instance)).encode("utf8"),
+            orjson.dumps(instance),
+            ('"%s"' % str(instance)).encode("utf8"),
         )
 
     def test_all_uuid_creation_functions_create_serializable_uuids(self):
@@ -101,5 +102,6 @@ class UUIDTests(unittest.TestCase):
         )
         for val in uuids:
             self.assertEqual(
-                orjson.dumps(val), f'"{val}"'.encode("utf-8"),
+                orjson.dumps(val),
+                f'"{val}"'.encode("utf-8"),
             )

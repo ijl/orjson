@@ -49,14 +49,17 @@ table = []
 for lib_name in LIBRARIES:
     if lib_name == "json":
         time_unsorted = timeit(
-            lambda: json.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_sorted = timeit(
-            lambda: json.dumps(data, sort_keys=True).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data, sort_keys=True).encode("utf-8"),
+            number=ITERATIONS,
         )
     elif lib_name == "simplejson":
         time_unsorted = timeit(
-            lambda: simplejson.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: simplejson.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_sorted = timeit(
             lambda: simplejson.dumps(data, sort_keys=True).encode("utf-8"),
@@ -64,7 +67,8 @@ for lib_name in LIBRARIES:
         )
     elif lib_name == "ujson":
         time_unsorted = timeit(
-            lambda: ujson.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_sorted = timeit(
             lambda: ujson.dumps(data, sort_keys=True).encode("utf-8"),
@@ -72,7 +76,8 @@ for lib_name in LIBRARIES:
         )
     elif lib_name == "rapidjson":
         time_unsorted = timeit(
-            lambda: rapidjson.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: rapidjson.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_sorted = timeit(
             lambda: rapidjson.dumps(data, sort_keys=True).encode("utf-8"),
@@ -81,7 +86,8 @@ for lib_name in LIBRARIES:
     elif lib_name == "orjson":
         time_unsorted = timeit(lambda: orjson.dumps(data), number=ITERATIONS)
         time_sorted = timeit(
-            lambda: orjson.dumps(data, None, orjson.OPT_SORT_KEYS), number=ITERATIONS,
+            lambda: orjson.dumps(data, None, orjson.OPT_SORT_KEYS),
+            number=ITERATIONS,
         )
         orjson_time_sorted = per_iter_latency(time_sorted)
     else:

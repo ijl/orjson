@@ -83,7 +83,10 @@ for lib_name in LIBRARIES:
         mem = None
         correct = False
     else:
-        total_latency = timeit(func, number=ITERATIONS,)
+        total_latency = timeit(
+            func,
+            number=ITERATIONS,
+        )
         latency = per_iter_latency(total_latency)
         time.sleep(1)
         mem = max(memory_usage((func,), interval=0.001, timeout=latency * 2))

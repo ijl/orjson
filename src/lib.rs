@@ -20,7 +20,8 @@ use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
-const DUMPS_DOC: &str = "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
+const DUMPS_DOC: &str =
+    "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
 const LOADS_DOC: &str = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
 
 macro_rules! opt {
@@ -80,7 +81,11 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         PyModule_AddObject(
             mptr,
             "dumps\0".as_ptr() as *const c_char,
-            PyCFunction_New(Box::into_raw(Box::new(wrapped_dumps)), std::ptr::null_mut()),
+            PyCFunction_NewEx(
+                Box::into_raw(Box::new(wrapped_dumps)),
+                std::ptr::null_mut(),
+                mptr,
+            ),
         )
     };
 
@@ -95,7 +100,11 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         PyModule_AddObject(
             mptr,
             "loads\0".as_ptr() as *const c_char,
-            PyCFunction_New(Box::into_raw(Box::new(wrapped_loads)), std::ptr::null_mut()),
+            PyCFunction_NewEx(
+                Box::into_raw(Box::new(wrapped_loads)),
+                std::ptr::null_mut(),
+                mptr,
+            ),
         )
     };
 

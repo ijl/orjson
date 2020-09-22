@@ -172,35 +172,60 @@ class NumpyTests(unittest.TestCase):
     def test_numpy_array_d1(self):
         array = numpy.array([1])
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 
     def test_numpy_array_d2(self):
         array = numpy.array([[1]])
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 
     def test_numpy_array_d3(self):
         array = numpy.array([[[1]]])
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 
     def test_numpy_array_d4(self):
         array = numpy.array([[[[1]]]])
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 
     def test_numpy_array_4_stride(self):
         array = numpy.random.rand(4, 4, 4, 4)
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 
@@ -247,7 +272,12 @@ class NumpyTests(unittest.TestCase):
         )
         assert array.ndim == 32
         self.assertEqual(
-            orjson.loads(orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY,)),
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            ),
             array.tolist(),
         )
 

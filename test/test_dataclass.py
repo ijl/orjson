@@ -102,7 +102,8 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass1("a", 1, None)
         self.assertEqual(
-            orjson.dumps(obj), b'{"name":"a","number":1,"sub":null}',
+            orjson.dumps(obj),
+            b'{"name":"a","number":1,"sub":null}',
         )
 
     def test_dataclass_recursive(self):
@@ -130,7 +131,8 @@ class DataclassTests(unittest.TestCase):
         dumps() no attributes
         """
         self.assertEqual(
-            orjson.dumps(EmptyDataclass()), b"{}",
+            orjson.dumps(EmptyDataclass()),
+            b"{}",
         )
 
     def test_dataclass_empty_slots(self):
@@ -138,7 +140,8 @@ class DataclassTests(unittest.TestCase):
         dumps() no attributes slots
         """
         self.assertEqual(
-            orjson.dumps(EmptyDataclassSlots()), b"{}",
+            orjson.dumps(EmptyDataclassSlots()),
+            b"{}",
         )
 
     def test_dataclass_default_arg(self):
@@ -164,7 +167,8 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass4("a", 1, 2.1)
         self.assertEqual(
-            orjson.dumps(obj), b'{"a":"a","b":1,"c":2.1}',
+            orjson.dumps(obj),
+            b'{"a":"a","b":1,"c":2.1}',
         )
 
     def test_dataclass_classvar(self):
@@ -173,7 +177,8 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Dataclass4("a", 1)
         self.assertEqual(
-            orjson.dumps(obj), b'{"a":"a","b":1,"c":1.1}',
+            orjson.dumps(obj),
+            b'{"a":"a","b":1,"c":1.1}',
         )
 
     def test_dataclass_subclass(self):
@@ -182,7 +187,8 @@ class DataclassTests(unittest.TestCase):
         """
         obj = Datasubclass("a", 1, None, False)
         self.assertEqual(
-            orjson.dumps(obj), b'{"name":"a","number":1,"sub":null,"additional":false}',
+            orjson.dumps(obj),
+            b'{"name":"a","number":1,"sub":null,"additional":false}',
         )
 
     def test_dataclass_slots(self):
@@ -238,7 +244,8 @@ class DataclassTests(unittest.TestCase):
         """
         obj = InitDataclass("zxc", "vbn")
         self.assertEqual(
-            orjson.dumps(obj), b'{"ab":"zxc vbn"}',
+            orjson.dumps(obj),
+            b'{"ab":"zxc vbn"}',
         )
 
     def test_dataclass_option(self):
