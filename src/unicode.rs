@@ -109,7 +109,6 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
     }
 }
 
-#[inline]
 pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
     unsafe {
         if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {

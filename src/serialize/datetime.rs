@@ -56,6 +56,7 @@ impl Date {
     }
 }
 impl<'p> Serialize for Date {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -108,6 +109,7 @@ impl Time {
 }
 
 impl<'p> Serialize for Time {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -266,6 +268,7 @@ impl DateTime {
 }
 
 impl<'p> Serialize for DateTime {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

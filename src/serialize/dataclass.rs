@@ -11,7 +11,85 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 
 use std::ptr::NonNull;
 
-pub struct DataclassSerializer {
+pub struct DataclassFastSerializer {
+    dict: *mut pyo3::ffi::PyObject,
+    opts: Opt,
+    default_calls: u8,
+    recursion: u8,
+    default: Option<NonNull<pyo3::ffi::PyObject>>,
+}
+
+impl DataclassFastSerializer {
+    pub fn new(
+        dict: *mut pyo3::ffi::PyObject,
+        opts: Opt,
+        default_calls: u8,
+        recursion: u8,
+        default: Option<NonNull<pyo3::ffi::PyObject>>,
+    ) -> Self {
+        DataclassFastSerializer {
+            dict: dict,
+            opts: opts,
+            default_calls: default_calls,
+            recursion: recursion,
+            default: default,
+        }
+    }
+}
+
+impl<'p> Serialize for DataclassFastSerializer {
+    #[inline(never)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let len = unsafe { PyDict_GET_SIZE(self.dict) as usize };
+        if unlikely!(len == 0) {
+            return serializer.serialize_map(Some(0)).unwrap().end();
+        }
+        let mut map = serializer.serialize_map(None).unwrap();
+        let mut pos = 0isize;
+        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        for _ in 0..=len - 1 {
+            unsafe {
+                pyo3::ffi::_PyDict_Next(
+                    self.dict,
+                    &mut pos,
+                    &mut key,
+                    &mut value,
+                    std::ptr::null_mut(),
+                )
+            };
+            if unlikely!(ob_type!(key) != STR_TYPE) {
+                err!(KEY_MUST_BE_STR)
+            }
+            {
+                let data = read_utf8_from_str(key, &mut str_size);
+                if unlikely!(data.is_null()) {
+                    err!(INVALID_STR)
+                }
+                let key_as_str = str_from_slice!(data, str_size);
+                if unlikely!(key_as_str.as_bytes()[0] == b'_') {
+                    continue;
+                }
+                map.serialize_key(key_as_str).unwrap();
+            }
+
+            map.serialize_value(&PyObjectSerializer::new(
+                value,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            ))?;
+        }
+        map.end()
+    }
+}
+
+pub struct DataclassFallbackSerializer {
     ptr: *mut pyo3::ffi::PyObject,
     opts: Opt,
     default_calls: u8,
@@ -19,7 +97,7 @@ pub struct DataclassSerializer {
     default: Option<NonNull<pyo3::ffi::PyObject>>,
 }
 
-impl DataclassSerializer {
+impl DataclassFallbackSerializer {
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
         opts: Opt,
@@ -27,7 +105,7 @@ impl DataclassSerializer {
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
     ) -> Self {
-        DataclassSerializer {
+        DataclassFallbackSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
@@ -37,7 +115,7 @@ impl DataclassSerializer {
     }
 }
 
-impl<'p> Serialize for DataclassSerializer {
+impl<'p> Serialize for DataclassFallbackSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -84,7 +162,7 @@ impl<'p> Serialize for DataclassSerializer {
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
 
-            map.serialize_value(&SerializePyObject::new(
+            map.serialize_value(&PyObjectSerializer::new(
                 value,
                 self.opts,
                 self.default_calls,

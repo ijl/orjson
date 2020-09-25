@@ -8,10 +8,11 @@ use std::ffi::CStr;
 
 use std::ptr::NonNull;
 
-macro_rules! obj_name {
-    ($obj:expr) => {
-        unsafe { CStr::from_ptr((*$obj).tp_name).to_string_lossy() }
-    };
+#[cold]
+#[inline(never)]
+fn format_err(ptr: *mut pyo3::ffi::PyObject) -> String {
+    let name = unsafe { CStr::from_ptr((*ob_type!(ptr)).tp_name).to_string_lossy() };
+    format_args!("Type is not JSON serializable: {}", name).to_string()
 }
 
 pub struct DefaultSerializer {
@@ -57,12 +58,9 @@ impl<'p> Serialize for DefaultSerializer {
                     std::ptr::null_mut() as *mut pyo3::ffi::PyObject
                 ));
                 if unlikely!(default_obj.is_null()) {
-                    err!(format_args!(
-                        "Type is not JSON serializable: {}",
-                        obj_name!(ob_type!(self.ptr))
-                    ))
+                    err!(format_err(self.ptr))
                 } else {
-                    let res = SerializePyObject::new(
+                    let res = PyObjectSerializer::new(
                         default_obj,
                         self.opts,
                         self.default_calls + 1,
@@ -74,10 +72,7 @@ impl<'p> Serialize for DefaultSerializer {
                     res
                 }
             }
-            None => err!(format_args!(
-                "Type is not JSON serializable: {}",
-                obj_name!(ob_type!(self.ptr))
-            )),
+            None => err!(format_err(self.ptr)),
         }
     }
 }

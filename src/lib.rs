@@ -154,6 +154,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 }
 
 #[cold]
+#[inline(never)]
 fn raise_loads_exception(msg: Cow<str>) -> *mut PyObject {
     unsafe {
         let err_msg =
@@ -171,6 +172,7 @@ fn raise_loads_exception(msg: Cow<str>) -> *mut PyObject {
 }
 
 #[cold]
+#[inline(never)]
 fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
     unsafe {
         let err_msg =

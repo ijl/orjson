@@ -7,7 +7,9 @@ use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
+use crate::serialize::list::*;
 use crate::serialize::numpy::*;
+use crate::serialize::str::*;
 use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
@@ -38,7 +40,7 @@ pub fn serialize(
         _ => {}
     }
     buf.prefetch();
-    let obj = SerializePyObject::with_obtype(ptr, obtype, opts, 0, 0, default);
+    let obj = PyObjectSerializer::with_obtype(ptr, obtype, opts, 0, 0, default);
     let res;
     if likely!(opts & INDENT_2 != INDENT_2) {
         res = serde_json::to_writer(&mut buf, &obj);
@@ -127,20 +129,20 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Uuid
         } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
-        } else if is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
-            && opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opts & PASSTHROUGH_SUBCLASS == 0
+            && is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
         {
             ObType::StrSubclass
-        } else if is_subclass!(ob_type, Py_TPFLAGS_LONG_SUBCLASS)
-            && opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opts & PASSTHROUGH_SUBCLASS == 0
+            && is_subclass!(ob_type, Py_TPFLAGS_LONG_SUBCLASS)
         {
             ObType::Int
-        } else if is_subclass!(ob_type, Py_TPFLAGS_LIST_SUBCLASS)
-            && opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opts & PASSTHROUGH_SUBCLASS == 0
+            && is_subclass!(ob_type, Py_TPFLAGS_LIST_SUBCLASS)
         {
             ObType::List
-        } else if is_subclass!(ob_type, Py_TPFLAGS_DICT_SUBCLASS)
-            && opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opts & PASSTHROUGH_SUBCLASS == 0
+            && is_subclass!(ob_type, Py_TPFLAGS_DICT_SUBCLASS)
         {
             ObType::Dict
         } else if opts & PASSTHROUGH_DATACLASS == 0
@@ -157,7 +159,7 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
     }
 }
 
-pub struct SerializePyObject {
+pub struct PyObjectSerializer {
     ptr: *mut pyo3::ffi::PyObject,
     obtype: ObType,
     opts: Opt,
@@ -166,7 +168,7 @@ pub struct SerializePyObject {
     default: Option<NonNull<pyo3::ffi::PyObject>>,
 }
 
-impl SerializePyObject {
+impl PyObjectSerializer {
     #[inline]
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
@@ -175,7 +177,7 @@ impl SerializePyObject {
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
     ) -> Self {
-        SerializePyObject {
+        PyObjectSerializer {
             ptr: ptr,
             obtype: pyobject_to_obtype(ptr, opts),
             opts: opts,
@@ -194,7 +196,7 @@ impl SerializePyObject {
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
     ) -> Self {
-        SerializePyObject {
+        PyObjectSerializer {
             ptr: ptr,
             obtype: obtype,
             opts: opts,
@@ -205,7 +207,7 @@ impl SerializePyObject {
     }
 }
 
-impl<'p> Serialize for SerializePyObject {
+impl<'p> Serialize for PyObjectSerializer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -219,14 +221,7 @@ impl<'p> Serialize for SerializePyObject {
                 }
                 serializer.serialize_str(str_from_slice!(uni, str_size))
             }
-            ObType::StrSubclass => {
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
-                if unlikely!(uni.is_null()) {
-                    err!(INVALID_STR)
-                }
-                serializer.serialize_str(str_from_slice!(uni, str_size))
-            }
+            ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
             ObType::Int => {
                 let val = ffi!(PyLong_AsLongLong(self.ptr));
                 if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
@@ -256,43 +251,17 @@ impl<'p> Serialize for SerializePyObject {
                 if unlikely!(len == 0) {
                     serializer.serialize_map(Some(0)).unwrap().end()
                 } else if likely!(self.opts & SORT_OR_NON_STR_KEYS == 0) {
-                    let mut map = serializer.serialize_map(None).unwrap();
-                    let mut pos = 0isize;
-                    let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                    let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    for _ in 0..=len - 1 {
-                        unsafe {
-                            pyo3::ffi::_PyDict_Next(
-                                self.ptr,
-                                &mut pos,
-                                &mut key,
-                                &mut value,
-                                std::ptr::null_mut(),
-                            )
-                        };
-                        if unlikely!(ob_type!(key) != STR_TYPE) {
-                            err!(KEY_MUST_BE_STR)
-                        }
-                        {
-                            let data = read_utf8_from_str(key, &mut str_size);
-                            if unlikely!(data.is_null()) {
-                                err!(INVALID_STR)
-                            }
-                            map.serialize_key(str_from_slice!(data, str_size)).unwrap();
-                        }
-
-                        map.serialize_value(&SerializePyObject::new(
-                            value,
-                            self.opts,
-                            self.default_calls,
-                            self.recursion + 1,
-                            self.default,
-                        ))?;
-                    }
-                    map.end()
+                    Dict::new(
+                        self.ptr,
+                        self.opts,
+                        self.default_calls,
+                        self.recursion,
+                        self.default,
+                        len,
+                    )
+                    .serialize(serializer)
                 } else if self.opts & NON_STR_KEYS != 0 {
-                    NonStrKey::new(
+                    DictNonStrKey::new(
                         self.ptr,
                         self.opts,
                         self.default_calls,
@@ -318,101 +287,46 @@ impl<'p> Serialize for SerializePyObject {
                     err!(RECURSION_LIMIT_REACHED)
                 }
                 let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
-                if len == 0 {
+                if unlikely!(len == 0) {
                     serializer.serialize_seq(Some(0)).unwrap().end()
                 } else {
-                    let mut type_ptr = std::ptr::null_mut();
-                    let mut ob_type = ObType::Str;
-
-                    let mut seq = serializer.serialize_seq(None).unwrap();
-                    for i in 0..=len - 1 {
-                        let elem = unsafe {
-                            *(*(self.ptr as *mut pyo3::ffi::PyListObject))
-                                .ob_item
-                                .offset(i as isize)
-                        };
-                        if ob_type!(elem) != type_ptr {
-                            type_ptr = ob_type!(elem);
-                            ob_type = pyobject_to_obtype(elem, self.opts);
-                        }
-                        seq.serialize_element(&SerializePyObject::with_obtype(
-                            elem,
-                            ob_type,
-                            self.opts,
-                            self.default_calls,
-                            self.recursion + 1,
-                            self.default,
-                        ))?;
-                    }
-                    seq.end()
-                }
-            }
-            ObType::Tuple => {
-                let mut seq = serializer.serialize_seq(None).unwrap();
-                for elem in PyTupleIterator::new(self.ptr) {
-                    seq.serialize_element(&SerializePyObject::new(
-                        elem.as_ptr(),
+                    ListSerializer::new(
+                        self.ptr,
                         self.opts,
                         self.default_calls,
-                        self.recursion + 1,
+                        self.recursion,
                         self.default,
-                    ))?
+                        len,
+                    )
+                    .serialize(serializer)
                 }
-                seq.end()
             }
+            ObType::Tuple => TupleSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
             ObType::Dataclass => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
                 let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                if !dict.is_null() {
+                if likely!(!dict.is_null()) {
                     ffi!(Py_DECREF(dict));
-                    let len = unsafe { PyDict_GET_SIZE(dict) as usize };
-                    if unlikely!(len == 0) {
-                        return serializer.serialize_map(Some(0)).unwrap().end();
-                    }
-                    let mut map = serializer.serialize_map(None).unwrap();
-                    let mut pos = 0isize;
-                    let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                    let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-                    for _ in 0..=len - 1 {
-                        unsafe {
-                            pyo3::ffi::_PyDict_Next(
-                                dict,
-                                &mut pos,
-                                &mut key,
-                                &mut value,
-                                std::ptr::null_mut(),
-                            )
-                        };
-                        if unlikely!(ob_type!(key) != STR_TYPE) {
-                            err!(KEY_MUST_BE_STR)
-                        }
-                        {
-                            let data = read_utf8_from_str(key, &mut str_size);
-                            if unlikely!(data.is_null()) {
-                                err!(INVALID_STR)
-                            }
-                            let key_as_str = str_from_slice!(data, str_size);
-                            if unlikely!(key_as_str.as_bytes()[0] == b'_') {
-                                continue;
-                            }
-                            map.serialize_key(key_as_str).unwrap();
-                        }
-
-                        map.serialize_value(&SerializePyObject::new(
-                            value,
-                            self.opts,
-                            self.default_calls,
-                            self.recursion + 1,
-                            self.default,
-                        ))?;
-                    }
-                    map.end()
+                    DataclassFastSerializer::new(
+                        dict,
+                        self.opts,
+                        self.default_calls,
+                        self.recursion,
+                        self.default,
+                    )
+                    .serialize(serializer)
                 } else {
                     unsafe { pyo3::ffi::PyErr_Clear() };
-                    DataclassSerializer::new(
+                    DataclassFallbackSerializer::new(
                         self.ptr,
                         self.opts,
                         self.default_calls,
@@ -425,7 +339,7 @@ impl<'p> Serialize for SerializePyObject {
             ObType::Enum => {
                 let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
                 ffi!(Py_DECREF(value));
-                SerializePyObject::new(
+                PyObjectSerializer::new(
                     value,
                     self.opts,
                     self.default_calls,

@@ -42,12 +42,6 @@ macro_rules! str_from_slice {
     };
 }
 
-macro_rules! str_to_pyobject {
-    ($obj:expr) => {
-        crate::unicode::unicode_from_str($obj)
-    };
-}
-
 macro_rules! ffi {
     ($fn:ident()) => {
         unsafe { pyo3::ffi::$fn() }

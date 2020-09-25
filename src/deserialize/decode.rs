@@ -119,21 +119,21 @@ impl<'de> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        Ok(nonnull!(str_to_pyobject!(value.as_str())))
+        Ok(nonnull!(unicode_from_str(value.as_str())))
     }
 
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(nonnull!(str_to_pyobject!(value)))
+        Ok(nonnull!(unicode_from_str(value)))
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(nonnull!(str_to_pyobject!(value)))
+        Ok(nonnull!(unicode_from_str(value)))
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -178,7 +178,7 @@ impl<'de> Visitor<'de> for JsonValue {
                     let entry = map.entry(&hash).or_insert_with(
                         || hash,
                         || {
-                            let pyob = str_to_pyobject!(&key);
+                            let pyob = unicode_from_str(&key);
                             CachedKey::new(pyob, hash_str(pyob))
                         },
                     );
@@ -187,7 +187,7 @@ impl<'de> Visitor<'de> for JsonValue {
                     pyhash = tmp.1;
                 }
             } else {
-                pykey = str_to_pyobject!(&key);
+                pykey = unicode_from_str(&key);
                 pyhash = hash_str(pykey);
             }
             let value = map.next_value_seed(self)?;
