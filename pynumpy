@@ -30,8 +30,12 @@ elif kind == "float64":
     assert array.dtype == numpy.float64
 elif kind == "bool":
     array = numpy.random.choice((True, False), size=(100000, 200))
+elif kind == "int8":
+    array = numpy.random.randint(((2 ** 7) - 1), size=(100000, 100), dtype=numpy.int8)
+elif kind == "uint8":
+    array = numpy.random.randint(((2 ** 8) - 1), size=(100000, 100), dtype=numpy.uint8)
 else:
-    print("usage: pynumpy (bool|int32|float64)")
+    print("usage: pynumpy (bool|int32|float64|int8|uint8)")
     sys.exit(1)
 proc = psutil.Process()
 

@@ -784,8 +784,8 @@ JSONEncodeError: Integer exceeds 53-bit range
 ### numpy
 
 orjson natively serializes `numpy.ndarray` and individual `numpy.float64`,
-`numpy.float32`, `numpy.int64`, `numpy.int32`, `numpy.uint64`, and
-`numpy.uint32` instances. Arrays may have a
+`numpy.float32`, `numpy.int64`, `numpy.int32`, `numpy.int8`, `numpy.uint64`,
+`numpy.uint32`, and `numpy.uint8` instances. Arrays may have a
 `dtype` of `numpy.bool`, `numpy.float32`, `numpy.float64`, `numpy.int32`,
 `numpy.int64`, `numpy.uint32`, `numpy.uint64`, `numpy.uintp`, or `numpy.intp`.
 orjson is faster than all compared libraries at serializing

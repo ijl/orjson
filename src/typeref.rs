@@ -7,13 +7,15 @@ use std::ptr::NonNull;
 use std::sync::Once;
 
 pub struct NumpyTypes {
+    pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
     pub float32: *mut PyTypeObject,
     pub int64: *mut PyTypeObject,
     pub int32: *mut PyTypeObject,
+    pub int8: *mut PyTypeObject,
     pub uint64: *mut PyTypeObject,
     pub uint32: *mut PyTypeObject,
-    pub array: *mut PyTypeObject,
+    pub uint8: *mut PyTypeObject,
 }
 pub static mut HASH_SEED: u64 = 0;
 
@@ -146,10 +148,12 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
         array: look_up_numpy_type(numpy, "ndarray\0")?.as_ptr(),
         float32: look_up_numpy_type(numpy, "float32\0")?.as_ptr(),
         float64: look_up_numpy_type(numpy, "float64\0")?.as_ptr(),
+        int8: look_up_numpy_type(numpy, "int8\0")?.as_ptr(),
         int32: look_up_numpy_type(numpy, "int32\0")?.as_ptr(),
         int64: look_up_numpy_type(numpy, "int64\0")?.as_ptr(),
         uint32: look_up_numpy_type(numpy, "uint32\0")?.as_ptr(),
         uint64: look_up_numpy_type(numpy, "uint64\0")?.as_ptr(),
+        uint8: look_up_numpy_type(numpy, "uint8\0")?.as_ptr(),
     });
     Py_XDECREF(numpy);
     types

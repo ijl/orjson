@@ -54,6 +54,24 @@ class NumpyTests(unittest.TestCase):
             b"[0,18446744073709551615]",
         )
 
+    def test_numpy_array_d1_i8(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([-128, 127], numpy.int8),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[-128,127]",
+        )
+
+    def test_numpy_array_d1_u8(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([0, 255], numpy.uint8),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[0,255]",
+        )
+
     def test_numpy_array_d1_i32(self):
         self.assertEqual(
             orjson.dumps(
@@ -117,6 +135,24 @@ class NumpyTests(unittest.TestCase):
             b"[[1.0,2.0,3.0],[4.0,5.0,6.0]]",
         )
 
+    def test_numpy_array_d3_i8(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.int8),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[[[1,2],[3,4]],[[5,6],[7,8]]]",
+        )
+
+    def test_numpy_array_d3_u8(self):
+        self.assertEqual(
+            orjson.dumps(
+                numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.uint8),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b"[[[1,2],[3,4]],[[5,6],[7,8]]]",
+        )
+
     def test_numpy_array_d3_i32(self):
         self.assertEqual(
             orjson.dumps(
@@ -159,7 +195,7 @@ class NumpyTests(unittest.TestCase):
         )
 
     def test_numpy_array_unsupported_dtype(self):
-        array = numpy.array([[1, 2], [3, 4]], numpy.int8)
+        array = numpy.array([[1, 2], [3, 4]], numpy.float16)
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         self.assertEqual(
@@ -314,8 +350,20 @@ class NumpyTests(unittest.TestCase):
             array.tolist(),
         )
 
-    def test_numpy_primitives(self):
-        # int32
+    def test_numpy_scalar_int8(self):
+        self.assertEqual(
+            orjson.dumps(numpy.int8(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.int8(127), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"127",
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.int8(--128), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"-128",
+        )
+
+    def test_numpy_scalar_int32(self):
         self.assertEqual(
             orjson.dumps(numpy.int32(1), option=orjson.OPT_SERIALIZE_NUMPY), b"1"
         )
@@ -327,7 +375,8 @@ class NumpyTests(unittest.TestCase):
             orjson.dumps(numpy.int32(-2147483648), option=orjson.OPT_SERIALIZE_NUMPY),
             b"-2147483648",
         )
-        # int 64
+
+    def test_numpy_scalar_int64(self):
         self.assertEqual(
             orjson.dumps(
                 numpy.int64(-9223372036854775808), option=orjson.OPT_SERIALIZE_NUMPY
@@ -340,7 +389,17 @@ class NumpyTests(unittest.TestCase):
             ),
             b"9223372036854775807",
         )
-        # uint32
+
+    def test_numpy_scalar_uint8(self):
+        self.assertEqual(
+            orjson.dumps(numpy.uint8(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
+        )
+        self.assertEqual(
+            orjson.dumps(numpy.uint8(255), option=orjson.OPT_SERIALIZE_NUMPY),
+            b"255",
+        )
+
+    def test_numpy_scalar_uint32(self):
         self.assertEqual(
             orjson.dumps(numpy.uint32(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
         )
@@ -348,7 +407,8 @@ class NumpyTests(unittest.TestCase):
             orjson.dumps(numpy.uint32(4294967295), option=orjson.OPT_SERIALIZE_NUMPY),
             b"4294967295",
         )
-        # uint64
+
+    def test_numpy_scalar_uint64(self):
         self.assertEqual(
             orjson.dumps(numpy.uint64(0), option=orjson.OPT_SERIALIZE_NUMPY), b"0"
         )
@@ -359,12 +419,12 @@ class NumpyTests(unittest.TestCase):
             b"18446744073709551615",
         )
 
-        # float32
+    def test_numpy_scalar_float32(self):
         self.assertEqual(
             orjson.dumps(numpy.float32(1.0), option=orjson.OPT_SERIALIZE_NUMPY), b"1.0"
         )
 
-        # float64
+    def test_numpy_scalar_float64(self):
         self.assertEqual(
             orjson.dumps(numpy.float64(123.123), option=orjson.OPT_SERIALIZE_NUMPY),
             b"123.123",
