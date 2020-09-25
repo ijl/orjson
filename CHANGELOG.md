@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.4.0 - 2020-09-25
+
+### Added
+
+- Serialize `numpy.uint8` and `numpy.int8` instances.
+
+### Fixed
+
+- Fix serializing `numpy.empty()` instances.
+
+### Changed
+
+- No longer publish `manylinux1` wheels due to tooling dropping support.
+
 ## 3.3.1 - 2020-08-17
 
 ### Fixed

@@ -764,12 +764,10 @@ OverflowError: Invalid Inf value when encoding double
 
 ### int
 
-JSON only requires that implementations accept integers with 53-bit precision.
-orjson will, by default, serialize 64-bit integers. This is compatible with
-the Python standard library and other non-browser implementations. For
-transmitting JSON to a web browser or other strict implementations, `dumps()`
-can be configured to raise a `JSONEncodeError` on values exceeding the
-53-bit range.
+orjson serializes 64-bit integers by default. This is widely compatible,
+but there are implementations that only support 53-bits for integers, e.g.,
+web browsers. For those implementations, `dumps()` can be configured to
+raise a `JSONEncodeError` on values exceeding the 53-bit range.
 
 ```python
 >>> import orjson
@@ -924,7 +922,7 @@ workers) and when
 multithreaded. It also uses some tests from the ultrajson library.
 
 orjson is the most correct of the compared libraries. This graph shows how each
-library fares handles a combined 342 JSON fixtures from the
+library handles a combined 342 JSON fixtures from the
 [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
 [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) tests:
 
