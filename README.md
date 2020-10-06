@@ -1108,6 +1108,11 @@ scripts. The memory results can be reproduced using the `pymem` script.
 
 ## Questions
 
+### Why can't I install it from PyPI?
+
+Probably `pip` needs to be upgraded. `pip` added support for `manylinux2014`
+in 2019.
+
 ### Will it deserialize to dataclasses, UUIDs, decimals, etc or support object_hook?
 
 No. This requires a schema specifying what types are expected and how to
