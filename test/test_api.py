@@ -178,6 +178,18 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(str(inspect.signature(orjson.loads)), "(obj, /)")
         inspect.signature(orjson.loads).bind("[]")
 
+    def test_dumps_module_str(self):
+        """
+        orjson.dumps.__module__ is a str
+        """
+        self.assertEqual(orjson.dumps.__module__, "orjson")
+
+    def test_loads_module_str(self):
+        """
+        orjson.loads.__module__ is a str
+        """
+        self.assertEqual(orjson.loads.__module__, "orjson")
+
     def test_bytes_buffer(self):
         """
         dumps() trigger buffer growing where length is greater than growth

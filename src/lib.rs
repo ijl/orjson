@@ -84,7 +84,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_dumps)),
                 std::ptr::null_mut(),
-                mptr,
+                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
             ),
         )
     };
@@ -103,7 +103,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_loads)),
                 std::ptr::null_mut(),
-                mptr,
+                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
             ),
         )
     };
