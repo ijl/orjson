@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
+import sys
 import unittest
 
 import pytest
@@ -13,6 +14,9 @@ try:
     import pendulum
 except ImportError:
     pendulum = None  # type: ignore
+
+if sys.version_info >= (3, 9):
+    import zoneinfo
 
 
 class DatetimeTests(unittest.TestCase):
@@ -99,6 +103,46 @@ class DatetimeTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps([datetime.datetime(2018, 6, 1, 2, 3, 4, 0, tzinfo=pytz.UTC)]),
             b'["2018-06-01T02:03:04+00:00"]',
+        )
+
+    @unittest.skipIf(sys.version_info < (3, 9), "zoneinfo not available")
+    def test_datetime_zoneinfo_positive(self):
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2018,
+                        1,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=zoneinfo.ZoneInfo("Asia/Shanghai"),
+                    )
+                ]
+            ),
+            b'["2018-01-01T02:03:04+08:00"]',
+        )
+
+    @unittest.skipIf(sys.version_info < (3, 9), "zoneinfo not available")
+    def test_datetime_zoneinfo_negative(self):
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2018,
+                        6,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=zoneinfo.ZoneInfo("America/New_York"),
+                    )
+                ]
+            ),
+            b'["2018-06-01T02:03:04-04:00"]',
         )
 
     @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")

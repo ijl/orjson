@@ -658,9 +658,9 @@ e.g., "1970-01-01T00:00:00+00:00". This is a subset of ISO 8601 and
 compatible with `isoformat()` in the standard library.
 
 ```python
->>> import orjson, datetime, pendulum
+>>> import orjson, datetime, zoneinfo
 >>> orjson.dumps(
-    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=pendulum.timezone('Australia/Adelaide'))
+    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=zoneinfo.ZoneInfo('Australia/Adelaide'))
 )
 b'"2018-12-01T02:03:04.000009+10:30"'
 >>> orjson.dumps(
@@ -674,8 +674,9 @@ b'"2100-09-01T21:55:02"'
 ```
 
 `datetime.datetime` supports instances with a `tzinfo` that is `None`,
-`datetime.timezone.utc` or a timezone instance from
-the `pendulum`, `pytz`, or `dateutil`/`arrow` libraries.
+`datetime.timezone.utc`, a timezone instance from the python3.9+ `zoneinfo`
+module, or a timezone instance from the third-party `pendulum`, `pytz`, or
+`dateutil`/`arrow` libraries.
 
 `datetime.time` objects must not have a `tzinfo`.
 
