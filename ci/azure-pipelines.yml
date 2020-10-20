@@ -92,6 +92,21 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
+- job: macos_python39_amd64
+  pool:
+    vmImage: macOS-10.15
+  variables:
+    interpreter: python3.9
+    manylinux: off
+    target: x86_64-apple-darwin
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.9'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-posix.yml
+
 - job: macos_python38_amd64
   pool:
     vmImage: macOS-10.15
@@ -141,7 +156,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.8.5\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.8.6\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
