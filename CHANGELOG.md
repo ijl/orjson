@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.4.1 - 2020-10-20
+
+### Fixed
+
+- Fix `orjson.dumps.__module__` and `orjson.loads.__module__` not being the
+`str` "orjson".
+
+### Changed
+
+- Publish macos python3.9 wheel.
+- More packaging documentation.
+
 ## 3.4.0 - 2020-09-25
 
 ### Added
