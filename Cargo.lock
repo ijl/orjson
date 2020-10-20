@@ -21,10 +21,8 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 [[package]]
 name = "bytecount"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0017894339f586ccb943b01b9555de56770c11cda818e7e3d8bd93f4ed7f46e"
 dependencies = [
- "packed_simd",
+ "packed_simd_2",
 ]
 
 [[package]]
@@ -45,11 +43,9 @@ dependencies = [
 [[package]]
 name = "encoding_rs"
 version = "0.8.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a51b8cf747471cb9499b6d59e59b0444f4c90eba8968c4e44874e92b5b64ace2"
 dependencies = [
  "cfg-if",
- "packed_simd",
+ "packed_simd_2",
 ]
 
 [[package]]
@@ -88,9 +84,15 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.77"
+version = "0.2.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f96b10ec2560088a8e76961b00d47107b3a625fecb76dedb29ee7ccbf98235"
+checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
+
+[[package]]
+name = "libm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
 
 [[package]]
 name = "lock_api"
@@ -126,12 +128,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "packed_simd"
-version = "0.3.3"
+name = "packed_simd_2"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a85ea9fc0d4ac0deb6fe7911d38786b32fc11119afd9e9d38b84ff691ce64220"
+checksum = "3278e0492f961fd4ae70909f56b2723a7e8d01a228427294e19cdfdebda89a17"
 dependencies = [
  "cfg-if",
+ "libm",
 ]
 
 [[package]]
@@ -162,9 +165,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.12.1"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b065394f390af20bfe60bad3728d71dfc4d397a5717f46cf9083a40ea468a52c"
+checksum = "a9b90d637542bbf29b140fdd38fa308424073fd2cdf641a5680aed8020145e3c"
 dependencies = [
  "libc",
  "parking_lot",
@@ -196,9 +199,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "serde"
-version = "1.0.116"
+version = "1.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96fe57af81d28386a513cbc6858332abc6117cfdb5999647c6444b8f43a370a5"
+checksum = "b88fa983de7720629c9387e9f517353ed404164b1e482c970a90c1a4aaf7dc1a"
 
 [[package]]
 name = "serde_json"

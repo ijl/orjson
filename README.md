@@ -1140,7 +1140,7 @@ maturin build --no-sdist --release --strip --manylinux off
 ```
 
 Problems with the Rust nightly channel may require pinning a version.
-`nightly-2020-09-14` is known to be ok.
+`nightly-2020-10-19` is known to be ok.
 
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
 may not work on 32-bit targets. It should be compiled with

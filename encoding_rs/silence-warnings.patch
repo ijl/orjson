@@ -1,0 +1,17 @@
+diff --git a/encoding_rs/src/lib.rs b/encoding_rs/src/lib.rs
+index 82105c0..1920c3c 100644
+--- a/encoding_rs/src/lib.rs
++++ b/encoding_rs/src/lib.rs
+@@ -7,6 +7,12 @@
+ // option. This file may not be copied, modified, or distributed
+ // except according to those terms.
+ 
++// silence warnings in vendored src
++#![allow(deprecated)]
++#![allow(ellipsis_inclusive_range_patterns)]
++#![allow(unused_labels)]
++#![allow(unused_unsafe)]
++
+ #![cfg_attr(
+     feature = "cargo-clippy",
+     allow(doc_markdown, inline_always, new_ret_no_self)

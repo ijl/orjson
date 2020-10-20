@@ -1,0 +1,35 @@
+[package]
+authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
+description = "count occurrences of a given byte, or the number of UTF-8 code points, in a byte slice, fast"
+edition = "2018"
+name = "bytecount"
+version = "0.6.0"
+license = "Apache-2.0/MIT"
+repository = "https://github.com/llogiq/bytecount"
+categories = ["algorithms", "no-std"]
+readme = "README.md"
+exclude = ["/.travis.yml", "/appveyor.yml"]
+
+[badges]
+travis-ci = { repository = "llogiq/bytecount" }
+appveyor = { repository = "llogiq/bytecount" }
+
+[lib]
+bench = false
+
+[features]
+generic-simd = ["packed_simd"]
+runtime-dispatch-simd = []
+html_report = []
+
+[dependencies]
+packed_simd = { version = "0.3.4", package = "packed_simd_2", optional = true }
+
+[dev-dependencies]
+quickcheck = "0.9"
+rand = "0.7"
+criterion = { version = "0.3", default-features = false }
+
+[[bench]]
+name = "bench"
+harness = false
