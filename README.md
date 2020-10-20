@@ -1133,10 +1133,23 @@ If someone implements it well.
 To package orjson requires [Rust](https://www.rust-lang.org/) on the
  nightly channel and the [maturin](https://github.com/PyO3/maturin)
 build tool. maturin can be installed from PyPI or packaged as
-well. maturin can be invoked like:
+well. This is the simplest and recommended way of installing
+from source, assuming `rustup` is available from a
+package manager:
 
 ```sh
+rustup default nightly
+pip wheel --no-binary=orjson orjson
+```
+
+This is an example of building a wheel using the repository as source,
+`rustup` installed from upstream, and a pinned version of Rust:
+
+```sh
+pip install maturin
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-10-19 --profile minimal -y
 maturin build --no-sdist --release --strip --manylinux off
+ls -1 target/wheels
 ```
 
 Problems with the Rust nightly channel may require pinning a version.
@@ -1156,7 +1169,12 @@ necessarily to install dependencies from PyPI specified in
 `test/requirements.txt`. These require a C compiler. The tests do not
 make network requests.
 
-The tests should be run as part of the build.
+The tests should be run as part of the build. It can be run like this:
+
+```sh
+pip install -r test/requirements.txt
+pytest -q test
+```
 
 ## License
 
