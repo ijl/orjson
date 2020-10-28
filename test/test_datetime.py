@@ -105,7 +105,10 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-06-01T02:03:04+00:00"]',
         )
 
-    @unittest.skipIf(sys.version_info < (3, 9), "zoneinfo not available")
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
     def test_datetime_zoneinfo_positive(self):
         self.assertEqual(
             orjson.dumps(
@@ -125,7 +128,10 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-01-01T02:03:04+08:00"]',
         )
 
-    @unittest.skipIf(sys.version_info < (3, 9), "zoneinfo not available")
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
     def test_datetime_zoneinfo_negative(self):
         self.assertEqual(
             orjson.dumps(
