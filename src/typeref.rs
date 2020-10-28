@@ -17,7 +17,7 @@ pub struct NumpyTypes {
     pub uint32: *mut PyTypeObject,
     pub uint8: *mut PyTypeObject,
 }
-pub static mut HASH_SEED: u64 = 0;
+pub static mut HASH_SEED: u32 = 0;
 
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
 pub static mut TRUE: *mut PyObject = 0 as *mut PyObject;
@@ -102,7 +102,7 @@ pub fn init_typerefs() {
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
-        HASH_SEED = (VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64);
+        HASH_SEED = ((VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64)) as u32;
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
         JsonEncodeError = pyo3::ffi::PyExc_TypeError;
