@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.4.2 - 2020-10-29
+
+### Changed
+
+- Improve deserialization performance.
+- Publish Windows python3.9 wheel.
+- Disable unsupported SIMD features on non-x86, non-ARM targets
+
 ## 3.4.1 - 2020-10-20
 
 ### Fixed

@@ -4,7 +4,7 @@ repository = "https://github.com/ijl/orjson"
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=0.8.1,<0.9"]
+requires = ["maturin>=0.8.1,<0.10"]
 
 [tool.maturin]
 manylinux = "off"
