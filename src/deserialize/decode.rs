@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
 use std::ptr::NonNull;
-use wyhash::wyhash;
+use wy::hash32;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
@@ -167,8 +167,9 @@ impl<'de> Visitor<'de> for JsonValue {
         while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
+            let value = map.next_value_seed(self)?;
             if likely!(key.len() <= 64) {
-                let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
+                let hash = unsafe { hash32(key.as_bytes(), HASH_SEED) };
                 {
                     let map = unsafe {
                         KEY_MAP
@@ -179,18 +180,17 @@ impl<'de> Visitor<'de> for JsonValue {
                         || hash,
                         || {
                             let pyob = unicode_from_str(&key);
-                            CachedKey::new(pyob, hash_str(pyob))
+                            hash_str(pyob);
+                            CachedKey::new(pyob)
                         },
                     );
-                    let tmp = entry.get();
-                    pykey = tmp.0;
-                    pyhash = tmp.1;
+                    pykey = entry.get();
+                    pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
                 }
             } else {
                 pykey = unicode_from_str(&key);
                 pyhash = hash_str(pykey);
             }
-            let value = map.next_value_seed(self)?;
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,
                 pykey,

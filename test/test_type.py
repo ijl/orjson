@@ -2,7 +2,12 @@
 
 import unittest
 
-import xxhash
+import pytest
+
+try:
+    import xxhash
+except ImportError:
+    xxhash = None
 
 import orjson
 
@@ -73,6 +78,9 @@ class TypeTests(unittest.TestCase):
             orjson.JSONEncodeError, orjson.dumps, b"\xed\xa0\xbd\xed\xba\x80"
         )  # \ud83d\ude80
 
+    @pytest.mark.skipif(
+        xxhash is None, reason="xxhash install broken on win, python3.9, Azure"
+    )
     def test_str_ascii(self):
         """
         str is ASCII but not compact

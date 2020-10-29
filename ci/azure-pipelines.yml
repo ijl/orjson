@@ -152,6 +152,21 @@ jobs:
   - checkout: self
   - template: ./azure-posix.yml
 
+- job: win_python39_amd64
+  pool:
+    vmImage: windows-2019
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.9.0\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.9'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
 - job: win_python38_amd64
   pool:
     vmImage: windows-2019

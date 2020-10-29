@@ -60,7 +60,10 @@ ryu = { version = "1" }
 serde = { version = "1", default_features = false }
 serde_json = { path = "./json", default_features = false, features = ["std"] }
 smallvec = { version = "1", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
-wyhash = { version = "0.4" }
+wy = { version = "1" }
+
+[target.'cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "i686", target_arch = "armv7")))'.dependencies]
+encoding_rs = { path = "./encoding_rs", default_features = false }
 
 [profile.release]
 codegen-units = 1

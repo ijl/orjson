@@ -5,27 +5,25 @@ use associative_cache::*;
 use once_cell::unsync::OnceCell;
 use std::os::raw::c_void;
 
-#[derive(Clone)]
+#[repr(transparent)]
 pub struct CachedKey {
     ptr: *mut c_void,
-    hash: pyo3::ffi::Py_hash_t,
 }
 
 unsafe impl Send for CachedKey {}
 unsafe impl Sync for CachedKey {}
 
 impl CachedKey {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, hash: pyo3::ffi::Py_hash_t) -> CachedKey {
+    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> CachedKey {
         CachedKey {
             ptr: ptr as *mut c_void,
-            hash: hash,
         }
     }
 
-    pub fn get(&mut self) -> (*mut pyo3::ffi::PyObject, pyo3::ffi::Py_hash_t) {
+    pub fn get(&mut self) -> *mut pyo3::ffi::PyObject {
         let ptr = self.ptr as *mut pyo3::ffi::PyObject;
         ffi!(Py_INCREF(ptr));
-        (ptr, self.hash)
+        ptr
     }
 }
 
@@ -36,6 +34,6 @@ impl Drop for CachedKey {
 }
 
 pub type KeyMap =
-    AssociativeCache<u64, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
+    AssociativeCache<u32, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
 
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();

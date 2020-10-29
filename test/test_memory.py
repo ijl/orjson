@@ -7,7 +7,10 @@ import random
 import unittest
 from typing import List
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 import pytest
 
 import orjson
@@ -57,6 +60,9 @@ class Unsupported:
 
 
 class MemoryTests(unittest.TestCase):
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_loads(self):
         """
         loads() memory leak
@@ -70,6 +76,9 @@ class MemoryTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_dumps(self):
         """
         dumps() memory leak
@@ -84,6 +93,9 @@ class MemoryTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_loads_exc(self):
         """
         loads() memory leak exception without a GC pause
@@ -102,6 +114,9 @@ class MemoryTests(unittest.TestCase):
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
         gc.enable()
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_dumps_exc(self):
         """
         dumps() memory leak exception without a GC pause
@@ -121,6 +136,9 @@ class MemoryTests(unittest.TestCase):
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
         gc.enable()
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_dumps_default(self):
         """
         dumps() default memory leak
@@ -144,6 +162,9 @@ class MemoryTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_dumps_dataclass(self):
         """
         dumps() dataclass memory leak
@@ -157,6 +178,9 @@ class MemoryTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_loads_keys(self):
         """
         loads() memory leak with number of keys causing cache eviction
@@ -173,6 +197,9 @@ class MemoryTests(unittest.TestCase):
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_memory_dumps_numpy(self):
         """

@@ -2,8 +2,8 @@ arrow
 dataclasses;python_version<"3.7"
 numpy;platform_machine=="x86_64" and python_version<"3.9"
 pendulum;sys_platform=="linux" and platform_machine=="x86_64"
-psutil
+psutil;sys_platform!="windows" and python_version<"3.9"
 pytest
 pytz
 typing_extensions;python_version>="3.6" and python_version<"3.8"
-xxhash==1.4.3 # creates non-compact ASCII for test_str_ascii
+xxhash==1.4.3;sys_platform!="windows" and python_version<"3.9" # creates non-compact ASCII for test_str_ascii

@@ -590,7 +590,7 @@ The input must be valid UTF-8.
 
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
-keys must be at most 64 chars to be cached and 512 entries are stored.
+keys must be at most 64 bytes to be cached and 512 entries are stored.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
