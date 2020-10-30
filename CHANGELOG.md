@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.3 - 2020-10-30
+
+### Fixed
+
+- Fix regression in parsing similar `dict` keys.
+
 ## 3.4.2 - 2020-10-29
 
 ### Changed
