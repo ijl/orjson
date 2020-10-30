@@ -380,3 +380,17 @@ class TypeTests(unittest.TestCase):
         """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(object())
+
+    def test_dict_similar_keys(self):
+        """
+        loads() similar keys
+
+        This was a regression in 3.4.2 caused by using
+        the implementation in wy instead of wyhash.
+        """
+        self.assertEqual(
+            orjson.loads(
+                '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}'
+            ),
+            {"cf_status_firefox57": "verified", "cf_status_firefox67": "---"},
+        )

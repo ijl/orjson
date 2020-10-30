@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
 use std::ptr::NonNull;
-use wy::hash32;
+use wyhash::wyhash;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
@@ -169,7 +169,7 @@ impl<'de> Visitor<'de> for JsonValue {
             let pyhash: pyo3::ffi::Py_hash_t;
             let value = map.next_value_seed(self)?;
             if likely!(key.len() <= 64) {
-                let hash = unsafe { hash32(key.as_bytes(), HASH_SEED) };
+                let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
                 {
                     let map = unsafe {
                         KEY_MAP
