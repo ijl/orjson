@@ -78,17 +78,14 @@ available in the repository.
 To install a wheel from PyPI:
 
 ```sh
+pip install --upgrade "pip>=19.3" # manylinux2014 support
 pip install --upgrade orjson
 ```
 
-To depend on orjson in a project:
-
-```txt
-orjson>=3,<4
-```
+Notice that Linux environments with a `pip` version shipped in 2018 or earlier
+must first upgrade `pip` to support `manylinux2014` wheels.
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
-
 
 ### Quickstart
 
