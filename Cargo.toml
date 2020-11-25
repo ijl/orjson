@@ -50,8 +50,8 @@ classifier = [
 
 [dependencies]
 associative-cache = { version = "1" }
-bytecount = { path = "./bytecount", default_features = false, features = ["generic-simd", "runtime-dispatch-simd"] }
-encoding_rs = { path = "./encoding_rs", default_features = false }
+bytecount = { version = "0.6", default_features = false, features = ["generic-simd", "runtime-dispatch-simd"] }
+encoding_rs = { version = "0.8", default_features = false }
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 once_cell = { version = "1", default_features = false }
@@ -63,7 +63,7 @@ smallvec = { version = "1", default_features = false, features = ["const_generic
 wyhash = { version = "0.4" }
 
 [target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "i686", target_arch = "armv7"))'.dependencies]
-encoding_rs = { path = "./encoding_rs", default_features = false, features = ["simd-accel"] }
+encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
 
 [profile.release]
 codegen-units = 1
