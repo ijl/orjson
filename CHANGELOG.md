@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.4 - 2020-11-25
+
+### Changed
+
+- `orjson.dumps()` serializes integers up to a 64-bit unsigned integer's
+maximum. It was previously the maximum of a 64-bit signed integer.
+
 ## 3.4.3 - 2020-10-30
 
 ### Fixed
