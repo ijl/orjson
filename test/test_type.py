@@ -215,13 +215,19 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(orjson.loads(str(val)), val)
             self.assertEqual(orjson.dumps(val), str(val).encode("utf-8"))
 
+    def test_uint_64(self):
+        """
+        uint 64-bit
+        """
+        for val in (0, 9223372036854775808, 18446744073709551615):
+            self.assertEqual(orjson.loads(str(val)), val)
+            self.assertEqual(orjson.dumps(val), str(val).encode("utf-8"))
+
     def test_int_128(self):
         """
         int 128-bit
-
-        These are an OverflowError in ujson, but valid in stdlib json.
         """
-        for val in (9223372036854775809, -9223372036854775809):
+        for val in (18446744073709551616, -9223372036854775809):
             self.assertRaises(orjson.JSONEncodeError, orjson.dumps, val)
 
     def test_float(self):

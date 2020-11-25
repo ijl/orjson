@@ -762,8 +762,11 @@ OverflowError: Invalid Inf value when encoding double
 
 ### int
 
-orjson serializes 64-bit integers by default. This is widely compatible,
-but there are implementations that only support 53-bits for integers, e.g.,
+orjson serializes and deserializes 64-bit integers by default. The range
+supported is a signed 64-bit integer's minimum (-9223372036854775807) to
+an unsigned 64-bit integer's maximum (18446744073709551615). This
+is widely compatible, but there are implementations
+that only support 53-bits for integers, e.g.,
 web browsers. For those implementations, `dumps()` can be configured to
 raise a `JSONEncodeError` on values exceeding the 53-bit range.
 

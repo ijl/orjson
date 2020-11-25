@@ -7,6 +7,7 @@ use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
+use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
 use crate::serialize::str::*;
@@ -18,11 +19,6 @@ use crate::unicode::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
-
-// https://tools.ietf.org/html/rfc7159#section-6
-// "[-(2**53)+1, (2**53)-1]"
-const STRICT_INT_MIN: i64 = -9007199254740991;
-const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const RECURSION_LIMIT: u8 = 255;
 
@@ -222,17 +218,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 serializer.serialize_str(str_from_slice!(uni, str_size))
             }
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
-            ObType::Int => {
-                let val = ffi!(PyLong_AsLongLong(self.ptr));
-                if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
-                    err!("Integer exceeds 64-bit range")
-                } else if unlikely!(self.opts & STRICT_INTEGER != 0)
-                    && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
-                {
-                    err!("Integer exceeds 53-bit range")
-                }
-                serializer.serialize_i64(val)
-            }
+            ObType::Int => IntSerializer::new(self.ptr, self.opts).serialize(serializer),
             ObType::None => serializer.serialize_unit(),
             ObType::Float => serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr))),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),

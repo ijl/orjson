@@ -5,6 +5,7 @@ mod datetime;
 mod default;
 mod dict;
 mod encode;
+mod int;
 mod list;
 mod numpy;
 mod str;
