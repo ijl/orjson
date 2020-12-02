@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.5 - 2020-12-01
+
+### Fixed
+
+- Fix deserializing long strings on processors without AVX2.
+
 ## 3.4.4 - 2020-11-25
 
 ### Changed
