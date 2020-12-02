@@ -50,7 +50,7 @@ classifier = [
 
 [dependencies]
 associative-cache = { version = "1" }
-bytecount = { version = "0.6", default_features = false, features = ["generic-simd", "runtime-dispatch-simd"] }
+bytecount = { version = "^0.6.2", default_features = false, features = ["generic-simd", "runtime-dispatch-simd"] }
 encoding_rs = { version = "0.8", default_features = false }
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }

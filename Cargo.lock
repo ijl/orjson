@@ -20,9 +20,9 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
 name = "bytecount"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c39a773ba75db12126d8d383f1bdbf7eb92ea47ec27dd0557aff1fedf172764c"
+checksum = "72feb31ffc86498dacdbd0fcebb56138e7177a8cc5cea4516031d15ae85a742e"
 dependencies = [
  "packed_simd_2",
 ]
@@ -60,9 +60,9 @@ dependencies = [
 
 [[package]]
 name = "inlinable_string"
-version = "0.1.13"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0180dffe08637edc064c281919b6f92232477bdf1cd26101e072f613dacfedc"
+checksum = "3094308123a0e9fd59659ce45e22de9f53fc1d2ac6e1feb9fef988e4f76cad77"
 
 [[package]]
 name = "instant"
@@ -175,9 +175,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9b90d637542bbf29b140fdd38fa308424073fd2cdf641a5680aed8020145e3c"
+checksum = "bf6bbbe8f70d179260b3728e5d04eb012f4f0c7988e58c11433dd689cecaa72e"
 dependencies = [
  "libc",
  "parking_lot",

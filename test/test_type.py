@@ -48,6 +48,13 @@ class TypeTests(unittest.TestCase):
         for obj in ("aaaa" * 1024, "üýþÿ" * 1024, "好" * 1024, "�" * 1024):
             self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
 
+    def test_str_very_long(self):
+        """
+        str long enough to trigger overflow in bytecount
+        """
+        for obj in ("aaaa" * 20000, "üýþÿ" * 20000, "好" * 20000, "�" * 20000):
+            self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
+
     def test_str_replacement(self):
         """
         str roundtrip �
