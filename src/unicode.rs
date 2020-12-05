@@ -9,8 +9,7 @@ use std::os::raw::c_char;
 
 #[repr(C)]
 pub struct PyASCIIObject {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
+    pub ob_base: PyObject,
     pub length: Py_ssize_t,
     pub hash: Py_hash_t,
     pub state: u32,
@@ -19,12 +18,7 @@ pub struct PyASCIIObject {
 
 #[repr(C)]
 pub struct PyCompactUnicodeObject {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub length: Py_ssize_t,
-    pub hash: Py_hash_t,
-    pub state: u32,
-    pub wstr: *mut Py_UNICODE,
+    pub ob_base: PyASCIIObject,
     pub utf8_length: Py_ssize_t,
     pub utf8: *mut c_char,
     pub wstr_length: Py_ssize_t,
@@ -85,7 +79,7 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
             },
             PyUnicodeKind::TwoByte => unsafe {
                 let ptr = ffi!(PyUnicode_New(num_chars, 65535));
-                (*ptr.cast::<PyCompactUnicodeObject>()).length = num_chars;
+                (*ptr.cast::<PyASCIIObject>()).length = num_chars;
                 let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u16;
                 for each in buf.chars() {
                     core::ptr::write(data_ptr, each as u16);
@@ -96,7 +90,7 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
             },
             PyUnicodeKind::FourByte => unsafe {
                 let ptr = ffi!(PyUnicode_New(num_chars, 1114111));
-                (*ptr.cast::<PyCompactUnicodeObject>()).length = num_chars;
+                (*ptr.cast::<PyASCIIObject>()).length = num_chars;
                 let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u32;
                 for each in buf.chars() {
                     core::ptr::write(data_ptr, each as u32);
