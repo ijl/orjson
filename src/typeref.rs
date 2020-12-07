@@ -64,6 +64,7 @@ pub static mut JsonDecodeError: *mut PyObject = 0 as *mut PyObject;
 
 static INIT: Once = Once::new();
 
+#[cold]
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
         assert!(crate::deserialize::KEY_MAP
@@ -110,6 +111,7 @@ pub fn init_typerefs() {
     });
 }
 
+#[cold]
 unsafe fn look_up_json_exc() -> *mut PyObject {
     let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -126,6 +128,7 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     res
 }
 
+#[cold]
 unsafe fn look_up_numpy_type(
     numpy_module: *mut PyObject,
     np_type: &str,
@@ -133,10 +136,11 @@ unsafe fn look_up_numpy_type(
     let mod_dict = PyObject_GenericGetDict(numpy_module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
     Py_XDECREF(ptr);
-    // Py_XDECREF(mod_dict) causes segfault when pytest exits
+    Py_XDECREF(mod_dict);
     Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
 }
 
+#[cold]
 unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
     if numpy.is_null() {
@@ -159,6 +163,7 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     types
 }
 
+#[cold]
 unsafe fn look_up_field_type() -> NonNull<PyObject> {
     let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -169,6 +174,7 @@ unsafe fn look_up_field_type() -> NonNull<PyObject> {
     NonNull::new_unchecked(ptr as *mut PyObject)
 }
 
+#[cold]
 unsafe fn look_up_enum_type() -> *mut PyTypeObject {
     let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -179,6 +185,7 @@ unsafe fn look_up_enum_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     let uuid_mod = PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
     let uuid_mod_dict = PyObject_GenericGetDict(uuid_mod, std::ptr::null_mut());
@@ -190,6 +197,7 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
     let datetime = (PyDateTimeAPI.DateTime_FromDateAndTime)(
         1970,
@@ -207,6 +215,7 @@ unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_date_type() -> *mut PyTypeObject {
     let date = (PyDateTimeAPI.Date_FromDate)(1970, 1, 1, PyDateTimeAPI.DateType);
     let ptr = (*date).ob_type;
@@ -214,6 +223,7 @@ unsafe fn look_up_date_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_time_type() -> *mut PyTypeObject {
     let time = (PyDateTimeAPI.Time_FromTime)(0, 0, 0, 0, NONE, PyDateTimeAPI.TimeType);
     let ptr = (*time).ob_type;

@@ -4,7 +4,7 @@ pr:
     - '*'
 
 variables:
-  toolchain: nightly
+  toolchain: nightly-2020-11-24
 
 jobs:
 

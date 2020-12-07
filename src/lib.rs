@@ -37,6 +37,7 @@ macro_rules! opt {
 
 #[allow(non_snake_case)]
 #[no_mangle]
+#[cold]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     let mut init = PyModuleDef_INIT;
     init.m_name = "orjson\0".as_ptr() as *const c_char;

@@ -20,7 +20,6 @@ pub struct LocalPyTypeObject {
     // ...
 }
 
-
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyDict_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
@@ -43,5 +42,5 @@ pub unsafe fn PyBytes_AS_STRING(op: *mut PyObject) -> *const c_char {
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyBytes_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
-    (*op.cast::<PyVarObject>()).ob_size    
+    (*op.cast::<PyVarObject>()).ob_size
 }

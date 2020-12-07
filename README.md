@@ -801,8 +801,7 @@ b'[[1,2,3],[4,5,6]]'
 ```
 
 The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
-supported datatypes. Individual items (e.g., `numpy.float64(1)`) are
-not supported.
+supported datatypes.
 
 If an array is not a contiguous C array or contains an supported datatype,
 orjson falls through to `default`. In `default`, `obj.tolist()` can be
@@ -1147,7 +1146,7 @@ This is an example of building a wheel using the repository as source,
 
 ```sh
 pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-10-24 --profile minimal -y
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-11-24 --profile minimal -y
 maturin build --no-sdist --release --strip --manylinux off
 ls -1 target/wheels
 ```
