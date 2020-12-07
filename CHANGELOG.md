@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.6 - 2020-12-07
+
+### Fixed
+
+- Fix compatibility with debug builds of CPython.
+
 ## 3.4.5 - 2020-12-02
 
 ### Fixed
