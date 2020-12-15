@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::*;
+use crate::error::DeError;
 use crate::exc::*;
 use crate::ffi::*;
 use crate::typeref::*;
@@ -14,14 +15,19 @@ use wyhash::wyhash;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
-) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, String> {
+) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeError> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            return Err(INVALID_STR.to_string());
+            return Err(DeError {
+                message: INVALID_STR.to_string(),
+                line: 0,
+                column: 0,
+                jpart: "".to_string(),
+            });
         }
         contents = unsafe { std::slice::from_raw_parts(uni, str_size as usize) };
     } else {
@@ -34,11 +40,21 @@ pub fn deserialize(
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err("Input must be bytes, bytearray, or str".to_string());
+            return Err(DeError {
+                message: "Input must be bytes, bytearray, or str".to_string(),
+                line: 0,
+                column: 0,
+                jpart: "".to_string(),
+            });
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
-            return Err(INVALID_STR.to_string());
+            return Err(DeError {
+                message: INVALID_STR.to_string(),
+                line: 0,
+                column: 0,
+                jpart: "".to_string(),
+            });
         }
     }
 
@@ -48,10 +64,20 @@ pub fn deserialize(
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
-            deserializer.end().map_err(|e| e.to_string())?;
+            deserializer.end().map_err(|e| DeError {
+                message: e.to_string(),
+                line: e.line(),
+                column: e.column(),
+                jpart: data.to_string(),
+            })?;
             Ok(obj)
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(DeError {
+            message: e.to_string(),
+            line: e.line(),
+            column: e.column(),
+            jpart: data.to_string(),
+        }),
     }
 }
 

@@ -15,3 +15,6 @@ rustflags = ["-Z", "mutable-noalias", "-C", "target-feature=+use-aa,+sse2"]
 
 [target.armv7]
 rustflags = ["-Z", "mutable-noalias", "-C", "target-feature=+use-aa,+neon"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "link-arg=-undefined", "-C", "link-arg=dynamic_lookup"]

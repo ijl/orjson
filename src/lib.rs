@@ -8,6 +8,7 @@
 mod util;
 
 mod deserialize;
+mod error;
 mod exc;
 mod ffi;
 mod opt;
@@ -15,6 +16,7 @@ mod serialize;
 mod typeref;
 mod unicode;
 
+use crate::error::DeError;
 use pyo3::ffi::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
@@ -156,13 +158,18 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 
 #[cold]
 #[inline(never)]
-fn raise_loads_exception(msg: Cow<str>) -> *mut PyObject {
+fn raise_loads_exception(err: Cow<DeError>) -> *mut PyObject {
+    let msg = err.to_string();
+    let doc = err.jpart.as_str();
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         let args = PyTuple_New(3);
-        let doc = PyUnicode_New(0, 255);
-        let pos = PyLong_FromLongLong(0);
+
+        let pos = err.line as i64 * err.column as i64 - 1;
+
+        let doc = PyUnicode_FromStringAndSize(doc.as_ptr() as *const c_char, doc.len() as isize);
+        let pos = PyLong_FromLongLong(pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
         PyTuple_SET_ITEM(args, 1, doc);
         PyTuple_SET_ITEM(args, 2, pos);

@@ -247,3 +247,15 @@ class JsonCheckerTests(unittest.TestCase):
             b'{"JSON Test Pattern pass3":{"The outermost value":"must be '
             b'an object or array.","In this test":"It is an object."}}',
         )
+
+    def test_exc_position(self):
+        """
+        check exception line and column position
+        """
+
+        data = read_fixture_str("fail02.json", "jsonchecker")
+        try:
+            orjson.loads(data)
+        except orjson.JSONDecodeError as e:
+            assert e.colno == 17
+            assert e.lineno == 1
