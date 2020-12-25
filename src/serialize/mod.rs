@@ -12,5 +12,6 @@ mod str;
 mod tuple;
 mod uuid;
 mod writer;
+mod bytes;
 
 pub use encode::serialize;

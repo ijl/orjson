@@ -13,6 +13,7 @@ class JSONDecodeError(ValueError): ...
 class JSONEncodeError(TypeError): ...
 
 OPT_APPEND_NEWLINE: int
+OPT_DIRECT_SERIALIZE_BYTES: int
 OPT_INDENT_2: int
 OPT_NAIVE_UTC: int
 OPT_NON_STR_KEYS: int

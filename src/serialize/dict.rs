@@ -299,6 +299,7 @@ impl DictNonStrKey {
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
+            | ObType::Bytes
             | ObType::Unknown => Err(NonStrError::UnsupportedType),
         }
     }
