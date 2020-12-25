@@ -1,9 +1,5 @@
 use serde::ser::{Serialize, Serializer};
 
-use crate::exc::*;
-use pyo3::types::PyBytes;
-use pyo3::{PyTryFrom, FromPyObject, PyAny, FromPyPointer, Py};
-
 pub struct BytesSerializer {
     ptr: *mut pyo3::ffi::PyObject
 }

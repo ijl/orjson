@@ -14,6 +14,4 @@ class BytesTests(unittest.TestCase):
     def test_bytes(self):
         obj = b'{"a":"a","b":1}'
         result = orjson.dumps(obj, option=orjson.OPT_DIRECT_SERIALIZE_BYTES)
-        # barray = eval(str(result)[2:-1])
-        # print("".join([chr(ch) for ch in barray]))
-        self.assertEqual(result, b'{"a":"a","b":1}')
+        self.assertEqual(b'{"a":"a","b":1}', result)

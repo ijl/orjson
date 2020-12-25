@@ -223,12 +223,8 @@ where
 
     #[inline]
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
-        use serde::ser::SerializeSeq;
-        let mut seq = tri!(self.serialize_seq(Some(value.len())));
-        for byte in value {
-            tri!(seq.serialize_element(byte));
-        }
-        seq.end()
+        self.writer.write_all(value);
+        Ok(())
     }
 
     #[inline]
