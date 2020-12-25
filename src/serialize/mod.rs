@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+mod bytes;
 mod dataclass;
 mod datetime;
 mod default;
@@ -12,6 +13,5 @@ mod str;
 mod tuple;
 mod uuid;
 mod writer;
-mod bytes;
 
 pub use encode::serialize;
