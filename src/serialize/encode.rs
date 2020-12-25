@@ -3,6 +3,7 @@
 use crate::exc::*;
 use crate::ffi::*;
 use crate::opt::*;
+use crate::serialize::bytes::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
@@ -19,7 +20,6 @@ use crate::unicode::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
-use crate::serialize::bytes::BytesSerializer;
 
 pub const RECURSION_LIMIT: u8 = 255;
 
