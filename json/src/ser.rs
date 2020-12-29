@@ -223,7 +223,7 @@ where
 
     #[inline]
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
-        self.writer.write_all(value);
+        tri!(self.writer.write_all(value).map_err(Error::io));
         Ok(())
     }
 

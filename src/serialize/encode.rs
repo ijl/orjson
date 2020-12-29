@@ -101,7 +101,9 @@ pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
             ObType::Dict
         } else if ob_type == DATETIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
             ObType::Datetime
-        } else if ob_type == BYTES_TYPE && opts & DIRECT_SERIALIZE_BYTES != 0 {
+        } else if ob_type == BYTES_TYPE
+            && (opts & (SERIALIZE_BYTES_AS_JSON | SERIALIZE_BYTES_AS_STRING) != 0)
+        {
             ObType::Bytes
         } else {
             pyobject_to_obtype_unlikely(obj, opts)
@@ -353,7 +355,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 }
             },
             ObType::NumpyScalar => NumpyScalar::new(self.ptr).serialize(serializer),
-            ObType::Bytes => BytesSerializer::new(self.ptr).serialize(serializer),
+            ObType::Bytes => BytesSerializer::new(self.ptr, self.opts).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

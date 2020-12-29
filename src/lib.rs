@@ -112,8 +112,13 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     opt!(mptr, "OPT_APPEND_NEWLINE\0", opt::APPEND_NEWLINE);
     opt!(
         mptr,
-        "OPT_DIRECT_SERIALIZE_BYTES\0",
-        opt::DIRECT_SERIALIZE_BYTES
+        "OPT_SERIALIZE_BYTES_AS_JSON\0",
+        opt::SERIALIZE_BYTES_AS_JSON
+    );
+    opt!(
+        mptr,
+        "OPT_SERIALIZE_BYTES_AS_STRING\0",
+        opt::SERIALIZE_BYTES_AS_STRING
     );
     opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
     opt!(mptr, "OPT_NAIVE_UTC\0", opt::NAIVE_UTC);
