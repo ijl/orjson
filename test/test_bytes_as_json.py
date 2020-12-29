@@ -31,3 +31,8 @@ class BytesAsJsonTests(unittest.TestCase):
         obj = {"foo": b'{"a":"a","b":b'}
         result = orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_JSON)
         self.assertEqual(b'{"foo":{"a":"a","b":b}', result)
+
+    def test_bytes_invalid_utf8_ok(self):
+        obj = b'\xff'
+        result = orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_JSON)
+        self.assertEqual(b'\xff', result)
