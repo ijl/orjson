@@ -5,18 +5,18 @@ import unittest
 import orjson
 
 
-class BytesTests(unittest.TestCase):
+class BytesAsJsonTests(unittest.TestCase):
     def test_bytes_without_opt(self):
         obj = b'{"a":"a","b":1}'
         with self.assertRaises(TypeError):
             orjson.dumps(obj)
 
-    def test_bytes_as_json(self):
+    def test_bytes(self):
         obj = b'{"a":"a","b":1}'
         result = orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_JSON)
         self.assertEqual(b'{"a":"a","b":1}', result)
 
-    def test_bytes_as_json_in_dict(self):
+    def test_bytes_in_dict(self):
         value = {"a": "a", "b": 1}
         serialized_value = orjson.dumps(value)
 
@@ -27,6 +27,7 @@ class BytesTests(unittest.TestCase):
             orjson.dumps(matching_obj), orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_JSON)
         )
 
-    def test_bytes_as_string(self):
-        obj = b'some_bytes'
-        self.assertEqual(b'"some_bytes"', orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_STRING))
+    def test_bytes_invalid_json_ok(self):
+        obj = {"foo": b'{"a":"a","b":b'}
+        result = orjson.dumps(obj, option=orjson.OPT_SERIALIZE_BYTES_AS_JSON)
+        self.assertEqual(b'{"foo":{"a":"a","b":b}', result)
