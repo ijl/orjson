@@ -33,7 +33,7 @@ impl<'p> Serialize for BytesSerializer {
             let mut bytes: *mut i8 = ptr::null_mut();
             ffi!(PyBytes_AsStringAndSize(self.ptr, &mut bytes, &mut bytes_size));
             if unlikely!(bytes.is_null()) {
-                err!("invalid bytes")
+                err!("bytes could not be read")
             }
             serializer.serialize_str(str_from_slice!(bytes as *const u8, bytes_size))
         } else {
