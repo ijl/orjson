@@ -1,6 +1,30 @@
 # the repetition should be a function using jsonnet, but drone still
 # expects YAML even with .jsonnet extension, yielding a parse error
 kind: pipeline
+name: linux_python310_aarch64
+platform:
+  arch: arm64
+steps:
+- name: test
+  image: python:3.10-rc-buster
+  environment:
+    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    TWINE_USERNAME:
+      from_secret: twine_username
+    TWINE_PASSWORD:
+      from_secret: twine_password
+  commands:
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-01-02 --profile minimal -y
+    - python3.10 -m pip install --upgrade pip maturin
+    - maturin build --no-sdist --release --strip --manylinux 2014 --interpreter python3.10
+    - python3.10 -m pip install target/wheels/orjson*.whl
+    - python3.10 -m pip install -r test/requirements.txt -r integration/requirements.txt twine
+    - pytest -s -rxX -v test
+    - ./integration/run thread
+    - ./integration/run http
+    - ./ci/deploy target/wheels/*.whl
+---
+kind: pipeline
 name: linux_python39_aarch64
 platform:
   arch: arm64

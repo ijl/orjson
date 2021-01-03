@@ -36,6 +36,20 @@ jobs:
   - checkout: self
   - template: ./azure-debug.yml
 
+- job: linux_python310_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: python:3.10-rc-buster
+  variables:
+    interpreter: python3.10
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: false
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
 - job: linux_python39_amd64_manylinux2014
   pool:
     vmImage: ubuntu-20.04
