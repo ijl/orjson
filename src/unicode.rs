@@ -6,6 +6,7 @@ use pyo3::ffi::*;
 use std::os::raw::c_char;
 
 // see unicodeobject.h for documentation
+// re: python3.12 changes, https://www.python.org/dev/peps/pep-0623/
 
 #[repr(C)]
 pub struct PyASCIIObject {
@@ -13,6 +14,7 @@ pub struct PyASCIIObject {
     pub length: Py_ssize_t,
     pub hash: Py_hash_t,
     pub state: u32,
+    #[cfg(not(python312))]
     pub wstr: *mut c_char,
 }
 
@@ -21,11 +23,15 @@ pub struct PyCompactUnicodeObject {
     pub ob_base: PyASCIIObject,
     pub utf8_length: Py_ssize_t,
     pub utf8: *mut c_char,
+    #[cfg(not(python312))]
     pub wstr_length: Py_ssize_t,
 }
 
-const STATE_COMPACT_ASCII: u32 = 0b00000000000000000000000001100000;
+const STATE_ASCII: u32 = 0b00000000000000000000000001000000;
+#[cfg(not(python312))]
 const STATE_COMPACT: u32 = 0b00000000000000000000000000100000;
+#[cfg(not(python312))]
+const STATE_COMPACT_ASCII: u32 = STATE_COMPACT | STATE_ASCII;
 
 fn is_four_byte(buf: &str) -> bool {
     let mut ret = false;
@@ -103,6 +109,22 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
     }
 }
 
+#[cfg(python312)]
+pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
+    unsafe {
+        if (*op.cast::<PyASCIIObject>()).state & STATE_ASCII != 0 {
+            *str_size = (*op.cast::<PyASCIIObject>()).length;
+            op.cast::<PyASCIIObject>().offset(1) as *const u8
+        } else if !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null() {
+            *str_size = (*op.cast::<PyCompactUnicodeObject>()).utf8_length;
+            (*op.cast::<PyCompactUnicodeObject>()).utf8 as *const u8
+        } else {
+            PyUnicode_AsUTF8AndSize(op, str_size) as *const u8
+        }
+    }
+}
+
+#[cfg(not(python312))]
 pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
     unsafe {
         if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
