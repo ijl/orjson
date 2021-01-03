@@ -62,7 +62,7 @@ impl<'p> Serialize for DataclassFastSerializer {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
             {

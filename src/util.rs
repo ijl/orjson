@@ -20,13 +20,13 @@ macro_rules! err {
 
 macro_rules! unlikely {
     ($exp:expr) => {
-        unsafe { std::intrinsics::unlikely($exp) }
+        std::intrinsics::unlikely($exp)
     };
 }
 
 macro_rules! likely {
     ($exp:expr) => {
-        unsafe { std::intrinsics::likely($exp) }
+        std::intrinsics::likely($exp)
     };
 }
 

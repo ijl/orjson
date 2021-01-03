@@ -150,6 +150,8 @@ serializing subclasses, specify the option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
 
 The output is a `bytes` object containing UTF-8.
 
+The global interpreter lock (GIL) is held for the duration of the call.
+
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object with the error message
 `Type is not JSON serializable: ...`. To fix this, specify
@@ -588,6 +590,8 @@ The input must be valid UTF-8.
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
 keys must be at most 64 bytes to be cached and 512 entries are stored.
+
+The global interpreter lock (GIL) is held for the duration of the call.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
@@ -1146,20 +1150,18 @@ This is an example of building a wheel using the repository as source,
 
 ```sh
 pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-11-24 --profile minimal -y
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-01-02 --profile minimal -y
 maturin build --no-sdist --release --strip --manylinux off
 ls -1 target/wheels
 ```
 
 Problems with the Rust nightly channel may require pinning a version.
-`nightly-2020-11-24` is known to be ok.
+`nightly-2021-01-02` is known to be ok.
 
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
-may not work on 32-bit targets. It should be compiled with
-`-C target-feature=+sse2` on amd64 and `-C target-feature=+neon` on arm7. musl
-libc is not supported, but building with `-C target-feature=-crt-static`
-will probably work. The recommended flags are specified in `.cargo/config`
-and will apply unless `RUSTFLAGS` is set.
+may not work on 32-bit targets. It has recommended `RUSTFLAGS`
+specified in `.cargo/config` so it is recommended to either not set
+`RUSTFLAGS` or include these options.
 
 There are no runtime dependencies other than libc.
 
@@ -1177,5 +1179,5 @@ pytest -q test
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2020, licensed
-under either the Apache 2 or MIT licenses.
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2021, licensed
+under both the Apache 2 and MIT licenses.

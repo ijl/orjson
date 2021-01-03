@@ -203,7 +203,7 @@ pub unsafe extern "C" fn dumps(
     let mut default: Option<NonNull<PyObject>> = None;
     let mut optsptr: Option<NonNull<PyObject>> = None;
 
-    let num_args = pyo3::ffi::PyVectorcall_NARGS(nargs as isize);
+    let num_args = pyo3::ffi::PyVectorcall_NARGS(nargs as usize);
     if unlikely!(num_args == 0) {
         return raise_dumps_exception(Cow::Borrowed(
             "dumps() missing 1 required positional argument: 'obj'",

@@ -4,7 +4,7 @@ pr:
     - '*'
 
 variables:
-  toolchain: nightly-2020-11-24
+  toolchain: nightly-2021-01-02
 
 jobs:
 
@@ -156,7 +156,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.9.0\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.9.1\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0

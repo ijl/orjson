@@ -63,7 +63,7 @@ impl<'p> Serialize for Dict {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
             {
@@ -137,7 +137,7 @@ impl<'p> Serialize for DictSortedKey {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!("Dict key must be str")
             }
             let data = read_utf8_from_str(key, &mut str_size);
@@ -220,7 +220,7 @@ impl DictNonStrKey {
             }
             ObType::Int => {
                 let ival = ffi!(PyLong_AsLongLong(key));
-                if unlikely!(ival == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
+                if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
                     ffi!(PyErr_Clear());
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
                     if unlikely!(uval == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
