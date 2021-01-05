@@ -1,4 +1,4 @@
-# orjson
+# orjson2
 
 orjson is a fast, correct JSON library for Python. It
 [benchmarks](https://github.com/ijl/orjson#performance) as the fastest Python
