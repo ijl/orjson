@@ -12,7 +12,7 @@ pub type _PyCFunctionFastWithKeywords = unsafe extern "C" fn(
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct LocalPyTypeObject {
+pub struct PyTypeObject {
     pub ob_refcnt: pyo3::ffi::Py_ssize_t,
     pub ob_type: *mut pyo3::ffi::PyTypeObject,
     pub ma_used: pyo3::ffi::Py_ssize_t,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::encode::*;
+use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
@@ -46,11 +46,7 @@ impl<'p> Serialize for ListSerializer {
 
         let mut seq = serializer.serialize_seq(None).unwrap();
         for i in 0..=self.len - 1 {
-            let elem = unsafe {
-                *(*(self.ptr as *mut pyo3::ffi::PyListObject))
-                    .ob_item
-                    .offset(i as isize)
-            };
+            let elem = unsafe { *(*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item.add(i) };
             if ob_type!(elem) != type_ptr {
                 type_ptr = ob_type!(elem);
                 ob_type = pyobject_to_obtype(elem, self.opts);

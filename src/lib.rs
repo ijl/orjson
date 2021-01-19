@@ -3,6 +3,9 @@
 #![feature(core_intrinsics)]
 #![feature(const_fn)]
 #![allow(unused_unsafe)]
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::redundant_field_names)]
+#![allow(clippy::zero_prefixed_literal)]
 
 #[macro_use]
 mod util;
@@ -241,12 +244,12 @@ pub unsafe extern "C" fn dumps(
     }
 
     let mut optsbits: i32 = 0;
-    if optsptr.is_some() {
-        if (*optsptr.unwrap().as_ptr()).ob_type != typeref::INT_TYPE {
+    if let Some(opts) = optsptr {
+        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
         optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-        if optsbits < 0 || optsbits > opt::MAX_OPT {
+        if !(0..=opt::MAX_OPT).contains(&optsbits) {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
     }
@@ -312,8 +315,8 @@ pub unsafe extern "C" fn dumps(
     }
 
     let mut optsbits: i32 = 0;
-    if optsptr.is_some() {
-        if (*optsptr.unwrap().as_ptr()).ob_type != typeref::INT_TYPE {
+    if let Some(opts) = optsptr {
+        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
         optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;

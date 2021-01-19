@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
-use crate::ffi::*;
+use crate::ffi::{PyDict_GET_SIZE, PyTypeObject};
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -15,7 +15,6 @@ use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use crate::unicode::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
@@ -46,7 +45,7 @@ pub fn serialize(
     match res {
         Ok(_) => {
             if opts & APPEND_NEWLINE != 0 {
-                buf.write(b"\n").unwrap();
+                let _ = buf.write(b"\n");
             }
             Ok(buf.finish())
         }
@@ -123,7 +122,7 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Tuple
         } else if ob_type == UUID_TYPE {
             ObType::Uuid
-        } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
+        } else if (*(ob_type as *mut PyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
         } else if opts & PASSTHROUGH_SUBCLASS == 0
             && is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
@@ -209,14 +208,7 @@ impl<'p> Serialize for PyObjectSerializer {
         S: Serializer,
     {
         match self.obtype {
-            ObType::Str => {
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let uni = read_utf8_from_str(self.ptr, &mut str_size);
-                if unlikely!(uni.is_null()) {
-                    err!(INVALID_STR)
-                }
-                serializer.serialize_str(str_from_slice!(uni, str_size))
-            }
+            ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
             ObType::Int => IntSerializer::new(self.ptr, self.opts).serialize(serializer),
             ObType::None => serializer.serialize_unit(),

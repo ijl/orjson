@@ -3,7 +3,7 @@
 use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
-use crate::serialize::encode::*;
+use crate::serialize::serializer::*;
 use crate::typeref::*;
 use crate::unicode::*;
 

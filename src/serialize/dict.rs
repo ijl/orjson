@@ -3,8 +3,8 @@
 use crate::exc::*;
 use crate::opt::*;
 use crate::serialize::datetime::*;
-use crate::serialize::encode::pyobject_to_obtype;
-use crate::serialize::encode::*;
+use crate::serialize::serializer::pyobject_to_obtype;
+use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
 use crate::typeref::*;
 use crate::unicode::*;

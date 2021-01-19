@@ -73,7 +73,7 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
                 let ptr = ffi!(PyUnicode_New(len as isize, 127));
                 let data_ptr = ptr.cast::<PyASCIIObject>().offset(1) as *mut u8;
                 core::ptr::copy_nonoverlapping(buf.as_ptr(), data_ptr, len);
-                core::ptr::write(data_ptr.offset(len as isize), 0);
+                core::ptr::write(data_ptr.add(len), 0);
                 ptr
             },
             PyUnicodeKind::OneByte => unsafe {
