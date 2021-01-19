@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.7 - 2021-01-19
+
+### Changed
+
+- Use vectorcall APIs for method calls on python3.9 and above.
+- Publish python3.10 wheels for Linux on amd64 and aarch64.
+
 ## 3.4.6 - 2020-12-07
 
 ### Fixed
