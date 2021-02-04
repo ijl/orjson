@@ -30,9 +30,9 @@ platform:
   arch: arm64
 steps:
 - name: test
-  image: python:3.9-buster
+  image: quay.io/pypa/manylinux2014_aarch64:latest
   environment:
-    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/opt/python/cp39-cp39/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     TWINE_USERNAME:
       from_secret: twine_username
     TWINE_PASSWORD:
@@ -54,9 +54,9 @@ platform:
   arch: arm64
 steps:
 - name: test
-  image: python:3.8-buster
+  image: quay.io/pypa/manylinux2014_aarch64:latest
   environment:
-    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     TWINE_USERNAME:
       from_secret: twine_username
     TWINE_PASSWORD:
@@ -78,9 +78,9 @@ platform:
   arch: arm64
 steps:
 - name: test
-  image: python:3.7-buster
+  image: quay.io/pypa/manylinux2014_aarch64:latest
   environment:
-    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/opt/python/cp37-cp37m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     TWINE_USERNAME:
       from_secret: twine_username
     TWINE_PASSWORD:
@@ -102,9 +102,9 @@ platform:
   arch: arm64
 steps:
 - name: test
-  image: python:3.6-buster
+  image: quay.io/pypa/manylinux2014_aarch64:latest
   environment:
-    PATH: "/root/.local/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    PATH: "/root/.local/bin:/root/.cargo/bin:/opt/python/cp36-cp36m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     TWINE_USERNAME:
       from_secret: twine_username
     TWINE_PASSWORD:
