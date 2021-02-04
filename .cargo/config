@@ -1,5 +1,5 @@
 [build]
-rustflags = ["-Z", "mutable-noalias", "-C", "target-feature=+use-aa"]
+rustflags = ["-Z", "mutable-noalias"]
 
 [target.x86_64]
 rustflags = ["-Z", "mutable-noalias", "-C", "target-feature=+use-aa,+sse2"]
