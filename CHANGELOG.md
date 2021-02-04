@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.4.8 - 2021-02-04
+
+### Fixed
+
+- aarch64 manylinux2014 wheels are now compatible with glibc 2.17.
+
+### Changed
+
+- Fix build warnings on ppcle64.
+
 ## 3.4.7 - 2021-01-19
 
 ### Changed
