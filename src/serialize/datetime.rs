@@ -41,7 +41,13 @@ impl Date {
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
-            buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
+            let mut yearbuf = itoa::Buffer::new();
+            let formatted = yearbuf.format(year);
+            if unlikely!(year < 1000) {
+                // date-fullyear   = 4DIGIT
+                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
+            }
+            buf.extend_from_slice(formatted.as_bytes());
         }
         buf.push(b'-');
         {
@@ -165,12 +171,16 @@ impl DateTime {
                 return Err(DateTimeError::LibraryUnsupported);
             }
         };
-
-        buf.extend_from_slice(
-            itoa::Buffer::new()
-                .format(ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32)
-                .as_bytes(),
-        );
+        {
+            let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
+            let mut yearbuf = itoa::Buffer::new();
+            let formatted = yearbuf.format(year);
+            if unlikely!(year < 1000) {
+                // date-fullyear   = 4DIGIT
+                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
+            }
+            buf.extend_from_slice(formatted.as_bytes());
+        }
         buf.push(b'-');
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;
