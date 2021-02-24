@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.5.0 - 2021-02-24
+
+### Added
+
+- `orjson.loads()` supports reading from `memoryview` objects.
+
+### Fixed
+
+- `datetime.datetime` and `datetime.date` zero pad years less than 1000 to
+four digits.
+- sdist pins maturin 0.9.0 to avoid breaks in later 0.9.x.
+
+### Changed
+
+- `orjson.dumps()` when given a non-C contiguous `numpy.ndarray` has
+an error message suggesting to use `default`.
+
 ## 3.4.8 - 2021-02-04
 
 ### Fixed
