@@ -3,13 +3,6 @@
 use pyo3::ffi::*;
 use std::os::raw::c_char;
 
-pub type _PyCFunctionFastWithKeywords = unsafe extern "C" fn(
-    slf: *mut PyObject,
-    args: *const *mut PyObject,
-    nargs: Py_ssize_t,
-    kwnames: *mut PyObject,
-) -> *mut PyObject;
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct PyTypeObject {

@@ -11,7 +11,7 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: PATH=$(path) pip install --user --upgrade pip maturin twine auditwheel
+- bash: PATH=$(path) pip install --user --upgrade pip maturin==0.9.0 twine auditwheel
   displayName: build dependencies
 - bash: PATH=$(path) maturin build --no-sdist --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
   displayName: build

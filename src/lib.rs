@@ -62,7 +62,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
             ml_meth: Some(unsafe {
-                std::mem::transmute::<crate::ffi::_PyCFunctionFastWithKeywords, PyCFunction>(dumps)
+                std::mem::transmute::<pyo3::ffi::_PyCFunctionFastWithKeywords, PyCFunction>(dumps)
             }),
             ml_flags: pyo3::ffi::METH_FASTCALL | METH_KEYWORDS,
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
