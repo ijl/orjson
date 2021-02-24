@@ -9,6 +9,7 @@ use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visit
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 use wyhash::wyhash;
 
@@ -30,11 +31,18 @@ pub fn deserialize(
         if is_type!(obj_type_ptr, BYTES_TYPE) {
             buffer = unsafe { PyBytes_AS_STRING(ptr) as *const u8 };
             length = unsafe { PyBytes_GET_SIZE(ptr) as usize };
+        } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
+            let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
+            if unsafe { pyo3::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
+                return Err("Input type memoryview must be a C contiguous buffer".to_string());
+            }
+            buffer = unsafe { (*membuf).buf as *const u8 };
+            length = unsafe { (*membuf).len as usize };
         } else if is_type!(obj_type_ptr, BYTEARRAY_TYPE) {
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err("Input must be bytes, bytearray, or str".to_string());
+            return Err("Input must be bytes, bytearray, memoryview, or str".to_string());
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {

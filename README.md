@@ -575,15 +575,16 @@ b'"1970-01-01T00:00:00Z"'
 ### Deserialize
 
 ```python
-def loads(__obj: Union[bytes, bytearray, str]) -> Any: ...
+def loads(__obj: Union[bytes, bytearray, memoryview, str]) -> Any: ...
 ```
 
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
 `list`, `int`, `float`, `str`, `bool`, and `None` objects.
 
-`bytes`, `bytearray`, and `str` input are accepted. If the input exists as
-`bytes` (was read directly from a source), it is recommended to
-pass `bytes`. This has lower memory usage and lower latency.
+`bytes`, `bytearray`, `memoryview`, and `str` input are accepted. If the input
+exists as a `memoryview`, `bytearray`, or `bytes` object, it is recommended to
+pass these directly rather than creating an unnecessary `str` object. This has
+lower memory usage and lower latency.
 
 The input must be valid UTF-8.
 

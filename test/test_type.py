@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import io
 import unittest
 
 import pytest
@@ -116,6 +117,21 @@ class TypeTests(unittest.TestCase):
         arr = bytearray()
         arr.extend(b"[]")
         self.assertEqual(orjson.loads(arr), [])
+
+    def test_memoryview_loads(self):
+        """
+        memoryview loads
+        """
+        arr = bytearray()
+        arr.extend(b"[]")
+        self.assertEqual(orjson.loads(memoryview(arr)), [])
+
+    def test_bytesio_loads(self):
+        """
+        memoryview loads
+        """
+        arr = io.BytesIO(b"[]")
+        self.assertEqual(orjson.loads(arr.getbuffer()), [])
 
     def test_bool(self):
         """

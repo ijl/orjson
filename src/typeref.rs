@@ -41,6 +41,7 @@ pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut MEMORYVIEW_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 
 pub static mut INT_ATTR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
@@ -78,7 +79,17 @@ pub fn init_typerefs() {
         STR_TYPE = (*EMPTY_UNICODE).ob_type;
         STR_HASH_FUNCTION = (*((*EMPTY_UNICODE).ob_type)).tp_hash;
         BYTES_TYPE = (*PyBytes_FromStringAndSize("".as_ptr() as *const c_char, 0)).ob_type;
-        BYTEARRAY_TYPE = (*PyByteArray_FromStringAndSize("".as_ptr() as *const c_char, 0)).ob_type;
+
+        {
+            let bytearray = PyByteArray_FromStringAndSize("".as_ptr() as *const c_char, 0);
+            BYTEARRAY_TYPE = (*bytearray).ob_type;
+
+            let memoryview = PyMemoryView_FromObject(bytearray);
+            MEMORYVIEW_TYPE = (*memoryview).ob_type;
+            Py_DECREF(memoryview);
+            Py_DECREF(bytearray);
+        }
+
         DICT_TYPE = (*PyDict_New()).ob_type;
         LIST_TYPE = (*PyList_New(0)).ob_type;
         TUPLE_TYPE = (*PyTuple_New(0)).ob_type;
