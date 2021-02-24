@@ -330,14 +330,18 @@ impl<'p> Serialize for PyObjectSerializer {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
                 Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType) => {
-                    DefaultSerializer::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
+                    if self.default.is_none() {
+                        err!("numpy array is not C contiguous; use ndarray.tolist() in default")
+                    } else {
+                        DefaultSerializer::new(
+                            self.ptr,
+                            self.opts,
+                            self.default_calls,
+                            self.recursion,
+                            self.default,
+                        )
+                        .serialize(serializer)
+                    }
                 }
             },
             ObType::NumpyScalar => NumpyScalar::new(self.ptr).serialize(serializer),
