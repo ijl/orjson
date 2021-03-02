@@ -59,6 +59,7 @@ pub struct PyArrayInterface {
     pub descr: *mut PyObject,
 }
 
+#[derive(Clone, Copy)]
 pub enum ItemType {
     BOOL,
     F32,
@@ -71,6 +72,22 @@ pub enum ItemType {
     U64,
 }
 
+impl ItemType {
+    fn find(array: *mut PyArrayInterface) -> Option<ItemType> {
+        match unsafe { ((*array).typekind, (*array).itemsize) } {
+            (098, 1) => Some(ItemType::BOOL),
+            (102, 4) => Some(ItemType::F32),
+            (102, 8) => Some(ItemType::F64),
+            (105, 1) => Some(ItemType::I8),
+            (105, 4) => Some(ItemType::I32),
+            (105, 8) => Some(ItemType::I64),
+            (117, 1) => Some(ItemType::U8),
+            (117, 4) => Some(ItemType::U32),
+            (117, 8) => Some(ItemType::U64),
+            _ => None,
+        }
+    }
+}
 pub enum PyArrayError {
     Malformed,
     NotContiguous,
@@ -90,6 +107,7 @@ pub struct NumpyArray {
     children: Vec<NumpyArray>,
     depth: usize,
     capsule: *mut PyCapsule,
+    kind: ItemType,
 }
 
 impl<'a> NumpyArray {
@@ -108,20 +126,22 @@ impl<'a> NumpyArray {
             if num_dimensions == 0 {
                 return Err(PyArrayError::UnsupportedDataType);
             }
-            let mut pyarray = NumpyArray {
-                array: array,
-                position: vec![0; num_dimensions],
-                children: Vec::with_capacity(num_dimensions),
-                depth: 0,
-                capsule: capsule as *mut PyCapsule,
-            };
-            if pyarray.kind().is_none() {
-                Err(PyArrayError::UnsupportedDataType)
-            } else {
-                if pyarray.dimensions() > 1 {
-                    pyarray.build();
+            match ItemType::find(array) {
+                None => Err(PyArrayError::UnsupportedDataType),
+                Some(kind) => {
+                    let mut pyarray = NumpyArray {
+                        array: array,
+                        position: vec![0; num_dimensions],
+                        children: Vec::with_capacity(num_dimensions),
+                        depth: 0,
+                        capsule: capsule as *mut PyCapsule,
+                        kind: kind,
+                    };
+                    if pyarray.dimensions() > 1 {
+                        pyarray.build();
+                    }
+                    Ok(pyarray)
                 }
-                Ok(pyarray)
             }
         }
     }
@@ -133,24 +153,10 @@ impl<'a> NumpyArray {
             children: Vec::with_capacity(num_children),
             depth: self.depth + 1,
             capsule: self.capsule,
+            kind: self.kind,
         };
         arr.build();
         arr
-    }
-
-    fn kind(&self) -> Option<ItemType> {
-        match unsafe { ((*self.array).typekind, (*self.array).itemsize) } {
-            (098, 1) => Some(ItemType::BOOL),
-            (102, 4) => Some(ItemType::F32),
-            (102, 8) => Some(ItemType::F64),
-            (105, 1) => Some(ItemType::I8),
-            (105, 4) => Some(ItemType::I32),
-            (105, 8) => Some(ItemType::I64),
-            (117, 1) => Some(ItemType::U8),
-            (117, 4) => Some(ItemType::U32),
-            (117, 8) => Some(ItemType::U64),
-            _ => None,
-        }
     }
 
     fn build(&mut self) {
@@ -221,7 +227,7 @@ impl<'p> Serialize for NumpyArray {
             } else {
                 let data_ptr = self.data();
                 let num_items = self.num_items();
-                match self.kind().unwrap() {
+                match self.kind {
                     ItemType::F64 => {
                         let slice: &[f64] = slice!(data_ptr as *const f64, num_items);
                         for &each in slice.iter() {

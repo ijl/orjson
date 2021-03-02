@@ -70,14 +70,59 @@ class NonStrKeyTests(unittest.TestCase):
             b'{"9223372036854775807":true}',
         )
 
-    def test_dict_keys_int_range(self):
+    def test_dict_keys_int_range_valid_i64(self):
         """
-        OPT_NON_STR_KEYS has a 64-bit range for int
+        OPT_NON_STR_KEYS has a i64 range for int, valid
         """
-        with self.assertRaises(orjson.JSONEncodeError):
-            orjson.dumps({9223372036854775809: True}, option=orjson.OPT_NON_STR_KEYS)
+        self.assertEqual(
+            orjson.dumps(
+                {9223372036854775807: True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_STRICT_INTEGER,
+            ),
+            b'{"9223372036854775807":true}',
+        )
+        self.assertEqual(
+            orjson.dumps(
+                {-9223372036854775807: True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_STRICT_INTEGER,
+            ),
+            b'{"-9223372036854775807":true}',
+        )
+        self.assertEqual(
+            orjson.dumps(
+                {9223372036854775809: True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_STRICT_INTEGER,
+            ),
+            b'{"9223372036854775809":true}',
+        )
+
+    def test_dict_keys_int_range_valid_u64(self):
+        """
+        OPT_NON_STR_KEYS has a u64 range for int, valid
+        """
+        self.assertEqual(
+            orjson.dumps(
+                {0: True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_STRICT_INTEGER,
+            ),
+            b'{"0":true}',
+        )
+        self.assertEqual(
+            orjson.dumps(
+                {18446744073709551615: True},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_STRICT_INTEGER,
+            ),
+            b'{"18446744073709551615":true}',
+        )
+
+    def test_dict_keys_int_range_invalid(self):
+        """
+        OPT_NON_STR_KEYS has a range of i64::MIN to u64::MAX
+        """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps({-9223372036854775809: True}, option=orjson.OPT_NON_STR_KEYS)
+        with self.assertRaises(orjson.JSONEncodeError):
+            orjson.dumps({18446744073709551616: True}, option=orjson.OPT_NON_STR_KEYS)
 
     def test_dict_keys_float(self):
         self.assertEqual(

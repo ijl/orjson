@@ -3,7 +3,7 @@
 use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
-use crate::serialize::encode::*;
+use crate::serialize::serializer::*;
 use crate::typeref::*;
 use crate::unicode::*;
 
@@ -62,7 +62,7 @@ impl<'p> Serialize for DataclassFastSerializer {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
             {

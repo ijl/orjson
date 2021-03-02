@@ -14,6 +14,8 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
             res = orjson.loads(data)
         with self.assertRaises(exc, msg=data):
             res = orjson.loads(bytearray(data))
+        with self.assertRaises(exc, msg=data):
+            res = orjson.loads(memoryview(data))
         try:
             decoded = data.decode("utf-8")
         except UnicodeDecodeError:
@@ -26,6 +28,7 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         data = read_fixture_bytes(filename, "parsing")
         orjson.loads(data)
         orjson.loads(bytearray(data))
+        orjson.loads(memoryview(data))
         orjson.loads(data.decode("utf-8"))
 
     def test_y_array_arraysWithSpace(self):

@@ -41,7 +41,13 @@ impl Date {
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
-            buf.extend_from_slice(itoa::Buffer::new().format(year).as_bytes());
+            let mut yearbuf = itoa::Buffer::new();
+            let formatted = yearbuf.format(year);
+            if unlikely!(year < 1000) {
+                // date-fullyear   = 4DIGIT
+                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
+            }
+            buf.extend_from_slice(formatted.as_bytes());
         }
         buf.push(b'-');
         {
@@ -147,48 +153,34 @@ impl DateTime {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
             if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
                 // pendulum
-                let offset = ffi!(PyObject_CallMethodObjArgs(
-                    self.ptr,
-                    UTCOFFSET_METHOD_STR,
-                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
-                ));
+                let offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
             } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
                 // pytz
-                let method_ptr = ffi!(PyObject_CallMethodObjArgs(
-                    tzinfo,
-                    NORMALIZE_METHOD_STR,
-                    self.ptr,
-                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
-                ));
-                let offset = ffi!(PyObject_CallMethodObjArgs(
-                    method_ptr,
-                    UTCOFFSET_METHOD_STR,
-                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
-                ));
+                let method_ptr = call_method!(tzinfo, NORMALIZE_METHOD_STR, self.ptr);
+                let offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
             } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
                 // dateutil/arrow, datetime.timezone.utc
-                let offset = ffi!(PyObject_CallMethodObjArgs(
-                    tzinfo,
-                    UTCOFFSET_METHOD_STR,
-                    self.ptr,
-                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
-                ));
+                let offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
             } else {
                 return Err(DateTimeError::LibraryUnsupported);
             }
         };
-
-        buf.extend_from_slice(
-            itoa::Buffer::new()
-                .format(ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32)
-                .as_bytes(),
-        );
+        {
+            let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
+            let mut yearbuf = itoa::Buffer::new();
+            let formatted = yearbuf.format(year);
+            if unlikely!(year < 1000) {
+                // date-fullyear   = 4DIGIT
+                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
+            }
+            buf.extend_from_slice(formatted.as_bytes());
+        }
         buf.push(b'-');
         {
             let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;

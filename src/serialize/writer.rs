@@ -22,10 +22,9 @@ impl BytesWriter {
         }
     }
 
-    #[inline]
     pub fn finish(&mut self) -> NonNull<PyObject> {
         unsafe {
-            (*self.bytes).ob_size = self.len as isize;
+            (*self.bytes.cast::<PyVarObject>()).ob_size = self.len as Py_ssize_t;
             self.resize(self.len as isize);
             NonNull::new_unchecked(self.bytes as *mut PyObject)
         }
@@ -37,11 +36,10 @@ impl BytesWriter {
             std::mem::transmute::<&[c_char; 1], *mut u8>(
                 &(*self.bytes.cast::<PyBytesObject>()).ob_sval,
             )
-            .offset(self.len as isize)
+            .add(self.len)
         }
     }
 
-    #[inline]
     pub fn resize(&mut self, len: isize) {
         unsafe {
             _PyBytes_Resize(
@@ -51,12 +49,10 @@ impl BytesWriter {
         }
     }
 
-    #[inline]
     pub fn prefetch(&self) {
         unsafe { core::intrinsics::prefetch_write_data(self.buffer_ptr(), 3) };
     }
 
-    #[inline]
     fn grow(&mut self, len: usize) {
         while self.cap - self.len < len {
             self.cap *= 2;
@@ -80,7 +76,7 @@ impl std::io::Write for BytesWriter {
     }
     #[inline]
     fn write_all(&mut self, buf: &[u8]) -> std::result::Result<(), std::io::Error> {
-        self.write(buf).unwrap();
+        let _ = self.write(buf);
         Ok(())
     }
     #[inline]

@@ -182,7 +182,7 @@ class NumpyTests(unittest.TestCase):
             b"[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]",
         )
 
-    def test_numpy_array_fotran(self):
+    def test_numpy_array_fortran(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
         assert array.flags["F_CONTIGUOUS"] == True
         with self.assertRaises(orjson.JSONEncodeError):
@@ -193,6 +193,18 @@ class NumpyTests(unittest.TestCase):
             ),
             orjson.dumps(array.tolist()),
         )
+
+    def test_numpy_array_non_contiguous_message(self):
+        array = numpy.array([[1, 2], [3, 4]], order="F")
+        assert array.flags["F_CONTIGUOUS"] == True
+        try:
+            orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+            assert False
+        except TypeError as exc:
+            self.assertEqual(
+                str(exc),
+                "numpy array is not C contiguous; use ndarray.tolist() in default",
+            )
 
     def test_numpy_array_unsupported_dtype(self):
         array = numpy.array([[1, 2], [3, 4]], numpy.float16)

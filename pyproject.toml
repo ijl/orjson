@@ -4,11 +4,11 @@ repository = "https://github.com/ijl/orjson"
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=0.8.1,<0.9"]
+requires = ["maturin==0.9.0"]
 
 [tool.maturin]
 manylinux = "off"
-sdist-include = ["bytecount/**/*", "Cargo.lock", "encoding_rs/**/*", "json/**/*"]
+sdist-include = ["Cargo.lock", "json/**/*"]
 strip = "on"
 
 [tool.black]

@@ -1,5 +1,72 @@
 # Changelog
 
+## 3.5.0 - 2021-02-24
+
+### Added
+
+- `orjson.loads()` supports reading from `memoryview` objects.
+
+### Fixed
+
+- `datetime.datetime` and `datetime.date` zero pad years less than 1000 to
+four digits.
+- sdist pins maturin 0.9.0 to avoid breaks in later 0.9.x.
+
+### Changed
+
+- `orjson.dumps()` when given a non-C contiguous `numpy.ndarray` has
+an error message suggesting to use `default`.
+
+## 3.4.8 - 2021-02-04
+
+### Fixed
+
+- aarch64 manylinux2014 wheels are now compatible with glibc 2.17.
+
+### Changed
+
+- Fix build warnings on ppcle64.
+
+## 3.4.7 - 2021-01-19
+
+### Changed
+
+- Use vectorcall APIs for method calls on python3.9 and above.
+- Publish python3.10 wheels for Linux on amd64 and aarch64.
+
+## 3.4.6 - 2020-12-07
+
+### Fixed
+
+- Fix compatibility with debug builds of CPython.
+
+## 3.4.5 - 2020-12-02
+
+### Fixed
+
+- Fix deserializing long strings on processors without AVX2.
+
+## 3.4.4 - 2020-11-25
+
+### Changed
+
+- `orjson.dumps()` serializes integers up to a 64-bit unsigned integer's
+maximum. It was previously the maximum of a 64-bit signed integer.
+
+## 3.4.3 - 2020-10-30
+
+### Fixed
+
+- Fix regression in parsing similar `dict` keys.
+
+## 3.4.2 - 2020-10-29
+
+### Changed
+
+- Improve deserialization performance.
+- Publish Windows python3.9 wheel.
+- Disable unsupported SIMD features on non-x86, non-ARM targets
+
 ## 3.4.1 - 2020-10-20
 
 ### Fixed

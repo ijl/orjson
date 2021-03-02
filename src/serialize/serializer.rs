@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
-use crate::ffi::*;
+use crate::ffi::{PyDict_GET_SIZE, PyTypeObject};
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
+use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
 use crate::serialize::str::*;
@@ -14,15 +15,9 @@ use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use crate::unicode::*;
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
-
-// https://tools.ietf.org/html/rfc7159#section-6
-// "[-(2**53)+1, (2**53)-1]"
-const STRICT_INT_MIN: i64 = -9007199254740991;
-const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub const RECURSION_LIMIT: u8 = 255;
 
@@ -50,7 +45,7 @@ pub fn serialize(
     match res {
         Ok(_) => {
             if opts & APPEND_NEWLINE != 0 {
-                buf.write(b"\n").unwrap();
+                let _ = buf.write(b"\n");
             }
             Ok(buf.finish())
         }
@@ -127,7 +122,7 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Tuple
         } else if ob_type == UUID_TYPE {
             ObType::Uuid
-        } else if (*(ob_type as *mut LocalPyTypeObject)).ob_type == ENUM_TYPE {
+        } else if (*(ob_type as *mut PyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
         } else if opts & PASSTHROUGH_SUBCLASS == 0
             && is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
@@ -213,26 +208,9 @@ impl<'p> Serialize for PyObjectSerializer {
         S: Serializer,
     {
         match self.obtype {
-            ObType::Str => {
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-                let uni = read_utf8_from_str(self.ptr, &mut str_size);
-                if unlikely!(uni.is_null()) {
-                    err!(INVALID_STR)
-                }
-                serializer.serialize_str(str_from_slice!(uni, str_size))
-            }
+            ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
-            ObType::Int => {
-                let val = ffi!(PyLong_AsLongLong(self.ptr));
-                if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
-                    err!("Integer exceeds 64-bit range")
-                } else if unlikely!(self.opts & STRICT_INTEGER != 0)
-                    && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
-                {
-                    err!("Integer exceeds 53-bit range")
-                }
-                serializer.serialize_i64(val)
-            }
+            ObType::Int => IntSerializer::new(self.ptr, self.opts).serialize(serializer),
             ObType::None => serializer.serialize_unit(),
             ObType::Float => serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr))),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
@@ -352,14 +330,18 @@ impl<'p> Serialize for PyObjectSerializer {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
                 Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType) => {
-                    DefaultSerializer::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
+                    if self.default.is_none() {
+                        err!("numpy array is not C contiguous; use ndarray.tolist() in default")
+                    } else {
+                        DefaultSerializer::new(
+                            self.ptr,
+                            self.opts,
+                            self.default_calls,
+                            self.recursion,
+                            self.default,
+                        )
+                        .serialize(serializer)
+                    }
                 }
             },
             ObType::NumpyScalar => NumpyScalar::new(self.ptr).serialize(serializer),

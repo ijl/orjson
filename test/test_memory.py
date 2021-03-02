@@ -79,6 +79,23 @@ class MemoryTests(unittest.TestCase):
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
     )
+    def test_memory_loads_memoryview(self):
+        """
+        loads() memory leak using memoryview
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = FIXTURE.encode("utf-8")
+        val = orjson.loads(fixture)
+        mem = proc.memory_info().rss
+        for _ in range(10000):
+            val = orjson.loads(memoryview(fixture))
+        gc.collect()
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
     def test_memory_dumps(self):
         """
         dumps() memory leak

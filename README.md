@@ -32,7 +32,7 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.6, 3.7, 3.8, and 3.9. It distributes x86_64/amd64
+orjson supports CPython 3.6, 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64
 and aarch64/armv8 wheels for Linux. It distributes x86_64/amd64 wheels for
 macOS and Windows. orjson does not support PyPy. Releases follow semantic
 versioning and serializing a new object type without an opt-in flag is
@@ -78,17 +78,14 @@ available in the repository.
 To install a wheel from PyPI:
 
 ```sh
+pip install --upgrade "pip>=19.3" # manylinux2014 support
 pip install --upgrade orjson
 ```
 
-To depend on orjson in a project:
-
-```txt
-orjson>=3,<4
-```
+Notice that Linux environments with a `pip` version shipped in 2018 or earlier
+must first upgrade `pip` to support `manylinux2014` wheels.
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
-
 
 ### Quickstart
 
@@ -152,6 +149,8 @@ of `tuple` to avoid serializing `namedtuple` objects as arrays. To avoid
 serializing subclasses, specify the option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
 
 The output is a `bytes` object containing UTF-8.
+
+The global interpreter lock (GIL) is held for the duration of the call.
 
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object with the error message
@@ -576,21 +575,24 @@ b'"1970-01-01T00:00:00Z"'
 ### Deserialize
 
 ```python
-def loads(__obj: Union[bytes, bytearray, str]) -> Any: ...
+def loads(__obj: Union[bytes, bytearray, memoryview, str]) -> Any: ...
 ```
 
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
 `list`, `int`, `float`, `str`, `bool`, and `None` objects.
 
-`bytes`, `bytearray`, and `str` input are accepted. If the input exists as
-`bytes` (was read directly from a source), it is recommended to
-pass `bytes`. This has lower memory usage and lower latency.
+`bytes`, `bytearray`, `memoryview`, and `str` input are accepted. If the input
+exists as a `memoryview`, `bytearray`, or `bytes` object, it is recommended to
+pass these directly rather than creating an unnecessary `str` object. This has
+lower memory usage and lower latency.
 
 The input must be valid UTF-8.
 
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
 keys must be at most 64 bytes to be cached and 512 entries are stored.
+
+The global interpreter lock (GIL) is held for the duration of the call.
 
 It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
@@ -765,8 +767,11 @@ OverflowError: Invalid Inf value when encoding double
 
 ### int
 
-orjson serializes 64-bit integers by default. This is widely compatible,
-but there are implementations that only support 53-bits for integers, e.g.,
+orjson serializes and deserializes 64-bit integers by default. The range
+supported is a signed 64-bit integer's minimum (-9223372036854775807) to
+an unsigned 64-bit integer's maximum (18446744073709551615). This
+is widely compatible, but there are implementations
+that only support 53-bits for integers, e.g.,
 web browsers. For those implementations, `dumps()` can be configured to
 raise a `JSONEncodeError` on values exceeding the 53-bit range.
 
@@ -801,8 +806,7 @@ b'[[1,2,3],[4,5,6]]'
 ```
 
 The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
-supported datatypes. Individual items (e.g., `numpy.float64(1)`) are
-not supported.
+supported datatypes.
 
 If an array is not a contiguous C array or contains an supported datatype,
 orjson falls through to `default`. In `default`, `obj.tolist()` can be
@@ -1147,20 +1151,18 @@ This is an example of building a wheel using the repository as source,
 
 ```sh
 pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2020-10-19 --profile minimal -y
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-01-31 --profile minimal -y
 maturin build --no-sdist --release --strip --manylinux off
 ls -1 target/wheels
 ```
 
 Problems with the Rust nightly channel may require pinning a version.
-`nightly-2020-10-19` is known to be ok.
+`nightly-2021-01-31` is known to be ok.
 
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
-may not work on 32-bit targets. It should be compiled with
-`-C target-feature=+sse2` on amd64 and `-C target-feature=+neon` on arm7. musl
-libc is not supported, but building with `-C target-feature=-crt-static`
-will probably work. The recommended flags are specified in `.cargo/config`
-and will apply unless `RUSTFLAGS` is set.
+may not work on 32-bit targets. It has recommended `RUSTFLAGS`
+specified in `.cargo/config` so it is recommended to either not set
+`RUSTFLAGS` or include these options.
 
 There are no runtime dependencies other than libc.
 
@@ -1178,5 +1180,5 @@ pytest -q test
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2020, licensed
-under either the Apache 2 or MIT licenses.
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2021, licensed
+under both the Apache 2 and MIT licenses.

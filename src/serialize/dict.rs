@@ -3,8 +3,8 @@
 use crate::exc::*;
 use crate::opt::*;
 use crate::serialize::datetime::*;
-use crate::serialize::encode::pyobject_to_obtype;
-use crate::serialize::encode::*;
+use crate::serialize::serializer::pyobject_to_obtype;
+use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
 use crate::typeref::*;
 use crate::unicode::*;
@@ -63,7 +63,7 @@ impl<'p> Serialize for Dict {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
             {
@@ -137,7 +137,7 @@ impl<'p> Serialize for DictSortedKey {
                     std::ptr::null_mut(),
                 )
             };
-            if unlikely!(ob_type!(key) != STR_TYPE) {
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!("Dict key must be str")
             }
             let data = read_utf8_from_str(key, &mut str_size);
@@ -219,11 +219,17 @@ impl DictNonStrKey {
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Int => {
-                let val = ffi!(PyLong_AsLongLong(key));
-                if unlikely!(val == -1 && !pyo3::ffi::PyErr_Occurred().is_null()) {
-                    return Err(NonStrError::IntegerRange);
+                let ival = ffi!(PyLong_AsLongLong(key));
+                if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
+                    ffi!(PyErr_Clear());
+                    let uval = ffi!(PyLong_AsUnsignedLongLong(key));
+                    if unlikely!(uval == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                        return Err(NonStrError::IntegerRange);
+                    }
+                    Ok(InlinableString::from(itoa::Buffer::new().format(uval)))
+                } else {
+                    Ok(InlinableString::from(itoa::Buffer::new().format(ival)))
                 }
-                Ok(InlinableString::from(itoa::Buffer::new().format(val)))
             }
             ObType::Float => {
                 let val = ffi!(PyFloat_AS_DOUBLE(key));

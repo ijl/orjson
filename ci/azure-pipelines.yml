@@ -4,7 +4,7 @@ pr:
     - '*'
 
 variables:
-  toolchain: nightly
+  toolchain: nightly-2021-01-31
 
 jobs:
 
@@ -35,6 +35,20 @@ jobs:
   steps:
   - checkout: self
   - template: ./azure-debug.yml
+
+- job: linux_python310_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: python:3.10-rc-buster
+  variables:
+    interpreter: python3.10
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: false
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
 
 - job: linux_python39_amd64_manylinux2014
   pool:
@@ -156,7 +170,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.9.0\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.9.1\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
@@ -171,7 +185,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.8.6\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.8.7\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0

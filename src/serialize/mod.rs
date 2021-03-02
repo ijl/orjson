@@ -4,12 +4,13 @@ mod dataclass;
 mod datetime;
 mod default;
 mod dict;
-mod encode;
+mod int;
 mod list;
 mod numpy;
+mod serializer;
 mod str;
 mod tuple;
 mod uuid;
 mod writer;
 
-pub use encode::serialize;
+pub use serializer::serialize;

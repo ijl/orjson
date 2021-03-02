@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import io
 import unittest
 
 import pytest
@@ -46,6 +47,13 @@ class TypeTests(unittest.TestCase):
         str long
         """
         for obj in ("aaaa" * 1024, "üýþÿ" * 1024, "好" * 1024, "�" * 1024):
+            self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
+
+    def test_str_very_long(self):
+        """
+        str long enough to trigger overflow in bytecount
+        """
+        for obj in ("aaaa" * 20000, "üýþÿ" * 20000, "好" * 20000, "�" * 20000):
             self.assertEqual(orjson.loads(orjson.dumps(obj)), obj)
 
     def test_str_replacement(self):
@@ -109,6 +117,21 @@ class TypeTests(unittest.TestCase):
         arr = bytearray()
         arr.extend(b"[]")
         self.assertEqual(orjson.loads(arr), [])
+
+    def test_memoryview_loads(self):
+        """
+        memoryview loads
+        """
+        arr = bytearray()
+        arr.extend(b"[]")
+        self.assertEqual(orjson.loads(memoryview(arr)), [])
+
+    def test_bytesio_loads(self):
+        """
+        memoryview loads
+        """
+        arr = io.BytesIO(b"[]")
+        self.assertEqual(orjson.loads(arr.getbuffer()), [])
 
     def test_bool(self):
         """
@@ -215,13 +238,19 @@ class TypeTests(unittest.TestCase):
             self.assertEqual(orjson.loads(str(val)), val)
             self.assertEqual(orjson.dumps(val), str(val).encode("utf-8"))
 
+    def test_uint_64(self):
+        """
+        uint 64-bit
+        """
+        for val in (0, 9223372036854775808, 18446744073709551615):
+            self.assertEqual(orjson.loads(str(val)), val)
+            self.assertEqual(orjson.dumps(val), str(val).encode("utf-8"))
+
     def test_int_128(self):
         """
         int 128-bit
-
-        These are an OverflowError in ujson, but valid in stdlib json.
         """
-        for val in (9223372036854775809, -9223372036854775809):
+        for val in (18446744073709551616, -9223372036854775809):
             self.assertRaises(orjson.JSONEncodeError, orjson.dumps, val)
 
     def test_float(self):
@@ -380,3 +409,17 @@ class TypeTests(unittest.TestCase):
         """
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(object())
+
+    def test_dict_similar_keys(self):
+        """
+        loads() similar keys
+
+        This was a regression in 3.4.2 caused by using
+        the implementation in wy instead of wyhash.
+        """
+        self.assertEqual(
+            orjson.loads(
+                '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}'
+            ),
+            {"cf_status_firefox57": "verified", "cf_status_firefox67": "---"},
+        )

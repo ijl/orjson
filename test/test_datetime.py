@@ -50,7 +50,7 @@ class DatetimeTests(unittest.TestCase):
                 [datetime.datetime(datetime.MINYEAR, 1, 1, 0, 0, 0, 0)],
                 option=orjson.OPT_NAIVE_UTC,
             ),
-            b'["1-01-01T00:00:00+00:00"]',
+            b'["0001-01-01T00:00:00+00:00"]',
         )
 
     def test_datetime_max(self):
@@ -63,6 +63,30 @@ class DatetimeTests(unittest.TestCase):
                 option=orjson.OPT_NAIVE_UTC,
             ),
             b'["9999-12-31T23:59:50.999999+00:00"]',
+        )
+
+    def test_datetime_three_digits(self):
+        """
+        datetime.datetime three digit year
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(312, 1, 1)],
+                option=orjson.OPT_NAIVE_UTC,
+            ),
+            b'["0312-01-01T00:00:00+00:00"]',
+        )
+
+    def test_datetime_two_digits(self):
+        """
+        datetime.datetime two digit year
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.datetime(46, 1, 1)],
+                option=orjson.OPT_NAIVE_UTC,
+            ),
+            b'["0046-01-01T00:00:00+00:00"]',
         )
 
     def test_datetime_tz_assume(self):
@@ -573,7 +597,7 @@ class DateTests(unittest.TestCase):
         datetime.date MINYEAR
         """
         self.assertEqual(
-            orjson.dumps([datetime.date(datetime.MINYEAR, 1, 1)]), b'["1-01-01"]'
+            orjson.dumps([datetime.date(datetime.MINYEAR, 1, 1)]), b'["0001-01-01"]'
         )
 
     def test_date_max(self):
@@ -582,6 +606,28 @@ class DateTests(unittest.TestCase):
         """
         self.assertEqual(
             orjson.dumps([datetime.date(datetime.MAXYEAR, 12, 31)]), b'["9999-12-31"]'
+        )
+
+    def test_date_three_digits(self):
+        """
+        datetime.date three digit year
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.date(312, 1, 1)],
+            ),
+            b'["0312-01-01"]',
+        )
+
+    def test_date_two_digits(self):
+        """
+        datetime.date two digit year
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [datetime.date(46, 1, 1)],
+            ),
+            b'["0046-01-01"]',
         )
 
 

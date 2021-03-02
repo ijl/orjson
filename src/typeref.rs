@@ -17,7 +17,7 @@ pub struct NumpyTypes {
     pub uint32: *mut PyTypeObject,
     pub uint8: *mut PyTypeObject,
 }
-pub static mut HASH_SEED: u32 = 0;
+pub static mut HASH_SEED: u64 = 0;
 
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
 pub static mut TRUE: *mut PyObject = 0 as *mut PyObject;
@@ -41,6 +41,7 @@ pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_
 
 pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut MEMORYVIEW_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 
 pub static mut INT_ATTR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
@@ -64,6 +65,7 @@ pub static mut JsonDecodeError: *mut PyObject = 0 as *mut PyObject;
 
 static INIT: Once = Once::new();
 
+#[cold]
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
         assert!(crate::deserialize::KEY_MAP
@@ -77,10 +79,20 @@ pub fn init_typerefs() {
         STR_TYPE = (*EMPTY_UNICODE).ob_type;
         STR_HASH_FUNCTION = (*((*EMPTY_UNICODE).ob_type)).tp_hash;
         BYTES_TYPE = (*PyBytes_FromStringAndSize("".as_ptr() as *const c_char, 0)).ob_type;
-        BYTEARRAY_TYPE = (*PyByteArray_FromStringAndSize("".as_ptr() as *const c_char, 0)).ob_type;
+
+        {
+            let bytearray = PyByteArray_FromStringAndSize("".as_ptr() as *const c_char, 0);
+            BYTEARRAY_TYPE = (*bytearray).ob_type;
+
+            let memoryview = PyMemoryView_FromObject(bytearray);
+            MEMORYVIEW_TYPE = (*memoryview).ob_type;
+            Py_DECREF(memoryview);
+            Py_DECREF(bytearray);
+        }
+
         DICT_TYPE = (*PyDict_New()).ob_type;
-        LIST_TYPE = (*PyList_New(0 as Py_ssize_t)).ob_type;
-        TUPLE_TYPE = (*PyTuple_New(0 as Py_ssize_t)).ob_type;
+        LIST_TYPE = (*PyList_New(0)).ob_type;
+        TUPLE_TYPE = (*PyTuple_New(0)).ob_type;
         NONE_TYPE = (*NONE).ob_type;
         BOOL_TYPE = (*TRUE).ob_type;
         INT_TYPE = (*PyLong_FromLongLong(0)).ob_type;
@@ -102,7 +114,7 @@ pub fn init_typerefs() {
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
-        HASH_SEED = ((VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64)) as u32;
+        HASH_SEED = (VALUE_STR as u64).wrapping_mul(DICT_TYPE as u64);
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
         JsonEncodeError = pyo3::ffi::PyExc_TypeError;
@@ -110,9 +122,10 @@ pub fn init_typerefs() {
     });
 }
 
+#[cold]
 unsafe fn look_up_json_exc() -> *mut PyObject {
     let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
-    let module_dict = PyModule_GetDict(module);
+    let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char)
         as *mut PyObject;
     let res = pyo3::ffi::PyErr_NewException(
@@ -126,17 +139,16 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     res
 }
 
-unsafe fn look_up_numpy_type(
-    numpy_module: *mut PyObject,
-    np_type: &str,
-) -> Option<NonNull<PyTypeObject>> {
-    let mod_dict = PyModule_GetDict(numpy_module);
+#[cold]
+unsafe fn look_up_numpy_type(numpy_module: *mut PyObject, np_type: &str) -> *mut PyTypeObject {
+    let mod_dict = PyObject_GenericGetDict(numpy_module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
     Py_XDECREF(ptr);
-    // Py_XDECREF(mod_dict) causes segfault when pytest exits
-    Some(NonNull::new_unchecked(ptr as *mut PyTypeObject))
+    Py_XDECREF(mod_dict);
+    ptr as *mut PyTypeObject
 }
 
+#[cold]
 unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
     if numpy.is_null() {
@@ -145,23 +157,24 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     }
 
     let types = Some(NumpyTypes {
-        array: look_up_numpy_type(numpy, "ndarray\0")?.as_ptr(),
-        float32: look_up_numpy_type(numpy, "float32\0")?.as_ptr(),
-        float64: look_up_numpy_type(numpy, "float64\0")?.as_ptr(),
-        int8: look_up_numpy_type(numpy, "int8\0")?.as_ptr(),
-        int32: look_up_numpy_type(numpy, "int32\0")?.as_ptr(),
-        int64: look_up_numpy_type(numpy, "int64\0")?.as_ptr(),
-        uint32: look_up_numpy_type(numpy, "uint32\0")?.as_ptr(),
-        uint64: look_up_numpy_type(numpy, "uint64\0")?.as_ptr(),
-        uint8: look_up_numpy_type(numpy, "uint8\0")?.as_ptr(),
+        array: look_up_numpy_type(numpy, "ndarray\0"),
+        float32: look_up_numpy_type(numpy, "float32\0"),
+        float64: look_up_numpy_type(numpy, "float64\0"),
+        int8: look_up_numpy_type(numpy, "int8\0"),
+        int32: look_up_numpy_type(numpy, "int32\0"),
+        int64: look_up_numpy_type(numpy, "int64\0"),
+        uint32: look_up_numpy_type(numpy, "uint32\0"),
+        uint64: look_up_numpy_type(numpy, "uint64\0"),
+        uint8: look_up_numpy_type(numpy, "uint8\0"),
     });
     Py_XDECREF(numpy);
     types
 }
 
+#[cold]
 unsafe fn look_up_field_type() -> NonNull<PyObject> {
     let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
-    let module_dict = PyModule_GetDict(module);
+    let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(module_dict, "_FIELD\0".as_ptr() as *const c_char)
         as *mut PyTypeObject;
     Py_DECREF(module_dict);
@@ -169,9 +182,10 @@ unsafe fn look_up_field_type() -> NonNull<PyObject> {
     NonNull::new_unchecked(ptr as *mut PyObject)
 }
 
+#[cold]
 unsafe fn look_up_enum_type() -> *mut PyTypeObject {
     let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
-    let module_dict = PyModule_GetDict(module);
+    let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(module_dict, "EnumMeta\0".as_ptr() as *const c_char)
         as *mut PyTypeObject;
     Py_DECREF(module_dict);
@@ -179,9 +193,10 @@ unsafe fn look_up_enum_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     let uuid_mod = PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
-    let uuid_mod_dict = PyModule_GetDict(uuid_mod);
+    let uuid_mod_dict = PyObject_GenericGetDict(uuid_mod, std::ptr::null_mut());
     let uuid = PyMapping_GetItemString(uuid_mod_dict, "NAMESPACE_DNS\0".as_ptr() as *const c_char);
     let ptr = (*uuid).ob_type;
     Py_DECREF(uuid);
@@ -190,6 +205,7 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
     let datetime = (PyDateTimeAPI.DateTime_FromDateAndTime)(
         1970,
@@ -207,6 +223,7 @@ unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_date_type() -> *mut PyTypeObject {
     let date = (PyDateTimeAPI.Date_FromDate)(1970, 1, 1, PyDateTimeAPI.DateType);
     let ptr = (*date).ob_type;
@@ -214,6 +231,7 @@ unsafe fn look_up_date_type() -> *mut PyTypeObject {
     ptr
 }
 
+#[cold]
 unsafe fn look_up_time_type() -> *mut PyTypeObject {
     let time = (PyDateTimeAPI.Time_FromTime)(0, 0, 0, 0, NONE, PyDateTimeAPI.TimeType);
     let ptr = (*time).ob_type;

@@ -3,6 +3,9 @@
 #![feature(core_intrinsics)]
 #![feature(const_fn)]
 #![allow(unused_unsafe)]
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::redundant_field_names)]
+#![allow(clippy::zero_prefixed_literal)]
 
 #[macro_use]
 mod util;
@@ -37,6 +40,7 @@ macro_rules! opt {
 
 #[allow(non_snake_case)]
 #[no_mangle]
+#[cold]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     let mut init = PyModuleDef_INIT;
     init.m_name = "orjson\0".as_ptr() as *const c_char;
@@ -58,7 +62,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
             ml_meth: Some(unsafe {
-                std::mem::transmute::<crate::ffi::_PyCFunctionFastWithKeywords, PyCFunction>(dumps)
+                std::mem::transmute::<pyo3::ffi::_PyCFunctionFastWithKeywords, PyCFunction>(dumps)
             }),
             ml_flags: pyo3::ffi::METH_FASTCALL | METH_KEYWORDS,
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
@@ -202,7 +206,7 @@ pub unsafe extern "C" fn dumps(
     let mut default: Option<NonNull<PyObject>> = None;
     let mut optsptr: Option<NonNull<PyObject>> = None;
 
-    let num_args = pyo3::ffi::PyVectorcall_NARGS(nargs as isize);
+    let num_args = pyo3::ffi::PyVectorcall_NARGS(nargs as usize);
     if unlikely!(num_args == 0) {
         return raise_dumps_exception(Cow::Borrowed(
             "dumps() missing 1 required positional argument: 'obj'",
@@ -240,12 +244,12 @@ pub unsafe extern "C" fn dumps(
     }
 
     let mut optsbits: i32 = 0;
-    if optsptr.is_some() {
-        if (*optsptr.unwrap().as_ptr()).ob_type != typeref::INT_TYPE {
+    if let Some(opts) = optsptr {
+        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
         optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-        if optsbits < 0 || optsbits > opt::MAX_OPT {
+        if !(0..=opt::MAX_OPT).contains(&optsbits) {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
     }
@@ -311,8 +315,8 @@ pub unsafe extern "C" fn dumps(
     }
 
     let mut optsbits: i32 = 0;
-    if optsptr.is_some() {
-        if (*optsptr.unwrap().as_ptr()).ob_type != typeref::INT_TYPE {
+    if let Some(opts) = optsptr {
+        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
         }
         optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
