@@ -119,7 +119,7 @@ jobs:
       versionSpec: '3.9'
       addToPath: true
   - checkout: self
-  - template: ./azure-posix.yml
+  - template: ./azure-macos.yml
 
 - job: macos_python38_amd64
   pool:
@@ -134,7 +134,7 @@ jobs:
       versionSpec: '3.8'
       addToPath: true
   - checkout: self
-  - template: ./azure-posix.yml
+  - template: ./azure-macos.yml
 
 - job: macos_python37_amd64
   pool:
@@ -149,7 +149,7 @@ jobs:
       versionSpec: '3.7'
       addToPath: true
   - checkout: self
-  - template: ./azure-posix.yml
+  - template: ./azure-macos.yml
 
 - job: macos_python36_amd64
   pool:
@@ -164,7 +164,7 @@ jobs:
       versionSpec: '3.6'
       addToPath: true
   - checkout: self
-  - template: ./azure-posix.yml
+  - template: ./azure-macos.yml
 
 - job: win_python39_amd64
   pool:
