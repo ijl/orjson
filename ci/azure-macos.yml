@@ -35,8 +35,13 @@ steps:
   displayName: install universal2
 - bash: pytest -s -rxX -v test
   displayName: pytest universal2
-- bash: ./ci/deploy target/wheels/*.whl
-  displayName: deploy
+- bash: ./ci/deploy target/wheels/*_x86_64.whl
+  displayName: deploy x86_64
+  env:
+    TWINE_PASSWORD: $(TWINE_PASSWORD)
+    TWINE_USERNAME: $(TWINE_USERNAME)
+- bash: ./ci/deploy target/wheels/*_universal2.whl
+  displayName: deploy universal2
   env:
     TWINE_PASSWORD: $(TWINE_PASSWORD)
     TWINE_USERNAME: $(TWINE_USERNAME)
