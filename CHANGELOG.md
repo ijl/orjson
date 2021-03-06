@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.1 - 2021-03-06
+
+### Changed
+
+- Publish `universal2` wheels for macOS supporting Apple Silicon (aarch64).
+
 ## 3.5.0 - 2021-02-24
 
 ### Added

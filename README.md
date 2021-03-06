@@ -33,8 +33,8 @@ support for 64-bit
 file-like objects
 
 orjson supports CPython 3.6, 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64
-and aarch64/armv8 wheels for Linux. It distributes x86_64/amd64 wheels for
-macOS and Windows. orjson does not support PyPy. Releases follow semantic
+and aarch64/armv8 wheels for Linux and macOS. It distributes x86_64/amd64 wheels
+for and Windows. orjson does not support PyPy. Releases follow semantic
 versioning and serializing a new object type without an opt-in flag is
 considered a breaking change.
 
