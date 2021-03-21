@@ -44,7 +44,7 @@ impl<'p> Serialize for ListSerializer {
         let mut type_ptr = std::ptr::null_mut();
         let mut ob_type = ObType::Str;
 
-        let mut seq = serializer.serialize_seq(None).unwrap();
+        let mut seq = serializer.serialize_seq(Some(self.len)).unwrap();
         for i in 0..=self.len - 1 {
             let elem = unsafe { *(*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item.add(i) };
             if ob_type!(elem) != type_ptr {
