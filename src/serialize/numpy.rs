@@ -23,6 +23,7 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
             || ob_type == scalar_types.uint64
             || ob_type == scalar_types.uint32
             || ob_type == scalar_types.uint8
+            || ob_type == scalar_types.bool_
     }
 }
 
@@ -450,6 +451,8 @@ impl<'p> Serialize for NumpyScalar {
                 (*(self.ptr as *mut NumpyUint32)).serialize(serializer)
             } else if ob_type == scalar_types.uint8 {
                 (*(self.ptr as *mut NumpyUint8)).serialize(serializer)
+            } else if ob_type == scalar_types.bool_ {
+                (*(self.ptr as *mut NumpyBool)).serialize(serializer)
             } else {
                 unreachable!()
             }
@@ -582,5 +585,21 @@ impl<'p> Serialize for NumpyFloat64 {
         S: Serializer,
     {
         serializer.serialize_f64(self.value)
+    }
+}
+
+#[repr(C)]
+pub struct NumpyBool {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: bool,
+}
+
+impl<'p> Serialize for NumpyBool {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bool(self.value)
     }
 }

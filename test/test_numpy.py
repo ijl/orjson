@@ -441,3 +441,9 @@ class NumpyTests(unittest.TestCase):
             orjson.dumps(numpy.float64(123.123), option=orjson.OPT_SERIALIZE_NUMPY),
             b"123.123",
         )
+
+    def test_numpy_bool(self):
+        self.assertEqual(
+            orjson.dumps({"a": numpy.bool_(True), "b": numpy.bool_(False)}, option=orjson.OPT_SERIALIZE_NUMPY),
+            b'{"a":true,"b":false}'
+        )

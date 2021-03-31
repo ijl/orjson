@@ -17,6 +17,7 @@ pub struct NumpyTypes {
     pub uint64: *mut PyTypeObject,
     pub uint32: *mut PyTypeObject,
     pub uint8: *mut PyTypeObject,
+    pub bool_: *mut PyTypeObject,
 }
 
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
@@ -173,6 +174,7 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
         uint32: look_up_numpy_type(numpy, "uint32\0"),
         uint64: look_up_numpy_type(numpy, "uint64\0"),
         uint8: look_up_numpy_type(numpy, "uint8\0"),
+        bool_: look_up_numpy_type(numpy, "bool_\0"),
     });
     Py_XDECREF(numpy);
     types
