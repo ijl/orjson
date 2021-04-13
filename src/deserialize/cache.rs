@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::typeref::*;
+use ahash::CallHasher;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
 use once_cell::unsync::OnceCell;
@@ -37,3 +39,7 @@ pub type KeyMap =
     AssociativeCache<u64, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
 
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
+
+pub fn cache_hash(key: &[u8]) -> u64 {
+    <[u8]>::get_hash(&key, unsafe { &*HASH_BUILDER })
+}

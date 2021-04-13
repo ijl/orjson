@@ -11,7 +11,6 @@ use std::borrow::Cow;
 use std::fmt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use wyhash::wyhash;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
@@ -173,11 +172,11 @@ impl<'de> Visitor<'de> for JsonValue {
     {
         let dict_ptr = ffi!(PyDict_New());
         while let Some(key) = map.next_key::<Cow<str>>()? {
+            let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
-            let value = map.next_value_seed(self)?;
             if likely!(key.len() <= 64) {
-                let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
+                let hash = cache_hash(key.as_bytes());
                 {
                     let map = unsafe {
                         KEY_MAP
