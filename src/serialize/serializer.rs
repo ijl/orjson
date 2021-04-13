@@ -27,17 +27,9 @@ pub fn serialize(
     opts: Opt,
 ) -> Result<NonNull<pyo3::ffi::PyObject>, String> {
     let mut buf = BytesWriter::new();
-    let obtype = pyobject_to_obtype(ptr, opts);
-    match obtype {
-        ObType::List | ObType::Dict | ObType::Dataclass | ObType::NumpyArray => {
-            buf.resize(1024);
-        }
-        _ => {}
-    }
-    buf.prefetch();
-    let obj = PyObjectSerializer::with_obtype(ptr, obtype, opts, 0, 0, default);
+    let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
     let res;
-    if likely!(opts & INDENT_2 != INDENT_2) {
+    if opts & INDENT_2 != INDENT_2 {
         res = serde_json::to_writer(&mut buf, &obj);
     } else {
         res = serde_json::to_writer_pretty(&mut buf, &obj);
@@ -78,7 +70,6 @@ pub enum ObType {
     Unknown,
 }
 
-#[inline]
 pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
@@ -164,7 +155,6 @@ pub struct PyObjectSerializer {
 }
 
 impl PyObjectSerializer {
-    #[inline]
     pub fn new(
         ptr: *mut pyo3::ffi::PyObject,
         opts: Opt,
@@ -175,25 +165,6 @@ impl PyObjectSerializer {
         PyObjectSerializer {
             ptr: ptr,
             obtype: pyobject_to_obtype(ptr, opts),
-            opts: opts,
-            default_calls: default_calls,
-            recursion: recursion,
-            default: default,
-        }
-    }
-
-    #[inline]
-    pub fn with_obtype(
-        ptr: *mut pyo3::ffi::PyObject,
-        obtype: ObType,
-        opts: Opt,
-        default_calls: u8,
-        recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
-    ) -> Self {
-        PyObjectSerializer {
-            ptr: ptr,
-            obtype: obtype,
             opts: opts,
             default_calls: default_calls,
             recursion: recursion,
@@ -225,8 +196,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
-                if unlikely!(len == 0) {
+                if unlikely!(unsafe { PyDict_GET_SIZE(self.ptr) as usize } == 0) {
                     serializer.serialize_map(Some(0)).unwrap().end()
                 } else if likely!(self.opts & SORT_OR_NON_STR_KEYS == 0) {
                     Dict::new(
@@ -235,7 +205,6 @@ impl<'p> Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        len,
                     )
                     .serialize(serializer)
                 } else if self.opts & NON_STR_KEYS != 0 {
@@ -245,7 +214,6 @@ impl<'p> Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        len,
                     )
                     .serialize(serializer)
                 } else {
@@ -255,7 +223,6 @@ impl<'p> Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        len,
                     )
                     .serialize(serializer)
                 }
@@ -264,8 +231,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(RECURSION_LIMIT_REACHED)
                 }
-                let len = ffi!(PyList_GET_SIZE(self.ptr)) as usize;
-                if unlikely!(len == 0) {
+                if unlikely!(ffi!(PyList_GET_SIZE(self.ptr)) as usize == 0) {
                     serializer.serialize_seq(Some(0)).unwrap().end()
                 } else {
                     ListSerializer::new(
@@ -274,7 +240,6 @@ impl<'p> Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        len,
                     )
                     .serialize(serializer)
                 }

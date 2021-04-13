@@ -62,6 +62,13 @@ impl<'p> Serialize for DataclassFastSerializer {
                     std::ptr::null_mut(),
                 )
             };
+            let value = PyObjectSerializer::new(
+                value,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
@@ -77,13 +84,7 @@ impl<'p> Serialize for DataclassFastSerializer {
                 map.serialize_key(key_as_str).unwrap();
             }
 
-            map.serialize_value(&PyObjectSerializer::new(
-                value,
-                self.opts,
-                self.default_calls,
-                self.recursion + 1,
-                self.default,
-            ))?;
+            map.serialize_value(&value)?;
         }
         map.end()
     }
