@@ -5,6 +5,7 @@
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
 
 #[macro_use]
