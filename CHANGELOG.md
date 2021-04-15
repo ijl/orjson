@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5.2 - 2021-04-15
+
+### Changed
+
+- Improve serialization and deserialization performance.
+- `orjson.dumps()` serializes individual `numpy.bool_` objects.
+
 ## 3.5.1 - 2021-03-06
 
 ### Changed
