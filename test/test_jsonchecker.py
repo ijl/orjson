@@ -3,7 +3,10 @@
 Tests files from http://json.org/JSON_checker/
 """
 
+import json
 import unittest
+
+import pytest
 
 import orjson
 
@@ -247,3 +250,27 @@ class JsonCheckerTests(unittest.TestCase):
             b'{"JSON Test Pattern pass3":{"The outermost value":"must be '
             b'an object or array.","In this test":"It is an object."}}',
         )
+
+
+@pytest.mark.parametrize(
+    "filename, expected_err_dict",
+    [
+        ("fail34.json", {"pos": 6, "lineno": 2, "colno": 1}),
+        ("fail35.json", {"pos": 55, "lineno": 5, "colno": 8}),
+    ],
+)
+def test_json_decode_error(filename, expected_err_dict):
+    data = read_fixture_str(filename, "jsonchecker")
+
+    with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:
+        json.loads(data)
+    json_err_dict = json_exc_info.value.__dict__
+
+    with pytest.raises(json.decoder.JSONDecodeError) as orjson_exc_info:
+        orjson.loads(data)
+    orjson_err_dict = orjson_exc_info.value.__dict__
+
+    for k in {"pos", "lineno", "colno"}:
+        assert (
+            json_err_dict[k] == orjson_err_dict[k] == expected_err_dict[k]
+        ), f"{k!r} should be the same between stdlib `json` and `orjson`"

@@ -14,14 +14,19 @@ use std::ptr::NonNull;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
-) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, String> {
+) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            return Err(INVALID_STR.to_string());
+            return Err(DeserializeError {
+                message: INVALID_STR.to_string(),
+                line: 0,
+                column: 0,
+                data: "",
+            });
         }
         contents = unsafe { std::slice::from_raw_parts(uni, str_size as usize) };
     } else {
@@ -33,7 +38,12 @@ pub fn deserialize(
         } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
             let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
             if unsafe { pyo3::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
-                return Err("Input type memoryview must be a C contiguous buffer".to_string());
+                return Err(DeserializeError {
+                    message: "Input type memoryview must be a C contiguous buffer".to_string(),
+                    line: 0,
+                    column: 0,
+                    data: "",
+                });
             }
             buffer = unsafe { (*membuf).buf as *const u8 };
             length = unsafe { (*membuf).len as usize };
@@ -41,11 +51,21 @@ pub fn deserialize(
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err("Input must be bytes, bytearray, memoryview, or str".to_string());
+            return Err(DeserializeError {
+                message: "Input must be bytes, bytearray, memoryview, or str".to_string(),
+                line: 0,
+                column: 0,
+                data: "",
+            });
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
-            return Err(INVALID_STR.to_string());
+            return Err(DeserializeError {
+                message: INVALID_STR.to_string(),
+                line: 0,
+                column: 0,
+                data: "",
+            });
         }
     }
 
@@ -55,10 +75,20 @@ pub fn deserialize(
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
-            deserializer.end().map_err(|e| e.to_string())?;
+            deserializer.end().map_err(|e| DeserializeError {
+                message: e.to_string(),
+                line: e.line(),
+                column: e.column(),
+                data,
+            })?;
             Ok(obj)
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(DeserializeError {
+            message: e.to_string(),
+            line: e.line(),
+            column: e.column(),
+            data,
+        }),
     }
 }
 
@@ -209,5 +239,30 @@ impl<'de> Visitor<'de> for JsonValue {
             ffi!(Py_DECREF(value.as_ptr()));
         }
         Ok(nonnull!(dict_ptr))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DeserializeError<'a> {
+    pub message: String,
+    pub line: usize,  // start at 1
+    pub column: usize,  // start at 1
+    pub data: &'a str,
+}
+
+impl<'a> DeserializeError<'a> {
+    /// Return position of the error in the deserialized data
+    pub fn pos(&self) -> usize {
+        // chars for all lines except the last one
+        self.data
+            .split('\n')
+            .take(self.line - 1)
+            .map(|line| line.len())
+            .sum::<usize>()
+            // add chars for last line
+            + self.column
+            // add missed '\n' characters
+            + self.line
+            - 2
     }
 }

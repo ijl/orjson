@@ -6,3 +6,4 @@ mod deserializer;
 pub use cache::KeyMap;
 pub use cache::KEY_MAP;
 pub use deserializer::deserialize;
+pub use deserializer::DeserializeError;
