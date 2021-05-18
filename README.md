@@ -705,6 +705,10 @@ before calling `dumps()`. If using an unsupported type such as
 To disable serialization of `datetime` objects specify the option
 `orjson.OPT_PASSTHROUGH_DATETIME`.
 
+To use "Z" suffix instead of "+00:00" to indicate UTC ("Zulu") time, use `orjson.OPT_UTC_Z` option.
+
+Use the `orjson.OPT_NAIVE_UTC` option to assume datetimes without timezone are UTC.
+
 ### enum
 
 orjson serializes enums natively. Options apply to their values.
