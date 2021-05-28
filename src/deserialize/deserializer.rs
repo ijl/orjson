@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::*;
+use crate::deserialize::DeserializeError;
 use crate::exc::*;
 use crate::ffi::*;
 use crate::typeref::*;
@@ -14,14 +15,14 @@ use std::ptr::NonNull;
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
-) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, String> {
+) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            return Err(INVALID_STR.to_string());
+            return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
         contents = unsafe { std::slice::from_raw_parts(uni, str_size as usize) };
     } else {
@@ -33,7 +34,12 @@ pub fn deserialize(
         } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
             let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
             if unsafe { pyo3::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
-                return Err("Input type memoryview must be a C contiguous buffer".to_string());
+                return Err(DeserializeError::new(
+                    Cow::Borrowed("Input type memoryview must be a C contiguous buffer"),
+                    0,
+                    0,
+                    "",
+                ));
             }
             buffer = unsafe { (*membuf).buf as *const u8 };
             length = unsafe { (*membuf).len as usize };
@@ -41,11 +47,16 @@ pub fn deserialize(
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err("Input must be bytes, bytearray, memoryview, or str".to_string());
+            return Err(DeserializeError::new(
+                Cow::Borrowed("Input must be bytes, bytearray, memoryview, or str"),
+                0,
+                0,
+                "",
+            ));
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
         if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
-            return Err(INVALID_STR.to_string());
+            return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
     }
 
@@ -55,10 +66,17 @@ pub fn deserialize(
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
-            deserializer.end().map_err(|e| e.to_string())?;
+            deserializer.end().map_err(|e| {
+                DeserializeError::new(Cow::Owned(e.to_string()), e.line(), e.column(), data)
+            })?;
             Ok(obj)
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(DeserializeError::new(
+            Cow::Owned(e.to_string()),
+            e.line(),
+            e.column(),
+            data,
+        )),
     }
 }
 
