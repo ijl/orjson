@@ -17,11 +17,14 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
         let scalar_types = unsafe { NUMPY_TYPES.as_ref().unwrap() };
         ob_type == scalar_types.float64
             || ob_type == scalar_types.float32
+            || ob_type == scalar_types.float16
             || ob_type == scalar_types.int64
             || ob_type == scalar_types.int32
+            || ob_type == scalar_types.int16
             || ob_type == scalar_types.int8
             || ob_type == scalar_types.uint64
             || ob_type == scalar_types.uint32
+            || ob_type == scalar_types.uint16
             || ob_type == scalar_types.uint8
             || ob_type == scalar_types.bool_
     }
@@ -439,16 +442,22 @@ impl<'p> Serialize for NumpyScalar {
                 (*(self.ptr as *mut NumpyFloat64)).serialize(serializer)
             } else if ob_type == scalar_types.float32 {
                 (*(self.ptr as *mut NumpyFloat32)).serialize(serializer)
+            } else if ob_type == scalar_types.float16 {
+                (*(self.ptr as *mut NumpyFloat16)).serialize(serializer)
             } else if ob_type == scalar_types.int64 {
                 (*(self.ptr as *mut NumpyInt64)).serialize(serializer)
             } else if ob_type == scalar_types.int32 {
                 (*(self.ptr as *mut NumpyInt32)).serialize(serializer)
+            } else if ob_type == scalar_types.int16 {
+                (*(self.ptr as *mut NumpyInt16)).serialize(serializer)
             } else if ob_type == scalar_types.int8 {
                 (*(self.ptr as *mut NumpyInt8)).serialize(serializer)
             } else if ob_type == scalar_types.uint64 {
                 (*(self.ptr as *mut NumpyUint64)).serialize(serializer)
             } else if ob_type == scalar_types.uint32 {
                 (*(self.ptr as *mut NumpyUint32)).serialize(serializer)
+            } else if ob_type == scalar_types.uint16 {
+                (*(self.ptr as *mut NumpyUint16)).serialize(serializer)
             } else if ob_type == scalar_types.uint8 {
                 (*(self.ptr as *mut NumpyUint8)).serialize(serializer)
             } else if ob_type == scalar_types.bool_ {
@@ -473,6 +482,22 @@ impl<'p> Serialize for NumpyInt8 {
         S: Serializer,
     {
         serializer.serialize_i8(self.value)
+    }
+}
+
+#[repr(C)]
+pub struct NumpyInt16 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: i16,
+}
+
+impl<'p> Serialize for NumpyInt16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i16(self.value)
     }
 }
 
@@ -525,6 +550,22 @@ impl<'p> Serialize for NumpyUint8 {
 }
 
 #[repr(C)]
+pub struct NumpyUint16 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: u16,
+}
+
+impl<'p> Serialize for NumpyUint16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(self.value)
+    }
+}
+
+#[repr(C)]
 pub struct NumpyUint32 {
     pub ob_refcnt: Py_ssize_t,
     pub ob_type: *mut PyTypeObject,
@@ -553,6 +594,22 @@ impl<'p> Serialize for NumpyUint64 {
         S: Serializer,
     {
         serializer.serialize_u64(self.value)
+    }
+}
+
+#[repr(C)]
+pub struct NumpyFloat16 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: f16,
+}
+
+impl<'p> Serialize for NumpyFloat16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f16(self.value)
     }
 }
 

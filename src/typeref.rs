@@ -11,11 +11,14 @@ pub struct NumpyTypes {
     pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
     pub float32: *mut PyTypeObject,
+    pub float16: *mut PyTypeObject,
     pub int64: *mut PyTypeObject,
     pub int32: *mut PyTypeObject,
+    pub int16: *mut PyTypeObject,
     pub int8: *mut PyTypeObject,
     pub uint64: *mut PyTypeObject,
     pub uint32: *mut PyTypeObject,
+    pub uint16: *mut PyTypeObject,
     pub uint8: *mut PyTypeObject,
     pub bool_: *mut PyTypeObject,
 }
@@ -166,14 +169,17 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
 
     let types = Some(NumpyTypes {
         array: look_up_numpy_type(numpy, "ndarray\0"),
+        float16: look_up_numpy_type(numpy, "float16\0"),
         float32: look_up_numpy_type(numpy, "float32\0"),
         float64: look_up_numpy_type(numpy, "float64\0"),
         int8: look_up_numpy_type(numpy, "int8\0"),
+        int16: look_up_numpy_type(numpy, "int16\0"),
         int32: look_up_numpy_type(numpy, "int32\0"),
         int64: look_up_numpy_type(numpy, "int64\0"),
+        uint8: look_up_numpy_type(numpy, "uint8\0"),
+        uint16: look_up_numpy_type(numpy, "uint16\0"),
         uint32: look_up_numpy_type(numpy, "uint32\0"),
         uint64: look_up_numpy_type(numpy, "uint64\0"),
-        uint8: look_up_numpy_type(numpy, "uint8\0"),
         bool_: look_up_numpy_type(numpy, "bool_\0"),
     });
     Py_XDECREF(numpy);
