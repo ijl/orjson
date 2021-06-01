@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5.3 - 2021-06-01
+
+### Fixed
+
+- `orjson.JSONDecodeError` now has `pos`, `lineno`, and `colno`.
+- Fix build on recent versions of Rust nightly.
+
 ## 3.5.2 - 2021-04-15
 
 ### Changed
