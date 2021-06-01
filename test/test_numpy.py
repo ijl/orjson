@@ -444,6 +444,9 @@ class NumpyTests(unittest.TestCase):
 
     def test_numpy_bool(self):
         self.assertEqual(
-            orjson.dumps({"a": numpy.bool_(True), "b": numpy.bool_(False)}, option=orjson.OPT_SERIALIZE_NUMPY),
-            b'{"a":true,"b":false}'
+            orjson.dumps(
+                {"a": numpy.bool_(True), "b": numpy.bool_(False)},
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            ),
+            b'{"a":true,"b":false}',
         )

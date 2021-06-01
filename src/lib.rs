@@ -159,13 +159,16 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 
 #[cold]
 #[inline(never)]
-fn raise_loads_exception(msg: Cow<str>) -> *mut PyObject {
+fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
+    let pos = err.pos() as i64;
+    let msg = err.message;
+    let doc = err.data;
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         let args = PyTuple_New(3);
-        let doc = PyUnicode_New(0, 255);
-        let pos = PyLong_FromLongLong(0);
+        let doc = PyUnicode_FromStringAndSize(doc.as_ptr() as *const c_char, doc.len() as isize);
+        let pos = PyLong_FromLongLong(pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
         PyTuple_SET_ITEM(args, 1, doc);
         PyTuple_SET_ITEM(args, 2, pos);
@@ -191,7 +194,7 @@ fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
 pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
     match crate::deserialize::deserialize(obj) {
         Ok(val) => val.as_ptr(),
-        Err(err) => raise_loads_exception(Cow::Owned(err)),
+        Err(err) => raise_loads_exception(err),
     }
 }
 
