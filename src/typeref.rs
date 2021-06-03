@@ -52,6 +52,7 @@ pub static mut EMPTY_UNICODE: *mut PyObject = 0 as *mut PyObject;
 pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut PYDANTIC_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut FIELD_TYPE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
@@ -119,6 +120,8 @@ pub fn init_typerefs() {
         DICT_STR = PyUnicode_InternFromString("__dict__\0".as_ptr() as *const c_char);
         DATACLASS_FIELDS_STR =
             PyUnicode_InternFromString("__dataclass_fields__\0".as_ptr() as *const c_char);
+        PYDANTIC_FIELDS_STR =
+            PyUnicode_InternFromString("__fields__\0".as_ptr() as *const c_char);
         FIELD_TYPE_STR = PyUnicode_InternFromString("_field_type\0".as_ptr() as *const c_char);
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
