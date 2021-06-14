@@ -1,0 +1,108 @@
+
+name: Release
+on:
+  workflow_dispatch:
+
+
+jobs:
+  release_manylinux:
+    name: Release manylinux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-path: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+    container: quay.io/pypa/manylinux2014_x86_64:latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - run: yum install -y libffi libffi-devel openssl openssl-devel
+      - run: /opt/python/${{ matrix.python-path }}/bin/python -m venv .venv
+      - run: .venv/bin/pip install -U pip wheel
+      - run: .venv/bin/pip install -U maturin
+      - run: .venv/bin/pip install -r requirements.txt
+      - run: .venv/bin/maturin build --no-sdist --release --strip --manylinux 2014 -i /opt/python/${{ matrix.python-path }}/bin/python --target x86_64-unknown-linux-gnu
+      - run: .venv/bin/pip install orjson --no-index -f target/wheels
+      - run: .venv/bin/pytest
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels linux ${{ matrix.python-version}}
+          path: target/wheels/*
+  release_windows:
+    name: Release windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8', '3.9']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -U pip wheel maturin
+      - run: pip install -r requirements.txt
+      - run: maturin build --no-sdist --release --strip -i $pythonLocation"python.exe"
+      - run: pip install orjson --no-index -f target/wheels
+      - run: pytest
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels windows ${{ matrix.python-version}}
+          path: target/wheels/*
+
+  release_macos:
+    name: Release macOS
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8', '3.9']
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -U pip wheel maturin
+      - run: pip install -r requirements.txt
+      - run: maturin build --no-sdist --release --strip --manylinux off -i $pythonLocation/python --target x86_64-apple-darwin
+      - run: pip install orjson --no-index -f target/wheels
+      - run: pytest
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels macos ${{ matrix.python-version}}
+          path: target/wheels/*
+  release_sdist:
+    name: Release sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - run: pip install -U pip wheel maturin
+      - run: pip install -r requirements.txt
+      - run: maturin sdist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels source ${{ matrix.python-version}}
+          path: target/wheels/*
