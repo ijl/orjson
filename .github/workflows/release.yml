@@ -28,7 +28,7 @@ jobs:
       - run: .venv/bin/maturin build --no-sdist --release --strip --manylinux 2014 -i /opt/python/${{ matrix.python-path }}/bin/python --target x86_64-unknown-linux-gnu
       - uses: actions/upload-artifact@v2
         with:
-          name: wheels linux ${{ matrix.python-version}}
+          name: wheels linux ${{ matrix.python-path}}
           path: target/wheels/*
   release_windows:
     name: Release windows
