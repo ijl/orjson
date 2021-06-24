@@ -11,9 +11,9 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: PATH=$(path) pip install --user --upgrade pip maturin==0.10.6 twine auditwheel
+- bash: PATH=$(path) pip install --user --upgrade pip maturin==0.10.6 auditwheel
   displayName: build dependencies
-- bash: PATH=$(path) maturin build --no-sdist --release --strip --manylinux $(manylinux) --skip-auditwheel --interpreter $(interpreter) --target $(target)
+- bash: PATH=$(path) maturin build --no-sdist --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
   displayName: build
 - bash: PATH=$(path) $(interpreter) -m auditwheel repair target/wheels/orjson*.whl
   displayName: verify that wheel conforms to manylinux tag
@@ -35,5 +35,5 @@ steps:
 - bash: PATH=$(path) ./ci/deploy target/wheels/*.whl
   displayName: deploy
   env:
-    TWINE_PASSWORD: $(TWINE_PASSWORD)
-    TWINE_USERNAME: $(TWINE_USERNAME)
+    MATURIN_PASSWORD: $(TWINE_PASSWORD)
+    MATURIN_USERNAME: $(TWINE_USERNAME)

@@ -14,5 +14,7 @@ if [[ $to_run == *"http"* ]]; then
 	"${_dir}"/http --daemon
 	sleep 2
 	"${_dir}"/client 8001
-	pkill -f 'wsgi:app'
+	set +e
+	pkill -f 'wsgi:app' # pkill not present on manylinux_2_24_x86_64
+	set -e
 fi

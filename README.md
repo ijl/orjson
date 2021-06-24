@@ -1156,13 +1156,13 @@ This is an example of building a wheel using the repository as source,
 
 ```sh
 pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-05-25 --profile minimal -y
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-06-24 --profile minimal -y
 maturin build --no-sdist --release --strip --manylinux off
 ls -1 target/wheels
 ```
 
 Problems with the Rust nightly channel may require pinning a version.
-`nightly-2021-05-25` is known to be ok.
+`nightly-2021-06-24` is known to be ok.
 
 orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
 may not work on 32-bit targets. It has recommended `RUSTFLAGS`
