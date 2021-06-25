@@ -36,7 +36,7 @@ jobs:
   - checkout: self
   - template: ./azure-debug.yml
 
-- job: linux_python310_amd64_manylinux2014
+- job: linux_python310_amd64_manylinux_2_24
   pool:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
@@ -44,6 +44,20 @@ jobs:
     interpreter: python3.10
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: true
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
+- job: linux_python39_amd64_manylinux_2_24
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux_2_24_x86_64:latest
+  variables:
+    interpreter: python3.9
+    manylinux: 2_24
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
     verifyManylinux: true
   steps:
