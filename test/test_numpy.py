@@ -208,8 +208,9 @@ class NumpyTests(unittest.TestCase):
 
     def test_numpy_array_unsupported_dtype(self):
         array = numpy.array([[1, 2], [3, 4]], numpy.float16)
-        with self.assertRaises(orjson.JSONEncodeError):
+        with self.assertRaises(orjson.JSONEncodeError) as cm:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+        assert str(cm.exception) == "unsupported datatype in numpy array"
         self.assertEqual(
             orjson.dumps(
                 array, default=numpy_default, option=orjson.OPT_SERIALIZE_NUMPY
