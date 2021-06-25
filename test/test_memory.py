@@ -7,6 +7,8 @@ import random
 import unittest
 from typing import List
 
+import pytz
+
 try:
     import psutil
 except ImportError:
@@ -192,6 +194,23 @@ class MemoryTests(unittest.TestCase):
         mem = proc.memory_info().rss
         for _ in range(100):
             val = orjson.dumps(DATACLASS_FIXTURE)
+        gc.collect()
+        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
+    def test_memory_dumps_pytz_tzinfo(self):
+        """
+        dumps() pytz tzinfo memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        dt = datetime.datetime.now()
+        val = orjson.dumps(pytz.UTC.localize(dt))
+        mem = proc.memory_info().rss
+        for _ in range(50000):
+            val = orjson.dumps(pytz.UTC.localize(dt))
         gc.collect()
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 

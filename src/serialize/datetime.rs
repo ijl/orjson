@@ -156,17 +156,21 @@ impl DateTime {
                 let offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                ffi!(Py_DECREF(offset));
             } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
                 // pytz
                 let method_ptr = call_method!(tzinfo, NORMALIZE_METHOD_STR, self.ptr);
                 let offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
+                ffi!(Py_DECREF(method_ptr));
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                ffi!(Py_DECREF(offset));
             } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
                 // dateutil/arrow, datetime.timezone.utc
                 let offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
                 offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                ffi!(Py_DECREF(offset));
             } else {
                 return Err(DateTimeError::LibraryUnsupported);
             }
