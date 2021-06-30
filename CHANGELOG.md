@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.5.4 - 2021-06-30
+
+### Fixed
+
+- Fix memory leak serializing `datetime.datetime` with `tzinfo`.
+- Fix wrong error message when serializing an unsupported numpy type
+without default specified.
+
+### Changed
+
+- Publish python3.10 and python3.9 manylinux_2_24 wheels.
+
 ## 3.5.3 - 2021-06-01
 
 ### Fixed
