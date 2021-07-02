@@ -4,6 +4,7 @@ use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
+use crate::serialize::datetimelike::*;
 use crate::serialize::serializer::pyobject_to_obtype;
 use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
@@ -236,7 +237,7 @@ impl DictNonStrKey {
             ObType::Datetime => {
                 let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
                 let dt = DateTime::new(key, opts);
-                if dt.write_buf(&mut buf).is_err() {
+                if dt.write_buf(&mut buf, opts).is_err() {
                     return Err(NonStrError::DatetimeLibraryUnsupported);
                 }
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());

@@ -291,7 +291,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 )
                 .serialize(serializer)
             }
-            ObType::NumpyArray => match NumpyArray::new(self.ptr) {
+            ObType::NumpyArray => match NumpyArray::new(self.ptr, self.opts) {
                 Ok(val) => val.serialize(serializer),
                 Err(PyArrayError::Malformed) => err!("numpy array is malformed"),
                 Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType)
@@ -313,7 +313,7 @@ impl<'p> Serialize for PyObjectSerializer {
                     err!("unsupported datatype in numpy array")
                 }
             },
-            ObType::NumpyScalar => NumpyScalar::new(self.ptr).serialize(serializer),
+            ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,
