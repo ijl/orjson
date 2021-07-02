@@ -66,7 +66,7 @@ impl<'p> Serialize for Date {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -92,20 +92,14 @@ impl Time {
         })
     }
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
-        {
-            let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
-            write_double_digit!(buf, hour);
-        }
+        let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
+        write_double_digit!(buf, hour);
         buf.push(b':');
-        {
-            let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
-            write_double_digit!(buf, minute);
-        }
+        let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
+        write_double_digit!(buf, minute);
         buf.push(b':');
-        {
-            let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
-            write_double_digit!(buf, second);
-        }
+        let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
+        write_double_digit!(buf, second);
         if self.opts & OMIT_MICROSECONDS == 0 {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
@@ -119,7 +113,7 @@ impl<'p> Serialize for Time {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -215,7 +209,7 @@ impl<'p> Serialize for DateTime {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         if self.write_buf(&mut buf, self.opts).is_err() {
             err!(DATETIME_LIBRARY_UNSUPPORTED)
         }

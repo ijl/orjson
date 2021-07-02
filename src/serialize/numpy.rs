@@ -451,6 +451,7 @@ impl NumpyScalar {
 }
 
 impl<'p> Serialize for NumpyScalar {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -838,7 +839,7 @@ impl Serialize for NumpyDatetime64Repr {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf, self.opts).unwrap();
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }

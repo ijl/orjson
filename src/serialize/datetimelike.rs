@@ -5,7 +5,33 @@ pub enum DateTimeError {
     LibraryUnsupported,
 }
 
-pub type DateTimeBuffer = smallvec::SmallVec<[u8; 32]>;
+#[repr(transparent)]
+pub struct DateTimeBuffer {
+    buf: smallvec::SmallVec<[u8; 32]>,
+}
+
+impl DateTimeBuffer {
+    pub fn new() -> DateTimeBuffer {
+        DateTimeBuffer {
+            buf: smallvec::SmallVec::with_capacity(32),
+        }
+    }
+    pub fn push(&mut self, value: u8) {
+        self.buf.push(value);
+    }
+
+    pub fn extend_from_slice(&mut self, slice: &[u8]) {
+        self.buf.extend_from_slice(slice);
+    }
+
+    pub fn as_ptr(&self) -> *const u8 {
+        self.buf.as_ptr()
+    }
+
+    pub fn len(&self) -> usize {
+        self.buf.len()
+    }
+}
 
 macro_rules! write_double_digit {
     ($buf:ident, $value:expr) => {
@@ -78,25 +104,15 @@ pub trait DateTimeLike {
             buf.extend_from_slice(formatted.as_bytes());
         }
         buf.push(b'-');
-        {
-            write_double_digit!(buf, self.month());
-        }
+        write_double_digit!(buf, self.month());
         buf.push(b'-');
-        {
-            write_double_digit!(buf, self.day());
-        }
+        write_double_digit!(buf, self.day());
         buf.push(b'T');
-        {
-            write_double_digit!(buf, self.hour());
-        }
+        write_double_digit!(buf, self.hour());
         buf.push(b':');
-        {
-            write_double_digit!(buf, self.minute());
-        }
+        write_double_digit!(buf, self.minute());
         buf.push(b':');
-        {
-            write_double_digit!(buf, self.second());
-        }
+        write_double_digit!(buf, self.second());
         if opts & OMIT_MICROSECONDS == 0 {
             let microsecond = self.microsecond();
             if microsecond != 0 {
@@ -144,27 +160,17 @@ pub trait DateTimeLike {
                     let offset_hour = offset_minute / 60;
                     write_double_digit!(buf, offset_hour);
                     buf.push(b':');
-
                     let mut offset_minute_print = offset_minute % 60;
-
-                    {
-                        // https://tools.ietf.org/html/rfc3339#section-5.8
-                        // "exactly 19 minutes and 32.13 seconds ahead of UTC"
-                        // "closest representable UTC offset"
-                        //  "+20:00"
-                        let offset_excess_second =
-                            offset_second - (offset_minute_print * 60 + offset_hour * 3600);
-                        if offset_excess_second >= 30 {
-                            offset_minute_print += 1;
-                        }
+                    // https://tools.ietf.org/html/rfc3339#section-5.8
+                    // "exactly 19 minutes and 32.13 seconds ahead of UTC"
+                    // "closest representable UTC offset"
+                    //  "+20:00"
+                    let offset_excess_second =
+                        offset_second - (offset_minute_print * 60 + offset_hour * 3600);
+                    if offset_excess_second >= 30 {
+                        offset_minute_print += 1;
                     }
-
-                    if offset_minute_print < 10 {
-                        buf.push(b'0');
-                    }
-                    buf.extend_from_slice(
-                        itoa::Buffer::new().format(offset_minute_print).as_bytes(),
-                    );
+                    write_double_digit!(buf, offset_minute_print);
                 }
             }
         }

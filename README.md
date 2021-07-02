@@ -794,9 +794,9 @@ JSONEncodeError: Integer exceeds 53-bit range
 
 orjson natively serializes `numpy.ndarray` and individual `numpy.float64`,
 `numpy.float32`, `numpy.int64`, `numpy.int32`, `numpy.int8`, `numpy.uint64`,
-`numpy.uint32`, and `numpy.uint8` instances. Arrays may have a
-`dtype` of `numpy.bool`, `numpy.float32`, `numpy.float64`, `numpy.int32`,
-`numpy.int64`, `numpy.uint32`, `numpy.uint64`, `numpy.uintp`, or `numpy.intp`.
+`numpy.uint32`, `numpy.uint8`, `numpy.uintp`, or `numpy.intp`, and
+`numpy.datetime64` instances.
+
 orjson is faster than all compared libraries at serializing
 numpy instances. Serializing numpy data requires specifying
 `option=orjson.OPT_SERIALIZE_NUMPY`.
@@ -813,10 +813,32 @@ b'[[1,2,3],[4,5,6]]'
 The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
 supported datatypes.
 
-If an array is not a contiguous C array or contains an supported datatype,
-orjson falls through to `default`. In `default`, `obj.tolist()` can be
-specified. If an array is malformed, which is not expected,
-`orjson.JSONEncodeError` is raised.
+`numpy.datetime64` instances are serialized as RFC 3339 strings and
+datetime options affect them.
+
+```python
+>>> import orjson, numpy
+>>> orjson.dumps(
+        numpy.datetime64("2021-01-01T00:00:00.172"),
+        option=orjson.OPT_SERIALIZE_NUMPY,
+)
+b'"2021-01-01T00:00:00.172000"'
+>>> orjson.dumps(
+        numpy.datetime64("2021-01-01T00:00:00.172"),
+        option=(
+            orjson.OPT_SERIALIZE_NUMPY |
+            orjson.OPT_NAIVE_UTC |
+            orjson.OPT_OMIT_MICROSECONDS
+        ),
+)
+b'"2021-01-01T00:00:00+00:00"'
+```
+
+If an array is not a contiguous C array, contains an supported datatype,
+or contains a `numpy.datetime64` using an unsupported representation
+(e.g., picoseconds), orjson falls through to `default`. In `default`,
+`obj.tolist()` can be specified. If an array is malformed, which
+is not expected, `orjson.JSONEncodeError` is raised.
 
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:
