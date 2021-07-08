@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.0 - 2021-07-08
+
+### Added
+
+- `orjson.dumps()` serializes `numpy.datetime64` instances as RFC 3339
+strings.
+
 ## 3.5.4 - 2021-06-30
 
 ### Fixed
