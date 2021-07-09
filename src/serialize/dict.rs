@@ -269,8 +269,13 @@ impl DictNonStrKey {
                 ffi!(Py_DECREF(value));
                 self.pyobject_to_string(value, opts)
             }
+            ObType::Decimal => {
+                let value = ffi!(PyObject_Str(key));
+                ffi!(Py_DECREF(value));
+                self.pyobject_to_string(value, opts)
+            }
             ObType::Str => {
-                // because of ObType::Enum
+                // because of ObType::Enum and ObType::Decimal
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                 let uni = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(uni.is_null()) {

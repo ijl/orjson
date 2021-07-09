@@ -141,7 +141,7 @@ def dumps(
 It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
+`datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, `decimal.Decimal` and
 `None` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
@@ -186,15 +186,20 @@ handled by `default`, raise an exception such as `TypeError`.
 ```python
 >>> import orjson, decimal
 >>>
+
+class Custom:
+    def __init__(self, val):
+        self.val = val
+
 def default(obj):
-    if isinstance(obj, decimal.Decimal):
-        return str(obj)
+    if isinstance(obj, Custom):
+        return obj.val
     raise TypeError
 
->>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"))
-JSONEncodeError: Type is not JSON serializable: decimal.Decimal
->>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
-b'"0.0842389659712649442845"'
+>>> orjson.dumps(Custom(42))
+JSONEncodeError: Type is not JSON serializable: Custom
+>>> orjson.dumps(Custom(42), default=default)
+b'42'
 >>> orjson.dumps({1, 2}, default=default)
 orjson.JSONEncodeError: Type is not JSON serializable: set
 ```
@@ -210,9 +215,13 @@ like a legitimate value and is serialized:
 ```python
 >>> import orjson, json, rapidjson
 >>>
+class Custom:
+   def __init__(self, val):
+      self.val = val
+
 def default(obj):
-    if isinstance(obj, decimal.Decimal):
-        return str(obj)
+    if isinstance(obj, Custom):
+        return obj.val
 
 >>> orjson.dumps({"set":{1, 2}}, default=default)
 b'{"set":null}'
@@ -500,6 +509,19 @@ required to serialize  `dataclasses.dataclass` instances. For more, see
 
 Serialize `numpy.ndarray` instances. For more, see
 [numpy](https://github.com/ijl/orjson#numpy).
+
+##### OPT_SERIALIZE_DECIMAL
+
+Serialize `decimal.Decimal` instances as `str`.
+
+```python
+>>> import orjson, decimal
+>>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"))
+JSONEncodeError: Type is not JSON serializable: decimal.Decimal
+>>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), option=orjson.OPT_SERIALIZE_DECIMAL)
+b'"0.0842389659712649442845"'
+```
+
 
 ##### OPT_SERIALIZE_UUID
 

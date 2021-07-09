@@ -67,6 +67,7 @@ pub enum ObType {
     NumpyArray,
     Enum,
     StrSubclass,
+    Decimal,
     Unknown,
 }
 
@@ -115,6 +116,10 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
             ObType::Uuid
         } else if (*(ob_type as *mut PyTypeObject)).ob_type == ENUM_TYPE {
             ObType::Enum
+        } else if opts & SERIALIZE_DECIMAL != 0
+            && (*(ob_type as *mut PyTypeObject)).ob_type == DECIMAL_TYPE
+        {
+            ObType::Decimal
         } else if opts & PASSTHROUGH_SUBCLASS == 0
             && is_subclass!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
         {
@@ -290,6 +295,11 @@ impl<'p> Serialize for PyObjectSerializer {
                     self.default,
                 )
                 .serialize(serializer)
+            }
+            ObType::Decimal => {
+                let value = ffi!(PyObject_Str(self.ptr));
+                ffi!(Py_DECREF(value));
+                StrSerializer::new(value).serialize(serializer)
             }
             ObType::NumpyArray => match NumpyArray::new(self.ptr, self.opts) {
                 Ok(val) => val.serialize(serializer),

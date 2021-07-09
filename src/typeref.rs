@@ -38,6 +38,7 @@ pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut DECIMAL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut NUMPY_TYPES: Lazy<Option<NumpyTypes>> = Lazy::new(|| unsafe { load_numpy_types() });
 pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
 
@@ -114,6 +115,7 @@ pub fn init_typerefs() {
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
+        DECIMAL_TYPE = look_up_decimal_type();
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
         NORMALIZE_METHOD_STR = PyUnicode_InternFromString("normalize\0".as_ptr() as *const c_char);
@@ -219,6 +221,20 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     Py_DECREF(uuid_mod);
     ptr
 }
+
+
+#[cold]
+unsafe fn look_up_decimal_type() -> *mut PyTypeObject {
+    let decimal_mod = PyImport_ImportModule("decimal\0".as_ptr() as *const c_char);
+    let decimal_mod_dict = PyObject_GenericGetDict(decimal_mod, std::ptr::null_mut());
+    let decimal = PyMapping_GetItemString(decimal_mod_dict, "Decimal\0".as_ptr() as *const c_char);
+    let ptr = (*decimal).ob_type;
+    Py_DECREF(decimal);
+    Py_DECREF(decimal_mod_dict);
+    Py_DECREF(decimal_mod);
+    ptr
+}
+
 
 #[cold]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
