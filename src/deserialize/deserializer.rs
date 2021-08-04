@@ -140,13 +140,6 @@ impl<'de> Visitor<'de> for JsonValue {
         Ok(nonnull!(ffi!(PyFloat_FromDouble(value))))
     }
 
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(nonnull!(unicode_from_str(value.as_str())))
-    }
-
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -193,7 +186,10 @@ impl<'de> Visitor<'de> for JsonValue {
             let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
-            if likely!(key.len() <= 64) {
+            if unlikely!(key.len() > 64) {
+                pykey = unicode_from_str(&key);
+                pyhash = hash_str(pykey);
+            } else {
                 let hash = cache_hash(key.as_bytes());
                 {
                     let map = unsafe {
@@ -212,9 +208,6 @@ impl<'de> Visitor<'de> for JsonValue {
                     pykey = entry.get();
                     pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
                 }
-            } else {
-                pykey = unicode_from_str(&key);
-                pyhash = hash_str(pykey);
             }
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,

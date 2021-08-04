@@ -29,11 +29,11 @@ impl<'p> Serialize for IntSerializer {
         S: Serializer,
     {
         let val = ffi!(PyLong_AsLongLong(self.ptr));
-        if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
+        if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null()) {
             return UIntSerializer::new(self.ptr).serialize(serializer);
-        } else if unlikely!(self.opts & STRICT_INTEGER != 0)
-            && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
-        {
+        } else if unlikely!(
+            self.opts & STRICT_INTEGER != 0 && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
+        ) {
             err!("Integer exceeds 53-bit range")
         }
         serializer.serialize_i64(val)
@@ -59,7 +59,7 @@ impl<'p> Serialize for UIntSerializer {
     {
         ffi!(PyErr_Clear());
         let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
-        if unlikely!(val == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+        if unlikely!(val == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
             err!("Integer exceeds 64-bit range")
         }
         serializer.serialize_u64(val)

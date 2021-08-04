@@ -51,7 +51,7 @@ enum PyUnicodeKind {
 fn find_str_kind(buf: &str, num_chars: usize) -> PyUnicodeKind {
     if buf.len() == num_chars {
         PyUnicodeKind::Ascii
-    } else if unlikely!(encoding_rs::mem::is_str_latin1(buf)) {
+    } else if encoding_rs::mem::is_str_latin1(buf) {
         // fails fast, no obvious effect on CJK
         PyUnicodeKind::OneByte
     } else if is_four_byte(buf) {

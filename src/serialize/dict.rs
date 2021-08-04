@@ -218,7 +218,7 @@ impl DictNonStrKey {
                 if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
                     ffi!(PyErr_Clear());
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
-                    if unlikely!(uval == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                    if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
                         return Err(NonStrError::IntegerRange);
                     }
                     Ok(InlinableString::from(itoa::Buffer::new().format(uval)))
