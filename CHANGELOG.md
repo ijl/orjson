@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.6.1 - 2021-08-04
+
+### Changed
+
+- `orjson` now includes a `pyi` type stubs file.
+- Publish manylinux_2_24 wheels instead of manylinux2014.
+
+### Fixed
+
+- Fix commpilation on latest Rust nightly.
+
 ## 3.6.0 - 2021-07-08
 
 ### Added
