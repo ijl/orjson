@@ -4,6 +4,7 @@ version = "3.6.0"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2018"
+resolver = "2"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
@@ -11,7 +12,6 @@ readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
     "build.rs",
-    ".cargo",
     "Cargo.toml",
     "CHANGELOG.md",
     "data/*",
@@ -60,10 +60,10 @@ inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 once_cell = { version = "1", default_features = false }
 pyo3 = { version = "^0.13.2", default_features = false, features = ["extension-module"]}
-ryu = { version = "1" }
+ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { path = "./json", default_features = false, features = ["std"] }
-smallvec = { version = "^1.6", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
+smallvec = { version = "^1.6", default_features = false, features = ["union", "write"] }
 
 [target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "i686", target_arch = "armv7"))'.dependencies]
 encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }

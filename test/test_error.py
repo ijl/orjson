@@ -7,6 +7,8 @@ import pytest
 
 import orjson
 
+from .util import read_fixture_str
+
 ASCII_TEST = b"""\
 {
   "a": "qwe",
@@ -74,9 +76,7 @@ class JsonDecodeErrorTests(unittest.TestCase):
         )
 
     def test_tab(self):
-        # data/jsonchecker/fail26.json
-        data = """["tab\   character\   in\  string\  "]"""
-
+        data = read_fixture_str("fail26.json", "jsonchecker")
         with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:
             json.loads(data)
 

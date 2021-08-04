@@ -14,7 +14,7 @@ macro_rules! ob_type {
 
 macro_rules! err {
     ($msg:expr) => {
-        return Err(serde::ser::Error::custom($msg));
+        return Err(serde::ser::Error::custom($msg))
     };
 }
 

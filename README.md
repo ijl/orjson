@@ -78,12 +78,9 @@ available in the repository.
 To install a wheel from PyPI:
 
 ```sh
-pip install --upgrade "pip>=19.3" # manylinux2014 support
+pip install --upgrade "pip>=20.3" # manylinux_x_y, universal2 wheel support
 pip install --upgrade orjson
 ```
-
-Notice that Linux environments with a `pip` version shipped in 2018 or earlier
-must first upgrade `pip` to support `manylinux2014` wheels.
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
 
@@ -1142,8 +1139,9 @@ scripts. The memory results can be reproduced using the `pymem` script.
 
 ### Why can't I install it from PyPI?
 
-Probably `pip` needs to be upgraded. `pip` added support for `manylinux2014`
-in 2019.
+
+Probably `pip` needs to be upgraded to version 20.3 or later to support
+the latest manylinux_x_y or universal2 wheel formats.
 
 ### Will it deserialize to dataclasses, UUIDs, decimals, etc or support object_hook?
 
@@ -1161,49 +1159,30 @@ If someone implements it well.
 
 ## Packaging
 
-To package orjson requires [Rust](https://www.rust-lang.org/) on the
- nightly channel and the [maturin](https://github.com/PyO3/maturin)
-build tool. maturin can be installed from PyPI or packaged as
-well. This is the simplest and recommended way of installing
-from source, assuming `rustup` is available from a
-package manager:
+To package orjson requires [Rust](https://www.rust-lang.org/) and the
+[maturin](https://github.com/PyO3/maturin) build tool.
+
+This is an example for the x86_64-unknown-linux-gnu target:
 
 ```sh
-rustup default nightly
-pip wheel --no-binary=orjson orjson
-```
+RUSTFLAGS="-C target-cpu=k8" maturin build --no-sdist --release --strip
+````
 
-This is an example of building a wheel using the repository as source,
-`rustup` installed from upstream, and a pinned version of Rust:
+The explicit `RUSTFLAGS` enables SSE2 on amd64. aarch64 does not need any
+`target-feature` specified.
 
-```sh
-pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-06-24 --profile minimal -y
-maturin build --no-sdist --release --strip --manylinux off
-ls -1 target/wheels
-```
+The project's own CI tests against `nightly-2021-08-04`. It is prudent to
+pin this version because Rust nightly can introduce breaking changes.
 
-Problems with the Rust nightly channel may require pinning a version.
-`nightly-2021-06-24` is known to be ok.
-
-orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
-may not work on 32-bit targets. It has recommended `RUSTFLAGS`
-specified in `.cargo/config` so it is recommended to either not set
-`RUSTFLAGS` or include these options.
+orjson is tested for amd64 and aarch64 on Linux and amd64 on macOS and
+Windows. It may not work on 32-bit targets.
 
 There are no runtime dependencies other than libc.
 
-orjson's tests are included in the source distribution on PyPI. It is
-necessarily to install dependencies from PyPI specified in
-`test/requirements.txt`. These require a C compiler. The tests do not
-make network requests.
-
-The tests should be run as part of the build. It can be run like this:
-
-```sh
-pip install -r test/requirements.txt
-pytest -q test
-```
+orjson's tests are included in the source distribution on PyPI. The
+requirements to run the tests are specified in `test/requirements.txt`. The
+tests should be run as part of the build. It can be run with
+`pytest -q test`.
 
 ## License
 
