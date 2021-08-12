@@ -106,6 +106,62 @@ jobs:
   - checkout: self
   - template: ./azure-linux-container.yml
 
+- job: linux_python39_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
+  variables:
+    interpreter: python3.9
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: true
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
+- job: linux_python38_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
+  variables:
+    interpreter: python3.8
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: true
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
+- job: linux_python37_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
+  variables:
+    interpreter: python3.7
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: true
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
+- job: linux_python36_amd64_manylinux2014
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
+  variables:
+    interpreter: python3.6
+    manylinux: 2014
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp36-cp36m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    verifyManylinux: true
+  steps:
+  - checkout: self
+  - template: ./azure-linux-container.yml
+
 - job: macos_python39_amd64
   pool:
     vmImage: macOS-10.15
