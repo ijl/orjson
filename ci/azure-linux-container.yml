@@ -2,7 +2,6 @@ parameters:
   interpreter: ''
   manylinux: ''
   path: ''
-  target: ''
   toolchain: ''
   verifyManylinux: ''
 
@@ -13,7 +12,7 @@ steps:
   displayName: ensure toolchain
 - bash: PATH=$(path) pip install --user --upgrade pip maturin==0.11.2 auditwheel
   displayName: build dependencies
-- bash: PATH=$(path) maturin build --no-sdist --release --strip --manylinux $(manylinux) --interpreter $(interpreter) --target $(target)
+- bash: PATH=$(path) maturin build --no-sdist --release --strip --compatibility $(manylinux) --interpreter $(interpreter)
   env:
     RUSTFLAGS: "-C target-cpu=k8"
   displayName: build

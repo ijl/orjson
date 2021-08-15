@@ -11,7 +11,6 @@ homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
-    "build.rs",
     "Cargo.toml",
     "CHANGELOG.md",
     "data/*",
@@ -29,7 +28,7 @@ name = "orjson"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -40,7 +39,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -59,7 +57,7 @@ encoding_rs = { version = "0.8", default_features = false }
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 once_cell = { version = "1", default_features = false }
-pyo3 = { version = "^0.13.2", default_features = false, features = ["extension-module"]}
+pyo3 = { version = "^0.14.2", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { path = "./json", default_features = false, features = ["std"] }
@@ -75,6 +73,3 @@ incremental = false
 lto = "thin"
 opt-level = 3
 panic = "abort"
-
-[profile.release.build-override]
-opt-level = 0

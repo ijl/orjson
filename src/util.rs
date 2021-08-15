@@ -58,7 +58,7 @@ macro_rules! ffi {
     };
 }
 
-#[cfg(python39)]
+#[cfg(Py_3_9)]
 macro_rules! call_method {
     ($obj1:expr, $obj2:expr) => {
         unsafe { pyo3::ffi::PyObject_CallMethodNoArgs($obj1, $obj2) }
@@ -68,7 +68,7 @@ macro_rules! call_method {
     };
 }
 
-#[cfg(not(python39))]
+#[cfg(not(Py_3_9))]
 macro_rules! call_method {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
