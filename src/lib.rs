@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![feature(core_intrinsics)]
+#![cfg_attr(feature = "unstable-simd", feature(core_intrinsics))]
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]

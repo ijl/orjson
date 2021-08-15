@@ -1,7 +1,0 @@
-error: unexpected end of macro invocation
- --> $DIR/missing_colon.rs:4:5
-  |
-4 |     json!({ "a" });
-  |     ^^^^^^^^^^^^^^^ missing tokens in macro arguments
-  |
-  = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)

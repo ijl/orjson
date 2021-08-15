@@ -11,13 +11,25 @@ jobs:
 - job: linux_sdist
   pool:
     vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
     interpreter: python3.9
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
   steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.9'
-      addToPath: true
+  - checkout: self
+  - template: ./azure-sdist.yml
+
+- job: linux_stable
+  pool:
+    vmImage: ubuntu-20.04
+  container: quay.io/pypa/manylinux_2_24_x86_64:latest
+  variables:
+    interpreter: python3.9
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    toolchain: 1.54.0
+  steps:
   - checkout: self
   - template: ./azure-sdist.yml
 
@@ -26,10 +38,10 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.9
     manylinux: off
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: false
   steps:
   - checkout: self
   - template: ./azure-debug.yml
@@ -39,6 +51,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.10
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -52,6 +65,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.9
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -65,6 +79,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.8
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -78,6 +93,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux_2_24_x86_64:latest
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.7
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -91,6 +107,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.9
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -104,6 +121,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.8
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -117,6 +135,7 @@ jobs:
     vmImage: ubuntu-20.04
   container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
   variables:
+    extra: '--cargo-extra-args="--features=unstable-simd"'
     interpreter: python3.7
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

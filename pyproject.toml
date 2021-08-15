@@ -8,7 +8,7 @@ requires = ["maturin>=0.11.2,<0.12"]
 
 [tool.maturin]
 manylinux = "off"
-sdist-include = ["Cargo.lock", "json/**/*"]
+sdist-include = ["Cargo.lock"]
 strip = "on"
 
 [tool.black]
