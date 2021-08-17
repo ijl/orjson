@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.6.2 - 2021-08-17
+
+### Changed
+
+- `orjson` now compiles on Rust stable 1.54.0 or above. Use of some SIMD
+usage is now disabled by default and packagers are advised to add
+`--cargo-extra-args="--features=unstable-simd"` to the `maturin build` command
+ if they continue to use nightly.
+- `orjson` built with `--features=unstable-simd` adds UTF-8 validation
+implementations that use AVX2 or SSE4.2.
+- Drop support for Python 3.6.
+
 ## 3.6.1 - 2021-08-04
 
 ### Changed
@@ -9,7 +21,7 @@
 
 ### Fixed
 
-- Fix commpilation on latest Rust nightly.
+- Fix compilation on latest Rust nightly.
 
 ## 3.6.0 - 2021-07-08
 
