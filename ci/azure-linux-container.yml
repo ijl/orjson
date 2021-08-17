@@ -14,9 +14,6 @@ parameters:
   - name: toolchain
     type: string
     default : ''
-  - name: verifyManylinux
-    type: boolean
-    default : true
 
 steps:
 - bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $(toolchain) --profile minimal -y
@@ -31,7 +28,6 @@ steps:
   displayName: build
 - bash: PATH=$(path) $(interpreter) -m auditwheel repair target/wheels/orjson*.whl
   displayName: verify that wheel conforms to manylinux tag
-  condition: eq(${{ parameters.verifyManylinux }}, true)
 - bash: PATH=$(path) $(interpreter) -m pip install --user target/wheels/orjson*.whl
   displayName: install
 - bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt

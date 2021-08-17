@@ -4,7 +4,7 @@ pr:
     - '*'
 
 variables:
-  toolchain: nightly-2021-08-04
+  toolchain: nightly-2021-08-17
 
 jobs:
 
@@ -55,7 +55,6 @@ jobs:
     interpreter: python3.10
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -69,7 +68,6 @@ jobs:
     interpreter: python3.9
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -83,7 +81,6 @@ jobs:
     interpreter: python3.8
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -97,7 +94,6 @@ jobs:
     interpreter: python3.7
     manylinux: 2_24
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -111,7 +107,6 @@ jobs:
     interpreter: python3.9
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -125,7 +120,6 @@ jobs:
     interpreter: python3.8
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
@@ -139,7 +133,6 @@ jobs:
     interpreter: python3.7
     manylinux: 2014
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    verifyManylinux: true
   steps:
   - checkout: self
   - template: ./azure-linux-container.yml
