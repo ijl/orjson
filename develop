@@ -2,7 +2,7 @@
 
 rm -f target/wheels/*
 
-export RUSTFLAGS="-C link-arg=-fuse-ld=lld -C target-cpu=k8"
+export RUSTFLAGS="-C target-cpu=k8"
 
 maturin build --no-sdist --compatibility off -i python3 --release "$@"
 

@@ -13,6 +13,30 @@ use std::fmt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
+#[cfg(all(target_arch = "x86_64", feature = "unstable-simd"))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    if std::is_x86_feature_detected!("sse4.2") {
+        simdutf8::basic::from_utf8(buf).is_ok()
+    } else {
+        encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", not(feature = "unstable-simd")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
+}
+
+#[cfg(target_arch = "aarch64")]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    simdutf8::basic::from_utf8(buf).is_ok()
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    simdutf8::basic::from_utf8(buf).is_ok()
+}
+
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
 ) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
@@ -55,7 +79,7 @@ pub fn deserialize(
             ));
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
-        if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
+        if !is_valid_utf8(contents) {
             return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
     }
