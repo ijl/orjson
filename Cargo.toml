@@ -73,7 +73,7 @@ pyo3 = { version = "^0.14.2", default_features = false, features = ["extension-m
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { version = "^1.0.66", default_features = false, features = ["std", "float_roundtrip"] }
-simdutf8 = { version = "0.1", default_features = false, optional = true }
+simdutf8 = { version = "^0.1.2", default_features = false, optional = true, features = ["aarch64_neon"] }
 smallvec = { version = "^1.6", default_features = false, features = ["union", "write"] }
 
 [profile.release]
