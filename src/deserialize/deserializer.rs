@@ -34,7 +34,7 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
 
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
-    simdutf8::basic::from_utf8(buf).is_ok()
+    encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
 }
 
 pub fn deserialize(
