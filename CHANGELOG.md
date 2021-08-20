@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.3 - 2021-08-20
+
+### Fixed
+
+- Fix build on aarch64 using the Rust stable channel.
+
 ## 3.6.2 - 2021-08-17
 
 ### Changed
