@@ -13,7 +13,7 @@ use std::fmt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
-#[cfg(all(target_arch = "x86_64", feature = "unstable-simd"))]
+#[cfg(target_arch = "x86_64")]
 fn is_valid_utf8(buf: &[u8]) -> bool {
     if std::is_x86_feature_detected!("sse4.2") {
         simdutf8::basic::from_utf8(buf).is_ok()
@@ -22,19 +22,19 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
     }
 }
 
-#[cfg(all(target_arch = "x86_64", not(feature = "unstable-simd")))]
-fn is_valid_utf8(buf: &[u8]) -> bool {
-    encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
-}
-
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(target_arch = "aarch64", feature = "unstable-simd"))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
     simdutf8::basic::from_utf8(buf).is_ok()
+}
+
+#[cfg(all(target_arch = "aarch64", not(feature = "unstable-simd")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    std::str::from_utf8(buf).is_ok()
 }
 
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
-    simdutf8::basic::from_utf8(buf).is_ok()
+    std::str::from_utf8(buf).is_ok()
 }
 
 pub fn deserialize(
