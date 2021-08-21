@@ -7,6 +7,7 @@ use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
+use crate::serialize::gen::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
@@ -56,6 +57,7 @@ pub enum ObType {
     None,
     Float,
     List,
+    Gen,
     Dict,
     Datetime,
     Date,
@@ -85,6 +87,8 @@ pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
             ObType::Float
         } else if ob_type == LIST_TYPE {
             ObType::List
+        } else if ob_type == GEN_TYPE {
+            ObType::Gen
         } else if ob_type == DICT_TYPE {
             ObType::Dict
         } else if ob_type == DATETIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
@@ -244,6 +248,14 @@ impl<'p> Serialize for PyObjectSerializer {
                     .serialize(serializer)
                 }
             }
+            ObType::Gen => GenSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
             ObType::Tuple => TupleSerializer::new(
                 self.ptr,
                 self.opts,

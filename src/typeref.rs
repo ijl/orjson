@@ -31,6 +31,7 @@ pub static mut BOOL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut NONE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut FLOAT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut LIST_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut GEN_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DICT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATETIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -104,6 +105,7 @@ pub fn init_typerefs() {
 
         DICT_TYPE = (*PyDict_New()).ob_type;
         LIST_TYPE = (*PyList_New(0)).ob_type;
+        GEN_TYPE = unsafe { &mut PyGen_Type as *mut PyTypeObject };
         TUPLE_TYPE = (*PyTuple_New(0)).ob_type;
         NONE_TYPE = (*NONE).ob_type;
         BOOL_TYPE = (*TRUE).ob_type;

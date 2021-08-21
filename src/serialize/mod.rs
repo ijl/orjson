@@ -6,6 +6,7 @@ mod datetime;
 mod datetimelike;
 mod default;
 mod dict;
+mod gen;
 mod int;
 mod list;
 mod numpy;

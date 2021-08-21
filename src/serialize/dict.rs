@@ -293,6 +293,7 @@ impl DictNonStrKey {
             | ObType::NumpyArray
             | ObType::Dict
             | ObType::List
+            | ObType::Gen
             | ObType::Dataclass
             | ObType::Unknown => Err(NonStrError::UnsupportedType),
         }
