@@ -335,6 +335,23 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
         self.assertEqual(orjson.loads(ref), obj)
 
+    def test_gen(self):
+        """
+        gen
+        """
+        def fibonacci(target):
+            a = 1
+            b = 1
+            for _ in range(target):
+                yield a
+                a, b = b, a + b
+        obj = fibonacci(5)
+        ref = '[1,1,2,3,5]'
+        self.assertEqual(orjson.dumps(obj), ref.encode("utf-8"))
+
+        obj = fibonacci(5)
+        self.assertEqual(orjson.loads(ref), list(obj))
+
     def test_tuple(self):
         """
         tuple
