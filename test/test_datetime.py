@@ -584,6 +584,65 @@ class DatetimeTests(unittest.TestCase):
         for attr in ("year", "month", "day", "hour", "minute", "second", "microsecond"):
             self.assertEqual(getattr(obj, attr), getattr(parsed, attr))
 
+    def test_datetime_timestamp(self):
+        """
+        datetime.timestamp
+        Testing before and after Timestamp 0 (Jan 1st 1970),
+        before and after February, on leap and common years.
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        1967, 1, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        1967, 3, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        1968, 1, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        1968, 3, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        2020, 1, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        2020, 3, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        2021, 1, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        2021, 3, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                ],
+                option=orjson.OPT_TIMESTAMP,
+            ),
+            b'["-94694399","-89596799","-63158399","-57974399","1577836801","1583020801","1609459201","1614556801"]',
+        )
+
+    def test_datetime_timestamp_offset(self):
+        """
+        datetime.timestamp with a tz offset
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2020, 3, 1, 0, 0, 1, 0, tzinfo=datetime.timezone.utc
+                    ),
+                    datetime.datetime(
+                        2020, 3, 1, 0, 0, 1, 0, tzinfo=tz.gettz("Europe/Amsterdam")
+                    ),
+                ],
+                option=orjson.OPT_TIMESTAMP,
+            ),
+            b'["1583020801","1583017201"]',
+        )
+
+
 
 class DateTests(unittest.TestCase):
     def test_date(self):

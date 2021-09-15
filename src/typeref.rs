@@ -253,3 +253,8 @@ unsafe fn look_up_time_type() -> *mut PyTypeObject {
     Py_DECREF(time);
     ptr
 }
+
+
+pub static NB_DAILY_SECONDS: i32 = 86400;
+pub static NB_LEAP_YEARS_1970: i32 = 477;
+pub const DAYS_IN_MONTH:[&'static i32; 12] = [&31, &28, &31, &30, &31, &30, &31, &31, &30, &31, &30, &31];

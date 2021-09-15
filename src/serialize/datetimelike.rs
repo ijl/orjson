@@ -54,6 +54,12 @@ macro_rules! write_triple_digit {
     };
 }
 
+macro_rules! write_any_digit {
+    ($buf:ident, $value:expr) => {
+        $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
+    };
+}
+
 #[derive(Default)]
 pub struct Offset {
     pub day: i32,
@@ -83,6 +89,8 @@ pub trait DateTimeLike {
     fn microsecond(&self) -> u32;
     /// Returns the number of nanoseconds since the whole non-leap second.
     fn nanosecond(&self) -> u32;
+    /// Return POSIX timestamp corresponding to the datetime.
+    fn timestamp(&self) -> i32;
 
     /// Is the object time-zone aware?
     fn has_tz(&self) -> bool;
@@ -93,6 +101,11 @@ pub trait DateTimeLike {
     /// Write `self` to a buffer in RFC3339 format, using `opts` to
     /// customise if desired.
     fn write_buf(&self, buf: &mut DateTimeBuffer, opts: Opt) -> Result<(), DateTimeError> {
+        if opts & TIMESTAMP != 0{
+            // write datetime as UNIX timestamp
+            write_any_digit!(buf, self.timestamp());
+            return Ok(());
+        }
         {
             let year = self.year();
             let mut yearbuf = itoa::Buffer::new();

@@ -4,6 +4,7 @@ use crate::exc::*;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::typeref::*;
+use crate::util::*;
 use serde::ser::{Serialize, Serializer};
 
 macro_rules! write_double_digit {
@@ -200,6 +201,38 @@ impl DateTimeLike for DateTime {
                 Err(DateTimeError::LibraryUnsupported)
             }
         }
+    }
+
+    fn timestamp(&self) -> i32 {
+        fn is_leap_year(year: i32) -> bool{
+            // source: https://en.wikipedia.org/wiki/Leap_year#Algorithm
+            if year.modulo(4) != 0{return false;}
+            else{
+                if year.modulo(100) != 0{return true;}
+                else{
+                    if year.modulo(400) != 0{return false;}
+                }
+            }
+            true
+        }
+        let year = self.year();
+        let month = self.month();
+        let nb_leap_years = ((year / 4) - (year / 100) + (year / 400)) 
+            - NB_LEAP_YEARS_1970 
+            - (if is_leap_year(year) && month <= 2 {1} else {0});
+        let ts_year = (year - 1970 - nb_leap_years)*365*NB_DAILY_SECONDS + nb_leap_years*366*NB_DAILY_SECONDS;
+        let ts_month: i32 = DAYS_IN_MONTH[0..(month as usize -1)].into_iter().map(|n_days| (*n_days)*NB_DAILY_SECONDS).sum();
+        let ts_day = (self.day() as i32 -1)*NB_DAILY_SECONDS;
+        let ts_hour = self.hour() as i32 *60*60;
+        let ts_min = self.minute() as i32 *60;
+        let mut ts_sec = self.second() as i32;
+        match self.offset(){
+            Ok(offset) => {
+                ts_sec -= offset.second;
+            }
+            Err(_) => {}
+        }
+        return ts_year + ts_month + ts_day + ts_hour + ts_min + ts_sec;
     }
 }
 

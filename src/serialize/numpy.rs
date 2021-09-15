@@ -832,6 +832,8 @@ impl DateTimeLike for NumpyDatetime64Repr {
     fn offset(&self) -> Result<Offset, DateTimeError> {
         Ok(Offset::default())
     }
+
+    fn timestamp(&self) -> i32 {todo!()}
 }
 
 impl Serialize for NumpyDatetime64Repr {
