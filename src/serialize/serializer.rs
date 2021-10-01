@@ -257,7 +257,10 @@ impl<'p> Serialize for PyObjectSerializer {
                     err!(RECURSION_LIMIT_REACHED)
                 }
                 let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                if unlikely!(dict.is_null()) {
+                let ob_type = ob_type!(self.ptr);
+                if unlikely!(
+                    dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
+                ) {
                     unsafe { pyo3::ffi::PyErr_Clear() };
                     DataclassFallbackSerializer::new(
                         self.ptr,

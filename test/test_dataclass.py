@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import abc
 import unittest
 import uuid
 from dataclasses import InitVar, asdict, dataclass, field
@@ -93,6 +94,23 @@ class InitDataclass:
     def __post_init__(self, a: str, b: str):
         self._other = 1
         self.ab = f"{a} {b}"
+
+
+class AbstractBase(abc.ABC):
+    @abc.abstractmethod
+    def key(self):
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class ConcreteAbc(AbstractBase):
+
+    __slots__ = ("attr",)
+
+    attr: float
+
+    def key(self):
+        return "dkjf"
 
 
 class DataclassTests(unittest.TestCase):
@@ -291,3 +309,9 @@ class DataclassPassthroughTests(unittest.TestCase):
             orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_DATACLASS, default=default),
             b'{"name":"a","number":1}',
         )
+
+
+class AbstractDataclassTests(unittest.TestCase):
+    def test_dataclass_abc(self):
+        obj = ConcreteAbc(1.0)
+        self.assertEqual(orjson.dumps(obj), b'{"attr":1.0}')
