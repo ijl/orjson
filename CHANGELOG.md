@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6.4 - 2021-10-01
+
+### Fixed
+
+- Fix serialization of `dataclass` inheriting from `abc.ABC` and
+using `__slots__`.
+- Decrement refcount for numpy `PyArrayInterface`.
+- Fix build on recent versions of Rust nightly.
+
 ## 3.6.3 - 2021-08-20
 
 ### Fixed
