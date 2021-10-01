@@ -137,6 +137,7 @@ impl<'a> NumpyArray {
         } else {
             let num_dimensions = unsafe { (*array).nd as usize };
             if num_dimensions == 0 {
+                ffi!(Py_DECREF(capsule));
                 return Err(PyArrayError::UnsupportedDataType);
             }
             match ItemType::find(array, ptr) {
@@ -221,7 +222,8 @@ impl<'a> NumpyArray {
 impl Drop for NumpyArray {
     fn drop(&mut self) {
         if self.depth == 0 {
-            ffi!(Py_XDECREF(self.capsule as *mut pyo3::ffi::PyObject))
+            ffi!(Py_DECREF(self.array as *mut pyo3::ffi::PyObject));
+            ffi!(Py_DECREF(self.capsule as *mut pyo3::ffi::PyObject));
         }
     }
 }
@@ -710,7 +712,9 @@ impl NumpyDatetimeUnit {
     fn from_pyobject(ptr: *mut PyObject) -> Self {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
+        ffi!(Py_DECREF(dtype));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
+        ffi!(Py_DECREF(descr));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = crate::unicode::read_utf8_from_str(descr_str, &mut str_size);

@@ -688,3 +688,14 @@ class NumpyTests(unittest.TestCase):
             ),
             b'{"year":"2021-01-01T00:00:00","month":"2021-01-01T00:00:00","day":"2021-01-01T00:00:00","hour":"2021-01-01T00:00:00","minute":"2021-01-01T00:00:00","second":"2021-01-01T00:00:00","milli":"2021-01-01T00:00:00","micro":"2021-01-01T00:00:00","nano":"2021-01-01T00:00:00"}',
         )
+
+    def test_numpy_repeated(self):
+        data = numpy.array([[[1, 2], [3, 4], [5, 6], [7, 8]]], numpy.int64)
+        for _ in range(0, 3):
+            self.assertEqual(
+                orjson.dumps(
+                    data,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                ),
+                b"[[[1,2],[3,4],[5,6],[7,8]]]",
+            )
