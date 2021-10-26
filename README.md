@@ -1,5 +1,6 @@
-# orjson
+# orjson-pydantic
 
+## This is a (maintained) fork of orjson that adds serialization of pydantic objects. 
 orjson is a fast, correct JSON library for Python. It
 [benchmarks](https://github.com/ijl/orjson#performance) as the fastest Python
 library for JSON and is more correct than the standard json library or other
