@@ -14,19 +14,21 @@ macro_rules! ob_type {
 
 macro_rules! err {
     ($msg:expr) => {
-        return Err(serde::ser::Error::custom($msg));
+        return Err(serde::ser::Error::custom($msg))
     };
 }
 
+#[cfg(feature = "unstable-simd")]
 macro_rules! unlikely {
     ($exp:expr) => {
-        std::intrinsics::unlikely($exp)
+        core::intrinsics::unlikely($exp)
     };
 }
 
-macro_rules! likely {
+#[cfg(not(feature = "unstable-simd"))]
+macro_rules! unlikely {
     ($exp:expr) => {
-        std::intrinsics::likely($exp)
+        $exp
     };
 }
 
@@ -64,7 +66,7 @@ macro_rules! ffi {
     };
 }
 
-#[cfg(python39)]
+#[cfg(Py_3_9)]
 macro_rules! call_method {
     ($obj1:expr, $obj2:expr) => {
         unsafe { pyo3::ffi::PyObject_CallMethodNoArgs($obj1, $obj2) }
@@ -74,7 +76,7 @@ macro_rules! call_method {
     };
 }
 
-#[cfg(not(python39))]
+#[cfg(not(Py_3_9))]
 macro_rules! call_method {
     ($obj1:expr, $obj2:expr) => {
         unsafe {

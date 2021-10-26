@@ -32,7 +32,7 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.6, 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64
+orjson supports CPython 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64
 and aarch64/armv8 wheels for Linux and macOS. It distributes x86_64/amd64 wheels
 for Windows. orjson does not support PyPy. Releases follow semantic
 versioning and serializing a new object type without an opt-in flag is
@@ -78,12 +78,9 @@ available in the repository.
 To install a wheel from PyPI:
 
 ```sh
-pip install --upgrade "pip>=19.3" # manylinux2014 support
+pip install --upgrade "pip>=20.3" # manylinux_x_y, universal2 wheel support
 pip install --upgrade orjson
 ```
-
-Notice that Linux environments with a `pip` version shipped in 2018 or earlier
-must first upgrade `pip` to support `manylinux2014` wheels.
 
 To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
 
@@ -794,9 +791,9 @@ JSONEncodeError: Integer exceeds 53-bit range
 
 orjson natively serializes `numpy.ndarray` and individual `numpy.float64`,
 `numpy.float32`, `numpy.int64`, `numpy.int32`, `numpy.int8`, `numpy.uint64`,
-`numpy.uint32`, and `numpy.uint8` instances. Arrays may have a
-`dtype` of `numpy.bool`, `numpy.float32`, `numpy.float64`, `numpy.int32`,
-`numpy.int64`, `numpy.uint32`, `numpy.uint64`, `numpy.uintp`, or `numpy.intp`.
+`numpy.uint32`, `numpy.uint8`, `numpy.uintp`, or `numpy.intp`, and
+`numpy.datetime64` instances.
+
 orjson is faster than all compared libraries at serializing
 numpy instances. Serializing numpy data requires specifying
 `option=orjson.OPT_SERIALIZE_NUMPY`.
@@ -813,10 +810,32 @@ b'[[1,2,3],[4,5,6]]'
 The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
 supported datatypes.
 
-If an array is not a contiguous C array or contains an supported datatype,
-orjson falls through to `default`. In `default`, `obj.tolist()` can be
-specified. If an array is malformed, which is not expected,
-`orjson.JSONEncodeError` is raised.
+`numpy.datetime64` instances are serialized as RFC 3339 strings and
+datetime options affect them.
+
+```python
+>>> import orjson, numpy
+>>> orjson.dumps(
+        numpy.datetime64("2021-01-01T00:00:00.172"),
+        option=orjson.OPT_SERIALIZE_NUMPY,
+)
+b'"2021-01-01T00:00:00.172000"'
+>>> orjson.dumps(
+        numpy.datetime64("2021-01-01T00:00:00.172"),
+        option=(
+            orjson.OPT_SERIALIZE_NUMPY |
+            orjson.OPT_NAIVE_UTC |
+            orjson.OPT_OMIT_MICROSECONDS
+        ),
+)
+b'"2021-01-01T00:00:00+00:00"'
+```
+
+If an array is not a contiguous C array, contains an supported datatype,
+or contains a `numpy.datetime64` using an unsupported representation
+(e.g., picoseconds), orjson falls through to `default`. In `default`,
+`obj.tolist()` can be specified. If an array is malformed, which
+is not expected, `orjson.JSONEncodeError` is raised.
 
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:
@@ -1120,8 +1139,9 @@ scripts. The memory results can be reproduced using the `pymem` script.
 
 ### Why can't I install it from PyPI?
 
-Probably `pip` needs to be upgraded. `pip` added support for `manylinux2014`
-in 2019.
+
+Probably `pip` needs to be upgraded to version 20.3 or later to support
+the latest manylinux_x_y or universal2 wheel formats.
 
 ### Will it deserialize to dataclasses, UUIDs, decimals, etc or support object_hook?
 
@@ -1139,49 +1159,31 @@ If someone implements it well.
 
 ## Packaging
 
-To package orjson requires [Rust](https://www.rust-lang.org/) on the
- nightly channel and the [maturin](https://github.com/PyO3/maturin)
-build tool. maturin can be installed from PyPI or packaged as
-well. This is the simplest and recommended way of installing
-from source, assuming `rustup` is available from a
-package manager:
+To package orjson requires [Rust](https://www.rust-lang.org/) and the
+[maturin](https://github.com/PyO3/maturin) build tool.
+
+This is an example for x86_64 on the Rust nightly channel:
 
 ```sh
-rustup default nightly
-pip wheel --no-binary=orjson orjson
+export RUSTFLAGS="-C target-cpu=k8"
+maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd"
 ```
 
-This is an example of building a wheel using the repository as source,
-`rustup` installed from upstream, and a pinned version of Rust:
+To build on the stable channel, do not specify `--features=unstable-simd`.
 
-```sh
-pip install maturin
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2021-05-25 --profile minimal -y
-maturin build --no-sdist --release --strip --manylinux off
-ls -1 target/wheels
-```
+The project's own CI tests against `nightly-2021-10-01` and stable 1.54. It
+is prudent to pin the nightly version because that channel can introduce
+breaking changes.
 
-Problems with the Rust nightly channel may require pinning a version.
-`nightly-2021-05-25` is known to be ok.
-
-orjson is tested for amd64 and aarch64 on Linux, macOS, and Windows. It
-may not work on 32-bit targets. It has recommended `RUSTFLAGS`
-specified in `.cargo/config` so it is recommended to either not set
-`RUSTFLAGS` or include these options.
+orjson is tested for amd64 and aarch64 on Linux and amd64 on macOS and
+Windows. It may not work on 32-bit targets.
 
 There are no runtime dependencies other than libc.
 
-orjson's tests are included in the source distribution on PyPI. It is
-necessarily to install dependencies from PyPI specified in
-`test/requirements.txt`. These require a C compiler. The tests do not
-make network requests.
-
-The tests should be run as part of the build. It can be run like this:
-
-```sh
-pip install -r test/requirements.txt
-pytest -q test
-```
+orjson's tests are included in the source distribution on PyPI. The
+requirements to run the tests are specified in `test/requirements.txt`. The
+tests should be run as part of the build. It can be run with
+`pytest -q test`.
 
 ## License
 

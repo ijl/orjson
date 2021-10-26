@@ -2,10 +2,9 @@
 
 use crate::exc::*;
 use crate::opt::*;
+use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
-
-pub type DateTimeBuffer = smallvec::SmallVec<[u8; 32]>;
 
 macro_rules! write_double_digit {
     ($buf:ident, $value:ident) => {
@@ -67,7 +66,7 @@ impl<'p> Serialize for Date {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -93,20 +92,14 @@ impl Time {
         })
     }
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
-        {
-            let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
-            write_double_digit!(buf, hour);
-        }
+        let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
+        write_double_digit!(buf, hour);
         buf.push(b':');
-        {
-            let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
-            write_double_digit!(buf, minute);
-        }
+        let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
+        write_double_digit!(buf, minute);
         buf.push(b':');
-        {
-            let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
-            write_double_digit!(buf, second);
-        }
+        let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
+        write_double_digit!(buf, second);
         if self.opts & OMIT_MICROSECONDS == 0 {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
@@ -120,14 +113,10 @@ impl<'p> Serialize for Time {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+        let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
-}
-
-pub enum DateTimeError {
-    LibraryUnsupported,
 }
 
 pub struct DateTime {
@@ -142,120 +131,75 @@ impl DateTime {
             opts: opts,
         }
     }
-    pub fn write_buf(&self, buf: &mut DateTimeBuffer) -> Result<(), DateTimeError> {
-        let has_tz = unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 };
-        let offset_day: i32;
-        let mut offset_second: i32;
-        if !has_tz {
-            offset_second = 0;
-            offset_day = 0;
+}
+
+macro_rules! pydatetime_get {
+    ($fn: ident, $pyfn: ident, $ty: ident) => {
+        fn $fn(&self) -> $ty {
+            ffi!($pyfn(self.ptr)) as $ty
+        }
+    };
+}
+
+impl DateTimeLike for DateTime {
+    pydatetime_get!(year, PyDateTime_GET_YEAR, i32);
+    pydatetime_get!(month, PyDateTime_GET_MONTH, u8);
+    pydatetime_get!(day, PyDateTime_GET_DAY, u8);
+    pydatetime_get!(hour, PyDateTime_DATE_GET_HOUR, u8);
+    pydatetime_get!(minute, PyDateTime_DATE_GET_MINUTE, u8);
+    pydatetime_get!(second, PyDateTime_DATE_GET_SECOND, u8);
+    pydatetime_get!(microsecond, PyDateTime_DATE_GET_MICROSECOND, u32);
+
+    fn millisecond(&self) -> u32 {
+        self.microsecond() / 1_000
+    }
+
+    fn nanosecond(&self) -> u32 {
+        self.microsecond() * 1_000
+    }
+
+    fn has_tz(&self) -> bool {
+        unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 }
+    }
+
+    fn offset(&self) -> Result<Offset, DateTimeError> {
+        if !self.has_tz() {
+            Ok(Offset::default())
         } else {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
             if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
                 // pendulum
-                let offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
-                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                let py_offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
+                let offset = Offset {
+                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                    day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+                };
+                ffi!(Py_DECREF(py_offset));
+                Ok(offset)
             } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
                 // pytz
                 let method_ptr = call_method!(tzinfo, NORMALIZE_METHOD_STR, self.ptr);
-                let offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
-                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                let py_offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
+                ffi!(Py_DECREF(method_ptr));
+                let offset = Offset {
+                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                    day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+                };
+                ffi!(Py_DECREF(py_offset));
+                Ok(offset)
             } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
                 // dateutil/arrow, datetime.timezone.utc
-                let offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
-                offset_second = ffi!(PyDateTime_DELTA_GET_SECONDS(offset)) as i32;
-                offset_day = ffi!(PyDateTime_DELTA_GET_DAYS(offset));
+                let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
+                let offset = Offset {
+                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                    day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+                };
+                ffi!(Py_DECREF(py_offset));
+                Ok(offset)
             } else {
-                return Err(DateTimeError::LibraryUnsupported);
-            }
-        };
-        {
-            let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
-            let mut yearbuf = itoa::Buffer::new();
-            let formatted = yearbuf.format(year);
-            if unlikely!(year < 1000) {
-                // date-fullyear   = 4DIGIT
-                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
-            }
-            buf.extend_from_slice(formatted.as_bytes());
-        }
-        buf.push(b'-');
-        {
-            let month = ffi!(PyDateTime_GET_MONTH(self.ptr)) as u8;
-            write_double_digit!(buf, month);
-        }
-        buf.push(b'-');
-        {
-            let day = ffi!(PyDateTime_GET_DAY(self.ptr)) as u8;
-            write_double_digit!(buf, day);
-        }
-        buf.push(b'T');
-        {
-            let hour = ffi!(PyDateTime_DATE_GET_HOUR(self.ptr)) as u8;
-            write_double_digit!(buf, hour);
-        }
-        buf.push(b':');
-        {
-            let minute = ffi!(PyDateTime_DATE_GET_MINUTE(self.ptr)) as u8;
-            write_double_digit!(buf, minute);
-        }
-        buf.push(b':');
-        {
-            let second = ffi!(PyDateTime_DATE_GET_SECOND(self.ptr)) as u8;
-            write_double_digit!(buf, second);
-        }
-        if self.opts & OMIT_MICROSECONDS == 0 {
-            let microsecond = ffi!(PyDateTime_DATE_GET_MICROSECOND(self.ptr)) as u32;
-            write_microsecond!(buf, microsecond);
-        }
-        if has_tz || self.opts & NAIVE_UTC != 0 {
-            if offset_second == 0 {
-                if self.opts & UTC_Z != 0 {
-                    buf.push(b'Z');
-                } else {
-                    buf.extend_from_slice(&[b'+', b'0', b'0', b':', b'0', b'0']);
-                }
-            } else {
-                if offset_day == -1 {
-                    // datetime.timedelta(days=-1, seconds=68400) -> -05:00
-                    buf.push(b'-');
-                    offset_second = 86400 - offset_second;
-                } else {
-                    // datetime.timedelta(seconds=37800) -> +10:30
-                    buf.push(b'+');
-                }
-                {
-                    let offset_minute = offset_second / 60;
-                    let offset_hour = offset_minute / 60;
-                    write_double_digit!(buf, offset_hour);
-                    buf.push(b':');
-
-                    let mut offset_minute_print = offset_minute % 60;
-
-                    {
-                        // https://tools.ietf.org/html/rfc3339#section-5.8
-                        // "exactly 19 minutes and 32.13 seconds ahead of UTC"
-                        // "closest representable UTC offset"
-                        //  "+20:00"
-                        let offset_excess_second =
-                            offset_second - (offset_minute_print * 60 + offset_hour * 3600);
-                        if offset_excess_second >= 30 {
-                            offset_minute_print += 1;
-                        }
-                    }
-
-                    if offset_minute_print < 10 {
-                        buf.push(b'0');
-                    }
-                    buf.extend_from_slice(
-                        itoa::Buffer::new().format(offset_minute_print).as_bytes(),
-                    );
-                }
+                Err(DateTimeError::LibraryUnsupported)
             }
         }
-        Ok(())
     }
 }
 
@@ -265,8 +209,8 @@ impl<'p> Serialize for DateTime {
     where
         S: Serializer,
     {
-        let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
-        if self.write_buf(&mut buf).is_err() {
+        let mut buf = DateTimeBuffer::new();
+        if self.write_buf(&mut buf, self.opts).is_err() {
             err!(DATETIME_LIBRARY_UNSUPPORTED)
         }
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))

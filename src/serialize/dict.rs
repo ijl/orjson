@@ -4,6 +4,7 @@ use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
+use crate::serialize::datetimelike::*;
 use crate::serialize::serializer::pyobject_to_obtype;
 use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
@@ -217,7 +218,7 @@ impl DictNonStrKey {
                 if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
                     ffi!(PyErr_Clear());
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
-                    if unlikely!(uval == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                    if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
                         return Err(NonStrError::IntegerRange);
                     }
                     Ok(InlinableString::from(itoa::Buffer::new().format(uval)))
@@ -234,23 +235,23 @@ impl DictNonStrKey {
                 }
             }
             ObType::Datetime => {
-                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                let mut buf = DateTimeBuffer::new();
                 let dt = DateTime::new(key, opts);
-                if dt.write_buf(&mut buf).is_err() {
+                if dt.write_buf(&mut buf, opts).is_err() {
                     return Err(NonStrError::DatetimeLibraryUnsupported);
                 }
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Date => {
-                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                let mut buf = DateTimeBuffer::new();
                 Date::new(key).write_buf(&mut buf);
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Time => match Time::new(key, opts) {
                 Ok(val) => {
-                    let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                    let mut buf = DateTimeBuffer::new();
                     val.write_buf(&mut buf);
                     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                     Ok(InlinableString::from(key_as_str))

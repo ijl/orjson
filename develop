@@ -2,6 +2,8 @@
 
 rm -f target/wheels/*
 
-maturin build --no-sdist --manylinux off -i python3 --release "$@"
+export RUSTFLAGS="-C target-cpu=k8"
+
+maturin build --no-sdist --compatibility off -i python3 --release "$@"
 
 pip install --force $(find target/wheels -name "*cp3*")

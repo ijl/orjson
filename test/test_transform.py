@@ -83,7 +83,7 @@ class JSONTestSuiteTransformTests(unittest.TestCase):
         """
         object_same_key_unclear_values.json
         """
-        self._pass_transform("object_same_key_unclear_values.json", b'{"a":0}')
+        self._pass_transform("object_same_key_unclear_values.json", b'{"a":-0.0}')
 
     def test_string_1_escaped_invalid_codepoint(self):
         """

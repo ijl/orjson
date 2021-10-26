@@ -13,6 +13,30 @@ use std::fmt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
+#[cfg(target_arch = "x86_64")]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    if std::is_x86_feature_detected!("sse4.2") {
+        simdutf8::basic::from_utf8(buf).is_ok()
+    } else {
+        encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", feature = "unstable-simd"))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    simdutf8::basic::from_utf8(buf).is_ok()
+}
+
+#[cfg(all(target_arch = "aarch64", not(feature = "unstable-simd")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    std::str::from_utf8(buf).is_ok()
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    std::str::from_utf8(buf).is_ok()
+}
+
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
 ) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
@@ -55,7 +79,7 @@ pub fn deserialize(
             ));
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
-        if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
+        if !is_valid_utf8(contents) {
             return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
     }
@@ -140,13 +164,6 @@ impl<'de> Visitor<'de> for JsonValue {
         Ok(nonnull!(ffi!(PyFloat_FromDouble(value))))
     }
 
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(nonnull!(unicode_from_str(value.as_str())))
-    }
-
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -193,7 +210,10 @@ impl<'de> Visitor<'de> for JsonValue {
             let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
-            if likely!(key.len() <= 64) {
+            if unlikely!(key.len() > 64) {
+                pykey = unicode_from_str(&key);
+                pyhash = hash_str(pykey);
+            } else {
                 let hash = cache_hash(key.as_bytes());
                 {
                     let map = unsafe {
@@ -212,9 +232,6 @@ impl<'de> Visitor<'de> for JsonValue {
                     pykey = entry.get();
                     pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
                 }
-            } else {
-                pykey = unicode_from_str(&key);
-                pyhash = hash_str(pykey);
             }
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,

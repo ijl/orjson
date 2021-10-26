@@ -18,6 +18,7 @@ pub struct NumpyTypes {
     pub uint32: *mut PyTypeObject,
     pub uint8: *mut PyTypeObject,
     pub bool_: *mut PyTypeObject,
+    pub datetime64: *mut PyTypeObject,
 }
 
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
@@ -53,8 +54,11 @@ pub static mut DST_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DICT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DATACLASS_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut PYDANTIC_FIELDS_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut SLOTS_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut FIELD_TYPE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut DTYPE_STR: *mut PyObject = 0 as *mut PyObject;
+pub static mut DESCR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
 pub static mut DEFAULT: *mut PyObject = 0 as *mut PyObject;
@@ -122,9 +126,12 @@ pub fn init_typerefs() {
             PyUnicode_InternFromString("__dataclass_fields__\0".as_ptr() as *const c_char);
         PYDANTIC_FIELDS_STR =
             PyUnicode_InternFromString("__fields__\0".as_ptr() as *const c_char);
+        SLOTS_STR = PyUnicode_InternFromString("__slots__\0".as_ptr() as *const c_char);
         FIELD_TYPE_STR = PyUnicode_InternFromString("_field_type\0".as_ptr() as *const c_char);
         ARRAY_STRUCT_STR =
             pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
+        DTYPE_STR = pyo3::ffi::PyUnicode_InternFromString("dtype\0".as_ptr() as *const c_char);
+        DESCR_STR = pyo3::ffi::PyUnicode_InternFromString("descr\0".as_ptr() as *const c_char);
         VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
@@ -178,6 +185,7 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
         uint64: look_up_numpy_type(numpy, "uint64\0"),
         uint8: look_up_numpy_type(numpy, "uint8\0"),
         bool_: look_up_numpy_type(numpy, "bool_\0"),
+        datetime64: look_up_numpy_type(numpy, "datetime64\0"),
     });
     Py_XDECREF(numpy);
     types
