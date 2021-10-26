@@ -1,13 +1,13 @@
 [package]
-name = "orjson-pydantic"
+name = "orjson"
 version = "3.6.4"
 authors = ["ijl <ijl@mailbox.org>", "Aviram Hassan <aviramyhassan@gmail.com>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2018"
 resolver = "2"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/ijl/orjson"
-homepage = "https://github.com/ijl/orjson"
+repository = "https://github.com/aviramha/orjson-pydantic"
+homepage = "https://github.com/aviramha/orjson-pydantic"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [

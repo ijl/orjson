@@ -12,3 +12,4 @@ benchmark_*.svg
 vendor
 build
 !json/perfect_float.patch
+.DS_Store
