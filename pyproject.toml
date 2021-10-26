@@ -1,5 +1,5 @@
 [project]
-name = "orjson"
+name = "orjson-pydantic"
 repository = "https://github.com/aviramha/orjson-pydantic"
 
 [build-system]

@@ -4,5 +4,5 @@ from setuptools import setup
 
 setup(
     name="orjson",
-    url="https://github.com/ijl/orjson",
+    url="https://github.com/aviramha/orjson-pydantic",
 )

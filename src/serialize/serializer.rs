@@ -292,7 +292,9 @@ impl<'p> Serialize for PyObjectSerializer {
                     err!(RECURSION_LIMIT_REACHED)
                 }
                 let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                if likely!(!dict.is_null()) {
+                if unlikely!(dict.is_null()) {
+                    err!(PYDANTIC_MUST_HAVE_DICT)
+                } else {
                     ffi!(Py_DECREF(dict));
                     DataclassFastSerializer::new(
                         dict,
@@ -302,27 +304,6 @@ impl<'p> Serialize for PyObjectSerializer {
                         self.default,
                     )
                     .serialize(serializer)
-                } else {
-                    err!(PYDANTIC_MUST_HAVE_DICT)
-                }
-            }
-            ObType::Pydantic => {
-                if unlikely!(self.recursion == RECURSION_LIMIT) {
-                    err!(RECURSION_LIMIT_REACHED)
-                }
-                let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                if likely!(!dict.is_null()) {
-                    ffi!(Py_DECREF(dict));
-                    DataclassFastSerializer::new(
-                        dict,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                } else {
-                    err!(PYDANTIC_MUST_HAVE_DICT)
                 }
             }
             ObType::Enum => {

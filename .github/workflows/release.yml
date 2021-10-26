@@ -2,6 +2,9 @@
 name: Release
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - '*.*.*'
 
 
 jobs:
@@ -12,6 +15,10 @@ jobs:
       matrix:
         python-path: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
     container: quay.io/pypa/manylinux2014_x86_64:latest
+    env:
+      TWINE_PASSWORD: ${{secrets.TWINE_PASSWORD}}
+      TWINE_USERNAME: ${{secrets.TWINE_USERNAME}}
+      RUSTFLAGS: -C target-cpu=k8
 
     steps:
       - uses: actions/checkout@v2
@@ -23,19 +30,22 @@ jobs:
       - run: yum install -y libffi libffi-devel openssl openssl-devel
       - run: /opt/python/${{ matrix.python-path }}/bin/python -m venv .venv
       - run: .venv/bin/pip install -U pip wheel
-      - run: .venv/bin/pip install -U maturin
+      - run: .venv/bin/pip install -U twine maturin
       - run: .venv/bin/pip install -r requirements.txt
       - run: .venv/bin/maturin build --no-sdist --release --strip --manylinux 2014 -i /opt/python/${{ matrix.python-path }}/bin/python --target x86_64-unknown-linux-gnu
-      - uses: actions/upload-artifact@v2
-        with:
-          name: wheels linux ${{ matrix.python-path}}
-          path: target/wheels/*
+      - run: .venv/bin/pip install orjson --no-index -f target/wheels
+      - run: .venv/bin/pytest
+      - run: .venv/bin/twine upload --non-interactive --skip-existing target/wheels/*
   release_windows:
     name: Release windows
     runs-on: windows-latest
     strategy:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9']
+    env:
+      TWINE_PASSWORD: ${{secrets.TWINE_PASSWORD}}
+      TWINE_USERNAME: ${{secrets.TWINE_USERNAME}}
+      RUSTFLAGS: -C target-cpu=k8
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -47,13 +57,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -U pip wheel maturin
+      - run: pip install --user -U pip wheel twine maturin
       - run: pip install -r requirements.txt
       - run: maturin build --no-sdist --release --strip -i $pythonLocation"python.exe"
-      - uses: actions/upload-artifact@v2
-        with:
-          name: wheels windows ${{ matrix.python-version}}
-          path: target/wheels/*
+      - run: pip install orjson --no-index -f target/wheels
+      - run: pytest
+      - run: twine upload --non-interactive --skip-existing target\wheels\*
 
   release_macos:
     name: Release macOS
@@ -61,6 +70,10 @@ jobs:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9']
     runs-on: macos-latest
+    env:
+      TWINE_PASSWORD: ${{secrets.TWINE_PASSWORD}}
+      TWINE_USERNAME: ${{secrets.TWINE_USERNAME}}
+      RUSTFLAGS: -C target-cpu=k8
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -72,16 +85,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -U pip wheel maturin
+      - run: pip install -U pip wheel twine maturin
       - run: pip install -r requirements.txt
       - run: maturin build --no-sdist --release --strip --manylinux off -i $pythonLocation/python --target x86_64-apple-darwin
-      - uses: actions/upload-artifact@v2
-        with:
-          name: wheels macos ${{ matrix.python-version}}
-          path: target/wheels/*
+      - run: pip install orjson --no-index -f target/wheels
+      - run: pytest
+      - run: twine upload --non-interactive --skip-existing target/wheels/*
   release_sdist:
     name: Release sdist
     runs-on: ubuntu-latest
+    env:
+      TWINE_PASSWORD: ${{secrets.TWINE_PASSWORD}}
+      TWINE_USERNAME: ${{secrets.TWINE_USERNAME}}
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -93,10 +108,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - run: pip install -U pip wheel maturin
+      - run: pip install -U pip wheel twine maturin
       - run: pip install -r requirements.txt
       - run: maturin sdist
-      - uses: actions/upload-artifact@v2
-        with:
-          name: wheels source ${{ matrix.python-version}}
-          path: target/wheels/*
+      - run: twine upload --non-interactive --skip-existing target/wheels/*
