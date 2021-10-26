@@ -62,6 +62,7 @@ available in the repository.
     6. [numpy](https://github.com/ijl/orjson#numpy)
     7. [str](https://github.com/ijl/orjson#str)
     8. [uuid](https://github.com/ijl/orjson#uuid)
+    9. [pydantic](https://github.com/ijl/orjson#pydantic)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -138,7 +139,7 @@ def dumps(
 It natively serializes
 `str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
+`datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, `pydantic.BaseModel`, and
 `None` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
@@ -568,7 +569,9 @@ b'"1970-01-01T00:00:00+00:00"'
     )
 b'"1970-01-01T00:00:00Z"'
 ```
-
+##### OPT_SERIALIZE_PYDANTIC
+Serialize a `pydantic.BaseModel` instance. For more see
+[pydantic](https://github.com/ijl/orjson#pydantic).
 ### Deserialize
 
 ```python
@@ -937,6 +940,12 @@ b'"f81d4fae-7dec-11d0-a765-00a0c91e6bf6"'
 b'"886313e1-3b8a-5372-9b90-0c9aee199e5d"'
 ```
 
+### pydantic
+
+orjson serializes `pydantic.BaseModel` instances based on the existence of `__fields__` attribute.
+> :warning: **The serialization doesn't behave like `pydantic.BaseModel.json()`**:
+1. It doesn't respect any of the Config attributes.
+2. It doesn't have any of the additional features of Pydantic (json_encoder, exclusions, inclusions, etc).
 ## Testing
 
 The library has comprehensive tests. There are tests against fixtures in the
