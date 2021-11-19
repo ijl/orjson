@@ -31,9 +31,9 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
     std::str::from_utf8(buf).is_ok()
 }
 
-pub fn read_input_to_str(
+pub fn read_input_to_buf(
     ptr: *mut pyo3::ffi::PyObject,
-) -> Result<&'static str, DeserializeError<'static>> {
+) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
@@ -73,9 +73,13 @@ pub fn read_input_to_str(
             ));
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
-        if !is_valid_utf8(contents) {
-            return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
-        }
+    }
+    Ok(contents)
+}
+
+pub fn read_buf_to_str(contents: &[u8]) -> Result<&str, DeserializeError> {
+    if !is_valid_utf8(contents) {
+        return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
     }
     Ok(unsafe { std::str::from_utf8_unchecked(contents) })
 }
