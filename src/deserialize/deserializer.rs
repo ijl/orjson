@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::*;
-use crate::deserialize::utf8::read_input_to_str;
+use crate::deserialize::utf8::{read_buf_to_str, read_input_to_buf};
 use crate::deserialize::DeserializeError;
 use crate::typeref::*;
 use crate::unicode::*;
@@ -14,7 +14,22 @@ use std::ptr::NonNull;
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
 ) -> Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
-    let buffer_str = read_input_to_str(ptr)?;
+    let buffer = read_input_to_buf(ptr)?;
+
+    if buffer.len() == 2 {
+        if buffer == b"[]" {
+            return Ok(nonnull!(ffi!(PyList_New(0))))
+        }
+        if buffer == b"{}" {
+            return Ok(nonnull!(ffi!(PyDict_New())))
+        }
+        if buffer == b"\"\"" {
+            ffi!(Py_INCREF(EMPTY_UNICODE));
+            unsafe { return Ok(nonnull!(EMPTY_UNICODE)) }
+        }
+    }
+    let buffer_str = read_buf_to_str(buffer)?;
+
     let mut deserializer = serde_json::Deserializer::from_str(buffer_str);
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
