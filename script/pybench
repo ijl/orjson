@@ -9,4 +9,5 @@ pytest \
     --benchmark-disable-gc \
     --benchmark-autosave \
     --benchmark-save-data \
+    --random-order \
     "bench/benchmark_$1.py"
