@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![feature(core_intrinsics)]
-#![feature(const_fn)]
+#![cfg_attr(feature = "unstable-simd", feature(core_intrinsics))]
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
 
 #[macro_use]
@@ -42,8 +42,17 @@ macro_rules! opt {
 #[no_mangle]
 #[cold]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
-    let mut init = PyModuleDef_INIT;
-    init.m_name = "orjson\0".as_ptr() as *const c_char;
+    let init = PyModuleDef {
+        m_base: PyModuleDef_HEAD_INIT,
+        m_name: "orjson\0".as_ptr() as *const c_char,
+        m_doc: std::ptr::null(),
+        m_size: 0,
+        m_methods: std::ptr::null_mut(),
+        m_slots: std::ptr::null_mut(),
+        m_traverse: None,
+        m_clear: None,
+        m_free: None,
+    };
     let mptr = PyModule_Create(Box::into_raw(Box::new(init)));
 
     let version = env!("CARGO_PKG_VERSION");
@@ -57,7 +66,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 
     let wrapped_dumps: PyMethodDef;
 
-    #[cfg(python37)]
+    #[cfg(Py_3_8)]
     {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
@@ -68,8 +77,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
         };
     }
-
-    #[cfg(not(python37))]
+    #[cfg(not(Py_3_8))]
     {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
@@ -80,7 +88,6 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
         };
     }
-
     unsafe {
         PyModule_AddObject(
             mptr,
@@ -154,18 +161,58 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         )
     };
 
+    // maturin>=0.11.0 creates a python package that imports *, hiding dunder by default
+    let all: [&str; 20] = [
+        "__all__\0",
+        "__version__\0",
+        "dumps\0",
+        "JSONDecodeError\0",
+        "JSONEncodeError\0",
+        "loads\0",
+        "OPT_APPEND_NEWLINE\0",
+        "OPT_INDENT_2\0",
+        "OPT_NAIVE_UTC\0",
+        "OPT_NON_STR_KEYS\0",
+        "OPT_OMIT_MICROSECONDS\0",
+        "OPT_PASSTHROUGH_DATACLASS\0",
+        "OPT_PASSTHROUGH_DATETIME\0",
+        "OPT_PASSTHROUGH_SUBCLASS\0",
+        "OPT_SERIALIZE_DATACLASS\0",
+        "OPT_SERIALIZE_NUMPY\0",
+        "OPT_SERIALIZE_UUID\0",
+        "OPT_SORT_KEYS\0",
+        "OPT_STRICT_INTEGER\0",
+        "OPT_UTC_Z\0",
+    ];
+
+    let pyall = PyTuple_New(all.len() as isize);
+    for (i, obj) in all.iter().enumerate() {
+        PyTuple_SET_ITEM(
+            pyall,
+            i as isize,
+            PyUnicode_InternFromString(obj.as_ptr() as *const c_char),
+        )
+    }
+
+    unsafe {
+        PyModule_AddObject(mptr, "__all__\0".as_ptr() as *const c_char, pyall);
+    };
+
     mptr
 }
 
 #[cold]
 #[inline(never)]
-fn raise_loads_exception(msg: Cow<str>) -> *mut PyObject {
+fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
+    let pos = err.pos() as i64;
+    let msg = err.message;
+    let doc = err.data;
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         let args = PyTuple_New(3);
-        let doc = PyUnicode_New(0, 255);
-        let pos = PyLong_FromLongLong(0);
+        let doc = PyUnicode_FromStringAndSize(doc.as_ptr() as *const c_char, doc.len() as isize);
+        let pos = PyLong_FromLongLong(pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
         PyTuple_SET_ITEM(args, 1, doc);
         PyTuple_SET_ITEM(args, 2, pos);
@@ -191,11 +238,11 @@ fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
 pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
     match crate::deserialize::deserialize(obj) {
         Ok(val) => val.as_ptr(),
-        Err(err) => raise_loads_exception(Cow::Owned(err)),
+        Err(err) => raise_loads_exception(err),
     }
 }
 
-#[cfg(python37)]
+#[cfg(Py_3_8)]
 #[no_mangle]
 pub unsafe extern "C" fn dumps(
     _self: *mut PyObject,
@@ -260,7 +307,7 @@ pub unsafe extern "C" fn dumps(
     }
 }
 
-#[cfg(not(python37))]
+#[cfg(not(Py_3_8))]
 #[no_mangle]
 pub unsafe extern "C" fn dumps(
     _self: *mut PyObject,
@@ -269,6 +316,8 @@ pub unsafe extern "C" fn dumps(
 ) -> *mut PyObject {
     let mut default: Option<NonNull<PyObject>> = None;
     let mut optsptr: Option<NonNull<PyObject>> = None;
+
+    let obj = PyTuple_GET_ITEM(args, 0);
 
     let num_args = PyTuple_GET_SIZE(args);
     if unlikely!(num_args == 0) {
@@ -284,11 +333,11 @@ pub unsafe extern "C" fn dumps(
     }
 
     if !kwds.is_null() {
-        let len = unsafe { crate::ffi::PyDict_GET_SIZE(kwds) as usize };
+        let len = unsafe { crate::ffi::PyDict_GET_SIZE(kwds) };
         let mut pos = 0isize;
         let mut arg: *mut PyObject = std::ptr::null_mut();
         let mut val: *mut PyObject = std::ptr::null_mut();
-        for _ in 0..=len - 1 {
+        for _ in 0..=len.saturating_sub(1) {
             unsafe { _PyDict_Next(kwds, &mut pos, &mut arg, &mut val, std::ptr::null_mut()) };
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
@@ -325,7 +374,7 @@ pub unsafe extern "C" fn dumps(
         }
     }
 
-    match crate::serialize::serialize(PyTuple_GET_ITEM(args, 0), default, optsbits as opt::Opt) {
+    match crate::serialize::serialize(obj, default, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
         Err(err) => raise_dumps_exception(Cow::Owned(err)),
     }

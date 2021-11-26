@@ -2,6 +2,8 @@
 
 mod dataclass;
 mod datetime;
+#[macro_use]
+mod datetimelike;
 mod default;
 mod dict;
 mod int;

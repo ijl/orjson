@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::exc::*;
+use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
+use crate::serialize::datetimelike::*;
 use crate::serialize::serializer::pyobject_to_obtype;
 use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
@@ -19,7 +21,6 @@ pub struct Dict {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
-    len: usize,
 }
 
 impl Dict {
@@ -29,7 +30,6 @@ impl Dict {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
-        len: usize,
     ) -> Self {
         Dict {
             ptr: ptr,
@@ -37,7 +37,6 @@ impl Dict {
             default_calls: default_calls,
             recursion: recursion,
             default: default,
-            len: len,
         }
     }
 }
@@ -53,7 +52,7 @@ impl<'p> Serialize for Dict {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=self.len - 1 {
+        for _ in 0..=unsafe { PyDict_GET_SIZE(self.ptr) as usize } - 1 {
             unsafe {
                 pyo3::ffi::_PyDict_Next(
                     self.ptr,
@@ -63,6 +62,13 @@ impl<'p> Serialize for Dict {
                     std::ptr::null_mut(),
                 )
             };
+            let value = PyObjectSerializer::new(
+                value,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(KEY_MUST_BE_STR)
             }
@@ -74,13 +80,7 @@ impl<'p> Serialize for Dict {
                 map.serialize_key(str_from_slice!(data, str_size)).unwrap();
             }
 
-            map.serialize_value(&PyObjectSerializer::new(
-                value,
-                self.opts,
-                self.default_calls,
-                self.recursion + 1,
-                self.default,
-            ))?;
+            map.serialize_value(&value)?;
         }
         map.end()
     }
@@ -92,7 +92,6 @@ pub struct DictSortedKey {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
-    len: usize,
 }
 
 impl DictSortedKey {
@@ -102,7 +101,6 @@ impl DictSortedKey {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
-        len: usize,
     ) -> Self {
         DictSortedKey {
             ptr: ptr,
@@ -110,7 +108,6 @@ impl DictSortedKey {
             default_calls: default_calls,
             recursion: recursion,
             default: default,
-            len: len,
         }
     }
 }
@@ -121,13 +118,14 @@ impl<'p> Serialize for DictSortedKey {
     where
         S: Serializer,
     {
+        let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
         let mut items: SmallVec<[(&str, *mut pyo3::ffi::PyObject); 8]> =
-            SmallVec::with_capacity(self.len);
+            SmallVec::with_capacity(len);
         let mut pos = 0isize;
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=self.len - 1 {
+        for _ in 0..=len - 1 {
             unsafe {
                 pyo3::ffi::_PyDict_Next(
                     self.ptr,
@@ -180,7 +178,6 @@ pub struct DictNonStrKey {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3::ffi::PyObject>>,
-    len: usize,
 }
 
 impl DictNonStrKey {
@@ -190,7 +187,6 @@ impl DictNonStrKey {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3::ffi::PyObject>>,
-        len: usize,
     ) -> Self {
         DictNonStrKey {
             ptr: ptr,
@@ -198,7 +194,6 @@ impl DictNonStrKey {
             default_calls: default_calls,
             recursion: recursion,
             default: default,
-            len: len,
         }
     }
 
@@ -223,7 +218,7 @@ impl DictNonStrKey {
                 if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
                     ffi!(PyErr_Clear());
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
-                    if unlikely!(uval == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                    if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
                         return Err(NonStrError::IntegerRange);
                     }
                     Ok(InlinableString::from(itoa::Buffer::new().format(uval)))
@@ -240,23 +235,23 @@ impl DictNonStrKey {
                 }
             }
             ObType::Datetime => {
-                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                let mut buf = DateTimeBuffer::new();
                 let dt = DateTime::new(key, opts);
-                if dt.write_buf(&mut buf).is_err() {
+                if dt.write_buf(&mut buf, opts).is_err() {
                     return Err(NonStrError::DatetimeLibraryUnsupported);
                 }
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Date => {
-                let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                let mut buf = DateTimeBuffer::new();
                 Date::new(key).write_buf(&mut buf);
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Time => match Time::new(key, opts) {
                 Ok(val) => {
-                    let mut buf: DateTimeBuffer = smallvec::SmallVec::with_capacity(32);
+                    let mut buf = DateTimeBuffer::new();
                     val.write_buf(&mut buf);
                     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                     Ok(InlinableString::from(key_as_str))
@@ -310,14 +305,15 @@ impl<'p> Serialize for DictNonStrKey {
     where
         S: Serializer,
     {
+        let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
         let mut items: SmallVec<[(InlinableString, *mut pyo3::ffi::PyObject); 8]> =
-            SmallVec::with_capacity(self.len);
+            SmallVec::with_capacity(len);
         let mut pos = 0isize;
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
         let opts = self.opts & NOT_PASSTHROUGH;
-        for _ in 0..=self.len - 1 {
+        for _ in 0..=len - 1 {
             unsafe {
                 pyo3::ffi::_PyDict_Next(
                     self.ptr,

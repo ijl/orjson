@@ -1,17 +1,16 @@
 [package]
 name = "orjson"
-version = "3.5.0"
+version = "3.6.4"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2018"
+resolver = "2"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
-    "build.rs",
-    ".cargo",
     "Cargo.toml",
     "CHANGELOG.md",
     "data/*",
@@ -29,8 +28,8 @@ name = "orjson"
 crate-type = ["cdylib"]
 
 [package.metadata.maturin]
-requires-python = ">=3.6"
-classifier = [
+requires-python = ">=3.7"
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
@@ -40,7 +39,6 @@ classifier = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -50,22 +48,33 @@ classifier = [
     "Typing :: Typed",
 ]
 
+[features]
+default = []
+
+# Use SIMD intrinsics. This requires Rust on the nightly channel.
+unstable-simd = [
+    "bytecount/generic-simd",
+    "bytecount/runtime-dispatch-simd",
+    "encoding_rs/simd-accel",
+    "simdutf8/aarch64_neon",
+    "simdutf8/std",
+]
+
 [dependencies]
+ahash = { version = "0.7", default_features = false }
 associative-cache = { version = "1" }
-bytecount = { version = "^0.6.2", default_features = false, features = ["generic-simd", "runtime-dispatch-simd"] }
+bytecount = { version = "^0.6.2", default_features = false, features = ["runtime-dispatch-simd"] }
+chrono = { version = "0.4", default_features = false }
 encoding_rs = { version = "0.8", default_features = false }
 inlinable_string = { version = "0.1" }
 itoa = { version = "0.4", default_features = false }
 once_cell = { version = "1", default_features = false }
-pyo3 = { version = "^0.13.2", default_features = false, features = ["extension-module"]}
-ryu = { version = "1" }
+pyo3 = { version = "^0.14.5", default_features = false, features = ["extension-module"]}
+ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
-serde_json = { path = "./json", default_features = false, features = ["std"] }
-smallvec = { version = "^1.6", default_features = false, features = ["const_generics", "union", "specialization", "write"] }
-wyhash = { version = "0.5" }
-
-[target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "i686", target_arch = "armv7"))'.dependencies]
-encoding_rs = { version = "0.8", default_features = false, features = ["simd-accel"] }
+serde_json = { version = "^1.0.68", default_features = false, features = ["std", "float_roundtrip"] }
+simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
+smallvec = { version = "^1.7", default_features = false, features = ["union", "write"] }
 
 [profile.release]
 codegen-units = 1

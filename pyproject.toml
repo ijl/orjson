@@ -4,14 +4,13 @@ repository = "https://github.com/ijl/orjson"
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin==0.9.0"]
+requires = ["maturin>=0.11.4,<0.12"]
 
 [tool.maturin]
-manylinux = "off"
-sdist-include = ["Cargo.lock", "json/**/*"]
-strip = "on"
+sdist-include = ["Cargo.lock"]
+strip = true
 
 [tool.black]
 line-length = 88
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py37', 'py38', 'py39']
 include = '\.pyi?$'

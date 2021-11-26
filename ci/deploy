@@ -2,8 +2,6 @@
 
 set -eou pipefail
 
-twine --version
-
 if [ -z ${DRONE_TAG+x} ]; then
     tag=$(git name-rev --tags --name-only $(git rev-parse HEAD))
 else
@@ -17,4 +15,4 @@ if [[ "$tag" == "undefined" ]]; then
     exit 0
 fi
 
-twine upload --non-interactive --skip-existing "$1"
+maturin upload --skip-existing --username "$MATURIN_USERNAME" "$1"

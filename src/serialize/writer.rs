@@ -5,6 +5,8 @@ use core::ptr::NonNull;
 use pyo3::ffi::*;
 use std::os::raw::c_char;
 
+const BUFFER_LENGTH: usize = 1024;
+
 pub struct BytesWriter {
     cap: usize,
     len: usize,
@@ -12,13 +14,14 @@ pub struct BytesWriter {
 }
 
 impl BytesWriter {
-    #[inline]
     pub fn new() -> Self {
-        let buf = [0; 64];
         BytesWriter {
-            cap: 64,
+            cap: BUFFER_LENGTH,
             len: 0,
-            bytes: unsafe { PyBytes_FromStringAndSize(buf.as_ptr(), 64) as *mut PyBytesObject },
+            bytes: unsafe {
+                PyBytes_FromStringAndSize(std::ptr::null_mut(), BUFFER_LENGTH as isize)
+                    as *mut PyBytesObject
+            },
         }
     }
 
@@ -40,6 +43,7 @@ impl BytesWriter {
         }
     }
 
+    #[inline(always)]
     pub fn resize(&mut self, len: isize) {
         unsafe {
             _PyBytes_Resize(
@@ -49,12 +53,9 @@ impl BytesWriter {
         }
     }
 
-    pub fn prefetch(&self) {
-        unsafe { core::intrinsics::prefetch_write_data(self.buffer_ptr(), 3) };
-    }
-
+    #[cold]
     fn grow(&mut self, len: usize) {
-        while self.cap - self.len < len {
+        while len >= self.cap {
             self.cap *= 2;
         }
         self.resize(self.cap as isize);
@@ -65,13 +66,14 @@ impl std::io::Write for BytesWriter {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> std::result::Result<usize, std::io::Error> {
         let to_write = buf.len();
-        if unlikely!(self.len + to_write > self.cap) {
-            self.grow(to_write);
+        let end_length = self.len + to_write;
+        if unlikely!(end_length > self.cap) {
+            self.grow(end_length);
         }
         unsafe {
             std::ptr::copy_nonoverlapping(buf.as_ptr() as *const u8, self.buffer_ptr(), to_write);
         };
-        self.len += to_write;
+        self.len = end_length;
         Ok(to_write)
     }
     #[inline]

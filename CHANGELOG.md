@@ -1,5 +1,82 @@
 # Changelog
 
+## 3.6.4 - 2021-10-01
+
+### Fixed
+
+- Fix serialization of `dataclass` inheriting from `abc.ABC` and
+using `__slots__`.
+- Decrement refcount for numpy `PyArrayInterface`.
+- Fix build on recent versions of Rust nightly.
+
+## 3.6.3 - 2021-08-20
+
+### Fixed
+
+- Fix build on aarch64 using the Rust stable channel.
+
+## 3.6.2 - 2021-08-17
+
+### Changed
+
+- `orjson` now compiles on Rust stable 1.54.0 or above. Use of some SIMD
+usage is now disabled by default and packagers are advised to add
+`--cargo-extra-args="--features=unstable-simd"` to the `maturin build` command
+ if they continue to use nightly.
+- `orjson` built with `--features=unstable-simd` adds UTF-8 validation
+implementations that use AVX2 or SSE4.2.
+- Drop support for Python 3.6.
+
+## 3.6.1 - 2021-08-04
+
+### Changed
+
+- `orjson` now includes a `pyi` type stubs file.
+- Publish manylinux_2_24 wheels instead of manylinux2014.
+
+### Fixed
+
+- Fix compilation on latest Rust nightly.
+
+## 3.6.0 - 2021-07-08
+
+### Added
+
+- `orjson.dumps()` serializes `numpy.datetime64` instances as RFC 3339
+strings.
+
+## 3.5.4 - 2021-06-30
+
+### Fixed
+
+- Fix memory leak serializing `datetime.datetime` with `tzinfo`.
+- Fix wrong error message when serializing an unsupported numpy type
+without default specified.
+
+### Changed
+
+- Publish python3.10 and python3.9 manylinux_2_24 wheels.
+
+## 3.5.3 - 2021-06-01
+
+### Fixed
+
+- `orjson.JSONDecodeError` now has `pos`, `lineno`, and `colno`.
+- Fix build on recent versions of Rust nightly.
+
+## 3.5.2 - 2021-04-15
+
+### Changed
+
+- Improve serialization and deserialization performance.
+- `orjson.dumps()` serializes individual `numpy.bool_` objects.
+
+## 3.5.1 - 2021-03-06
+
+### Changed
+
+- Publish `universal2` wheels for macOS supporting Apple Silicon (aarch64).
+
 ## 3.5.0 - 2021-02-24
 
 ### Added

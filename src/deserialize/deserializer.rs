@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::*;
+use crate::deserialize::DeserializeError;
 use crate::exc::*;
 use crate::ffi::*;
 use crate::typeref::*;
@@ -11,18 +12,41 @@ use std::borrow::Cow;
 use std::fmt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use wyhash::wyhash;
+
+#[cfg(target_arch = "x86_64")]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    if std::is_x86_feature_detected!("sse4.2") {
+        simdutf8::basic::from_utf8(buf).is_ok()
+    } else {
+        encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", feature = "unstable-simd"))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    simdutf8::basic::from_utf8(buf).is_ok()
+}
+
+#[cfg(all(target_arch = "aarch64", not(feature = "unstable-simd")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    std::str::from_utf8(buf).is_ok()
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    std::str::from_utf8(buf).is_ok()
+}
 
 pub fn deserialize(
     ptr: *mut pyo3::ffi::PyObject,
-) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, String> {
+) -> std::result::Result<NonNull<pyo3::ffi::PyObject>, DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            return Err(INVALID_STR.to_string());
+            return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
         contents = unsafe { std::slice::from_raw_parts(uni, str_size as usize) };
     } else {
@@ -34,7 +58,12 @@ pub fn deserialize(
         } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
             let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
             if unsafe { pyo3::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
-                return Err("Input type memoryview must be a C contiguous buffer".to_string());
+                return Err(DeserializeError::new(
+                    Cow::Borrowed("Input type memoryview must be a C contiguous buffer"),
+                    0,
+                    0,
+                    "",
+                ));
             }
             buffer = unsafe { (*membuf).buf as *const u8 };
             length = unsafe { (*membuf).len as usize };
@@ -42,11 +71,16 @@ pub fn deserialize(
             buffer = ffi!(PyByteArray_AsString(ptr)) as *const u8;
             length = ffi!(PyByteArray_Size(ptr)) as usize;
         } else {
-            return Err("Input must be bytes, bytearray, memoryview, or str".to_string());
+            return Err(DeserializeError::new(
+                Cow::Borrowed("Input must be bytes, bytearray, memoryview, or str"),
+                0,
+                0,
+                "",
+            ));
         }
         contents = unsafe { std::slice::from_raw_parts(buffer, length) };
-        if encoding_rs::Encoding::utf8_valid_up_to(contents) != length {
-            return Err(INVALID_STR.to_string());
+        if !is_valid_utf8(contents) {
+            return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
         }
     }
 
@@ -56,10 +90,17 @@ pub fn deserialize(
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
-            deserializer.end().map_err(|e| e.to_string())?;
+            deserializer.end().map_err(|e| {
+                DeserializeError::new(Cow::Owned(e.to_string()), e.line(), e.column(), data)
+            })?;
             Ok(obj)
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(DeserializeError::new(
+            Cow::Owned(e.to_string()),
+            e.line(),
+            e.column(),
+            data,
+        )),
     }
 }
 
@@ -123,13 +164,6 @@ impl<'de> Visitor<'de> for JsonValue {
         Ok(nonnull!(ffi!(PyFloat_FromDouble(value))))
     }
 
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(nonnull!(unicode_from_str(value.as_str())))
-    }
-
     fn visit_borrowed_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
@@ -173,11 +207,14 @@ impl<'de> Visitor<'de> for JsonValue {
     {
         let dict_ptr = ffi!(PyDict_New());
         while let Some(key) = map.next_key::<Cow<str>>()? {
+            let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3::ffi::PyObject;
             let pyhash: pyo3::ffi::Py_hash_t;
-            let value = map.next_value_seed(self)?;
-            if likely!(key.len() <= 64) {
-                let hash = unsafe { wyhash(key.as_bytes(), HASH_SEED) };
+            if unlikely!(key.len() > 64) {
+                pykey = unicode_from_str(&key);
+                pyhash = hash_str(pykey);
+            } else {
+                let hash = cache_hash(key.as_bytes());
                 {
                     let map = unsafe {
                         KEY_MAP
@@ -195,9 +232,6 @@ impl<'de> Visitor<'de> for JsonValue {
                     pykey = entry.get();
                     pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
                 }
-            } else {
-                pykey = unicode_from_str(&key);
-                pyhash = hash_str(pykey);
             }
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,
