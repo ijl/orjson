@@ -7,13 +7,13 @@ pub enum DateTimeError {
 
 #[repr(transparent)]
 pub struct DateTimeBuffer {
-    buf: smallvec::SmallVec<[u8; 32]>,
+    buf: arrayvec::ArrayVec<u8, 32>,
 }
 
 impl DateTimeBuffer {
     pub fn new() -> DateTimeBuffer {
         DateTimeBuffer {
-            buf: smallvec::SmallVec::with_capacity(32),
+            buf: arrayvec::ArrayVec::<u8, 32>::new(),
         }
     }
     pub fn push(&mut self, value: u8) {
@@ -21,7 +21,7 @@ impl DateTimeBuffer {
     }
 
     pub fn extend_from_slice(&mut self, slice: &[u8]) {
-        self.buf.extend_from_slice(slice);
+        self.buf.try_extend_from_slice(slice).unwrap();
     }
 
     pub fn as_ptr(&self) -> *const u8 {

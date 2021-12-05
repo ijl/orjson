@@ -251,7 +251,7 @@ impl DictNonStrKey {
                 Err(TimeError::HasTimezone) => Err(SerializeError::TimeHasTzinfo),
             },
             ObType::Uuid => {
-                let mut buf: UUIDBuffer = smallvec::SmallVec::with_capacity(64);
+                let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
                 UUID::new(key).write_buf(&mut buf);
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))

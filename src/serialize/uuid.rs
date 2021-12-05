@@ -2,11 +2,10 @@
 
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
-use smallvec::SmallVec;
 use std::io::Write;
 use std::os::raw::c_uchar;
 
-pub type UUIDBuffer = smallvec::SmallVec<[u8; 64]>;
+pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
 pub struct UUID {
     ptr: *mut pyo3::ffi::PyObject,
@@ -36,18 +35,18 @@ impl UUID {
             value = u128::from_le_bytes(buffer);
         }
 
-        let mut hexadecimal: SmallVec<[u8; 32]> = SmallVec::with_capacity(32);
+        let mut hexadecimal = arrayvec::ArrayVec::<u8, 32>::new();
         write!(hexadecimal, "{:032x}", value).unwrap();
 
-        buf.extend_from_slice(&hexadecimal[..8]);
+        buf.try_extend_from_slice(&hexadecimal[..8]).unwrap();
         buf.push(b'-');
-        buf.extend_from_slice(&hexadecimal[8..12]);
+        buf.try_extend_from_slice(&hexadecimal[8..12]).unwrap();
         buf.push(b'-');
-        buf.extend_from_slice(&hexadecimal[12..16]);
+        buf.try_extend_from_slice(&hexadecimal[12..16]).unwrap();
         buf.push(b'-');
-        buf.extend_from_slice(&hexadecimal[16..20]);
+        buf.try_extend_from_slice(&hexadecimal[16..20]).unwrap();
         buf.push(b'-');
-        buf.extend_from_slice(&hexadecimal[20..]);
+        buf.try_extend_from_slice(&hexadecimal[20..32]).unwrap();
     }
 }
 impl<'p> Serialize for UUID {
@@ -56,7 +55,7 @@ impl<'p> Serialize for UUID {
     where
         S: Serializer,
     {
-        let mut buf: UUIDBuffer = smallvec::SmallVec::with_capacity(64);
+        let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
         self.write_buf(&mut buf);
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
