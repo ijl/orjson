@@ -1,8 +1,12 @@
+-r bench/requirements.txt
+-r integration/requirements.txt
+-r test/requirements.txt
 autoflake
 black
 isort
 maturin
 mypy
--r test/requirements.txt
--r bench/requirements.txt
--r integration/requirements.txt
+types-python-dateutil
+types-pytz
+types-simplejson
+types-ujson

@@ -4,16 +4,17 @@
 import io
 import json
 import lzma
-import sys
 import os
+import sys
 from pathlib import Path
 from timeit import timeit
 
-import orjson
+import rapidjson
 import simplejson
 import ujson
-import rapidjson
 from tabulate import tabulate
+
+import orjson
 
 os.sched_setaffinity(os.getpid(), {0, 1})
 
@@ -29,6 +30,7 @@ def read_fixture_obj(filename):
         contents = path.read_bytes()
     return orjson.loads(contents)
 
+
 filename = sys.argv[1] if len(sys.argv) >= 1 else ""
 
 data = read_fixture_obj(f"{filename}.json.xz")
@@ -43,49 +45,54 @@ output_in_kib_pretty = len(orjson.dumps(data, option=orjson.OPT_INDENT_2)) / 102
 # minimum 2s runtime for orjson compact
 ITERATIONS = int(2 / (timeit(lambda: orjson.dumps(data), number=20) / 20))
 
-print(f"{output_in_kib_compact:,.0f}KiB compact, {output_in_kib_pretty:,.0f}KiB pretty, {ITERATIONS} iterations")
+print(
+    f"{output_in_kib_compact:,.0f}KiB compact, {output_in_kib_pretty:,.0f}KiB pretty, {ITERATIONS} iterations"
+)
+
 
 def per_iter_latency(val):
     if val is None:
         return None
     return (val * 1000) / ITERATIONS
 
+
 def test_correctness(serialized):
     return orjson.loads(serialized) == data
+
 
 table = []
 for lib_name in LIBRARIES:
     print(f"{lib_name}...")
     if lib_name == "json":
         time_compact = timeit(
-            lambda: json.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_pretty = timeit(
-            lambda: json.dumps(data, indent=2).encode("utf-8"), number=ITERATIONS,
+            lambda: json.dumps(data, indent=2).encode("utf-8"),
+            number=ITERATIONS,
         )
-        correct = test_correctness(
-            json.dumps(data, indent=2).encode("utf-8")
-        )
+        correct = test_correctness(json.dumps(data, indent=2).encode("utf-8"))
     elif lib_name == "simplejson":
         time_compact = timeit(
-            lambda: simplejson.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: simplejson.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_pretty = timeit(
-            lambda: simplejson.dumps(data, indent=2).encode("utf-8"), number=ITERATIONS,
+            lambda: simplejson.dumps(data, indent=2).encode("utf-8"),
+            number=ITERATIONS,
         )
-        correct = test_correctness(
-            simplejson.dumps(data, indent=2).encode("utf-8")
-        )
+        correct = test_correctness(simplejson.dumps(data, indent=2).encode("utf-8"))
     elif lib_name == "ujson":
         time_compact = timeit(
-            lambda: ujson.dumps(data).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(data).encode("utf-8"),
+            number=ITERATIONS,
         )
         time_pretty = timeit(
-            lambda: ujson.dumps(data, indent=2).encode("utf-8"), number=ITERATIONS,
+            lambda: ujson.dumps(data, indent=2).encode("utf-8"),
+            number=ITERATIONS,
         )
-        correct = test_correctness(
-            ujson.dumps(data, indent=2).encode("utf-8")
-        )
+        correct = test_correctness(ujson.dumps(data, indent=2).encode("utf-8"))
     elif lib_name == "rapidjson":
         time_compact = timeit(lambda: rapidjson.dumps(data), number=ITERATIONS)
         time_pretty = None
@@ -93,11 +100,10 @@ for lib_name in LIBRARIES:
     elif lib_name == "orjson":
         time_compact = timeit(lambda: orjson.dumps(data), number=ITERATIONS)
         time_pretty = timeit(
-            lambda: orjson.dumps(data, None, orjson.OPT_INDENT_2), number=ITERATIONS,
+            lambda: orjson.dumps(data, None, orjson.OPT_INDENT_2),
+            number=ITERATIONS,
         )
-        correct = test_correctness(
-            orjson.dumps(data, None, orjson.OPT_INDENT_2)
-        )
+        correct = test_correctness(orjson.dumps(data, None, orjson.OPT_INDENT_2))
         orjson_time_pretty = per_iter_latency(time_pretty)
     else:
         raise NotImplementedError

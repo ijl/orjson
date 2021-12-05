@@ -21,10 +21,16 @@ pub struct NumpyTypes {
     pub datetime64: *mut PyTypeObject,
 }
 
+pub static mut DEFAULT: *mut PyObject = 0 as *mut PyObject;
+pub static mut OPTION: *mut PyObject = 0 as *mut PyObject;
+
 pub static mut NONE: *mut PyObject = 0 as *mut PyObject;
 pub static mut TRUE: *mut PyObject = 0 as *mut PyObject;
 pub static mut FALSE: *mut PyObject = 0 as *mut PyObject;
 
+pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut MEMORYVIEW_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut STR_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut INT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BOOL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -38,12 +44,9 @@ pub static mut TIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+
 pub static mut NUMPY_TYPES: Lazy<Option<NumpyTypes>> = Lazy::new(|| unsafe { load_numpy_types() });
 pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
-
-pub static mut BYTES_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
-pub static mut MEMORYVIEW_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 
 pub static mut INT_ATTR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = 0 as *mut PyObject;
@@ -59,9 +62,9 @@ pub static mut ARRAY_STRUCT_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DTYPE_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut DESCR_STR: *mut PyObject = 0 as *mut PyObject;
 pub static mut VALUE_STR: *mut PyObject = 0 as *mut PyObject;
+
 pub static mut STR_HASH_FUNCTION: Option<hashfunc> = None;
-pub static mut DEFAULT: *mut PyObject = 0 as *mut PyObject;
-pub static mut OPTION: *mut PyObject = 0 as *mut PyObject;
+
 pub static mut HASH_BUILDER: Lazy<ahash::RandomState> = Lazy::new(|| unsafe {
     RandomState::with_seeds(
         VALUE_STR as u64,
@@ -115,6 +118,7 @@ pub fn init_typerefs() {
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
+
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
         NORMALIZE_METHOD_STR = PyUnicode_InternFromString("normalize\0".as_ptr() as *const c_char);
@@ -126,10 +130,10 @@ pub fn init_typerefs() {
         SLOTS_STR = PyUnicode_InternFromString("__slots__\0".as_ptr() as *const c_char);
         FIELD_TYPE_STR = PyUnicode_InternFromString("_field_type\0".as_ptr() as *const c_char);
         ARRAY_STRUCT_STR =
-            pyo3::ffi::PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
-        DTYPE_STR = pyo3::ffi::PyUnicode_InternFromString("dtype\0".as_ptr() as *const c_char);
-        DESCR_STR = pyo3::ffi::PyUnicode_InternFromString("descr\0".as_ptr() as *const c_char);
-        VALUE_STR = pyo3::ffi::PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
+            PyUnicode_InternFromString("__array_struct__\0".as_ptr() as *const c_char);
+        DTYPE_STR = PyUnicode_InternFromString("dtype\0".as_ptr() as *const c_char);
+        DESCR_STR = PyUnicode_InternFromString("descr\0".as_ptr() as *const c_char);
+        VALUE_STR = PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
         JsonEncodeError = pyo3::ffi::PyExc_TypeError;

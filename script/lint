@@ -2,7 +2,10 @@
 
 set -eou pipefail
 
+to_lint="./bench/*.py ./orjson.pyi ./test/*.py script/pydataclass script/pymem
+script/pysort script/pynumpy script/pynonstr script/pycorrectness script/graph"
+
 autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports .
-isort ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr pycorrectness
-black ./bench/*.py ./orjson.pyi ./test/*.py pydataclass pymem pysort pynumpy pynonstr pycorrectness
+isort ${to_lint}
+black ${to_lint}
 mypy --ignore-missing-imports ./bench/*.py ./orjson.pyi ./test/*.py

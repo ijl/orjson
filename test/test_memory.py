@@ -12,7 +12,7 @@ import pytz
 try:
     import psutil
 except ImportError:
-    psutil = None
+    psutil = None  # type: ignore
 import pytest
 
 import orjson
@@ -20,7 +20,7 @@ import orjson
 try:
     import numpy
 except ImportError:
-    numpy = None
+    numpy = None  # type: ignore
 
 FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 

@@ -197,7 +197,7 @@ impl<'de> Visitor<'de> for JsonValue {
                 }
                 Ok(nonnull!(ptr))
             }
-            Err(err) => std::result::Result::Err(err),
+            Err(err) => Result::Err(err),
         }
     }
 

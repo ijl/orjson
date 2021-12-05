@@ -64,7 +64,7 @@ impl BytesWriter {
 
 impl std::io::Write for BytesWriter {
     #[inline]
-    fn write(&mut self, buf: &[u8]) -> std::result::Result<usize, std::io::Error> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
         let to_write = buf.len();
         let end_length = self.len + to_write;
         if unlikely!(end_length > self.cap) {
@@ -77,12 +77,12 @@ impl std::io::Write for BytesWriter {
         Ok(to_write)
     }
     #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> std::result::Result<(), std::io::Error> {
+    fn write_all(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
         let _ = self.write(buf);
         Ok(())
     }
     #[inline]
-    fn flush(&mut self) -> std::result::Result<(), std::io::Error> {
+    fn flush(&mut self) -> Result<(), std::io::Error> {
         Ok(())
     }
 }

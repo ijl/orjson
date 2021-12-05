@@ -13,7 +13,7 @@ import orjson
 try:
     import numpy
 except ImportError:
-    numpy = None
+    numpy = None  # type: ignore
 
 
 class SubStr(str):

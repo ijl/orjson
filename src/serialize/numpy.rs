@@ -317,7 +317,7 @@ impl<'p> Serialize for NumpyArray {
 
 #[repr(transparent)]
 struct DataTypeF32 {
-    pub obj: f32,
+    obj: f32,
 }
 
 impl<'p> Serialize for DataTypeF32 {
@@ -331,7 +331,7 @@ impl<'p> Serialize for DataTypeF32 {
 
 #[repr(transparent)]
 pub struct DataTypeF64 {
-    pub obj: f64,
+    obj: f64,
 }
 
 impl<'p> Serialize for DataTypeF64 {
@@ -345,7 +345,7 @@ impl<'p> Serialize for DataTypeF64 {
 
 #[repr(transparent)]
 pub struct DataTypeI8 {
-    pub obj: i8,
+    obj: i8,
 }
 
 impl<'p> Serialize for DataTypeI8 {
@@ -359,7 +359,7 @@ impl<'p> Serialize for DataTypeI8 {
 
 #[repr(transparent)]
 pub struct DataTypeI32 {
-    pub obj: i32,
+    obj: i32,
 }
 
 impl<'p> Serialize for DataTypeI32 {
@@ -373,7 +373,7 @@ impl<'p> Serialize for DataTypeI32 {
 
 #[repr(transparent)]
 pub struct DataTypeI64 {
-    pub obj: i64,
+    obj: i64,
 }
 
 impl<'p> Serialize for DataTypeI64 {
@@ -387,7 +387,7 @@ impl<'p> Serialize for DataTypeI64 {
 
 #[repr(transparent)]
 pub struct DataTypeU8 {
-    pub obj: u8,
+    obj: u8,
 }
 
 impl<'p> Serialize for DataTypeU8 {
@@ -401,7 +401,7 @@ impl<'p> Serialize for DataTypeU8 {
 
 #[repr(transparent)]
 pub struct DataTypeU32 {
-    pub obj: u32,
+    obj: u32,
 }
 
 impl<'p> Serialize for DataTypeU32 {
@@ -415,7 +415,7 @@ impl<'p> Serialize for DataTypeU32 {
 
 #[repr(transparent)]
 pub struct DataTypeU64 {
-    pub obj: u64,
+    obj: u64,
 }
 
 impl<'p> Serialize for DataTypeU64 {
@@ -429,7 +429,7 @@ impl<'p> Serialize for DataTypeU64 {
 
 #[repr(transparent)]
 pub struct DataTypeBOOL {
-    pub obj: u8,
+    obj: u8,
 }
 
 impl<'p> Serialize for DataTypeBOOL {
@@ -442,8 +442,8 @@ impl<'p> Serialize for DataTypeBOOL {
 }
 
 pub struct NumpyScalar {
-    pub ptr: *mut pyo3::ffi::PyObject,
-    pub opts: Opt,
+    ptr: *mut pyo3::ffi::PyObject,
+    opts: Opt,
 }
 
 impl NumpyScalar {
@@ -495,9 +495,9 @@ impl<'p> Serialize for NumpyScalar {
 
 #[repr(C)]
 pub struct NumpyInt8 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: i8,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: i8,
 }
 
 impl<'p> Serialize for NumpyInt8 {
@@ -511,9 +511,9 @@ impl<'p> Serialize for NumpyInt8 {
 
 #[repr(C)]
 pub struct NumpyInt32 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: i32,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: i32,
 }
 
 impl<'p> Serialize for NumpyInt32 {
@@ -527,9 +527,9 @@ impl<'p> Serialize for NumpyInt32 {
 
 #[repr(C)]
 pub struct NumpyInt64 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: i64,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: i64,
 }
 
 impl<'p> Serialize for NumpyInt64 {
@@ -543,9 +543,9 @@ impl<'p> Serialize for NumpyInt64 {
 
 #[repr(C)]
 pub struct NumpyUint8 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: u8,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: u8,
 }
 
 impl<'p> Serialize for NumpyUint8 {
@@ -559,9 +559,9 @@ impl<'p> Serialize for NumpyUint8 {
 
 #[repr(C)]
 pub struct NumpyUint32 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: u32,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: u32,
 }
 
 impl<'p> Serialize for NumpyUint32 {
@@ -575,9 +575,9 @@ impl<'p> Serialize for NumpyUint32 {
 
 #[repr(C)]
 pub struct NumpyUint64 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: u64,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: u64,
 }
 
 impl<'p> Serialize for NumpyUint64 {
@@ -591,9 +591,9 @@ impl<'p> Serialize for NumpyUint64 {
 
 #[repr(C)]
 pub struct NumpyFloat32 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: f32,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: f32,
 }
 
 impl<'p> Serialize for NumpyFloat32 {
@@ -607,9 +607,9 @@ impl<'p> Serialize for NumpyFloat32 {
 
 #[repr(C)]
 pub struct NumpyFloat64 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: f64,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: f64,
 }
 
 impl<'p> Serialize for NumpyFloat64 {
@@ -623,9 +623,9 @@ impl<'p> Serialize for NumpyFloat64 {
 
 #[repr(C)]
 pub struct NumpyBool {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: bool,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: bool,
 }
 
 impl<'p> Serialize for NumpyBool {
@@ -794,9 +794,9 @@ impl NumpyDatetimeUnit {
 
 #[repr(C)]
 pub struct NumpyDatetime64 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: i64,
+    ob_refcnt: Py_ssize_t,
+    ob_type: *mut PyTypeObject,
+    value: i64,
 }
 
 macro_rules! forward_inner {
