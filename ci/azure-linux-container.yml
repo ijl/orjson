@@ -20,7 +20,7 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip maturin==0.11.4 auditwheel
+- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.12.3,<0.13" wheel auditwheel
   displayName: build dependencies
 - bash: PATH=$(path) maturin build --no-sdist --release --strip $(extra) --compatibility $(manylinux) --interpreter $(interpreter)
   env:
