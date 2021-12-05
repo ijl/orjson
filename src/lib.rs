@@ -30,8 +30,10 @@ const LOADS_DOC: &str = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects
 macro_rules! opt {
     ($mptr:expr, $name:expr, $opt:expr) => {
         unsafe {
-            #[cfg(not(target_os = "windows"))]
+            #[cfg(all(not(target_os = "windows"), target_pointer_width = "64"))]
             PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i64);
+            #[cfg(all(not(target_os = "windows"), target_pointer_width = "32"))]
+            PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
             #[cfg(target_os = "windows")]
             PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
         }
