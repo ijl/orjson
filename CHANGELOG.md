@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.5 - 2021-12-05
+
+### Fixed
+
+- Fix build on macOS aarch64 CPython 3.10.
+- Fix build issue on 32-bit.
+
 ## 3.6.4 - 2021-10-01
 
 ### Fixed
