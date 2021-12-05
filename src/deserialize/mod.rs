@@ -3,6 +3,7 @@
 mod cache;
 mod deserializer;
 mod error;
+mod utf8;
 
 pub use cache::KeyMap;
 pub use cache::KEY_MAP;
