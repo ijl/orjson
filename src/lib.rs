@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 #![cfg_attr(feature = "unstable-simd", feature(core_intrinsics))]
+#![cfg_attr(feature = "unstable-simd", feature(optimize_attribute))]
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
@@ -43,6 +44,7 @@ macro_rules! opt {
 #[allow(non_snake_case)]
 #[no_mangle]
 #[cold]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     let init = PyModuleDef {
         m_base: PyModuleDef_HEAD_INIT,
@@ -205,6 +207,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 
 #[cold]
 #[inline(never)]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     let pos = err.pos() as i64;
     let msg = err.message;
@@ -226,6 +229,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
 
 #[cold]
 #[inline(never)]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
 fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
     unsafe {
         let err_msg =

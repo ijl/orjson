@@ -660,6 +660,8 @@ pub enum NumpyDatetimeUnit {
 }
 
 impl fmt::Display for NumpyDatetimeUnit {
+    #[cold]
+    #[cfg_attr(feature = "unstable-simd", optimize(size))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let unit = match self {
             Self::Years => "years",
@@ -688,6 +690,8 @@ enum NumpyDateTimeError {
 }
 
 impl NumpyDateTimeError {
+    #[cold]
+    #[cfg_attr(feature = "unstable-simd", optimize(size))]
     fn into_serde_err<T: ser::Error>(self) -> T {
         let err = match self {
             Self::UnsupportedUnit(unit) => format!("unsupported numpy.datetime64 unit: {}", unit),

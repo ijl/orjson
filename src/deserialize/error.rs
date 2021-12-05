@@ -23,6 +23,7 @@ impl<'a> DeserializeError<'a> {
 
     /// Return position of the error in the deserialized data
     #[cold]
+    #[cfg_attr(feature = "unstable-simd", optimize(size))]
     pub fn pos(&self) -> usize {
         if self.line == 0 {
             return 1;
