@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::exc::*;
 use crate::opt::*;
 use serde::ser::{Serialize, Serializer};
 
@@ -34,7 +35,7 @@ impl<'p> Serialize for IntSerializer {
         } else if unlikely!(
             self.opts & STRICT_INTEGER != 0 && (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
         ) {
-            err!("Integer exceeds 53-bit range")
+            err!(SerializeError::Integer53Bits)
         }
         serializer.serialize_i64(val)
     }
@@ -60,7 +61,7 @@ impl<'p> Serialize for UIntSerializer {
         ffi!(PyErr_Clear());
         let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
         if unlikely!(val == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
-            err!("Integer exceeds 64-bit range")
+            err!(SerializeError::Integer64Bits)
         }
         serializer.serialize_u64(val)
     }

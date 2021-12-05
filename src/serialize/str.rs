@@ -24,7 +24,7 @@ impl<'p> Serialize for StrSerializer {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(self.ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
-            err!(INVALID_STR)
+            err!(SerializeError::InvalidStr)
         }
         serializer.serialize_str(str_from_slice!(uni, str_size))
     }
@@ -50,7 +50,7 @@ impl<'p> Serialize for StrSubclassSerializer {
         let mut str_size: pyo3::ffi::Py_ssize_t = 0;
         let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
         if unlikely!(uni.is_null()) {
-            err!(INVALID_STR)
+            err!(SerializeError::InvalidStr)
         }
         serializer.serialize_str(str_from_slice!(uni, str_size))
     }

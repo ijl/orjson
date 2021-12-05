@@ -70,12 +70,12 @@ impl<'p> Serialize for Dict {
                 self.default,
             );
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
-                err!(KEY_MUST_BE_STR)
+                err!(SerializeError::KeyMustBeStr)
             }
             {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
-                    err!(INVALID_STR)
+                    err!(SerializeError::InvalidStr)
                 }
                 map.serialize_key(str_from_slice!(data, str_size)).unwrap();
             }
@@ -136,11 +136,11 @@ impl<'p> Serialize for DictSortedKey {
                 )
             };
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
-                err!("Dict key must be str")
+                err!(SerializeError::KeyMustBeStr)
             }
             let data = read_utf8_from_str(key, &mut str_size);
             if unlikely!(data.is_null()) {
-                err!(INVALID_STR)
+                err!(SerializeError::InvalidStr)
             }
             items.push((str_from_slice!(data, str_size), value));
         }
@@ -162,14 +162,6 @@ impl<'p> Serialize for DictSortedKey {
         }
         map.end()
     }
-}
-
-enum NonStrError {
-    DatetimeLibraryUnsupported,
-    IntegerRange,
-    InvalidStr,
-    TimeTzinfo,
-    UnsupportedType,
 }
 
 pub struct DictNonStrKey {
@@ -201,7 +193,7 @@ impl DictNonStrKey {
         &self,
         key: *mut pyo3::ffi::PyObject,
         opts: crate::opt::Opt,
-    ) -> Result<InlinableString, NonStrError> {
+    ) -> Result<InlinableString, SerializeError> {
         match pyobject_to_obtype(key, opts) {
             ObType::None => Ok(InlinableString::from("null")),
             ObType::Bool => {
@@ -219,7 +211,7 @@ impl DictNonStrKey {
                     ffi!(PyErr_Clear());
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
                     if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
-                        return Err(NonStrError::IntegerRange);
+                        return Err(SerializeError::DictIntegerKey64Bit);
                     }
                     Ok(InlinableString::from(itoa::Buffer::new().format(uval)))
                 } else {
@@ -238,7 +230,7 @@ impl DictNonStrKey {
                 let mut buf = DateTimeBuffer::new();
                 let dt = DateTime::new(key, opts);
                 if dt.write_buf(&mut buf, opts).is_err() {
-                    return Err(NonStrError::DatetimeLibraryUnsupported);
+                    return Err(SerializeError::DatetimeLibraryUnsupported);
                 }
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
@@ -256,7 +248,7 @@ impl DictNonStrKey {
                     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                     Ok(InlinableString::from(key_as_str))
                 }
-                Err(TimeError::HasTimezone) => Err(NonStrError::TimeTzinfo),
+                Err(TimeError::HasTimezone) => Err(SerializeError::TimeHasTzinfo),
             },
             ObType::Uuid => {
                 let mut buf: UUIDBuffer = smallvec::SmallVec::with_capacity(64);
@@ -274,7 +266,7 @@ impl DictNonStrKey {
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                 let uni = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(uni.is_null()) {
-                    Err(NonStrError::InvalidStr)
+                    Err(SerializeError::InvalidStr)
                 } else {
                     Ok(InlinableString::from(str_from_slice!(uni, str_size)))
                 }
@@ -283,7 +275,7 @@ impl DictNonStrKey {
                 let mut str_size: pyo3::ffi::Py_ssize_t = 0;
                 let uni = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
                 if unlikely!(uni.is_null()) {
-                    Err(NonStrError::InvalidStr)
+                    Err(SerializeError::InvalidStr)
                 } else {
                     Ok(InlinableString::from(str_from_slice!(uni, str_size)))
                 }
@@ -294,7 +286,7 @@ impl DictNonStrKey {
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
-            | ObType::Unknown => Err(NonStrError::UnsupportedType),
+            | ObType::Unknown => Err(SerializeError::DictKeyInvalidType),
         }
     }
 }
@@ -326,7 +318,7 @@ impl<'p> Serialize for DictNonStrKey {
             if is_type!(ob_type!(key), STR_TYPE) {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
-                    err!(INVALID_STR)
+                    err!(SerializeError::InvalidStr)
                 }
                 items.push((
                     InlinableString::from(str_from_slice!(data, str_size)),
@@ -335,17 +327,7 @@ impl<'p> Serialize for DictNonStrKey {
             } else {
                 match self.pyobject_to_string(key, opts) {
                     Ok(key_as_str) => items.push((key_as_str, value)),
-                    Err(NonStrError::TimeTzinfo) => err!(TIME_HAS_TZINFO),
-                    Err(NonStrError::IntegerRange) => {
-                        err!("Dict integer key must be within 64-bit range")
-                    }
-                    Err(NonStrError::DatetimeLibraryUnsupported) => {
-                        err!(DATETIME_LIBRARY_UNSUPPORTED)
-                    }
-                    Err(NonStrError::InvalidStr) => err!(INVALID_STR),
-                    Err(NonStrError::UnsupportedType) => {
-                        err!("Dict key must a type serializable with OPT_NON_STR_KEYS")
-                    }
+                    Err(err) => err!(err),
                 }
             }
         }

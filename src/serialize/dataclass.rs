@@ -70,12 +70,12 @@ impl<'p> Serialize for DataclassFastSerializer {
                 self.default,
             );
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
-                err!(KEY_MUST_BE_STR)
+                err!(SerializeError::KeyMustBeStr)
             }
             {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
-                    err!(INVALID_STR)
+                    err!(SerializeError::InvalidStr)
                 }
                 let key_as_str = str_from_slice!(data, str_size);
                 if unlikely!(key_as_str.as_bytes()[0] == b'_') {
@@ -151,7 +151,7 @@ impl<'p> Serialize for DataclassFallbackSerializer {
             {
                 let data = read_utf8_from_str(attr, &mut str_size);
                 if unlikely!(data.is_null()) {
-                    err!(INVALID_STR);
+                    err!(SerializeError::InvalidStr);
                 }
                 let key_as_str = str_from_slice!(data, str_size);
                 if key_as_str.as_bytes()[0] == b'_' {

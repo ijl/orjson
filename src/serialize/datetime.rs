@@ -211,7 +211,7 @@ impl<'p> Serialize for DateTime {
     {
         let mut buf = DateTimeBuffer::new();
         if self.write_buf(&mut buf, self.opts).is_err() {
-            err!(DATETIME_LIBRARY_UNSUPPORTED)
+            err!(SerializeError::DatetimeLibraryUnsupported)
         }
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }

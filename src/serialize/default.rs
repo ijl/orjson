@@ -1,19 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::exc::*;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, Serializer};
-use std::ffi::CStr;
 
 use std::ptr::NonNull;
-
-#[cold]
-#[inline(never)]
-fn format_err(ptr: *mut pyo3::ffi::PyObject) -> String {
-    let name = unsafe { CStr::from_ptr((*ob_type!(ptr)).tp_name).to_string_lossy() };
-    format_args!("Type is not JSON serializable: {}", name).to_string()
-}
 
 pub struct DefaultSerializer {
     ptr: *mut pyo3::ffi::PyObject,
@@ -50,7 +43,7 @@ impl<'p> Serialize for DefaultSerializer {
         match self.default {
             Some(callable) => {
                 if unlikely!(self.default_calls == RECURSION_LIMIT) {
-                    err!("default serializer exceeds recursion limit")
+                    err!(SerializeError::DefaultRecursionLimit)
                 }
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
@@ -58,7 +51,7 @@ impl<'p> Serialize for DefaultSerializer {
                     std::ptr::null_mut() as *mut pyo3::ffi::PyObject
                 ));
                 if unlikely!(default_obj.is_null()) {
-                    err!(format_err(self.ptr))
+                    err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
                 } else {
                     let res = PyObjectSerializer::new(
                         default_obj,
@@ -72,7 +65,7 @@ impl<'p> Serialize for DefaultSerializer {
                     res
                 }
             }
-            None => err!(format_err(self.ptr)),
+            None => err!(SerializeError::UnsupportedType(nonnull!(self.ptr))),
         }
     }
 }
