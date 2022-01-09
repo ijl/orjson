@@ -27,8 +27,8 @@ class FlagEnum(enum.Flag):
     ONE = 1
 
 
-class AutoEnum(enum.auto):
-    A = "a"
+class AutoEnum(enum.Enum):
+    A = enum.auto()
 
 
 class FloatEnum(float, enum.Enum):
@@ -95,7 +95,7 @@ class EnumTests(unittest.TestCase):
         self.assertEqual(orjson.dumps(FlagEnum.ONE), b"1")
 
     def test_auto_enum(self):
-        self.assertEqual(orjson.dumps(AutoEnum.A), b'"a"')
+        self.assertEqual(orjson.dumps(AutoEnum.A), b'1')
 
     def test_float_enum(self):
         self.assertEqual(orjson.dumps(FloatEnum.ONE), b"1.1")
@@ -123,6 +123,8 @@ class EnumTests(unittest.TestCase):
         self.assertEqual(orjson.dumps(IntEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
         self.assertEqual(orjson.dumps(IntEnumEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
         self.assertEqual(orjson.dumps(IntFlagEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
+        self.assertEqual(orjson.dumps(FlagEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
+        self.assertEqual(orjson.dumps(AutoEnum.A, option=orjson.OPT_ENUM_NAME), b'"A"')
         self.assertEqual(orjson.dumps(FloatEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
         self.assertEqual(orjson.dumps(FloatEnum.ONE, option=orjson.OPT_ENUM_NAME), b'"ONE"')
         self.assertEqual(orjson.dumps(StrEnum.AAA, option=orjson.OPT_ENUM_NAME), b'"AAA"')
