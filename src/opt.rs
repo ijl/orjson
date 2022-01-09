@@ -14,6 +14,7 @@ pub const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
 pub const PASSTHROUGH_DATETIME: Opt = 1 << 9;
 pub const APPEND_NEWLINE: Opt = 1 << 10;
 pub const PASSTHROUGH_DATACLASS: Opt = 1 << 11;
+pub const ENUM_NAME: Opt = 1 << 12;
 
 // deprecated
 pub const SERIALIZE_DATACLASS: Opt = 0;
@@ -25,6 +26,7 @@ pub const NOT_PASSTHROUGH: Opt =
     !(PASSTHROUGH_DATETIME | PASSTHROUGH_DATACLASS | PASSTHROUGH_SUBCLASS);
 
 pub const MAX_OPT: i32 = (APPEND_NEWLINE
+    | ENUM_NAME
     | INDENT_2
     | NAIVE_UTC
     | NON_STR_KEYS
