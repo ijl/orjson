@@ -181,7 +181,13 @@ impl<'p> Serialize for PyObjectSerializer {
         match self.obtype {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
-            ObType::Int => IntSerializer::new(self.ptr, self.opts).serialize(serializer),
+            ObType::Int => {
+                if unlikely!(self.opts & STRICT_INTEGER != 0) {
+                    Int53Serializer::new(self.ptr).serialize(serializer)
+                } else {
+                    IntSerializer::new(self.ptr).serialize(serializer)
+                }
+            }
             ObType::None => serializer.serialize_unit(),
             ObType::Float => serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr))),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),

@@ -230,6 +230,14 @@ class TypeTests(unittest.TestCase):
             with self.assertRaises(orjson.JSONEncodeError):
                 orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER)
 
+    def test_int_53_exc_usize(self):
+        """
+        int 53-bit exception on 64-bit usize
+        """
+        for val in (9223372036854775808, 18446744073709551615):
+            with self.assertRaises(orjson.JSONEncodeError):
+                orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER)
+
     def test_int_64(self):
         """
         int 64-bit
