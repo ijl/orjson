@@ -1171,7 +1171,7 @@ maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstab
 
 To build on the stable channel, do not specify `--features=unstable-simd`.
 
-The project's own CI tests against `nightly-2021-12-05` and stable 1.54. It
+The project's own CI tests against `nightly-2022-01-17` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
@@ -1187,5 +1187,5 @@ tests should be run as part of the build. It can be run with
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2021, licensed
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2022, licensed
 under both the Apache 2 and MIT licenses.
