@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.6.6 - 2022-01-21
+
+### Changed
+
+- Improve performance of serializing `datetime.datetime` using `tzinfo` that
+are `zoneinfo.ZoneInfo`.
+
+### Fixed
+
+- Fix invalid indexing in line and column number reporting in
+`JSONDecodeError`.
+- Fix `orjson.OPT_STRICT_INTEGER` not raising an error on
+values exceeding a 64-bit integer maximum.
+
 ## 3.6.5 - 2021-12-05
 
 ### Fixed
