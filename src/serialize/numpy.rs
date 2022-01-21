@@ -837,6 +837,10 @@ impl DateTimeLike for NumpyDatetime64Repr {
         false
     }
 
+    fn slow_offset(&self) -> Result<Offset, DateTimeError> {
+        unreachable!()
+    }
+
     fn offset(&self) -> Result<Offset, DateTimeError> {
         Ok(Offset::default())
     }

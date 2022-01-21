@@ -162,33 +162,50 @@ impl DateTimeLike for DateTime {
         unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 }
     }
 
+    fn slow_offset(&self) -> Result<Offset, DateTimeError> {
+        let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
+        if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
+            // pendulum
+            let py_offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
+            let offset = Offset {
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+            };
+            ffi!(Py_DECREF(py_offset));
+            Ok(offset)
+        } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
+            // pytz
+            let method_ptr = call_method!(tzinfo, NORMALIZE_METHOD_STR, self.ptr);
+            let py_offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
+            ffi!(Py_DECREF(method_ptr));
+            let offset = Offset {
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+            };
+            ffi!(Py_DECREF(py_offset));
+            Ok(offset)
+        } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
+            // dateutil/arrow, datetime.timezone.utc
+            let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
+            let offset = Offset {
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
+            };
+            ffi!(Py_DECREF(py_offset));
+            Ok(offset)
+        } else {
+            Err(DateTimeError::LibraryUnsupported)
+        }
+    }
+
+    #[cfg(Py_3_9)]
     fn offset(&self) -> Result<Offset, DateTimeError> {
         if !self.has_tz() {
             Ok(Offset::default())
         } else {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
-            if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
-                // pendulum
-                let py_offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
-                let offset = Offset {
-                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
-                    day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
-                };
-                ffi!(Py_DECREF(py_offset));
-                Ok(offset)
-            } else if ffi!(PyObject_HasAttr(tzinfo, NORMALIZE_METHOD_STR)) == 1 {
-                // pytz
-                let method_ptr = call_method!(tzinfo, NORMALIZE_METHOD_STR, self.ptr);
-                let py_offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
-                ffi!(Py_DECREF(method_ptr));
-                let offset = Offset {
-                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
-                    day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
-                };
-                ffi!(Py_DECREF(py_offset));
-                Ok(offset)
-            } else if ffi!(PyObject_HasAttr(tzinfo, DST_STR)) == 1 {
-                // dateutil/arrow, datetime.timezone.utc
+            if unsafe { ob_type!(tzinfo) == ZONEINFO_TYPE } {
+                // zoneinfo
                 let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 let offset = Offset {
                     second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
@@ -197,8 +214,17 @@ impl DateTimeLike for DateTime {
                 ffi!(Py_DECREF(py_offset));
                 Ok(offset)
             } else {
-                Err(DateTimeError::LibraryUnsupported)
+                self.slow_offset()
             }
+        }
+    }
+
+    #[cfg(not(Py_3_9))]
+    fn offset(&self) -> Result<Offset, DateTimeError> {
+        if !self.has_tz() {
+            Ok(Offset::default())
+        } else {
+            self.slow_offset()
         }
     }
 }

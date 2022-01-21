@@ -87,6 +87,9 @@ pub trait DateTimeLike {
     /// Is the object time-zone aware?
     fn has_tz(&self) -> bool;
 
+    //// python3.8 or below implementation of offset()
+    fn slow_offset(&self) -> Result<Offset, DateTimeError>;
+
     /// The offset of the timezone.
     fn offset(&self) -> Result<Offset, DateTimeError>;
 
@@ -116,15 +119,9 @@ pub trait DateTimeLike {
         if opts & OMIT_MICROSECONDS == 0 {
             let microsecond = self.microsecond();
             if microsecond != 0 {
-                {
-                    buf.push(b'.');
-                }
-                {
-                    write_triple_digit!(buf, microsecond / 1_000);
-                }
-                {
-                    write_triple_digit!(buf, microsecond % 1_000);
-                }
+                buf.push(b'.');
+                write_triple_digit!(buf, microsecond / 1_000);
+                write_triple_digit!(buf, microsecond % 1_000);
                 // Don't support writing nanoseconds for now.
                 // If requested, something like the following should work,
                 // and the `DateTimeBuffer` type alias should be changed to
@@ -155,23 +152,21 @@ pub trait DateTimeLike {
                     // datetime.timedelta(seconds=37800) -> +10:30
                     buf.push(b'+');
                 }
-                {
-                    let offset_minute = offset_second / 60;
-                    let offset_hour = offset_minute / 60;
-                    write_double_digit!(buf, offset_hour);
-                    buf.push(b':');
-                    let mut offset_minute_print = offset_minute % 60;
-                    // https://tools.ietf.org/html/rfc3339#section-5.8
-                    // "exactly 19 minutes and 32.13 seconds ahead of UTC"
-                    // "closest representable UTC offset"
-                    //  "+20:00"
-                    let offset_excess_second =
-                        offset_second - (offset_minute_print * 60 + offset_hour * 3600);
-                    if offset_excess_second >= 30 {
-                        offset_minute_print += 1;
-                    }
-                    write_double_digit!(buf, offset_minute_print);
+                let offset_minute = offset_second / 60;
+                let offset_hour = offset_minute / 60;
+                write_double_digit!(buf, offset_hour);
+                buf.push(b':');
+                let mut offset_minute_print = offset_minute % 60;
+                // https://tools.ietf.org/html/rfc3339#section-5.8
+                // "exactly 19 minutes and 32.13 seconds ahead of UTC"
+                // "closest representable UTC offset"
+                //  "+20:00"
+                let offset_excess_second =
+                    offset_second - (offset_minute_print * 60 + offset_hour * 3600);
+                if offset_excess_second >= 30 {
+                    offset_minute_print += 1;
                 }
+                write_double_digit!(buf, offset_minute_print);
             }
         }
         Ok(())

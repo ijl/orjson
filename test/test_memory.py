@@ -7,7 +7,10 @@ import random
 import unittest
 from typing import List
 
-import pytz
+try:
+    import pytz
+except ImportError:
+    pytz = None  # type: ignore
 
 try:
     import psutil
@@ -198,7 +201,8 @@ class MemoryTests(unittest.TestCase):
         self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
 
     @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+        psutil is None or pytz is None,
+        reason="psutil install broken on win, python3.9, Azure",
     )
     def test_memory_dumps_pytz_tzinfo(self):
         """

@@ -5,10 +5,19 @@ import sys
 import unittest
 
 import pytest
-import pytz
 from dateutil import tz
 
 import orjson
+
+try:
+    import zoneinfo
+except ImportError:
+    zoneinfo = None  # type: ignore
+
+try:
+    import pytz
+except ImportError:
+    pytz = None  # type: ignore
 
 try:
     import pendulum
@@ -107,7 +116,7 @@ class DatetimeTests(unittest.TestCase):
 
     def test_datetime_timezone_utc(self):
         """
-        datetime.datetime UTC
+        datetime.datetime.utc
         """
         self.assertEqual(
             orjson.dumps(
@@ -120,12 +129,32 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-06-01T02:03:04+00:00"]',
         )
 
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_pytz_utc(self):
         """
-        datetime.datetime UTC
+        pytz.UTC
         """
         self.assertEqual(
             orjson.dumps([datetime.datetime(2018, 6, 1, 2, 3, 4, 0, tzinfo=pytz.UTC)]),
+            b'["2018-06-01T02:03:04+00:00"]',
+        )
+
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
+    def test_datetime_zoneinfo_utc(self):
+        """
+        zoneinfo.ZoneInfo("UTC")
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2018, 6, 1, 2, 3, 4, 0, tzinfo=zoneinfo.ZoneInfo("UTC")
+                    )
+                ]
+            ),
             b'["2018-06-01T02:03:04+00:00"]',
         )
 
@@ -202,6 +231,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-01-01T02:03:04+08:00"]',
         )
 
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_pytz_positive(self):
         """
         datetime.datetime positive UTC
@@ -240,6 +270,7 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-01-01T02:03:04+08:00"]',
         )
 
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_pytz_negative_dst(self):
         """
         datetime.datetime negative UTC DST
@@ -278,6 +309,33 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-06-01T02:03:04-04:00"]',
         )
 
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
+    def test_datetime_zoneinfo_negative_non_dst(self):
+        """
+        datetime.datetime negative UTC non-DST
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        2018,
+                        12,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=zoneinfo.ZoneInfo("America/New_York"),
+                    )
+                ]
+            ),
+            b'["2018-12-01T02:03:04-05:00"]',
+        )
+
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_pytz_negative_non_dst(self):
         """
         datetime.datetime negative UTC non-DST
@@ -323,7 +381,11 @@ class DatetimeTests(unittest.TestCase):
             b'["2018-12-01T02:03:04-05:00"]',
         )
 
-    def test_datetime_partial_hour(self):
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
+    def test_datetime_zoneinfo_partial_hour(self):
         """
         datetime.datetime UTC offset partial hour
         """
@@ -338,13 +400,14 @@ class DatetimeTests(unittest.TestCase):
                         3,
                         4,
                         0,
-                        tzinfo=pytz.timezone("Australia/Adelaide"),
+                        tzinfo=zoneinfo.ZoneInfo("Australia/Adelaide"),
                     )
                 ]
             ),
             b'["2018-12-01T02:03:04+10:30"]',
         )
 
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_pytz_partial_hour(self):
         """
         datetime.datetime UTC offset partial hour
@@ -415,6 +478,35 @@ class DatetimeTests(unittest.TestCase):
             b'["1937-01-01T12:00:27.000087+00:20"]',
         )
 
+    @unittest.skipIf(
+        sys.version_info < (3, 9) or sys.platform.startswith("win"),
+        "zoneinfo not available",
+    )
+    def test_datetime_partial_second_zoneinfo(self):
+        """
+        datetime.datetime UTC offset round seconds
+
+        https://tools.ietf.org/html/rfc3339#section-5.8
+        """
+        self.assertEqual(
+            orjson.dumps(
+                [
+                    datetime.datetime(
+                        1937,
+                        1,
+                        1,
+                        12,
+                        0,
+                        27,
+                        87,
+                        tzinfo=zoneinfo.ZoneInfo("Europe/Amsterdam"),
+                    )
+                ]
+            ),
+            b'["1937-01-01T12:00:27.000087+00:20"]',
+        )
+
+    @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_datetime_partial_second_pytz(self):
         """
         datetime.datetime UTC offset round seconds

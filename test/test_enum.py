@@ -64,7 +64,7 @@ class EnumTests(unittest.TestCase):
         """
         with self.assertRaises(TypeError):
 
-            class Subclass(StrEnum):
+            class Subclass(StrEnum):  # type: ignore
                 B = "b"
 
     def test_arbitrary_enum(self):

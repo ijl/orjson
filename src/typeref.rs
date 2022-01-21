@@ -45,6 +45,9 @@ pub static mut TUPLE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 
+#[cfg(Py_3_9)]
+pub static mut ZONEINFO_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+
 pub static mut NUMPY_TYPES: Lazy<Option<NumpyTypes>> = Lazy::new(|| unsafe { load_numpy_types() });
 pub static mut FIELD_TYPE: Lazy<NonNull<PyObject>> = Lazy::new(|| unsafe { look_up_field_type() });
 
@@ -119,6 +122,11 @@ pub fn init_typerefs() {
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
+
+        #[cfg(Py_3_9)]
+        {
+            ZONEINFO_TYPE = look_up_zoneinfo_type();
+        }
 
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
@@ -267,5 +275,18 @@ unsafe fn look_up_time_type() -> *mut PyTypeObject {
     let time = (PyDateTimeAPI.Time_FromTime)(0, 0, 0, 0, NONE, PyDateTimeAPI.TimeType);
     let ptr = (*time).ob_type;
     Py_DECREF(time);
+    ptr
+}
+
+#[cfg(Py_3_9)]
+#[cold]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
+unsafe fn look_up_zoneinfo_type() -> *mut PyTypeObject {
+    let module = PyImport_ImportModule("zoneinfo\0".as_ptr() as *const c_char);
+    let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
+    let ptr = PyMapping_GetItemString(module_dict, "ZoneInfo\0".as_ptr() as *const c_char)
+        as *mut PyTypeObject;
+    Py_DECREF(module_dict);
+    Py_DECREF(module);
     ptr
 }
