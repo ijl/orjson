@@ -78,6 +78,9 @@ serde_json = { version = "^1.0.68", default_features = false, features = ["std",
 simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
 smallvec = { version = "^1.8", default_features = false, features = ["union", "write"] }
 
+[build-dependencies]
+pyo3-build-config = "0.15"
+
 [profile.release]
 codegen-units = 1
 debug = false
