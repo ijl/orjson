@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  linux-cross:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [
+          { version: '3.7', abi: 'cp37-cp37m' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.10', abi: 'cp310-cp310' },
+        ]
+        target: [armv7]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Wheels
+      uses: messense/maturin-action@v1
+      env:
+        PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
+      with:
+        target: ${{ matrix.target }}
+        rust-toolchain: nightly-2022-01-17
+        manylinux: auto
+        args: -i python3.9 --release --out dist --no-sdist
+    - uses: uraimo/run-on-arch-action@v2.0.5
+      name: Install built wheel
+      with:
+        arch: ${{ matrix.target }}
+        distro: ubuntu20.04
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-dev python3-venv software-properties-common build-essential
+          add-apt-repository ppa:deadsnakes/ppa
+          apt-get update
+          apt-get install -y curl python3.7-dev python3.7-venv python3.9-dev python3.9-venv python3.10-dev python3.10-venv
+        run: |
+          PYTHON=python${{ matrix.python.version }}
+          $PYTHON -m venv venv
+          venv/bin/pip install -U pip
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels
+        path: dist
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [ linux-cross ]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *

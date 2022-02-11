@@ -173,6 +173,7 @@ dependencies = [
  "itoa",
  "once_cell",
  "pyo3",
+ "pyo3-build-config",
  "ryu",
  "serde",
  "serde_json",
