@@ -30,7 +30,7 @@ jobs:
         target: ${{ matrix.target }}
         rust-toolchain: nightly-2022-01-17
         manylinux: auto
-        args: -i python3.9 --release --out dist --no-sdist
+        args: -i python3.9 --release --strip --out dist --no-sdist
     - uses: uraimo/run-on-arch-action@v2.0.5
       name: Install built wheel
       with:
@@ -56,11 +56,51 @@ jobs:
         name: wheels
         path: dist
 
+  musllinux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build wheels
+      uses: messense/maturin-action@v1
+      with:
+        container: quay.io/pypa/musllinux_1_1_x86_64:latest
+        rust-toolchain: nightly-2022-01-17
+        target: x86_64-unknown-linux-musl
+        manylinux: musllinux_1_1
+        args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python-version }}
+    - name: Install built wheel
+      uses: addnab/docker-run-action@v3
+      with:
+        image: quay.io/pypa/musllinux_1_1_x86_64:latest
+        options: -v ${{ github.workspace }}:/io -w /io
+        run: |
+          # workaround zoneinfo._common.ZoneInfoNotFoundError: 'No time zone found with key UTC'
+          # exception when running tests
+          apk add tzdata
+
+          # Don't install numpy since there are no musllinux wheels
+          sed -i '/^numpy/d' test/requirements.txt
+
+          PYTHON=python${{ matrix.python-version }}
+          $PYTHON -m venv venv
+          venv/bin/pip install -U pip
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+    - name: Upload wheels
+      uses: actions/upload-artifact@v2
+      with:
+        name: wheels
+        path: dist
+
   release:
     name: Release
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ linux-cross ]
+    needs: [ linux-cross, musllinux ]
     steps:
       - uses: actions/download-artifact@v2
         with:
