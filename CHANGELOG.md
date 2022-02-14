@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.6.7 - 2022-02-14
+
+### Changed
+
+- Improve performance of deserializing almost-empty documents.
+- Publish arm7l `manylinux_2_17` wheels to PyPI.
+- Publish amd4 `musllinux_1_1` wheels to PyPI.
+
+### Fixed
+
+- Fix build requiring `python` on `PATH`.
+
 ## 3.6.6 - 2022-01-21
 
 ### Changed
