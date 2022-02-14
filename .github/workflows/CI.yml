@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - '*'
     tags:
       - '*'
   pull_request:
@@ -28,7 +28,7 @@ jobs:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
         target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-01-17
+        rust-toolchain: nightly-2022-02-13
         manylinux: auto
         args: -i python3.9 --release --strip --out dist --no-sdist
     - uses: uraimo/run-on-arch-action@v2.0.5
@@ -67,7 +67,7 @@ jobs:
       uses: messense/maturin-action@v1
       with:
         container: quay.io/pypa/musllinux_1_1_x86_64:latest
-        rust-toolchain: nightly-2022-01-17
+        rust-toolchain: nightly-2022-02-13
         target: x86_64-unknown-linux-musl
         manylinux: musllinux_1_1
         args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python-version }}
@@ -110,8 +110,8 @@ jobs:
           python-version: 3.9
       - name: Publish to PyPI
         env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
         run: |
           pip install --upgrade twine
           twine upload --skip-existing *

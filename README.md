@@ -32,11 +32,11 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64
-and aarch64/armv8 wheels for Linux and macOS. It distributes x86_64/amd64 wheels
-for Windows. orjson does not support PyPy. Releases follow semantic
-versioning and serializing a new object type without an opt-in flag is
-considered a breaking change.
+orjson supports CPython 3.7, 3.8, 3.9, and 3.10. It distributes x86_64/amd64,
+aarch64/armv8, and arm7 wheels for Linux, amd64 and aarch64 wheels for macOS,
+and amd64 wheels for Windows. orjson does not support PyPy. Releases
+follow semantic versioning and serializing a new object type
+without an opt-in flag is considered a breaking change.
 
 orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is
@@ -1173,12 +1173,13 @@ maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstab
 
 To build on the stable channel, do not specify `--features=unstable-simd`.
 
-The project's own CI tests against `nightly-2022-01-17` and stable 1.54. It
+The project's own CI tests against `nightly-2022-02-13` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
-orjson is tested for amd64 and aarch64 on Linux and amd64 on macOS and
-Windows. It may not work on 32-bit targets.
+orjson is tested for amd64, aarch64, and arm7 on Linux. It is tested for
+amd64 on macOS and ships an aarch64 wheel also supporting aarch64. For Windows
+is is tested on amd64.
 
 There are no runtime dependencies other than libc.
 
