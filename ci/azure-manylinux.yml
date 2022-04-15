@@ -20,11 +20,9 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.12.6,<0.13" wheel auditwheel
+- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.12.12,<0.13" wheel auditwheel
   displayName: build dependencies
 - bash: PATH=$(path) maturin build --no-sdist --release --strip $(extra) --compatibility $(compatibility) --interpreter $(interpreter)
-  env:
-    RUSTFLAGS: "-C target-cpu=k8"
   displayName: build
 - bash: PATH=$(path) $(interpreter) -m auditwheel repair target/wheels/orjson*.whl
   displayName: verify that wheel conforms to manylinux tag

@@ -7,11 +7,11 @@ use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub struct StrSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl StrSerializer {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         StrSerializer { ptr: ptr }
     }
 }
@@ -21,7 +21,7 @@ impl<'p> Serialize for StrSerializer {
     where
         S: Serializer,
     {
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(self.ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
             err!(SerializeError::InvalidStr)
@@ -32,11 +32,11 @@ impl<'p> Serialize for StrSerializer {
 
 #[repr(transparent)]
 pub struct StrSubclassSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl StrSubclassSerializer {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         StrSubclassSerializer { ptr: ptr }
     }
 }
@@ -47,7 +47,7 @@ impl<'p> Serialize for StrSubclassSerializer {
     where
         S: Serializer,
     {
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
         if unlikely!(uni.is_null()) {
             err!(SerializeError::InvalidStr)

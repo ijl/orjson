@@ -2,7 +2,7 @@
 
 use crate::typeref::EMPTY_UNICODE;
 use crate::typeref::STR_HASH_FUNCTION;
-use pyo3::ffi::*;
+use pyo3_ffi::*;
 use std::os::raw::c_char;
 
 // see unicodeobject.h for documentation
@@ -60,7 +60,7 @@ fn find_str_kind(buf: &str, num_chars: usize) -> PyUnicodeKind {
     }
 }
 
-pub fn unicode_from_str(buf: &str) -> *mut pyo3::ffi::PyObject {
+pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
     let len = buf.len();
     if unlikely!(len == 0) {
         ffi!(Py_INCREF(EMPTY_UNICODE));

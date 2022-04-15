@@ -30,11 +30,11 @@ macro_rules! write_microsecond {
 
 #[repr(transparent)]
 pub struct Date {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl Date {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         Date { ptr: ptr }
     }
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
@@ -77,13 +77,13 @@ pub enum TimeError {
 }
 
 pub struct Time {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: Opt) -> Result<Self, TimeError> {
-        if unsafe { (*(ptr as *mut pyo3::ffi::PyDateTime_Time)).hastzinfo == 1 } {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Result<Self, TimeError> {
+        if unsafe { (*(ptr as *mut pyo3_ffi::PyDateTime_Time)).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
         Ok(Time {
@@ -120,12 +120,12 @@ impl<'p> Serialize for Time {
 }
 
 pub struct DateTime {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }
 
 impl DateTime {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
@@ -159,7 +159,7 @@ impl DateTimeLike for DateTime {
     }
 
     fn has_tz(&self) -> bool {
-        unsafe { (*(self.ptr as *mut pyo3::ffi::PyDateTime_DateTime)).hastzinfo == 1 }
+        unsafe { (*(self.ptr as *mut pyo3_ffi::PyDateTime_DateTime)).hastzinfo == 1 }
     }
 
     fn slow_offset(&self) -> Result<Offset, DateTimeError> {

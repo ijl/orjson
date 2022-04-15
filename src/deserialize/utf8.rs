@@ -32,12 +32,12 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
 }
 
 pub fn read_input_to_buf(
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 ) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let contents: &[u8];
     if is_type!(obj_type_ptr, STR_TYPE) {
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let uni = read_utf8_from_str(ptr, &mut str_size);
         if unlikely!(uni.is_null()) {
             return Err(DeserializeError::new(Cow::Borrowed(INVALID_STR), 0, 0, ""));
@@ -51,7 +51,7 @@ pub fn read_input_to_buf(
             length = unsafe { PyBytes_GET_SIZE(ptr) as usize };
         } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
             let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
-            if unsafe { pyo3::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
+            if unsafe { pyo3_ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
                 return Err(DeserializeError::new(
                     Cow::Borrowed("Input type memoryview must be a C contiguous buffer"),
                     0,

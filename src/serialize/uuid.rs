@@ -8,11 +8,11 @@ use std::os::raw::c_uchar;
 pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
 pub struct UUID {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl UUID {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         UUID { ptr: ptr }
     }
     pub fn write_buf(&self, buf: &mut UUIDBuffer) {
@@ -24,8 +24,8 @@ impl UUID {
             let buffer: [c_uchar; 16] = [0; 16];
             unsafe {
                 // test_uuid_overflow
-                pyo3::ffi::_PyLong_AsByteArray(
-                    py_int as *mut pyo3::ffi::PyLongObject,
+                pyo3_ffi::_PyLong_AsByteArray(
+                    py_int as *mut pyo3_ffi::PyLongObject,
                     buffer.as_ptr() as *mut c_uchar,
                     16,
                     1, // little_endian

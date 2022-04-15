@@ -10,11 +10,11 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 #[repr(transparent)]
 pub struct IntSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl IntSerializer {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         IntSerializer { ptr: ptr }
     }
 }
@@ -36,11 +36,11 @@ impl<'p> Serialize for IntSerializer {
 
 #[repr(transparent)]
 pub struct UIntSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl UIntSerializer {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         UIntSerializer { ptr: ptr }
     }
 }
@@ -63,11 +63,11 @@ impl<'p> Serialize for UIntSerializer {
 
 #[repr(transparent)]
 pub struct Int53Serializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
 }
 
 impl Int53Serializer {
-    pub fn new(ptr: *mut pyo3::ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         Int53Serializer { ptr: ptr }
     }
 }

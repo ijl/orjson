@@ -7,20 +7,20 @@ use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
 
 pub struct ListSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl ListSerializer {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         ListSerializer {
             ptr: ptr,
@@ -38,9 +38,9 @@ impl<'p> Serialize for ListSerializer {
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(None).unwrap();
-        let slice: &[*mut pyo3::ffi::PyObject] = unsafe {
+        let slice: &[*mut pyo3_ffi::PyObject] = unsafe {
             std::slice::from_raw_parts(
-                (*(self.ptr as *mut pyo3::ffi::PyListObject)).ob_item,
+                (*(self.ptr as *mut pyo3_ffi::PyListObject)).ob_item,
                 ffi!(PyList_GET_SIZE(self.ptr)) as usize,
             )
         };

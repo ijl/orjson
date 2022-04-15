@@ -1167,13 +1167,12 @@ To package orjson requires [Rust](https://www.rust-lang.org/) and the
 This is an example for x86_64 on the Rust nightly channel:
 
 ```sh
-export RUSTFLAGS="-C target-cpu=k8"
 maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd"
 ```
 
 To build on the stable channel, do not specify `--features=unstable-simd`.
 
-The project's own CI tests against `nightly-2022-02-13` and stable 1.54. It
+The project's own CI tests against `nightly-2022-04-14` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

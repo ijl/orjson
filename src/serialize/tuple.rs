@@ -7,20 +7,20 @@ use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
 
 pub struct TupleSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl TupleSerializer {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         TupleSerializer {
             ptr: ptr,

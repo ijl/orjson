@@ -2,7 +2,7 @@
 
 use crate::ffi::PyBytesObject;
 use core::ptr::NonNull;
-use pyo3::ffi::*;
+use pyo3_ffi::*;
 use std::os::raw::c_char;
 
 const BUFFER_LENGTH: usize = 1024;
@@ -33,7 +33,6 @@ impl BytesWriter {
         }
     }
 
-    #[inline]
     fn buffer_ptr(&self) -> *mut u8 {
         unsafe {
             std::mem::transmute::<&[c_char; 1], *mut u8>(
@@ -43,11 +42,10 @@ impl BytesWriter {
         }
     }
 
-    #[inline(always)]
     pub fn resize(&mut self, len: isize) {
         unsafe {
             _PyBytes_Resize(
-                &mut self.bytes as *mut *mut PyBytesObject as *mut *mut PyObject,
+                std::ptr::addr_of_mut!(self.bytes) as *mut *mut PyBytesObject as *mut *mut PyObject,
                 len as isize,
             );
         }

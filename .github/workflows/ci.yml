@@ -28,7 +28,7 @@ jobs:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
         target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-02-13
+        rust-toolchain: nightly-2022-04-14
         manylinux: auto
         args: -i python3.9 --release --strip --out dist --no-sdist
     - uses: uraimo/run-on-arch-action@v2.0.5
@@ -67,7 +67,7 @@ jobs:
       uses: messense/maturin-action@v1
       with:
         container: quay.io/pypa/musllinux_1_1_x86_64:latest
-        rust-toolchain: nightly-2022-02-13
+        rust-toolchain: nightly-2022-04-14
         target: x86_64-unknown-linux-musl
         manylinux: musllinux_1_1
         args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python-version }}

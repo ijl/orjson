@@ -2,7 +2,7 @@
 
 use ahash::RandomState;
 use once_cell::unsync::Lazy;
-use pyo3::ffi::*;
+use pyo3_ffi::*;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::Once;
@@ -145,7 +145,7 @@ pub fn init_typerefs() {
         VALUE_STR = PyUnicode_InternFromString("value\0".as_ptr() as *const c_char);
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
-        JsonEncodeError = pyo3::ffi::PyExc_TypeError;
+        JsonEncodeError = pyo3_ffi::PyExc_TypeError;
         JsonDecodeError = look_up_json_exc();
     });
 }
@@ -157,7 +157,7 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char)
         as *mut PyObject;
-    let res = pyo3::ffi::PyErr_NewException(
+    let res = pyo3_ffi::PyErr_NewException(
         "orjson.JSONDecodeError\0".as_ptr() as *const c_char,
         ptr,
         std::ptr::null_mut(),
@@ -244,7 +244,7 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
 #[cold]
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
-    let datetime = (PyDateTimeAPI.DateTime_FromDateAndTime)(
+    let datetime = ((*PyDateTimeAPI()).DateTime_FromDateAndTime)(
         1970,
         1,
         1,
@@ -253,7 +253,7 @@ unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
         0,
         0,
         NONE,
-        PyDateTimeAPI.DateTimeType,
+        (*(PyDateTimeAPI())).DateTimeType,
     );
     let ptr = (*datetime).ob_type;
     Py_DECREF(datetime);
@@ -263,7 +263,7 @@ unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
 #[cold]
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
 unsafe fn look_up_date_type() -> *mut PyTypeObject {
-    let date = (PyDateTimeAPI.Date_FromDate)(1970, 1, 1, PyDateTimeAPI.DateType);
+    let date = ((*PyDateTimeAPI()).Date_FromDate)(1, 1, 1, (*(PyDateTimeAPI())).DateType);
     let ptr = (*date).ob_type;
     Py_DECREF(date);
     ptr
@@ -272,7 +272,7 @@ unsafe fn look_up_date_type() -> *mut PyTypeObject {
 #[cold]
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
 unsafe fn look_up_time_type() -> *mut PyTypeObject {
-    let time = (PyDateTimeAPI.Time_FromTime)(0, 0, 0, 0, NONE, PyDateTimeAPI.TimeType);
+    let time = ((*PyDateTimeAPI()).Time_FromTime)(0, 0, 0, 0, NONE, (*(PyDateTimeAPI())).TimeType);
     let ptr = (*time).ob_type;
     Py_DECREF(time);
     ptr

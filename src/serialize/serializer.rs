@@ -22,10 +22,10 @@ use std::ptr::NonNull;
 pub const RECURSION_LIMIT: u8 = 255;
 
 pub fn serialize(
-    ptr: *mut pyo3::ffi::PyObject,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    ptr: *mut pyo3_ffi::PyObject,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
-) -> Result<NonNull<pyo3::ffi::PyObject>, String> {
+) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
     let mut buf = BytesWriter::new();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
     let res;
@@ -70,7 +70,7 @@ pub enum ObType {
     Unknown,
 }
 
-pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
+pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == STR_TYPE {
@@ -97,12 +97,14 @@ pub fn pyobject_to_obtype(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
 
 macro_rules! is_subclass {
     ($ob_type:expr, $flag:ident) => {
-        unsafe { (((*$ob_type).tp_flags & pyo3::ffi::$flag) != 0) }
+        unsafe { (((*$ob_type).tp_flags & pyo3_ffi::$flag) != 0) }
     };
 }
 
+#[cold]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> ObType {
+pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == DATE_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
@@ -146,21 +148,21 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3::ffi::PyObject, opts: Opt) -> 
 }
 
 pub struct PyObjectSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     obtype: ObType,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl PyObjectSerializer {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,
@@ -267,7 +269,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 if unlikely!(
                     dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
                 ) {
-                    unsafe { pyo3::ffi::PyErr_Clear() };
+                    unsafe { pyo3_ffi::PyErr_Clear() };
                     DataclassFallbackSerializer::new(
                         self.ptr,
                         self.opts,

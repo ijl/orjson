@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use pyo3::ffi::*;
+use pyo3_ffi::*;
 use std::os::raw::{c_char, c_int};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct PyTypeObject {
-    pub ob_refcnt: pyo3::ffi::Py_ssize_t,
-    pub ob_type: *mut pyo3::ffi::PyTypeObject,
-    pub ma_used: pyo3::ffi::Py_ssize_t,
+    pub ob_refcnt: pyo3_ffi::Py_ssize_t,
+    pub ob_type: *mut pyo3_ffi::PyTypeObject,
+    pub ma_used: pyo3_ffi::Py_ssize_t,
     pub tp_name: *const c_char,
     // ...
 }
@@ -40,7 +40,7 @@ pub unsafe fn PyBytes_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
 
 #[repr(C)]
 pub struct _PyManagedBufferObject {
-    pub ob_base: *mut pyo3::ffi::PyObject,
+    pub ob_base: *mut pyo3_ffi::PyObject,
     pub flags: c_int,
     pub exports: Py_ssize_t,
     pub master: *mut Py_buffer,

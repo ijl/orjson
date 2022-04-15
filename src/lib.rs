@@ -19,10 +19,12 @@ mod serialize;
 mod typeref;
 mod unicode;
 
-use pyo3::ffi::*;
+use pyo3_ffi::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
-use std::ptr::NonNull;
+
+#[allow(unused_imports)]
+use core::ptr::{null, null_mut, NonNull};
 
 const DUMPS_DOC: &str =
     "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
@@ -49,10 +51,10 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     let init = PyModuleDef {
         m_base: PyModuleDef_HEAD_INIT,
         m_name: "orjson\0".as_ptr() as *const c_char,
-        m_doc: std::ptr::null(),
+        m_doc: null(),
         m_size: 0,
-        m_methods: std::ptr::null_mut(),
-        m_slots: std::ptr::null_mut(),
+        m_methods: null_mut(),
+        m_slots: null_mut(),
         m_traverse: None,
         m_clear: None,
         m_free: None,
@@ -74,10 +76,10 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
-            ml_meth: Some(unsafe {
-                std::mem::transmute::<pyo3::ffi::_PyCFunctionFastWithKeywords, PyCFunction>(dumps)
-            }),
-            ml_flags: pyo3::ffi::METH_FASTCALL | METH_KEYWORDS,
+            ml_meth: PyMethodDefPointer {
+                _PyCFunctionFastWithKeywords: dumps,
+            },
+            ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
         };
     }
@@ -85,9 +87,9 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     {
         wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
-            ml_meth: Some(unsafe {
-                std::mem::transmute::<PyCFunctionWithKeywords, PyCFunction>(dumps)
-            }),
+            ml_meth: PyMethodDefPointer {
+                PyCFunctionWithKeywords: dumps,
+            },
             ml_flags: METH_VARARGS | METH_KEYWORDS,
             ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
         };
@@ -98,7 +100,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             "dumps\0".as_ptr() as *const c_char,
             PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_dumps)),
-                std::ptr::null_mut(),
+                null_mut(),
                 PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
             ),
         )
@@ -106,7 +108,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
 
     let wrapped_loads = PyMethodDef {
         ml_name: "loads\0".as_ptr() as *const c_char,
-        ml_meth: Some(loads),
+        ml_meth: PyMethodDefPointer { PyCFunction: loads },
         ml_flags: METH_O,
         ml_doc: LOADS_DOC.as_ptr() as *const c_char,
     };
@@ -117,7 +119,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             "loads\0".as_ptr() as *const c_char,
             PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_loads)),
-                std::ptr::null_mut(),
+                null_mut(),
                 PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
             ),
         )
@@ -224,7 +226,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
         PyErr_SetObject(typeref::JsonDecodeError, args);
         Py_DECREF(args);
     };
-    std::ptr::null_mut()
+    null_mut()
 }
 
 #[cold]
@@ -237,7 +239,7 @@ fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
         Py_DECREF(err_msg);
     };
-    std::ptr::null_mut()
+    null_mut()
 }
 
 #[no_mangle]
@@ -259,7 +261,7 @@ pub unsafe extern "C" fn dumps(
     let mut default: Option<NonNull<PyObject>> = None;
     let mut optsptr: Option<NonNull<PyObject>> = None;
 
-    let num_args = pyo3::ffi::PyVectorcall_NARGS(nargs as usize);
+    let num_args = PyVectorcall_NARGS(nargs as usize);
     if unlikely!(num_args == 0) {
         return raise_dumps_exception(Cow::Borrowed(
             "dumps() missing 1 required positional argument: 'obj'",
@@ -341,10 +343,10 @@ pub unsafe extern "C" fn dumps(
     if !kwds.is_null() {
         let len = unsafe { crate::ffi::PyDict_GET_SIZE(kwds) };
         let mut pos = 0isize;
-        let mut arg: *mut PyObject = std::ptr::null_mut();
-        let mut val: *mut PyObject = std::ptr::null_mut();
+        let mut arg: *mut PyObject = null_mut();
+        let mut val: *mut PyObject = null_mut();
         for _ in 0..=len.saturating_sub(1) {
-            unsafe { _PyDict_Next(kwds, &mut pos, &mut arg, &mut val, std::ptr::null_mut()) };
+            unsafe { _PyDict_Next(kwds, &mut pos, &mut arg, &mut val, null_mut()) };
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
                     return raise_dumps_exception(Cow::Borrowed(

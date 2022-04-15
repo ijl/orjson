@@ -13,23 +13,24 @@ use crate::unicode::*;
 use inlinable_string::InlinableString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
+use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct Dict {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl Dict {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         Dict {
             ptr: ptr,
@@ -49,16 +50,16 @@ impl<'p> Serialize for Dict {
     {
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=unsafe { PyDict_GET_SIZE(self.ptr) as usize } - 1 {
             unsafe {
-                pyo3::ffi::_PyDict_Next(
+                pyo3_ffi::_PyDict_Next(
                     self.ptr,
-                    &mut pos,
-                    &mut key,
-                    &mut value,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
                     std::ptr::null_mut(),
                 )
             };
@@ -87,20 +88,20 @@ impl<'p> Serialize for Dict {
 }
 
 pub struct DictSortedKey {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl DictSortedKey {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DictSortedKey {
             ptr: ptr,
@@ -119,19 +120,19 @@ impl<'p> Serialize for DictSortedKey {
         S: Serializer,
     {
         let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
-        let mut items: SmallVec<[(&str, *mut pyo3::ffi::PyObject); 8]> =
+        let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         let mut pos = 0isize;
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=len - 1 {
             unsafe {
-                pyo3::ffi::_PyDict_Next(
+                pyo3_ffi::_PyDict_Next(
                     self.ptr,
-                    &mut pos,
-                    &mut key,
-                    &mut value,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
                     std::ptr::null_mut(),
                 )
             };
@@ -165,20 +166,20 @@ impl<'p> Serialize for DictSortedKey {
 }
 
 pub struct DictNonStrKey {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl DictNonStrKey {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DictNonStrKey {
             ptr: ptr,
@@ -191,7 +192,7 @@ impl DictNonStrKey {
 
     fn pyobject_to_string(
         &self,
-        key: *mut pyo3::ffi::PyObject,
+        key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,
     ) -> Result<InlinableString, SerializeError> {
         match pyobject_to_obtype(key, opts) {
@@ -263,7 +264,7 @@ impl DictNonStrKey {
             }
             ObType::Str => {
                 // because of ObType::Enum
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                let mut str_size: pyo3_ffi::Py_ssize_t = 0;
                 let uni = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(uni.is_null()) {
                     Err(SerializeError::InvalidStr)
@@ -272,7 +273,7 @@ impl DictNonStrKey {
                 }
             }
             ObType::StrSubclass => {
-                let mut str_size: pyo3::ffi::Py_ssize_t = 0;
+                let mut str_size: pyo3_ffi::Py_ssize_t = 0;
                 let uni = ffi!(PyUnicode_AsUTF8AndSize(key, &mut str_size)) as *const u8;
                 if unlikely!(uni.is_null()) {
                     Err(SerializeError::InvalidStr)
@@ -298,20 +299,20 @@ impl<'p> Serialize for DictNonStrKey {
         S: Serializer,
     {
         let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
-        let mut items: SmallVec<[(InlinableString, *mut pyo3::ffi::PyObject); 8]> =
+        let mut items: SmallVec<[(InlinableString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         let mut pos = 0isize;
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let opts = self.opts & NOT_PASSTHROUGH;
         for _ in 0..=len - 1 {
             unsafe {
-                pyo3::ffi::_PyDict_Next(
+                pyo3_ffi::_PyDict_Next(
                     self.ptr,
-                    &mut pos,
-                    &mut key,
-                    &mut value,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
                     std::ptr::null_mut(),
                 )
             };

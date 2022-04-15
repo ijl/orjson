@@ -19,7 +19,7 @@ pub enum SerializeError {
     NumpyMalformed,
     NumpyNotCContiguous,
     NumpyUnsupportedDatatype,
-    UnsupportedType(NonNull<pyo3::ffi::PyObject>),
+    UnsupportedType(NonNull<pyo3_ffi::PyObject>),
 }
 
 impl std::fmt::Display for SerializeError {

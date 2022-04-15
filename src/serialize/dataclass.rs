@@ -9,23 +9,24 @@ use crate::unicode::*;
 
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
+use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct DataclassFastSerializer {
-    dict: *mut pyo3::ffi::PyObject,
+    dict: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl DataclassFastSerializer {
     pub fn new(
-        dict: *mut pyo3::ffi::PyObject,
+        dict: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DataclassFastSerializer {
             dict: dict,
@@ -49,16 +50,16 @@ impl<'p> Serialize for DataclassFastSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let mut key: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=len - 1 {
             unsafe {
-                pyo3::ffi::_PyDict_Next(
+                pyo3_ffi::_PyDict_Next(
                     self.dict,
-                    &mut pos,
-                    &mut key,
-                    &mut value,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
                     std::ptr::null_mut(),
                 )
             };
@@ -91,20 +92,20 @@ impl<'p> Serialize for DataclassFastSerializer {
 }
 
 pub struct DataclassFallbackSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl DataclassFallbackSerializer {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DataclassFallbackSerializer {
             ptr: ptr,
@@ -130,16 +131,16 @@ impl<'p> Serialize for DataclassFallbackSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
-        let mut str_size: pyo3::ffi::Py_ssize_t = 0;
-        let mut attr: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
-        let mut field: *mut pyo3::ffi::PyObject = std::ptr::null_mut();
+        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut attr: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut field: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=len - 1 {
             unsafe {
-                pyo3::ffi::_PyDict_Next(
+                pyo3_ffi::_PyDict_Next(
                     fields,
-                    &mut pos,
-                    &mut attr,
-                    &mut field,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(attr),
+                    addr_of_mut!(field),
                     std::ptr::null_mut(),
                 )
             };

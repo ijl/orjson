@@ -9,20 +9,20 @@ use serde::ser::{Serialize, Serializer};
 use std::ptr::NonNull;
 
 pub struct DefaultSerializer {
-    ptr: *mut pyo3::ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
-    default: Option<NonNull<pyo3::ffi::PyObject>>,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
 impl DefaultSerializer {
     pub fn new(
-        ptr: *mut pyo3::ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
-        default: Option<NonNull<pyo3::ffi::PyObject>>,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DefaultSerializer {
             ptr: ptr,
@@ -48,7 +48,7 @@ impl<'p> Serialize for DefaultSerializer {
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
                     self.ptr,
-                    std::ptr::null_mut() as *mut pyo3::ffi::PyObject
+                    std::ptr::null_mut() as *mut pyo3_ffi::PyObject
                 ));
                 if unlikely!(default_obj.is_null()) {
                     err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
