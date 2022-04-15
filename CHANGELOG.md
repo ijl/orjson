@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.7 - 2022-04-15
+
+### Fixed
+
+- Fix serialization of `numpy.datetime64("NaT")` to raise on an
+unsupported type.
+
 ## 3.6.7 - 2022-02-14
 
 ### Changed

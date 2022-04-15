@@ -643,11 +643,6 @@ class Object:
 >>> orjson.dumps(Object(1, "a", [Member(1, True), Member(2)]))
 b'{"id":1,"name":"a","members":[{"id":1,"active":true},{"id":2,"active":false}]}'
 ```
-Users may wish to control how dataclass instances are serialized, e.g.,
-to not serialize an attribute or to change the name of an
-attribute when serialized. orjson may implement support using the
-metadata mapping on `field` attributes,
-e.g., `field(metadata={"json_serialize": False})`, if use cases are clear.
 
 ### datetime
 
