@@ -643,6 +643,7 @@ impl<'p> Serialize for NumpyBool {
 /// https://github.com/numpy/numpy/blob/fc8e3bbe419748ac5c6b7f3d0845e4bafa74644b/numpy/core/include/numpy/ndarraytypes.h#L268-L282.
 #[derive(Clone, Copy, Debug)]
 pub enum NumpyDatetimeUnit {
+    NaT,
     Years,
     Months,
     Weeks,
@@ -664,6 +665,7 @@ impl fmt::Display for NumpyDatetimeUnit {
     #[cfg_attr(feature = "unstable-simd", optimize(size))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let unit = match self {
+            Self::NaT => "NaT",
             Self::Years => "years",
             Self::Months => "months",
             Self::Weeks => "weeks",
@@ -722,6 +724,9 @@ impl NumpyDatetimeUnit {
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
         let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let uni = crate::unicode::read_utf8_from_str(descr_str, &mut str_size);
+        if str_size < 5 {
+            return Self::NaT;
+        }
         let fmt = str_from_slice!(uni, str_size);
         // unit descriptions are found at
         // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
