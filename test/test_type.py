@@ -259,7 +259,32 @@ class TypeTests(unittest.TestCase):
         int 128-bit
         """
         for val in (18446744073709551616, -9223372036854775809):
-            self.assertRaises(orjson.JSONEncodeError, orjson.dumps, val)
+            with self.assertRaises(orjson.JSONEncodeError):
+                orjson.dumps(val), str(val).encode("utf-8")
+
+    def test_int_256(self):
+        """
+        int 256-bit
+        """
+        for val in (2**256 - 1, -(2**256 -1)):
+            with self.assertRaises(orjson.JSONEncodeError):
+                orjson.dumps(val), str(val).encode("utf-8")
+
+    def test_int_128_arbitrary_size(self):
+        """
+        int 128-bit
+        """
+        for val in (18446744073709551616, -9223372036854775809):
+            self.assertEqual(orjson.dumps(val, option=orjson.OPT_ARBITRARY_SIZE_INTEGER), str(val).encode("utf-8"))
+            self.assertEqual(orjson.loads(str(val)), val)
+
+    def test_int_256_arbitrary_size(self):
+        """
+        int 256-bit
+        """
+        for val in (2**256 - 1, -(2**256 -1)):
+            self.assertEqual(orjson.dumps(val, option=orjson.OPT_ARBITRARY_SIZE_INTEGER), str(val).encode("utf-8"))
+            self.assertEqual(orjson.loads(str(val)), val)
 
     def test_float(self):
         """

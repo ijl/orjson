@@ -150,6 +150,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     opt!(mptr, "OPT_SERIALIZE_UUID\0", opt::SERIALIZE_UUID);
     opt!(mptr, "OPT_SORT_KEYS\0", opt::SORT_KEYS);
     opt!(mptr, "OPT_STRICT_INTEGER\0", opt::STRICT_INTEGER);
+    opt!(mptr, "OPT_ARBITRARY_SIZE_INTEGER\0", opt::ARBITRARY_SIZE_INTEGER);
     opt!(mptr, "OPT_UTC_Z\0", opt::UTC_Z);
 
     typeref::init_typerefs();
@@ -168,7 +169,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     };
 
     // maturin>=0.11.0 creates a python package that imports *, hiding dunder by default
-    let all: [&str; 20] = [
+    let all: [&str; 21] = [
         "__all__\0",
         "__version__\0",
         "dumps\0",
@@ -188,6 +189,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         "OPT_SERIALIZE_UUID\0",
         "OPT_SORT_KEYS\0",
         "OPT_STRICT_INTEGER\0",
+        "OPT_ARBITRARY_SIZE_INTEGER\0",
         "OPT_UTC_Z\0",
     ];
 

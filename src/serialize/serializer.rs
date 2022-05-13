@@ -187,7 +187,7 @@ impl<'p> Serialize for PyObjectSerializer {
                 if unlikely!(self.opts & STRICT_INTEGER != 0) {
                     Int53Serializer::new(self.ptr).serialize(serializer)
                 } else {
-                    IntSerializer::new(self.ptr).serialize(serializer)
+                    IntSerializer::new(self.ptr, self.opts & ARBITRARY_SIZE_INTEGER != 0).serialize(serializer)
                 }
             }
             ObType::None => serializer.serialize_unit(),

@@ -11,6 +11,8 @@ use std::borrow::Cow;
 use std::fmt;
 use std::ptr::NonNull;
 
+const SERDE_NUMBER_TOKEN: &'static str = "$serde_json::private::Number";
+
 pub fn deserialize(
     ptr: *mut pyo3_ffi::PyObject,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
@@ -151,7 +153,19 @@ impl<'de> Visitor<'de> for JsonValue {
             let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3_ffi::PyObject;
             let pyhash: pyo3_ffi::Py_hash_t;
-            if unlikely!(key.len() > 64) {
+            if unlikely!(key == SERDE_NUMBER_TOKEN) {
+                let v = {
+                    let c_buf = ffi!(PyUnicode_AsUTF8(value.as_ptr()));
+                    let v = ffi!(PyLong_FromString(c_buf, std::ptr::null_mut(), 10));
+                    if unlikely!(v.is_null() && !ffi!(PyErr_Occurred()).is_null()) {
+                        ffi!(PyErr_Clear());
+                        ffi!(PyFloat_FromString(value.as_ptr()))
+                    } else {
+                        v
+                    }
+                };
+                return Ok(nonnull!(v));
+            } else if unlikely!(key.len() > 64) {
                 pykey = unicode_from_str(&key);
                 pyhash = hash_str(pykey);
             } else {

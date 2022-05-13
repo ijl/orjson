@@ -1741,31 +1741,31 @@ class JSONTestSuiteParsingTests(unittest.TestCase):
         """
         i_number_huge_exp.json
         """
-        self._run_fail_json("i_number_huge_exp.json")
+        self._run_pass_json("i_number_huge_exp.json")
 
     def test_i_number_neg_int_huge_exp(self):
         """
         i_number_neg_int_huge_exp.json
         """
-        self._run_fail_json("i_number_neg_int_huge_exp.json")
+        self._run_pass_json("i_number_neg_int_huge_exp.json")
 
     def test_i_number_pos_double_huge_exp(self):
         """
         i_number_pos_double_huge_exp.json
         """
-        self._run_fail_json("i_number_pos_double_huge_exp.json")
+        self._run_pass_json("i_number_pos_double_huge_exp.json")
 
     def test_i_number_real_neg_overflow(self):
         """
         i_number_real_neg_overflow.json
         """
-        self._run_fail_json("i_number_real_neg_overflow.json")
+        self._run_pass_json("i_number_real_neg_overflow.json")
 
     def test_i_number_real_pos_overflow(self):
         """
         i_number_real_pos_overflow.json
         """
-        self._run_fail_json("i_number_real_pos_overflow.json")
+        self._run_pass_json("i_number_real_pos_overflow.json")
 
     def test_i_number_real_underflow(self):
         """
