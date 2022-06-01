@@ -35,9 +35,9 @@ impl BytesWriter {
 
     fn buffer_ptr(&self) -> *mut u8 {
         unsafe {
-            std::mem::transmute::<&[c_char; 1], *mut u8>(
-                &(*self.bytes.cast::<PyBytesObject>()).ob_sval,
-            )
+            std::mem::transmute::<*mut [c_char; 1], *mut u8>(std::ptr::addr_of_mut!(
+                (*self.bytes).ob_sval
+            ))
             .add(self.len)
         }
     }
@@ -54,15 +54,23 @@ impl BytesWriter {
     #[cold]
     fn grow(&mut self, len: usize) {
         while len >= self.cap {
-            self.cap *= 2;
+            if len < 262144 {
+                self.cap *= 4;
+            } else {
+                self.cap *= 2;
+            }
         }
         self.resize(self.cap as isize);
     }
 }
 
 impl std::io::Write for BytesWriter {
-    #[inline]
     fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        let _ = self.write_all(buf);
+        Ok(buf.len())
+    }
+
+    fn write_all(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
         let to_write = buf.len();
         let end_length = self.len + to_write;
         if unlikely!(end_length > self.cap) {
@@ -72,14 +80,9 @@ impl std::io::Write for BytesWriter {
             std::ptr::copy_nonoverlapping(buf.as_ptr() as *const u8, self.buffer_ptr(), to_write);
         };
         self.len = end_length;
-        Ok(to_write)
-    }
-    #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
-        let _ = self.write(buf);
         Ok(())
     }
-    #[inline]
+
     fn flush(&mut self) -> Result<(), std::io::Error> {
         Ok(())
     }
