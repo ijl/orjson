@@ -986,15 +986,6 @@ format, containing floats and arrays, indented.
 
 ### Latency
 
-![alt text](doc/twitter_serialization.png "twitter.json serialization")
-![alt text](doc/twitter_deserialization.png "twitter.json deserialization")
-![alt text](doc/github_serialization.png "github.json serialization")
-![alt text](doc/github_deserialization.png "github.json deserialization")
-![alt text](doc/citm_catalog_serialization.png "citm_catalog.json serialization")
-![alt text](doc/citm_catalog_deserialization.png "citm_catalog.json deserialization")
-![alt text](doc/canada_serialization.png "canada.json serialization")
-![alt text](doc/canada_deserialization.png "canada.json deserialization")
-
 #### twitter.json serialization
 
 | Library    |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |

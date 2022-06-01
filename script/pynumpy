@@ -120,14 +120,7 @@ for lib_name in LIBRARIES:
     )
 
 buf = io.StringIO()
-buf.write(tabulate(table, headers, tablefmt="grid") + "\n")
+buf.write(tabulate(table, headers, tablefmt="github"))
+buf.write("\n")
 
-print(
-    buf.getvalue()
-    .replace("-", "")
-    .replace("*", "-")
-    .replace("=", "-")
-    .replace("+", "|")
-    .replace("|||||", "")
-    .replace("\n\n", "\n")
-)
+print(buf.getvalue())

@@ -29,13 +29,6 @@ for fixture in sorted(FIXTURES, reverse=True):
             table.append((lib_name, f"{mem_base:,.1f}", f"{mem_diff:,.1f}"))
         else:
             table.append((lib_name, "", ""))
-    buf.write(tabulate(table, headers, tablefmt="grid") + "\n")
+    buf.write(tabulate(table, headers, tablefmt="github") + "\n")
 
-print(
-    buf.getvalue()
-    .replace("-", "")
-    .replace("=", "-")
-    .replace("+", "|")
-    .replace("||||", "")
-    .replace("\n\n", "\n")
-)
+print(buf.getvalue())

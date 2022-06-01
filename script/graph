@@ -3,12 +3,11 @@
 
 import collections
 import io
-import json
 import os
-import sys
 
-import matplotlib.pyplot as plt
 from tabulate import tabulate
+
+import orjson
 
 LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
@@ -18,7 +17,7 @@ def aggregate():
     res = collections.defaultdict(dict)
     for filename in os.listdir(benchmarks_dir):
         with open(os.path.join(benchmarks_dir, filename), "r") as fileh:
-            data = json.loads(fileh.read())
+            data = orjson.loads(fileh.read())
 
         for each in data["benchmarks"]:
             res[each["group"]][each["extra_info"]["lib"]] = {
@@ -28,21 +27,6 @@ def aggregate():
                 "correct": each["extra_info"]["correct"],
             }
     return res
-
-
-def box(obj):
-    for group, val in sorted(obj.items()):
-        data = []
-        for lib in LIBRARIES:
-            data.append(val[lib]["data"] if val[lib]["correct"] else -1)
-        fig = plt.figure(1, figsize=(9, 6))
-        ax = fig.add_subplot(111)
-        bp = ax.boxplot(data, vert=False, labels=LIBRARIES)
-        ax.set_xlim(left=0)
-        ax.set_xlabel("milliseconds")
-        plt.title(group)
-        plt.savefig("doc/{}.png".format(group.replace(" ", "_").replace(".json", "")))
-        plt.close()
 
 
 def tab(obj):
@@ -72,20 +56,9 @@ def tab(obj):
                 "%.2f" % (each[1] / baseline) if isinstance(each[1], float) else None
             )
             each[1] = "%.2f" % each[1] if isinstance(each[1], float) else None
-        buf.write(tabulate(table, headers, tablefmt="grid") + "\n")
+        buf.write(tabulate(table, headers, tablefmt="github") + "\n")
 
-    print(
-        buf.getvalue()
-        .replace("-", "")
-        .replace("=", "-")
-        .replace("+", "|")
-        .replace("|||||", "")
-        .replace("\n\n", "\n")
-    )
+    print(buf.getvalue())
 
 
-try:
-    locals()[sys.argv[1]](aggregate())
-except KeyError:
-    sys.stderr.write("usage: graph (box|tab)\n")
-    sys.exit(1)
+tab(aggregate())

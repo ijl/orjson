@@ -15,15 +15,15 @@ if hasattr(os, "sched_setaffinity"):
 
 
 @lru_cache(maxsize=None)
-def read_fixture_str(filename: str) -> str:
+def read_fixture(filename: str) -> bytes:
     path = Path(dirname, filename)
     if path.suffix == ".xz":
         contents = lzma.decompress(path.read_bytes())
     else:
         contents = path.read_bytes()
-    return contents.decode("utf-8")
+    return contents
 
 
 @lru_cache(maxsize=None)
 def read_fixture_obj(filename: str) -> Any:
-    return orjson.loads(read_fixture_str(filename))
+    return orjson.loads(read_fixture(filename))

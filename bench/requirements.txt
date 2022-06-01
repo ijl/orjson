@@ -1,4 +1,3 @@
-matplotlib
 memory-profiler
 pytest-benchmark
 pytest-random-order
