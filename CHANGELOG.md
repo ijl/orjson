@@ -1,6 +1,12 @@
 # Changelog
 
-## 3.6.7 - 2022-04-15
+## 3.6.9 - 2022-06-01
+
+### Changed
+
+- Improve serialization and deserialization performance.
+
+## 3.6.8 - 2022-04-15
 
 ### Fixed
 
