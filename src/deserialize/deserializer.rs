@@ -147,7 +147,7 @@ impl<'de> Visitor<'de> for JsonValue {
         A: MapAccess<'de>,
     {
         let dict_ptr = ffi!(PyDict_New());
-        while let Some(key) = map.next_key::<Cow<str>>()? {
+        while let Some(key) = map.next_key::<beef::lean::Cow<str>>()? {
             let value = map.next_value_seed(self)?;
             let pykey: *mut pyo3_ffi::PyObject;
             let pyhash: pyo3_ffi::Py_hash_t;
