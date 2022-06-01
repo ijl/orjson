@@ -22,13 +22,11 @@ mod unicode;
 use pyo3_ffi::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
+use std::os::raw::c_int;
+use std::os::raw::c_void;
 
 #[allow(unused_imports)]
 use core::ptr::{null, null_mut, NonNull};
-
-const DUMPS_DOC: &str =
-    "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
-const LOADS_DOC: &str = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
 
 macro_rules! opt {
     ($mptr:expr, $name:expr, $opt:expr) => {
@@ -47,20 +45,7 @@ macro_rules! opt {
 #[no_mangle]
 #[cold]
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
-pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
-    let init = PyModuleDef {
-        m_base: PyModuleDef_HEAD_INIT,
-        m_name: "orjson\0".as_ptr() as *const c_char,
-        m_doc: null(),
-        m_size: 0,
-        m_methods: null_mut(),
-        m_slots: null_mut(),
-        m_traverse: None,
-        m_clear: None,
-        m_free: None,
-    };
-    let mptr = PyModule_Create(Box::into_raw(Box::new(init)));
-
+pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     let version = env!("CARGO_PKG_VERSION");
     unsafe {
         PyModule_AddObject(
@@ -69,6 +54,9 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
             PyUnicode_FromStringAndSize(version.as_ptr() as *const c_char, version.len() as isize),
         )
     };
+
+    let dumps_doc =
+        "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
 
     let wrapped_dumps: PyMethodDef;
 
@@ -80,7 +68,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
                 _PyCFunctionFastWithKeywords: dumps,
             },
             ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
-            ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
+            ml_doc: dumps_doc.as_ptr() as *const c_char,
         };
     }
     #[cfg(not(Py_3_8))]
@@ -91,9 +79,10 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
                 PyCFunctionWithKeywords: dumps,
             },
             ml_flags: METH_VARARGS | METH_KEYWORDS,
-            ml_doc: DUMPS_DOC.as_ptr() as *const c_char,
+            ml_doc: dumps_doc.as_ptr() as *const c_char,
         };
     }
+
     unsafe {
         PyModule_AddObject(
             mptr,
@@ -106,11 +95,13 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
         )
     };
 
+    let loads_doc = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
+
     let wrapped_loads = PyMethodDef {
         ml_name: "loads\0".as_ptr() as *const c_char,
         ml_meth: PyMethodDefPointer { PyCFunction: loads },
         ml_flags: METH_O,
-        ml_doc: LOADS_DOC.as_ptr() as *const c_char,
+        ml_doc: loads_doc.as_ptr() as *const c_char,
     };
 
     unsafe {
@@ -203,8 +194,39 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyObject {
     unsafe {
         PyModule_AddObject(mptr, "__all__\0".as_ptr() as *const c_char, pyall);
     };
+    0
+}
 
-    mptr
+#[allow(non_snake_case)]
+#[no_mangle]
+#[cold]
+#[cfg_attr(feature = "unstable-simd", optimize(size))]
+pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
+    let mod_slots: Box<[PyModuleDef_Slot; 2]> = Box::new([
+        PyModuleDef_Slot {
+            slot: Py_mod_exec,
+            value: orjson_init_exec as *mut c_void,
+        },
+        PyModuleDef_Slot {
+            slot: 0,
+            value: null_mut(),
+        },
+    ]);
+
+    let init = Box::new(PyModuleDef {
+        m_base: PyModuleDef_HEAD_INIT,
+        m_name: "orjson\0".as_ptr() as *const c_char,
+        m_doc: null(),
+        m_size: 0,
+        m_methods: null_mut(),
+        m_slots: Box::into_raw(mod_slots) as *mut PyModuleDef_Slot,
+        m_traverse: None,
+        m_clear: None,
+        m_free: None,
+    });
+    let init_ptr = Box::into_raw(init);
+    PyModuleDef_Init(init_ptr);
+    init_ptr
 }
 
 #[cold]
