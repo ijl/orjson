@@ -1167,7 +1167,7 @@ maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstab
 
 To build on the stable channel, do not specify `--features=unstable-simd`.
 
-The project's own CI tests against `nightly-2022-04-14` and stable 1.54. It
+The project's own CI tests against `nightly-2022-06-01` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

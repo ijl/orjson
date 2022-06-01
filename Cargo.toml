@@ -55,10 +55,8 @@ default = []
 # Use SIMD intrinsics. This requires Rust on the nightly channel.
 unstable-simd = [
     "bytecount/generic-simd",
-    "bytecount/runtime-dispatch-simd",
     "encoding_rs/simd-accel",
     "simdutf8/aarch64_neon",
-    "simdutf8/std",
 ]
 
 [dependencies]
@@ -71,7 +69,7 @@ encoding_rs = { version = "0.8", default_features = false }
 inlinable_string = { version = "0.1" }
 itoa = { version = "1", default_features = false }
 once_cell = { version = "1", default_features = false }
-pyo3-ffi = { version = "^0.16.4", default_features = false, features = ["extension-module"]}
+pyo3-ffi = { version = "^0.16.5", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { version = "^1.0.68", default_features = false, features = ["std", "float_roundtrip"] }

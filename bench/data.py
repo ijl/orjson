@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from json import dumps as _json_dumps, loads as json_loads
-from orjson import dumps as _orjson_dumps, loads as orjson_loads
-from rapidjson import dumps as _rapidjson_dumps, loads as rapidjson_loads
-from simplejson import dumps as _simplejson_dumps, loads as simplejson_loads
-from ujson import dumps as _ujson_dumps, loads as ujson_loads
+from json import dumps as _json_dumps
+from json import loads as json_loads
 
+from rapidjson import dumps as _rapidjson_dumps
+from rapidjson import loads as rapidjson_loads
+from simplejson import dumps as _simplejson_dumps
+from simplejson import loads as simplejson_loads
+from ujson import dumps as _ujson_dumps
+from ujson import loads as ujson_loads
+
+from orjson import dumps as _orjson_dumps
+from orjson import loads as orjson_loads
 
 # dumps wrappers that return UTF-8
 

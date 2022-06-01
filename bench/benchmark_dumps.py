@@ -4,7 +4,7 @@ from json import loads as json_loads
 
 import pytest
 
-from .data import libraries, fixtures
+from .data import fixtures, libraries
 from .util import read_fixture_str
 
 
