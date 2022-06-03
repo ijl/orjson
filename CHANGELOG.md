@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.7.0 - 2022-06-02
+
+### Changed
+
+- Improve deserialization performance significantly through the use of a new
+backend. PyPI wheels for manylinux_2_28 and macOS have it enabled. Packagers
+are advised to see the README.
+
 ## 3.6.9 - 2022-06-01
 
 ### Changed
