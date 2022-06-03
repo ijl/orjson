@@ -1147,16 +1147,20 @@ If someone implements it well.
 
 ## Packaging
 
-To package orjson requires [Rust](https://www.rust-lang.org/) and the
-[maturin](https://github.com/PyO3/maturin) build tool.
-
-This is an example for x86_64 on the Rust nightly channel:
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.54
+and the [maturin](https://github.com/PyO3/maturin) build tool. For best
+performance, it should also have `clang` on PATH, use Rust nightly, and
+specify the features below:
 
 ```sh
-maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd"
+maturin build --no-sdist --release --strip --cargo-extra-args="--features=yyjson,unstable-simd"
 ```
 
-To build on the stable channel, do not specify `--features=unstable-simd`.
+To build without use of `clang`, do not specify `--features=yyjson`. orjson
+is much faster if built with this feature.
+
+To build on the stable channel, do not specify `--features=unstable-simd`. This
+has less of an impact on performance.
 
 The project's own CI tests against `nightly-2022-06-01` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce

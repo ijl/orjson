@@ -7,6 +7,7 @@
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
+#![allow(non_camel_case_types)]
 
 #[macro_use]
 mod util;
@@ -18,6 +19,9 @@ mod opt;
 mod serialize;
 mod typeref;
 mod unicode;
+
+#[cfg(feature = "yyjson")]
+mod yyjson;
 
 use pyo3_ffi::*;
 use std::borrow::Cow;
@@ -233,7 +237,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 #[inline(never)]
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
-    let pos = err.pos() as i64;
+    let pos = err.pos();
     let msg = err.message;
     let doc = err.data;
     unsafe {

@@ -7,7 +7,7 @@ build-backend = "maturin"
 requires = ["maturin>=0.12.18,<0.13"]
 
 [tool.maturin]
-sdist-include = ["build.rs", "Cargo.lock"]
+sdist-include = ["build.rs", "Cargo.lock", "include"]
 strip = true
 
 [tool.black]

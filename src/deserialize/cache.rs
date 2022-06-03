@@ -36,7 +36,7 @@ impl Drop for CachedKey {
 }
 
 pub type KeyMap =
-    AssociativeCache<u64, CachedKey, Capacity512, HashDirectMapped, RoundRobinReplacement>;
+    AssociativeCache<u64, CachedKey, Capacity1024, HashDirectMapped, RoundRobinReplacement>;
 
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 

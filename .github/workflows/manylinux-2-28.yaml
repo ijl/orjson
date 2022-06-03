@@ -27,7 +27,7 @@ jobs:
     - uses: actions/checkout@v2
     - run: python3 -m pip install --user --upgrade pip "maturin>=0.12.18,<0.13" wheel
     - run: cargo fetch
-    - run: maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd" --compatibility manylinux_2_28 --interpreter python${{ matrix.python.version }}
+    - run: maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd,yyjson" --compatibility manylinux_2_28 --interpreter python${{ matrix.python.version }}
     - run: python3 -m pip install --user target/wheels/orjson*.whl
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
     - run: pytest -s -rxX -v test

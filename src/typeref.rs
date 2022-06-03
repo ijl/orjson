@@ -76,6 +76,27 @@ pub static mut HASH_BUILDER: Lazy<ahash::RandomState> = Lazy::new(|| unsafe {
         BYTES_TYPE as u64,
     )
 });
+#[cfg(feature = "yyjson")]
+pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
+
+#[cfg(feature = "yyjson")]
+pub static mut YYJSON_ALLOC: Lazy<crate::yyjson::yyjson_alc> = Lazy::new(|| unsafe {
+    let buffer = Box::<[u8; YYJSON_BUFFER_SIZE]>::new([0; YYJSON_BUFFER_SIZE]);
+    let mut alloc = crate::yyjson::yyjson_alc {
+        malloc: None,
+        realloc: None,
+        free: None,
+        ctx: std::ptr::null_mut(),
+    };
+    unsafe {
+        crate::yyjson::yyjson_alc_pool_init(
+            &mut alloc,
+            Box::into_raw(buffer) as *mut std::os::raw::c_void,
+            YYJSON_BUFFER_SIZE as u64,
+        )
+    };
+    alloc
+});
 
 #[allow(non_upper_case_globals)]
 pub static mut JsonEncodeError: *mut PyObject = 0 as *mut PyObject;
