@@ -200,3 +200,10 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps([a, b, c]), f'["{a}","{b}","{c}"]'.encode("utf-8")
         )
+
+    def test_bytes_null_terminated(self):
+        """
+        dumps() PyBytesObject buffer is null-terminated
+        """
+        # would raise ValueError: invalid literal for int() with base 10: b'1596728892'
+        int(orjson.dumps(1596728892))
