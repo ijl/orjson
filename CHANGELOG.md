@@ -1,6 +1,14 @@
 # Changelog
 
-## 3.7.0 - 2022-06-02
+## 3.7.1 - 2022-06-03
+
+### Fixed
+
+- Type stubs for `orjson.JSONDecodeError` now inherit from
+`json.JSONDecodeError` instead of `ValueError`
+- Null-terminate the internal buffer of `orjson.dumps()` output.
+
+## 3.7.0 - 2022-06-03
 
 ### Changed
 
