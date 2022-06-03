@@ -25,6 +25,8 @@ steps:
   displayName: thread
 - bash: ./integration/run http
   displayName: http
+- bash: ./integration/run typestubs
+  displayName: typestubs
 - bash: rustup target add aarch64-apple-darwin
   displayName: rustup target
 - bash: PATH=$HOME/.cargo/bin:$PATH PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd" --interpreter $(interpreter) --universal2

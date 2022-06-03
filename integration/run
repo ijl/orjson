@@ -18,3 +18,8 @@ if [[ $to_run == *"http"* ]]; then
 	pkill -f 'wsgi:app' # pkill not present on manylinux_2_24_x86_64
 	set -e
 fi
+
+if [[ $to_run == *"typestubs"* ]]; then
+	python "${_dir}"/typestubs.py
+	mypy "${_dir}"/typestubs.py
+fi

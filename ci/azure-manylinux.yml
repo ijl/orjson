@@ -40,6 +40,8 @@ steps:
   displayName: thread
 - bash: PATH=$(path) ./integration/run http
   displayName: http
+- bash: PATH=$(path) ./integration/run typestubs
+  displayName: typestubs
 - bash: PATH=$(path) ./ci/deploy target/wheels/*.whl
   displayName: deploy
   env:

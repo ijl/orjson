@@ -22,6 +22,7 @@ steps:
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
+    - ./integration/run typestubs
     - ./ci/deploy target/wheels/*.whl
 ---
 kind: pipeline
@@ -46,6 +47,7 @@ steps:
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
+    - ./integration/run typestubs
     - ./ci/deploy target/wheels/*.whl
 ---
 kind: pipeline
@@ -70,6 +72,7 @@ steps:
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
+    - ./integration/run typestubs
     - ./ci/deploy target/wheels/*.whl
 ---
 kind: pipeline
@@ -94,4 +97,5 @@ steps:
     - pytest -s -rxX -v test
     - ./integration/run thread
     - ./integration/run http
+    - ./integration/run typestubs
     - ./ci/deploy target/wheels/*.whl

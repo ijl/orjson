@@ -1,3 +1,4 @@
 flask;sys_platform!="win"
 gunicorn;sys_platform!="win"
 httpx==0.14.3;sys_platform!="win"
+mypy==0.960
