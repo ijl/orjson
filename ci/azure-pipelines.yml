@@ -1,13 +1,6 @@
-pr:
-  branches:
-    include:
-    - '*'
-
 variables:
   toolchain: nightly-2022-06-01
-
 jobs:
-
 - job: linux_sdist
   pool:
     vmImage: ubuntu-22.04
@@ -45,58 +38,6 @@ jobs:
   steps:
   - checkout: self
   - template: ./azure-debug.yml
-
-- job: linux_python310_amd64_manylinux_2_24
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.10
-    compatibility: 2_24
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
-
-- job: linux_python39_amd64_manylinux_2_24
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.9
-    compatibility: 2_24
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
-
-- job: linux_python38_amd64_manylinux_2_24
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.8
-    compatibility: 2_24
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
-
-- job: linux_python37_amd64_manylinux_2_24
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.7
-    compatibility: 2_24
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
 
 - job: linux_python39_amd64_manylinux2014
   pool:

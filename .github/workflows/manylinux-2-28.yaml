@@ -1,0 +1,42 @@
+name: manylinux_2_28
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+jobs:
+  manylinux_2_28:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python: [
+          { version: '3.7', abi: 'cp37-cp37m' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.10', abi: 'cp310-cp310' },
+        ]
+    env:
+      PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-11/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64:latest
+      options: --user 0
+    steps:
+    - run: yum update && yum install -y clang
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-01 --profile minimal -y
+    - uses: actions/checkout@v2
+    - run: python3 -m pip install --user --upgrade pip "maturin>=0.12.18,<0.13" wheel
+    - run: cargo fetch
+    - run: maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd" --compatibility manylinux_2_28 --interpreter python${{ matrix.python.version }}
+    - run: python3 -m pip install --user target/wheels/orjson*.whl
+    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+    - run: pytest -s -rxX -v test
+    - run: python3 -m pip uninstall -y numpy
+    - run: pytest -s -rxX -v test
+    - run: ./integration/run thread
+    - run: ./integration/run http
+    - run: git config --global --add safe.directory /__w/orjson/orjson
+    - run: ./ci/deploy target/wheels/*.whl
+      env:
+        MATURIN_USERNAME: ${{ secrets.TWINE_USERNAME }}
+        MATURIN_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
