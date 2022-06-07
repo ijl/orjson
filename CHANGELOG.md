@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.2 - 2022-06-07
+
+## Changed
+
+- Improve deserialization performance.
+
 ## 3.7.1 - 2022-06-03
 
 ### Fixed
