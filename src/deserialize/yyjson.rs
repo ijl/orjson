@@ -12,22 +12,22 @@ use std::ptr::null;
 use std::ptr::NonNull;
 
 const YYJSON_TYPE_MASK: u8 = 0x07;
-const YYJSON_TYPE_BIT: u8 = 3;
 const YYJSON_SUBTYPE_MASK: u8 = 0x18;
 const YYJSON_TAG_BIT: u8 = 8;
 
-const YYJSON_SUBTYPE_UINT: u8 = 0 << 3;
-const YYJSON_SUBTYPE_SINT: u8 = 1 << 3;
-const YYJSON_SUBTYPE_REAL: u8 = 2 << 3;
+const YYJSON_VAL_SIZE: usize = std::mem::size_of::<yyjson_val>();
 
-const YYJSON_TYPE_NONE: u8 = 0;
-const YYJSON_TYPE_RAW: u8 = 1;
-const YYJSON_TYPE_NULL: u8 = 2;
-const YYJSON_TYPE_BOOL: u8 = 3;
-const YYJSON_TYPE_NUM: u8 = 4;
-const YYJSON_TYPE_STR: u8 = 5;
-const YYJSON_TYPE_ARR: u8 = 6;
-const YYJSON_TYPE_OBJ: u8 = 7;
+const TYPE_AND_SUBTYPE_MASK: u8 = YYJSON_TYPE_MASK | YYJSON_SUBTYPE_MASK;
+
+const TAG_ARRAY: u8 = 0b00000110;
+const TAG_DOUBLE: u8 = 0b00010100;
+const TAG_FALSE: u8 = 0b00000011;
+const TAG_INT64: u8 = 0b00001100;
+const TAG_NULL: u8 = 0b00000010;
+const TAG_OBJECT: u8 = 0b00000111;
+const TAG_STRING: u8 = 0b00000101;
+const TAG_TRUE: u8 = 0b00001011;
+const TAG_UINT64: u8 = 0b00000100;
 
 fn yyjson_doc_get_root(doc: *mut yyjson_doc) -> *mut yyjson_val {
     unsafe { (*doc).root }
@@ -35,10 +35,6 @@ fn yyjson_doc_get_root(doc: *mut yyjson_doc) -> *mut yyjson_val {
 
 fn unsafe_yyjson_get_len(val: *mut yyjson_val) -> usize {
     unsafe { ((*val).tag >> YYJSON_TAG_BIT) as usize }
-}
-
-fn unsafe_yyjson_get_bool(val: *mut yyjson_val) -> bool {
-    unsafe { (((*val).tag as u8 & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT) != 0 }
 }
 
 fn yyjson_obj_iter_get_val(key: *mut yyjson_val) -> *mut yyjson_val {
@@ -51,6 +47,40 @@ fn unsafe_yyjson_get_first(ctn: *mut yyjson_val) -> *mut yyjson_val {
 
 fn yyjson_read_max_memory_usage(len: usize) -> usize {
     (12 * len) + 256
+}
+
+fn unsafe_yyjson_is_ctn(val: *mut yyjson_val) -> bool {
+    unsafe { ((*val).tag as u8) & 0b00000110 == 0b00000110 }
+}
+
+fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
+    unsafe {
+        let ofs: usize;
+        if unlikely!(unsafe_yyjson_is_ctn(val)) {
+            ofs = (*val).uni.ofs;
+        } else {
+            ofs = YYJSON_VAL_SIZE;
+        }
+        ((val as *mut u8).add(ofs)) as *mut yyjson_val
+    }
+}
+
+fn yyjson_arr_iter_next(iter: *mut yyjson_arr_iter) -> *mut yyjson_val {
+    unsafe {
+        let val = (*iter).cur;
+        (*iter).cur = unsafe_yyjson_get_next(val);
+        (*iter).idx += 1;
+        val
+    }
+}
+
+fn yyjson_obj_iter_next(iter: *mut yyjson_obj_iter) -> *mut yyjson_val {
+    unsafe {
+        let key = (*iter).cur;
+        (*iter).cur = unsafe_yyjson_get_next(key.add(1));
+        (*iter).idx += 1;
+        key
+    }
 }
 
 pub fn deserialize_yyjson(
@@ -87,36 +117,30 @@ pub fn deserialize_yyjson(
     }
 }
 
-#[repr(u8)]
 enum ElementType {
-    Null,
-    Bool,
-    Int64,
-    Uint64,
-    Double,
     String,
+    Uint64,
+    Int64,
+    Double,
+    Null,
+    True,
+    False,
     Array,
     Object,
-    Other,
 }
 
 impl ElementType {
     fn from_tag(elem: *mut yyjson_val) -> Self {
-        let tag = unsafe { (*elem).tag as u8 };
-        match tag & YYJSON_TYPE_MASK as u8 {
-            YYJSON_TYPE_STR => Self::String,
-            YYJSON_TYPE_ARR => Self::Array,
-            YYJSON_TYPE_NULL => Self::Null,
-            YYJSON_TYPE_BOOL => Self::Bool,
-            YYJSON_TYPE_OBJ => Self::Object,
-            YYJSON_TYPE_NUM => match tag & YYJSON_SUBTYPE_MASK {
-                YYJSON_SUBTYPE_UINT => Self::Uint64,
-                YYJSON_SUBTYPE_SINT => Self::Int64,
-                YYJSON_SUBTYPE_REAL => Self::Double,
-                _ => Self::Other,
-            },
-            YYJSON_TYPE_RAW => unreachable!(),
-            YYJSON_TYPE_NONE => unreachable!(),
+        match unsafe { (*elem).tag as u8 & TYPE_AND_SUBTYPE_MASK } {
+            TAG_STRING => Self::String,
+            TAG_UINT64 => Self::Uint64,
+            TAG_INT64 => Self::Int64,
+            TAG_DOUBLE => Self::Double,
+            TAG_NULL => Self::Null,
+            TAG_TRUE => Self::True,
+            TAG_FALSE => Self::False,
+            TAG_ARRAY => Self::Array,
+            TAG_OBJECT => Self::Object,
             _ => unreachable!(),
         }
     }
@@ -129,6 +153,7 @@ fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
     )))
 }
 
+#[inline(never)]
 fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
@@ -150,6 +175,7 @@ fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
     }
 }
 
+#[inline(never)]
 fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
@@ -209,13 +235,13 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
 pub fn parse_node(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
     match ElementType::from_tag(elem) {
         ElementType::String => parse_yy_string(elem),
-        ElementType::Double => parse_f64(unsafe { (*elem).uni.f64_ }),
         ElementType::Uint64 => parse_u64(unsafe { (*elem).uni.u64_ }),
         ElementType::Int64 => parse_i64(unsafe { (*elem).uni.i64_ }),
-        ElementType::Bool => parse_bool(unsafe { unsafe_yyjson_get_bool(elem) }),
+        ElementType::Double => parse_f64(unsafe { (*elem).uni.f64_ }),
         ElementType::Null => parse_none(),
+        ElementType::True => parse_bool(true),
+        ElementType::False => parse_bool(false),
         ElementType::Array => parse_yy_array(elem),
         ElementType::Object => parse_yy_object(elem),
-        ElementType::Other => unreachable!(),
     }
 }

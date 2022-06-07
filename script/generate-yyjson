@@ -12,12 +12,12 @@ bindgen \
     --no-doc-comments \
     --no-layout-tests \
     --allowlist-function=yyjson_alc_pool_init \
-    --allowlist-function=yyjson_arr_iter_next \
     --allowlist-function=yyjson_doc_free \
-    --allowlist-function=yyjson_obj_iter_next \
     --allowlist-function=yyjson_read_opts \
     --allowlist-type=yyjson_alc \
+    --allowlist-type=yyjson_arr_iter \
     --allowlist-type=yyjson_doc \
+    --allowlist-type=yyjson_obj_iter \
     --allowlist-type=yyjson_read_code \
     --allowlist-type=yyjson_read_err \
     --allowlist-type=yyjson_val \

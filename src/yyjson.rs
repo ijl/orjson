@@ -52,12 +52,6 @@ extern "C" {
 extern "C" {
     pub fn yyjson_doc_free(doc: *mut yyjson_doc);
 }
-extern "C" {
-    pub fn yyjson_arr_iter_next(iter: *mut yyjson_arr_iter) -> *mut yyjson_val;
-}
-extern "C" {
-    pub fn yyjson_obj_iter_next(iter: *mut yyjson_obj_iter) -> *mut yyjson_val;
-}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union yyjson_val_uni {

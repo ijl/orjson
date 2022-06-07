@@ -1422,7 +1422,7 @@ yyjson_api_inline bool yyjson_arr_iter_has_next(yyjson_arr_iter *iter);
  Returns the next element in the iteration, or NULL on end.
  If `iter` is NULL, this function will return NULL.
  */
-yyjson_api yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
+yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
 
 /**
  Macro for iterating over an array.
@@ -1533,7 +1533,7 @@ yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter);
  Returns the next key in the iteration, or NULL on end.
  If `iter` is NULL, this function will return NULL.
  */
-yyjson_api yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter);
+yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter);
 
 /**
  Returns the value for key inside the iteration.
@@ -3692,7 +3692,7 @@ yyjson_api_inline bool yyjson_arr_iter_has_next(yyjson_arr_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
-yyjson_api yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
+yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
     yyjson_val *val;
     if (iter && iter->idx < iter->max) {
         val = iter->cur;
@@ -3766,7 +3766,7 @@ yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
-yyjson_api yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
+yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
         yyjson_val *key = iter->cur;
         iter->idx++;
