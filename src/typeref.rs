@@ -92,7 +92,7 @@ pub static mut YYJSON_ALLOC: Lazy<crate::yyjson::yyjson_alc> = Lazy::new(|| unsa
         crate::yyjson::yyjson_alc_pool_init(
             &mut alloc,
             Box::into_raw(buffer) as *mut std::os::raw::c_void,
-            YYJSON_BUFFER_SIZE as u64,
+            YYJSON_BUFFER_SIZE,
         )
     };
     alloc

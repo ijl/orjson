@@ -14,7 +14,7 @@ steps:
   displayName: rustup
 - bash: PATH=$(path) rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.12.18,<0.13" wheel
+- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.12.19,<0.13" wheel
   displayName: build dependencies
 - bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy==0.960
   displayName: test dependencies

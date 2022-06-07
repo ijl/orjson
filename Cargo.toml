@@ -62,7 +62,6 @@ unstable-simd = [
 
 # Build yyjson as a backend.
 yyjson = [
-    "bindgen",
     "cc",
 ]
 
@@ -85,9 +84,8 @@ simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
 smallvec = { version = "^1.8", default_features = false, features = ["union", "write"] }
 
 [build-dependencies]
-bindgen = { version = "0.59", optional = true }
 cc = { version = "1", optional = true  }
-pyo3-build-config = "^0.16.4"
+pyo3-build-config = "^0.16.5"
 
 [profile.release]
 codegen-units = 1

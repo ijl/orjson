@@ -1,25 +1,15 @@
 variables:
   toolchain: nightly-2022-06-01
-jobs:
-- job: linux_sdist
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
-  variables:
-    interpreter: python3.9
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-    target: x86_64-unknown-linux-gnu
-  steps:
-  - checkout: self
-  - template: ./azure-sdist.yml
 
-- job: linux_stable
+jobs:
+
+- job: linux_sdist_stable
   pool:
     vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
+  container: quay.io/pypa/manylinux_2_28_x86_64:latest
   variables:
-    interpreter: python3.9
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    interpreter: python3.10
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-11/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
     toolchain: 1.54.0
   steps:
@@ -29,54 +19,14 @@ jobs:
 - job: linux_debug
   pool:
     vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_24_x86_64:latest
+  container: quay.io/pypa/manylinux_2_28_x86_64:latest
   variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.9
+    interpreter: python3.10
     compatibility: off
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-11/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   steps:
   - checkout: self
   - template: ./azure-debug.yml
-
-- job: linux_python39_amd64_manylinux2014
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.9
-    compatibility: 2014
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp39-cp39/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
-
-- job: linux_python38_amd64_manylinux2014
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.8
-    compatibility: 2014
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp38-cp38/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
-
-- job: linux_python37_amd64_manylinux2014
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux2014_x86_64:2021-07-03-d4d5413
-  variables:
-    extra: '--cargo-extra-args="--features=unstable-simd"'
-    interpreter: python3.7
-    compatibility: 2014
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp37-cp37m/bin:/opt/rh/devtoolset-9/root/usr/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-manylinux.yml
 
 - job: macos_python310_amd64
   pool:

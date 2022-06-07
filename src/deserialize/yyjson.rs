@@ -49,7 +49,7 @@ fn unsafe_yyjson_get_first(ctn: *mut yyjson_val) -> *mut yyjson_val {
     unsafe { ctn.add(1) }
 }
 
-fn yyjson_read_max_memory_usage(len: u64) -> u64 {
+fn yyjson_read_max_memory_usage(len: usize) -> usize {
     (12 * len) + 256
 }
 
@@ -58,7 +58,7 @@ pub fn deserialize_yyjson(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     unsafe {
         let allocator: *mut yyjson_alc;
-        if yyjson_read_max_memory_usage(data.as_bytes().len() as u64) < YYJSON_BUFFER_SIZE as u64 {
+        if yyjson_read_max_memory_usage(data.as_bytes().len()) < YYJSON_BUFFER_SIZE {
             allocator = std::ptr::addr_of_mut!(*YYJSON_ALLOC);
         } else {
             allocator = std::ptr::null_mut();
@@ -70,7 +70,7 @@ pub fn deserialize_yyjson(
         };
         let doc: *mut yyjson_doc = yyjson_read_opts(
             data.as_bytes().as_ptr() as *mut c_char,
-            data.as_bytes().len() as u64,
+            data.as_bytes().len(),
             YYJSON_READ_NOFLAG,
             allocator,
             &mut err,
@@ -138,7 +138,7 @@ fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         }
         let mut iter: yyjson_arr_iter = yyjson_arr_iter {
             idx: 0,
-            max: len as u64,
+            max: len,
             cur: unsafe_yyjson_get_first(elem),
         };
         for idx in 0..=len.saturating_sub(1) {
@@ -159,7 +159,7 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         let dict = ffi!(_PyDict_NewPresized(len as isize));
         let mut iter = yyjson_obj_iter {
             idx: 0,
-            max: len as u64,
+            max: len,
             cur: unsafe_yyjson_get_first(elem),
             obj: elem,
         };

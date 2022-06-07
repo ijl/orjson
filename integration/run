@@ -15,7 +15,7 @@ if [[ $to_run == *"http"* ]]; then
 	sleep 2
 	"${_dir}"/client 8001
 	set +e
-	pkill -f 'wsgi:app' # pkill not present on manylinux_2_24_x86_64
+	pkill -f 'wsgi:app' # pkill not present on all CI envs
 	set -e
 fi
 
