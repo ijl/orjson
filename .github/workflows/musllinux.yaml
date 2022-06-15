@@ -9,22 +9,41 @@ jobs:
   musllinux:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python: [
+          { version: '3.7' },
+          { version: '3.8' },
+          { version: '3.9' },
+          { version: '3.10' },
+        ]
+        platform:
+          - target: aarch64-unknown-linux-musl
+            arch: aarch64
+          - target: x86_64-unknown-linux-musl
+            arch: x86_64
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python.version }}
     - name: Build wheels
       uses: messense/maturin-action@v1
       with:
-        container: quay.io/pypa/musllinux_1_1_x86_64:latest
         rust-toolchain: nightly-2022-06-22
-        target: x86_64-unknown-linux-musl
+        target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
-        args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python-version }}
+        args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python.version }}
+    - name: Set up QEMU
+      if: matrix.platform.arch != 'x86_64'
+      uses: docker/setup-qemu-action@v2
+      with:
+        image: tonistiigi/binfmt:qemu-v6.2.0
+        platforms: all
     - name: Install built wheel
       uses: addnab/docker-run-action@v3
       with:
-        image: quay.io/pypa/musllinux_1_1_x86_64:latest
+        image: quay.io/pypa/musllinux_1_1_${{ matrix.platform.arch }}:latest
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           # workaround zoneinfo._common.ZoneInfoNotFoundError: 'No time zone found with key UTC'
@@ -34,7 +53,7 @@ jobs:
           # Don't install numpy since there are no musllinux wheels
           sed -i '/^numpy/d' test/requirements.txt
 
-          PYTHON=python${{ matrix.python-version }}
+          PYTHON=python${{ matrix.python.version }}
           $PYTHON -m venv venv
           venv/bin/pip install -U pip
           venv/bin/pip install -r test/requirements.txt
