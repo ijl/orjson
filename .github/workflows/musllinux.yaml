@@ -35,6 +35,7 @@ jobs:
         manylinux: musllinux_1_1
         args: --release --strip --out dist --no-sdist --cargo-extra-args="--features=unstable-simd" -i python${{ matrix.python.version }}
     - name: Set up QEMU
+      if: matrix.platform.arch != 'x86_64'
       uses: docker/setup-qemu-action@v2
       with:
         image: tonistiigi/binfmt:qemu-v6.2.0
