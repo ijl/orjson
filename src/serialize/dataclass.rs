@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
+use crate::serialize::error::*;
 use crate::serialize::serializer::*;
 use crate::typeref::*;
 use crate::unicode::*;
@@ -38,7 +38,7 @@ impl DataclassFastSerializer {
     }
 }
 
-impl<'p> Serialize for DataclassFastSerializer {
+impl Serialize for DataclassFastSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -117,7 +117,7 @@ impl DataclassFallbackSerializer {
     }
 }
 
-impl<'p> Serialize for DataclassFallbackSerializer {
+impl Serialize for DataclassFallbackSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -15,8 +15,8 @@ steps:
       from_secret: twine_password
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
-    - yum update && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-01 --profile minimal -y
+    - yum update -y && yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
     - python3.10 -m pip install --user --upgrade pip "maturin>=0.12.19,<0.13" wheel
     - cargo fetch
     - maturin build --no-sdist --release --strip --compatibility manylinux_2_28 --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter python3.10
@@ -42,8 +42,8 @@ steps:
       from_secret: twine_password
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
-    - yum update && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-01 --profile minimal -y
+    - yum update -y && yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
     - python3.9 -m pip install --user --upgrade pip "maturin>=0.12.19,<0.13" wheel
     - cargo fetch
     - maturin build --no-sdist --release --strip --compatibility manylinux_2_28 --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter python3.9
@@ -69,8 +69,8 @@ steps:
       from_secret: twine_password
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
-    - yum update && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-01 --profile minimal -y
+    - yum update -y && yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
     - python3.8 -m pip install --user --upgrade pip "maturin>=0.12.19,<0.13" wheel
     - cargo fetch
     - maturin build --no-sdist --release --strip --compatibility manylinux_2_28 --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter python3.8
@@ -96,8 +96,8 @@ steps:
       from_secret: twine_password
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
-    - yum update && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-01 --profile minimal -y
+    - yum update -y && yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
     - python3.7 -m pip install --user --upgrade pip "maturin>=0.12.19,<0.13" wheel
     - cargo fetch
     - maturin build --no-sdist --release --strip --compatibility manylinux_2_28 --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter python3.7

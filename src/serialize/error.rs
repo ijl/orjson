@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::error::INVALID_STR;
 use std::ffi::CStr;
 use std::ptr::NonNull;
-
-pub const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
 pub enum SerializeError {
     DatetimeLibraryUnsupported,

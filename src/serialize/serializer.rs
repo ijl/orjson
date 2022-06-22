@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
 use crate::ffi::{PyDict_GET_SIZE, PyTypeObject};
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
+use crate::serialize::error::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
@@ -26,14 +26,13 @@ pub fn serialize(
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
-    let mut buf = BytesWriter::new();
+    let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
-    let res;
-    if opts & INDENT_2 != INDENT_2 {
-        res = serde_json::to_writer(&mut buf, &obj);
+    let res = if opts & INDENT_2 != INDENT_2 {
+        serde_json::to_writer(&mut buf, &obj)
     } else {
-        res = serde_json::to_writer_pretty(&mut buf, &obj);
-    }
+        serde_json::to_writer_pretty(&mut buf, &obj)
+    };
     match res {
         Ok(_) => {
             if opts & APPEND_NEWLINE != 0 {
@@ -97,7 +96,7 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
 
 macro_rules! is_subclass {
     ($ob_type:expr, $flag:ident) => {
-        unsafe { (((*$ob_type).tp_flags & pyo3_ffi::$flag) != 0) }
+        (((*$ob_type).tp_flags & pyo3_ffi::$flag) != 0)
     };
 }
 
@@ -175,7 +174,7 @@ impl PyObjectSerializer {
     }
 }
 
-impl<'p> Serialize for PyObjectSerializer {
+impl Serialize for PyObjectSerializer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

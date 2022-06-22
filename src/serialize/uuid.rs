@@ -49,7 +49,7 @@ impl UUID {
         buf.try_extend_from_slice(&hexadecimal[20..32]).unwrap();
     }
 }
-impl<'p> Serialize for UUID {
+impl Serialize for UUID {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
+use crate::serialize::error::*;
 use serde::ser::{Serialize, Serializer};
 
 // https://tools.ietf.org/html/rfc7159#section-6
@@ -19,7 +19,7 @@ impl IntSerializer {
     }
 }
 
-impl<'p> Serialize for IntSerializer {
+impl Serialize for IntSerializer {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -45,7 +45,7 @@ impl UIntSerializer {
     }
 }
 
-impl<'p> Serialize for UIntSerializer {
+impl Serialize for UIntSerializer {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -72,7 +72,7 @@ impl Int53Serializer {
     }
 }
 
-impl<'p> Serialize for Int53Serializer {
+impl Serialize for Int53Serializer {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -81,7 +81,7 @@ impl<'p> Serialize for Int53Serializer {
     {
         let val = ffi!(PyLong_AsLongLong(self.ptr));
         if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null())
-            || (val > STRICT_INT_MAX || val < STRICT_INT_MIN)
+            || !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
         {
             err!(SerializeError::Integer53Bits)
         }

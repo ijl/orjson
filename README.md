@@ -1160,7 +1160,7 @@ There is a minor performance benefit on at least amd64 to building on `nightly`
 with `--features=unstable-simd`. It may be more significant on other
 architectures.
 
-The project's own CI tests against `nightly-2022-06-01` and stable 1.54. It
+The project's own CI tests against `nightly-2022-06-22` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

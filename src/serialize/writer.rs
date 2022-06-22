@@ -14,7 +14,7 @@ pub struct BytesWriter {
 }
 
 impl BytesWriter {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         BytesWriter {
             cap: BUFFER_LENGTH,
             len: 0,

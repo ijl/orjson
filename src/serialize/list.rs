@@ -32,7 +32,7 @@ impl ListSerializer {
     }
 }
 
-impl<'p> Serialize for ListSerializer {
+impl Serialize for ListSerializer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

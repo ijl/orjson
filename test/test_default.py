@@ -19,7 +19,7 @@ class Recursive:
         self.cur = cur
 
 
-def default(obj):
+def default_recursive(obj):
     if obj.cur != 0:
         obj.cur -= 1
         return obj
@@ -107,6 +107,28 @@ class TypeTests(unittest.TestCase):
 
         with self.assertRaises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default_raises)
+
+    def test_default_vectorcall_str(self):
+        """
+        dumps() default function vectorcall str
+        """
+
+        class SubStr(str):
+            pass
+
+        obj = SubStr("saasa")
+        ref = b'"%s"' % str(obj).encode("utf-8")
+        self.assertEqual(
+            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_SUBCLASS, default=str), ref
+        )
+
+    def test_default_vectorcall_list(self):
+        """
+        dumps() default function vectorcall list
+        """
+        obj = {1, 2}
+        ref = b"[1,2]"
+        self.assertEqual(orjson.dumps(obj, default=list), ref)
 
     def test_default_func_nested_str(self):
         """
@@ -217,7 +239,7 @@ class TypeTests(unittest.TestCase):
         """
         dumps() default recursion limit
         """
-        self.assertEqual(orjson.dumps(Recursive(254), default=default), b"0")
+        self.assertEqual(orjson.dumps(Recursive(254), default=default_recursive), b"0")
 
     def test_default_recursion_reset(self):
         """
@@ -226,7 +248,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(
             orjson.dumps(
                 [Recursive(254), {"a": "b"}, Recursive(254), Recursive(254)],
-                default=default,
+                default=default_recursive,
             ),
             b'[0,{"a":"b"},0,0]',
         )

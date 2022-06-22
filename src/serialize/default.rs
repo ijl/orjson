@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
 use crate::opt::*;
+use crate::serialize::error::*;
 use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, Serializer};
@@ -34,7 +34,7 @@ impl DefaultSerializer {
     }
 }
 
-impl<'p> Serialize for DefaultSerializer {
+impl Serialize for DefaultSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

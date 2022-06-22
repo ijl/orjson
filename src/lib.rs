@@ -13,7 +13,7 @@
 mod util;
 
 mod deserialize;
-mod exc;
+mod error;
 mod ffi;
 mod opt;
 mod serialize;
@@ -34,14 +34,12 @@ use core::ptr::{null, null_mut, NonNull};
 
 macro_rules! opt {
     ($mptr:expr, $name:expr, $opt:expr) => {
-        unsafe {
-            #[cfg(all(not(target_os = "windows"), target_pointer_width = "64"))]
-            PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i64);
-            #[cfg(all(not(target_os = "windows"), target_pointer_width = "32"))]
-            PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
-            #[cfg(target_os = "windows")]
-            PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
-        }
+        #[cfg(all(not(target_os = "windows"), target_pointer_width = "64"))]
+        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i64);
+        #[cfg(all(not(target_os = "windows"), target_pointer_width = "32"))]
+        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
+        #[cfg(target_os = "windows")]
+        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
     };
 }
 
@@ -51,13 +49,11 @@ macro_rules! opt {
 #[cfg_attr(feature = "unstable-simd", optimize(size))]
 pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     let version = env!("CARGO_PKG_VERSION");
-    unsafe {
-        PyModule_AddObject(
-            mptr,
-            "__version__\0".as_ptr() as *const c_char,
-            PyUnicode_FromStringAndSize(version.as_ptr() as *const c_char, version.len() as isize),
-        )
-    };
+    PyModule_AddObject(
+        mptr,
+        "__version__\0".as_ptr() as *const c_char,
+        PyUnicode_FromStringAndSize(version.as_ptr() as *const c_char, version.len() as isize),
+    );
 
     let dumps_doc =
         "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
@@ -87,17 +83,15 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         };
     }
 
-    unsafe {
-        PyModule_AddObject(
-            mptr,
-            "dumps\0".as_ptr() as *const c_char,
-            PyCFunction_NewEx(
-                Box::into_raw(Box::new(wrapped_dumps)),
-                null_mut(),
-                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
-            ),
-        )
-    };
+    PyModule_AddObject(
+        mptr,
+        "dumps\0".as_ptr() as *const c_char,
+        PyCFunction_NewEx(
+            Box::into_raw(Box::new(wrapped_dumps)),
+            null_mut(),
+            PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
+        ),
+    );
 
     let loads_doc = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
 
@@ -108,17 +102,15 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         ml_doc: loads_doc.as_ptr() as *const c_char,
     };
 
-    unsafe {
-        PyModule_AddObject(
-            mptr,
-            "loads\0".as_ptr() as *const c_char,
-            PyCFunction_NewEx(
-                Box::into_raw(Box::new(wrapped_loads)),
-                null_mut(),
-                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
-            ),
-        )
-    };
+    PyModule_AddObject(
+        mptr,
+        "loads\0".as_ptr() as *const c_char,
+        PyCFunction_NewEx(
+            Box::into_raw(Box::new(wrapped_loads)),
+            null_mut(),
+            PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
+        ),
+    );
 
     opt!(mptr, "OPT_APPEND_NEWLINE\0", opt::APPEND_NEWLINE);
     opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
@@ -149,18 +141,16 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
 
     typeref::init_typerefs();
 
-    unsafe {
-        PyModule_AddObject(
-            mptr,
-            "JSONDecodeError\0".as_ptr() as *const c_char,
-            typeref::JsonDecodeError,
-        );
-        PyModule_AddObject(
-            mptr,
-            "JSONEncodeError\0".as_ptr() as *const c_char,
-            typeref::JsonEncodeError,
-        )
-    };
+    PyModule_AddObject(
+        mptr,
+        "JSONDecodeError\0".as_ptr() as *const c_char,
+        typeref::JsonDecodeError,
+    );
+    PyModule_AddObject(
+        mptr,
+        "JSONEncodeError\0".as_ptr() as *const c_char,
+        typeref::JsonEncodeError,
+    );
 
     // maturin>=0.11.0 creates a python package that imports *, hiding dunder by default
     let all: [&str; 20] = [
@@ -195,9 +185,7 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         )
     }
 
-    unsafe {
-        PyModule_AddObject(mptr, "__all__\0".as_ptr() as *const c_char, pyall);
-    };
+    PyModule_AddObject(mptr, "__all__\0".as_ptr() as *const c_char, pyall);
     0
 }
 

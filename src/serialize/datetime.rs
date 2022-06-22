@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
+use crate::serialize::error::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 
@@ -60,7 +60,7 @@ impl Date {
         }
     }
 }
-impl<'p> Serialize for Date {
+impl Serialize for Date {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -107,7 +107,7 @@ impl Time {
     }
 }
 
-impl<'p> Serialize for Time {
+impl Serialize for Time {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -229,7 +229,7 @@ impl DateTimeLike for DateTime {
     }
 }
 
-impl<'p> Serialize for DateTime {
+impl Serialize for DateTime {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

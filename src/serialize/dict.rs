@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::exc::*;
 use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
+use crate::serialize::error::*;
 use crate::serialize::serializer::pyobject_to_obtype;
 use crate::serialize::serializer::*;
 use crate::serialize::uuid::*;
@@ -42,7 +42,7 @@ impl Dict {
     }
 }
 
-impl<'p> Serialize for Dict {
+impl Serialize for Dict {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -113,7 +113,7 @@ impl DictSortedKey {
     }
 }
 
-impl<'p> Serialize for DictSortedKey {
+impl Serialize for DictSortedKey {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -198,12 +198,11 @@ impl DictNonStrKey {
         match pyobject_to_obtype(key, opts) {
             ObType::None => Ok(InlinableString::from("null")),
             ObType::Bool => {
-                let key_as_str: &str;
-                if unsafe { key == TRUE } {
-                    key_as_str = "true";
+                let key_as_str = if unsafe { key == TRUE } {
+                    "true"
                 } else {
-                    key_as_str = "false";
-                }
+                    "false"
+                };
                 Ok(InlinableString::from(key_as_str))
             }
             ObType::Int => {
@@ -292,7 +291,7 @@ impl DictNonStrKey {
     }
 }
 
-impl<'p> Serialize for DictNonStrKey {
+impl Serialize for DictNonStrKey {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

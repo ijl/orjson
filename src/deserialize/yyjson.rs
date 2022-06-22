@@ -239,8 +239,8 @@ pub fn parse_node(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         ElementType::Int64 => parse_i64(unsafe { (*elem).uni.i64_ }),
         ElementType::Double => parse_f64(unsafe { (*elem).uni.f64_ }),
         ElementType::Null => parse_none(),
-        ElementType::True => parse_bool(true),
-        ElementType::False => parse_bool(false),
+        ElementType::True => parse_true(),
+        ElementType::False => parse_false(),
         ElementType::Array => parse_yy_array(elem),
         ElementType::Object => parse_yy_object(elem),
     }

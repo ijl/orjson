@@ -88,13 +88,11 @@ pub static mut YYJSON_ALLOC: Lazy<crate::yyjson::yyjson_alc> = Lazy::new(|| unsa
         free: None,
         ctx: std::ptr::null_mut(),
     };
-    unsafe {
-        crate::yyjson::yyjson_alc_pool_init(
-            &mut alloc,
-            Box::into_raw(buffer) as *mut std::os::raw::c_void,
-            YYJSON_BUFFER_SIZE,
-        )
-    };
+    crate::yyjson::yyjson_alc_pool_init(
+        &mut alloc,
+        Box::into_raw(buffer) as *mut std::os::raw::c_void,
+        YYJSON_BUFFER_SIZE,
+    );
     alloc
 });
 

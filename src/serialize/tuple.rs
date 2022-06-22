@@ -32,7 +32,7 @@ impl TupleSerializer {
     }
 }
 
-impl<'p> Serialize for TupleSerializer {
+impl Serialize for TupleSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

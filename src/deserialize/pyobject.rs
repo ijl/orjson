@@ -3,17 +3,27 @@
 use crate::typeref::*;
 use std::ptr::NonNull;
 
+#[allow(dead_code)]
 #[inline(always)]
 pub fn parse_bool(val: bool) -> NonNull<pyo3_ffi::PyObject> {
     if val {
-        ffi!(Py_INCREF(TRUE));
-        nonnull!(TRUE)
+        parse_true()
     } else {
-        ffi!(Py_INCREF(FALSE));
-        nonnull!(FALSE)
+        parse_false()
     }
 }
 
+#[inline(always)]
+pub fn parse_true() -> NonNull<pyo3_ffi::PyObject> {
+        ffi!(Py_INCREF(TRUE));
+        nonnull!(TRUE)
+}
+
+#[inline(always)]
+pub fn parse_false() -> NonNull<pyo3_ffi::PyObject> {
+        ffi!(Py_INCREF(FALSE));
+        nonnull!(FALSE)
+}
 #[inline(always)]
 pub fn parse_i64(val: i64) -> NonNull<pyo3_ffi::PyObject> {
     nonnull!(ffi!(PyLong_FromLongLong(val)))
