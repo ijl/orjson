@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.3 - 2022-06-23
+
+## Changed
+
+- Improve build.
+- Publish aarch64 musllinux wheels.
+
 ## 3.7.2 - 2022-06-07
 
 ## Changed
