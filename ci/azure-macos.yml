@@ -13,6 +13,10 @@ steps:
   displayName: test dependencies
 - bash: PATH=$HOME/.cargo/bin:$PATH cargo fetch
 - bash: PATH=$HOME/.cargo/bin:$PATH maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter $(interpreter)
+  env:
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
@@ -29,6 +33,10 @@ steps:
 - bash: rustup target add aarch64-apple-darwin
   displayName: rustup target
 - bash: PATH=$HOME/.cargo/bin:$PATH PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd" --interpreter $(interpreter) --universal2
+  env:
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld --as-needed,-z,relro,-z,now"
   displayName: build universal2
 - bash: pip install --force-reinstall target/wheels/orjson*universal2.whl
   displayName: install universal2

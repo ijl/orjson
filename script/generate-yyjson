@@ -5,7 +5,7 @@ set -eou pipefail
 _repo="$(dirname "$(dirname "${BASH_SOURCE[0]}")")"
 
 bindgen \
-    "${_repo}/include/yyjson.h" \
+    "${_repo}/include/yyjson/yyjson.h" \
     --size_t-is-usize \
     --disable-header-comment \
     --no-derive-debug \

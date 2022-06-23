@@ -13,6 +13,9 @@ steps:
       from_secret: twine_username
     MATURIN_PASSWORD:
       from_secret: twine_password
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
     - yum update -y && yum install -y clang lld
@@ -40,6 +43,9 @@ steps:
       from_secret: twine_username
     MATURIN_PASSWORD:
       from_secret: twine_password
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
     - yum update -y && yum install -y clang lld
@@ -67,6 +73,9 @@ steps:
       from_secret: twine_username
     MATURIN_PASSWORD:
       from_secret: twine_password
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
     - yum update -y && yum install -y clang lld
@@ -94,6 +103,9 @@ steps:
       from_secret: twine_username
     MATURIN_PASSWORD:
       from_secret: twine_password
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
   commands:
     - yum update -y && yum install -y clang lld

@@ -65,7 +65,7 @@ fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
     }
 }
 
-fn yyjson_arr_iter_next(iter: *mut yyjson_arr_iter) -> *mut yyjson_val {
+fn yyjson_arr_iter_next(iter: &mut yyjson_arr_iter) -> *mut yyjson_val {
     unsafe {
         let val = (*iter).cur;
         (*iter).cur = unsafe_yyjson_get_next(val);
@@ -74,7 +74,7 @@ fn yyjson_arr_iter_next(iter: *mut yyjson_arr_iter) -> *mut yyjson_val {
     }
 }
 
-fn yyjson_obj_iter_next(iter: *mut yyjson_obj_iter) -> *mut yyjson_val {
+fn yyjson_obj_iter_next(iter: &mut yyjson_obj_iter) -> *mut yyjson_val {
     unsafe {
         let key = (*iter).cur;
         (*iter).cur = unsafe_yyjson_get_next(key.add(1));
