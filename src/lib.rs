@@ -141,7 +141,6 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
 
     typeref::init_typerefs();
 
-    Py_INCREF(typeref::JsonDecodeError);
     PyModule_AddObject(
         mptr,
         "JSONDecodeError\0".as_ptr() as *const c_char,
