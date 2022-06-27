@@ -184,6 +184,7 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
     Py_DECREF(ptr);
     Py_DECREF(module_dict);
     Py_DECREF(module);
+    Py_INCREF(res);
     res
 }
 
