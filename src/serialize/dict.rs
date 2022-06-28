@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::{PyDictIter, PyDictObject, PyDict_GET_SIZE};
+use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
@@ -13,6 +13,7 @@ use crate::unicode::*;
 use inlinable_string::InlinableString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
+use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct Dict {
@@ -48,8 +49,27 @@ impl Serialize for Dict {
         S: Serializer,
     {
         let mut map = serializer.serialize_map(None).unwrap();
+        let mut pos = 0isize;
         let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-        for (key, value) in PyDictIter::new(self.ptr as *mut PyDictObject) {
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        for _ in 0..=unsafe { PyDict_GET_SIZE(self.ptr) as usize } - 1 {
+            unsafe {
+                pyo3_ffi::_PyDict_Next(
+                    self.ptr,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
+                    std::ptr::null_mut(),
+                )
+            };
+            let value = PyObjectSerializer::new(
+                value,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
@@ -60,14 +80,8 @@ impl Serialize for Dict {
                 }
                 map.serialize_key(str_from_slice!(data, str_size)).unwrap();
             }
-            let pyvalue = PyObjectSerializer::new(
-                value,
-                self.opts,
-                self.default_calls,
-                self.recursion + 1,
-                self.default,
-            );
-            map.serialize_value(&pyvalue)?;
+
+            map.serialize_value(&value)?;
         }
         map.end()
     }
@@ -108,8 +122,20 @@ impl Serialize for DictSortedKey {
         let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
+        let mut pos = 0isize;
         let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-        for (key, value) in PyDictIter::new(self.ptr as *mut PyDictObject) {
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        for _ in 0..=len - 1 {
+            unsafe {
+                pyo3_ffi::_PyDict_Next(
+                    self.ptr,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
+                    std::ptr::null_mut(),
+                )
+            };
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
@@ -274,9 +300,21 @@ impl Serialize for DictNonStrKey {
         let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
         let mut items: SmallVec<[(InlinableString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
+        let mut pos = 0isize;
         let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let opts = self.opts & NOT_PASSTHROUGH;
-        for (key, value) in PyDictIter::new(self.ptr as *mut PyDictObject) {
+        for _ in 0..=len - 1 {
+            unsafe {
+                pyo3_ffi::_PyDict_Next(
+                    self.ptr,
+                    addr_of_mut!(pos),
+                    addr_of_mut!(key),
+                    addr_of_mut!(value),
+                    std::ptr::null_mut(),
+                )
+            };
             if is_type!(ob_type!(key), STR_TYPE) {
                 let data = read_utf8_from_str(key, &mut str_size);
                 if unlikely!(data.is_null()) {
