@@ -1,8 +1,15 @@
 # Changelog
 
+## 3.7.5 - 2022-06-28
+
+### Fixed
+
+- Fix issue serializing dicts that had keys popped and replaced. This was
+introduced in 3.7.4.
+
 ## 3.7.4 - 2022-06-28
 
-## Changed
+### Changed
 
 - Improve performance.
 
