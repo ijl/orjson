@@ -355,12 +355,7 @@ pub unsafe extern "C" fn dumps(
     }
 
     if !kwds.is_null() {
-        let len = unsafe { crate::ffi::PyDict_GET_SIZE(kwds) };
-        let mut pos = 0isize;
-        let mut arg: *mut PyObject = null_mut();
-        let mut val: *mut PyObject = null_mut();
-        for _ in 0..=len.saturating_sub(1) {
-            unsafe { _PyDict_Next(kwds, &mut pos, &mut arg, &mut val, null_mut()) };
+        for (arg, val) in crate::ffi::PyDictIter::new(kwds as *mut crate::ffi::PyDictObject) {
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
                     return raise_dumps_exception(Cow::Borrowed(
