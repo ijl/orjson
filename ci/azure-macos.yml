@@ -36,7 +36,7 @@ steps:
   env:
     CC: "clang"
     CFLAGS: "-O2 -fno-plt -flto=thin"
-    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld --as-needed,-z,relro,-z,now"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
   displayName: build universal2
 - bash: pip install --force-reinstall target/wheels/orjson*universal2.whl
   displayName: install universal2

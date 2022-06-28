@@ -25,6 +25,7 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
+        maturin-version: v0.12.19
         target: ${{ matrix.target }}
         rust-toolchain: nightly-2022-06-22
         manylinux: auto
