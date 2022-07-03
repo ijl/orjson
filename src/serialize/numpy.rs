@@ -722,15 +722,13 @@ impl NumpyDatetimeUnit {
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
         ffi!(Py_DECREF(descr));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-        let uni = crate::unicode::read_utf8_from_str(descr_str, &mut str_size);
-        if str_size < 5 {
+        let uni = crate::unicode::unicode_to_str(descr_str).unwrap();
+        if uni.len() < 5 {
             return Self::NaT;
         }
-        let fmt = str_from_slice!(uni, str_size);
         // unit descriptions are found at
         // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
-        match &fmt[4..fmt.len() - 1] {
+        match &uni[4..uni.len() - 1] {
             "Y" => Self::Years,
             "M" => Self::Months,
             "W" => Self::Weeks,

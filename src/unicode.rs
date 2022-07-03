@@ -27,10 +27,17 @@ pub struct PyCompactUnicodeObject {
     pub wstr_length: Py_ssize_t,
 }
 
+#[cfg(not(Py_3_12))]
 const STATE_ASCII: u32 = 0b00000000000000000000000001000000;
 #[cfg(not(Py_3_12))]
 const STATE_COMPACT: u32 = 0b00000000000000000000000000100000;
-#[cfg(not(Py_3_12))]
+
+#[cfg(Py_3_12)]
+const STATE_ASCII: u32 = 0b00000000000000000000000000100000;
+
+#[cfg(Py_3_12)]
+const STATE_COMPACT: u32 = 0b00000000000000000000000000010000;
+
 const STATE_COMPACT_ASCII: u32 = STATE_COMPACT | STATE_ASCII;
 
 fn is_four_byte(buf: &str) -> bool {
@@ -108,42 +115,40 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
     }
 }
 
-#[cfg(Py_3_12)]
-pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
-    unsafe {
-        if (*op.cast::<PyASCIIObject>()).state & STATE_ASCII != 0 {
-            *str_size = (*op.cast::<PyASCIIObject>()).length;
-            op.cast::<PyASCIIObject>().offset(1) as *const u8
-        } else if !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null() {
-            *str_size = (*op.cast::<PyCompactUnicodeObject>()).utf8_length;
-            (*op.cast::<PyCompactUnicodeObject>()).utf8 as *const u8
-        } else {
-            PyUnicode_AsUTF8AndSize(op, str_size) as *const u8
-        }
-    }
-}
-
-#[cfg(not(Py_3_12))]
-pub fn read_utf8_from_str(op: *mut PyObject, str_size: &mut Py_ssize_t) -> *const u8 {
-    unsafe {
-        if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
-            *str_size = (*op.cast::<PyASCIIObject>()).length;
-            op.cast::<PyASCIIObject>().offset(1) as *const u8
-        } else if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT
-            && !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null()
-        {
-            *str_size = (*op.cast::<PyCompactUnicodeObject>()).utf8_length;
-            (*op.cast::<PyCompactUnicodeObject>()).utf8 as *const u8
-        } else {
-            PyUnicode_AsUTF8AndSize(op, str_size) as *const u8
-        }
-    }
-}
-
 #[inline]
 pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
     unsafe {
         (*op.cast::<PyASCIIObject>()).hash = STR_HASH_FUNCTION.unwrap()(op);
         (*op.cast::<PyASCIIObject>()).hash
+    }
+}
+
+#[inline(never)]
+pub fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
+    let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+    let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)) as *const u8;
+    if unlikely!(ptr.is_null()) {
+        None
+    } else {
+        Some(str_from_slice!(ptr, str_size as usize))
+    }
+}
+
+#[inline(always)]
+pub fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
+    unsafe {
+        if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
+            let ptr = op.cast::<PyASCIIObject>().offset(1) as *const u8;
+            let len = (*op.cast::<PyASCIIObject>()).length as usize;
+            Some(str_from_slice!(ptr, len))
+        } else if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == STATE_COMPACT
+            && !(*op.cast::<PyCompactUnicodeObject>()).utf8.is_null()
+        {
+            let ptr = (*op.cast::<PyCompactUnicodeObject>()).utf8 as *const u8;
+            let len = (*op.cast::<PyCompactUnicodeObject>()).utf8_length as usize;
+            Some(str_from_slice!(ptr, len))
+        } else {
+            unicode_to_str_via_ffi(op)
+        }
     }
 }

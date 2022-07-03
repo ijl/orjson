@@ -50,10 +50,9 @@ impl Serialize for DataclassFastSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
-        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=len - 1 {
+        for _ in 0..=len.saturating_sub(1) {
             unsafe {
                 pyo3_ffi::_PyDict_Next(
                     self.dict,
@@ -63,7 +62,7 @@ impl Serialize for DataclassFastSerializer {
                     std::ptr::null_mut(),
                 )
             };
-            let value = PyObjectSerializer::new(
+            let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,
                 self.default_calls,
@@ -73,19 +72,16 @@ impl Serialize for DataclassFastSerializer {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            {
-                let data = read_utf8_from_str(key, &mut str_size);
-                if unlikely!(data.is_null()) {
-                    err!(SerializeError::InvalidStr)
-                }
-                let key_as_str = str_from_slice!(data, str_size);
-                if unlikely!(key_as_str.as_bytes()[0] == b'_') {
-                    continue;
-                }
-                map.serialize_key(key_as_str).unwrap();
+            let data = unicode_to_str(key);
+            if unlikely!(data.is_none()) {
+                err!(SerializeError::InvalidStr)
             }
-
-            map.serialize_value(&value)?;
+            let key_as_str = data.unwrap();
+            if unlikely!(key_as_str.as_bytes()[0] == b'_') {
+                continue;
+            }
+            map.serialize_key(key_as_str).unwrap();
+            map.serialize_value(&pyvalue)?;
         }
         map.end()
     }
@@ -131,7 +127,6 @@ impl Serialize for DataclassFallbackSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut pos = 0isize;
-        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
         let mut attr: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let mut field: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         for _ in 0..=len - 1 {
@@ -149,21 +144,19 @@ impl Serialize for DataclassFallbackSerializer {
             if unsafe { field_type != FIELD_TYPE.as_ptr() } {
                 continue;
             }
-            {
-                let data = read_utf8_from_str(attr, &mut str_size);
-                if unlikely!(data.is_null()) {
-                    err!(SerializeError::InvalidStr);
-                }
-                let key_as_str = str_from_slice!(data, str_size);
-                if key_as_str.as_bytes()[0] == b'_' {
-                    continue;
-                }
-                map.serialize_key(key_as_str).unwrap();
+            let data = unicode_to_str(attr);
+            if unlikely!(data.is_none()) {
+                err!(SerializeError::InvalidStr);
+            }
+            let key_as_str = data.unwrap();
+            if key_as_str.as_bytes()[0] == b'_' {
+                continue;
             }
 
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
 
+            map.serialize_key(key_as_str).unwrap();
             map.serialize_value(&PyObjectSerializer::new(
                 value,
                 self.opts,

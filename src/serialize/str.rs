@@ -21,12 +21,11 @@ impl Serialize for StrSerializer {
     where
         S: Serializer,
     {
-        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-        let uni = read_utf8_from_str(self.ptr, &mut str_size);
-        if unlikely!(uni.is_null()) {
+        let uni = unicode_to_str(self.ptr);
+        if unlikely!(uni.is_none()) {
             err!(SerializeError::InvalidStr)
         }
-        serializer.serialize_str(str_from_slice!(uni, str_size))
+        serializer.serialize_str(uni.unwrap())
     }
 }
 
@@ -47,11 +46,10 @@ impl Serialize for StrSubclassSerializer {
     where
         S: Serializer,
     {
-        let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-        let uni = ffi!(PyUnicode_AsUTF8AndSize(self.ptr, &mut str_size)) as *const u8;
-        if unlikely!(uni.is_null()) {
+        let uni = unicode_to_str_via_ffi(self.ptr);
+        if unlikely!(uni.is_none()) {
             err!(SerializeError::InvalidStr)
         }
-        serializer.serialize_str(str_from_slice!(uni, str_size))
+        serializer.serialize_str(uni.unwrap())
     }
 }
