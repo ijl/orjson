@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.6 - 2022-07-03
+
+### Changed
+
+- Handle unicode changes in CPython 3.12.
+- Build PyPI macOS wheels on 10.15 instead of 12 for compatibility.
+
 ## 3.7.5 - 2022-06-28
 
 ### Fixed
