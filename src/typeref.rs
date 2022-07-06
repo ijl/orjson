@@ -165,6 +165,7 @@ pub fn init_typerefs() {
         DEFAULT = PyUnicode_InternFromString("default\0".as_ptr() as *const c_char);
         OPTION = PyUnicode_InternFromString("option\0".as_ptr() as *const c_char);
         JsonEncodeError = pyo3_ffi::PyExc_TypeError;
+        Py_INCREF(JsonEncodeError);
         JsonDecodeError = look_up_json_exc();
     });
 }
