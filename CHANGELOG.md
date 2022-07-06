@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.7 - 2022-07-06
+
+### Changed
+
+- Support Python 3.11.
+
 ## 3.7.6 - 2022-07-03
 
 ### Changed
