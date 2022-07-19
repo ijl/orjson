@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.7.8 - 2022-07-19
+
+### Changed
+
+- Build makes best effort instead of requiring "--features".
+- Build using maturin 0.13.
+
 ## 3.7.7 - 2022-07-06
 
 ### Changed
