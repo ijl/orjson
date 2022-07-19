@@ -7,12 +7,12 @@ steps:
   displayName: rustup
 - bash: rustup default $(toolchain)
   displayName: ensure toolchain
-- bash: pip install --upgrade pip "maturin>=0.12.19,<0.13" wheel
+- bash: pip install --upgrade pip "maturin>=0.13,<0.14" wheel
   displayName: build dependencies
 - bash: pip install -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
 - bash: PATH=$HOME/.cargo/bin:$PATH cargo fetch
-- bash: PATH=$HOME/.cargo/bin:$PATH maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd,yyjson" --interpreter $(interpreter)
+- bash: PATH=$HOME/.cargo/bin:$PATH maturin build --release --strip --features=unstable-simd,yyjson --interpreter $(interpreter)
   env:
     CC: "clang"
     CFLAGS: "-O2 -fno-plt -flto=thin"
@@ -32,7 +32,7 @@ steps:
   displayName: http
 - bash: rustup target add aarch64-apple-darwin
   displayName: rustup target
-- bash: PATH=$HOME/.cargo/bin:$PATH PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") maturin build --no-sdist --release --strip --cargo-extra-args="--features=unstable-simd" --interpreter $(interpreter) --universal2
+- bash: PATH=$HOME/.cargo/bin:$PATH PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") maturin build --release --strip --features=unstable-simd --interpreter $(interpreter) --universal2
   env:
     CC: "clang"
     CFLAGS: "-O2 -fno-plt -flto=thin"
@@ -42,13 +42,7 @@ steps:
   displayName: install universal2
 - bash: pytest -s -rxX -v test
   displayName: pytest universal2
-- bash: ./ci/deploy target/wheels/*_x86_64.whl
-  displayName: deploy x86_64
+- bash: ./ci/deploy target/wheels/*.whl
+  displayName: deploy
   env:
-    MATURIN_PASSWORD: $(TWINE_PASSWORD)
-    MATURIN_USERNAME: $(TWINE_USERNAME)
-- bash: ./ci/deploy target/wheels/*_universal2.whl
-  displayName: deploy universal2
-  env:
-    MATURIN_PASSWORD: $(TWINE_PASSWORD)
-    MATURIN_USERNAME: $(TWINE_USERNAME)
+    MATURIN_PYPI_TOKEN: $(PYPI_TOKEN)

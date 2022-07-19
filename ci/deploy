@@ -15,4 +15,4 @@ if [[ "$tag" == "undefined" ]]; then
     exit 0
 fi
 
-maturin upload --skip-existing --username "$MATURIN_USERNAME" "$1"
+maturin upload --skip-existing "$1"

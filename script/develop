@@ -7,6 +7,6 @@ export CFLAGS="-O2 -fno-plt -flto=thin"
 export LDFLAGS="-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
 export RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=lld"
 
-maturin build --no-sdist --compatibility off -i python3 --release "$@"
+maturin build --compatibility off -i python3 --release "$@"
 
 pip install --force $(find target/wheels -name "*cp3*")

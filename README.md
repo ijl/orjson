@@ -1150,7 +1150,7 @@ and the [maturin](https://github.com/PyO3/maturin) build tool. It benefits
 from also having `clang`. The recommended build command is:
 
 ```sh
-maturin build --no-sdist --release --strip --cargo-extra-args="--features=yyjson"
+maturin build --release --strip --features=yyjson
 ```
 
 To build without use of `clang`, do not specify `--features=yyjson`.
