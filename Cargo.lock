@@ -166,6 +166,7 @@ dependencies = [
  "serde_json",
  "simdutf8",
  "smallvec",
+ "version_check",
 ]
 
 [[package]]
@@ -206,9 +207,9 @@ checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "serde"
-version = "1.0.138"
+version = "1.0.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1578c6245786b9d168c5447eeacfb96856573ca56c9d68fdcf394be134882a47"
+checksum = "0171ebb889e45aa68b44aee0859b3eede84c6f5f5c228e6f140c0b2a0a46cad6"
 
 [[package]]
 name = "serde_json"

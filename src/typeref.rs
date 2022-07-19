@@ -104,7 +104,7 @@ pub static mut JsonDecodeError: *mut PyObject = 0 as *mut PyObject;
 static INIT: Once = Once::new();
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 pub fn init_typerefs() {
     INIT.call_once(|| unsafe {
         assert!(crate::deserialize::KEY_MAP
@@ -171,7 +171,7 @@ pub fn init_typerefs() {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_json_exc() -> *mut PyObject {
     let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -190,7 +190,7 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_numpy_type(numpy_module: *mut PyObject, np_type: &str) -> *mut PyTypeObject {
     let mod_dict = PyObject_GenericGetDict(numpy_module, std::ptr::null_mut());
     let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
@@ -200,7 +200,7 @@ unsafe fn look_up_numpy_type(numpy_module: *mut PyObject, np_type: &str) -> *mut
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn load_numpy_types() -> Option<NumpyTypes> {
     let numpy = PyImport_ImportModule("numpy\0".as_ptr() as *const c_char);
     if numpy.is_null() {
@@ -226,7 +226,7 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_field_type() -> NonNull<PyObject> {
     let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -238,7 +238,7 @@ unsafe fn look_up_field_type() -> NonNull<PyObject> {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_enum_type() -> *mut PyTypeObject {
     let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());
@@ -250,7 +250,7 @@ unsafe fn look_up_enum_type() -> *mut PyTypeObject {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     let uuid_mod = PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
     let uuid_mod_dict = PyObject_GenericGetDict(uuid_mod, std::ptr::null_mut());
@@ -263,7 +263,7 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
     let datetime = ((*PyDateTimeAPI()).DateTime_FromDateAndTime)(
         1970,
@@ -282,7 +282,7 @@ unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_date_type() -> *mut PyTypeObject {
     let date = ((*PyDateTimeAPI()).Date_FromDate)(1, 1, 1, (*(PyDateTimeAPI())).DateType);
     let ptr = (*date).ob_type;
@@ -291,7 +291,7 @@ unsafe fn look_up_date_type() -> *mut PyTypeObject {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_time_type() -> *mut PyTypeObject {
     let time = ((*PyDateTimeAPI()).Time_FromTime)(0, 0, 0, 0, NONE, (*(PyDateTimeAPI())).TimeType);
     let ptr = (*time).ob_type;
@@ -301,7 +301,7 @@ unsafe fn look_up_time_type() -> *mut PyTypeObject {
 
 #[cfg(Py_3_9)]
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_zoneinfo_type() -> *mut PyTypeObject {
     let module = PyImport_ImportModule("zoneinfo\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, std::ptr::null_mut());

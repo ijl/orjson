@@ -1146,19 +1146,16 @@ Probably not.
 ## Packaging
 
 To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.54
-and the [maturin](https://github.com/PyO3/maturin) build tool. It benefits
-from also having `clang`. The recommended build command is:
+and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
+build command is:
 
 ```sh
-maturin build --release --strip --features=yyjson
+maturin build --release --strip
 ```
 
-To build without use of `clang`, do not specify `--features=yyjson`.
-Deserialization is much faster if built with this feature.
-
-There is a minor performance benefit on at least amd64 to building on `nightly`
-with `--features=unstable-simd`. It may be more significant on other
-architectures.
+It benefits from also having a C build environment to compile a faster
+deserialization backend. See this project's `manylinux_2_28` builds for an
+example using clang and LTO.
 
 The project's own CI tests against `nightly-2022-06-22` and stable 1.54. It
 is prudent to pin the nightly version because that channel can introduce

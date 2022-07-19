@@ -18,14 +18,14 @@ macro_rules! err {
     };
 }
 
-#[cfg(feature = "unstable-simd")]
+#[cfg(feature = "intrinsics")]
 macro_rules! unlikely {
     ($exp:expr) => {
         core::intrinsics::unlikely($exp)
     };
 }
 
-#[cfg(not(feature = "unstable-simd"))]
+#[cfg(not(feature = "intrinsics"))]
 macro_rules! unlikely {
     ($exp:expr) => {
         $exp

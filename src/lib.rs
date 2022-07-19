@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![cfg_attr(feature = "unstable-simd", feature(core_intrinsics))]
-#![cfg_attr(feature = "unstable-simd", feature(optimize_attribute))]
+#![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
+#![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
@@ -60,7 +60,7 @@ macro_rules! opt {
 #[allow(non_snake_case)]
 #[no_mangle]
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     typeref::init_typerefs();
     {
@@ -193,7 +193,7 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
 #[allow(non_snake_case)]
 #[no_mangle]
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
     let mod_slots: Box<[PyModuleDef_Slot; 2]> = Box::new([
         PyModuleDef_Slot {
@@ -224,7 +224,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 
 #[cold]
 #[inline(never)]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     let pos = err.pos();
     let msg = err.message;
@@ -246,7 +246,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
 
 #[cold]
 #[inline(never)]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
     unsafe {
         let err_msg =

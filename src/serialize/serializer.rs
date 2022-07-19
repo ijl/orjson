@@ -101,7 +101,7 @@ macro_rules! is_subclass {
 }
 
 #[cold]
-#[cfg_attr(feature = "unstable-simd", optimize(size))]
+#[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
 pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     unsafe {

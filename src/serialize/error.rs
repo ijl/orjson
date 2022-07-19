@@ -23,7 +23,7 @@ pub enum SerializeError {
 
 impl std::fmt::Display for SerializeError {
     #[cold]
-    #[cfg_attr(feature = "unstable-simd", optimize(size))]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             SerializeError::DatetimeLibraryUnsupported => write!(f, "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil"),
