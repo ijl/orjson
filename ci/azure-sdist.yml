@@ -32,5 +32,3 @@ steps:
   displayName: typestubs
 - bash: PATH=$(path) ./ci/deploy target/wheels/*.tar.gz
   displayName: deploy
-  env:
-    MATURIN_PYPI_TOKEN: $(PYPI_TOKEN)

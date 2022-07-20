@@ -42,7 +42,7 @@ steps:
   displayName: install universal2
 - bash: pytest -s -rxX -v test
   displayName: pytest universal2
-- bash: ./ci/deploy target/wheels/*.whl
-  displayName: deploy
-  env:
-    MATURIN_PYPI_TOKEN: $(PYPI_TOKEN)
+- bash: ./ci/deploy target/wheels/*_x86_64.whl
+  displayName: deploy x86_64
+- bash: ./ci/deploy target/wheels/*_universal2.whl
+  displayName: deploy universal2

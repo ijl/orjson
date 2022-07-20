@@ -29,5 +29,3 @@ steps:
   displayName: thread
 - bash: ./ci/deploy /d/a/1/s/target/wheels/*.whl
   displayName: deploy
-  env:
-    MATURIN_PYPI_TOKEN: $(PYPI_TOKEN)
