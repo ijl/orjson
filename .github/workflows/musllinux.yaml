@@ -22,6 +22,8 @@ jobs:
             arch: aarch64
           - target: x86_64-unknown-linux-musl
             arch: x86_64
+          - target: armv7-unknown-linux-musleabihf
+            arch: armv7
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -34,7 +36,7 @@ jobs:
         rust-toolchain: nightly-2022-06-22
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
-        args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out dist -i python${{ matrix.python.version }}
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
       uses: docker/setup-qemu-action@v2
