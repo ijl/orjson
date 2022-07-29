@@ -72,8 +72,8 @@ associative-cache = { version = "1" }
 beef = { version = "0.5", default_features = false, features = ["impl_serde"] }
 bytecount = { version = "^0.6.2", default_features = false, features = ["runtime-dispatch-simd"] }
 chrono = { version = "0.4", default_features = false }
+compact_str = { version = "0.5", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }
-inlinable_string = { version = "0.1" }
 itoa = { version = "1", default_features = false }
 once_cell = { version = "1", default_features = false }
 pyo3-ffi = { version = "^0.16.5", default_features = false, features = ["extension-module"]}
