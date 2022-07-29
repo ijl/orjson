@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.7.9 - 2022-07-29
+
+### Changed
+
+- Improve performance of serializing.
+- Improve performance of serializing pretty-printed (`orjson.OPT_INDENT_2`)
+to be much nearer to compact.
+- Improve performance of deserializing `str` input.
+- orjson now requires Rust 1.57 instead of 1.54 to build.
+
 ## 3.7.8 - 2022-07-19
 
 ### Changed

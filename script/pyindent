@@ -95,8 +95,8 @@ for lib_name in LIBRARIES:
         correct = test_correctness(ujson.dumps(data, indent=2).encode("utf-8"))
     elif lib_name == "rapidjson":
         time_compact = timeit(lambda: rapidjson.dumps(data), number=ITERATIONS)
-        time_pretty = None
-        correct = False
+        time_pretty = timeit(lambda: rapidjson.dumps(data, indent=2), number=ITERATIONS)
+        correct = test_correctness(rapidjson.dumps(data, indent=2))
     elif lib_name == "orjson":
         time_compact = timeit(lambda: orjson.dumps(data), number=ITERATIONS)
         time_pretty = timeit(
