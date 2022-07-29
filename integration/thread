@@ -45,7 +45,7 @@ def test_func(n):
 
 
 with ThreadPoolExecutor(max_workers=4) as executor:
-    executor.map(test_func, range(200000), chunksize=1000)
+    executor.map(test_func, range(50000), chunksize=1000)
     executor.shutdown(wait=True)
 
 

@@ -12,7 +12,7 @@ url = f"http://127.0.0.1:{port}"
 timeout = httpx.Timeout(5.0, connect_timeout=5.0)
 client = httpx.AsyncClient(timeout=timeout)
 
-stop_time = time.time() + 15
+stop_time = time.time() + 5
 
 TEST_MESSAGE = "http test running..."
 

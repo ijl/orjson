@@ -13,9 +13,10 @@ steps:
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
-    - yum update -y && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
+    - yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-07-26 --profile minimal -y
     - python3.10 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - cargo fetch
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.10
@@ -41,11 +42,11 @@ steps:
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
-    - yum update -y && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
+    - yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-07-26 --profile minimal -y
     - python3.9 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
-    - cargo fetch
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.9
     - python3.9 -m pip install --user target/wheels/orjson*.whl
     - python3.9 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
@@ -69,11 +70,11 @@ steps:
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
-    - yum update -y && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
+    - yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-07-26 --profile minimal -y
     - python3.8 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
-    - cargo fetch
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.8
     - python3.8 -m pip install --user target/wheels/orjson*.whl
     - python3.8 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
@@ -97,11 +98,11 @@ steps:
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
     RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
-    - yum update -y && yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-06-22 --profile minimal -y
+    - yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-07-26 --profile minimal -y
     - python3.7 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
-    - cargo fetch
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.7
     - python3.7 -m pip install --user target/wheels/orjson*.whl
     - python3.7 -m pip install --user -r test/requirements.txt -r integration/requirements.txt

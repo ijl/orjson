@@ -11,12 +11,12 @@ steps:
   displayName: build dependencies
 - bash: pip install -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
-- bash: PATH=$HOME/.cargo/bin:$PATH cargo fetch
 - bash: PATH=$HOME/.cargo/bin:$PATH maturin build --release --strip --features=unstable-simd,yyjson --interpreter $(interpreter)
   env:
     CC: "clang"
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   displayName: build
 - bash: pip install target/wheels/orjson*.whl
   displayName: install
@@ -37,6 +37,7 @@ steps:
     CC: "clang"
     CFLAGS: "-O2 -fno-plt -flto=thin"
     LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   displayName: build universal2
 - bash: pip install --force-reinstall target/wheels/orjson*universal2.whl
   displayName: install universal2

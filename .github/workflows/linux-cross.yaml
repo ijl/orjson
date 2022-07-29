@@ -27,7 +27,7 @@ jobs:
       with:
         maturin-version: v0.13.0
         target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-06-22
+        rust-toolchain: nightly-2022-07-26
         manylinux: auto
         args: -i python3.9 --release --strip --out dist
     - uses: uraimo/run-on-arch-action@v2.0.5

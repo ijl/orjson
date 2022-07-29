@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2022-06-22
+  toolchain: nightly-2022-07-26
 
 jobs:
 
@@ -11,7 +11,7 @@ jobs:
     interpreter: python3.10
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-11/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
-    toolchain: 1.54.0
+    toolchain: 1.57.0
   steps:
   - checkout: self
   - template: ./azure-sdist.yml

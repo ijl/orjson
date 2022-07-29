@@ -1,5 +1,5 @@
 arrow
-numpy;platform_machine=="x86_64" and python_version<"3.11"
+numpy;platform_machine=="x86_64" and python_version>"3.7" and python_version<"3.11"
 pendulum;sys_platform=="linux" and platform_machine=="x86_64"
 psutil;sys_platform=="linux" or sys_platform == "macos"
 pytest

@@ -31,7 +31,7 @@ jobs:
       uses: messense/maturin-action@v1
       with:
         maturin-version: v0.13.0
-        rust-toolchain: nightly-2022-06-22
+        rust-toolchain: nightly-2022-07-26
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
         args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }}
