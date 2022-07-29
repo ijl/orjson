@@ -2,6 +2,7 @@
 
 use crate::ffi::PyBytesObject;
 use pyo3_ffi::*;
+use serde_json::WriteExt;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
@@ -27,11 +28,9 @@ impl BytesWriter {
 
     pub fn finish(&mut self) -> NonNull<PyObject> {
         unsafe {
-            unsafe {
-                std::ptr::write(self.buffer_ptr(), 0);
-            };
+            std::ptr::write(self.buffer_ptr(), 0);
             (*self.bytes.cast::<PyVarObject>()).ob_size = self.len as Py_ssize_t;
-            self.resize(self.len as isize);
+            self.resize(self.len);
             NonNull::new_unchecked(self.bytes as *mut PyObject)
         }
     }
@@ -45,7 +44,8 @@ impl BytesWriter {
         }
     }
 
-    pub fn resize(&mut self, len: isize) {
+    pub fn resize(&mut self, len: usize) {
+        self.cap = len;
         unsafe {
             _PyBytes_Resize(
                 std::ptr::addr_of_mut!(self.bytes) as *mut *mut PyBytesObject as *mut *mut PyObject,
@@ -54,16 +54,17 @@ impl BytesWriter {
         }
     }
 
-    #[cold]
+    #[inline(never)]
     fn grow(&mut self, len: usize) {
-        while len >= self.cap {
+        let mut cap = self.cap;
+        while len >= cap {
             if len < 262144 {
-                self.cap *= 4;
+                cap *= 4;
             } else {
-                self.cap *= 2;
+                cap *= 2;
             }
         }
-        self.resize(self.cap as isize);
+        self.resize(cap);
     }
 }
 
@@ -87,6 +88,36 @@ impl std::io::Write for BytesWriter {
     }
 
     fn flush(&mut self) -> Result<(), std::io::Error> {
+        Ok(())
+    }
+}
+
+impl WriteExt for &mut BytesWriter {
+    fn write_str(&mut self, val: &str) -> Result<(), std::io::Error> {
+        let to_write = val.len();
+        let end_length = self.len + to_write + 2;
+        if unlikely!(end_length > self.cap) {
+            self.grow(end_length);
+        }
+        unsafe {
+            let ptr = self.buffer_ptr();
+            std::ptr::write(ptr, b'"');
+            std::ptr::copy_nonoverlapping(val.as_ptr() as *const u8, ptr.add(1), to_write);
+            std::ptr::write(ptr.add(to_write + 1), b'"');
+        };
+        self.len = end_length;
+        Ok(())
+    }
+
+    fn write_indent(&mut self, len: usize) -> Result<(), std::io::Error> {
+        let end_length = self.len + len;
+        if unlikely!(end_length > self.cap) {
+            self.grow(end_length);
+        }
+        unsafe {
+            std::ptr::write_bytes(self.buffer_ptr(), b' ', len);
+        };
+        self.len = end_length;
         Ok(())
     }
 }

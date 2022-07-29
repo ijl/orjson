@@ -383,6 +383,8 @@ pub use crate::ser::{to_writer, to_writer_pretty, Serializer};
 #[doc(inline)]
 pub use crate::value::{from_value, to_value, Map, Number, Value};
 
+pub use crate::ser::WriteExt;
+
 // We only use our own error type; no need for From conversions provided by the
 // standard library's try! macro. This reduces lines of LLVM IR by 4%.
 macro_rules! tri {

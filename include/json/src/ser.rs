@@ -9,6 +9,28 @@ use core::num::FpCategory;
 use serde::ser::{self, Impossible, Serialize};
 use serde::serde_if_integer128;
 
+#[allow(missing_docs)]
+// hack based on saethlin's research and patch in https://github.com/serde-rs/json/issues/766
+pub trait WriteExt: io::Write {
+    #[allow(missing_docs)]
+    #[inline]
+    fn write_str(&mut self, val: &str) -> std::result::Result<(), std::io::Error> {
+        let _ = val;
+        Ok(())
+    }
+    #[allow(missing_docs)]
+    #[inline]
+    fn write_indent(&mut self, len: usize) -> std::result::Result<(), std::io::Error> {
+        let _ = len;
+        Ok(())
+    }
+}
+
+impl WriteExt for &mut std::net::TcpStream {}
+impl WriteExt for std::net::TcpStream {}
+impl WriteExt for &mut Vec<u8> {}
+impl WriteExt for Vec<u8> {}
+
 /// A structure for serializing Rust values into JSON.
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub struct Serializer<W, F = CompactFormatter> {
@@ -18,7 +40,7 @@ pub struct Serializer<W, F = CompactFormatter> {
 
 impl<W> Serializer<W>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
 {
     /// Creates a new JSON serializer.
     #[inline]
@@ -27,9 +49,9 @@ where
     }
 }
 
-impl<'a, W> Serializer<W, PrettyFormatter<'a>>
+impl<'a, W> Serializer<W, PrettyFormatter>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
 {
     /// Creates a new JSON pretty print serializer.
     #[inline]
@@ -40,7 +62,7 @@ where
 
 impl<W, F> Serializer<W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     /// Creates a new JSON visitor whose output will be written to the writer
@@ -59,7 +81,7 @@ where
 
 impl<'a, W, F> ser::Serializer for &'a mut Serializer<W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -458,7 +480,7 @@ where
 
         impl<'ser, W, F> Write for Adapter<'ser, W, F>
         where
-            W: io::Write,
+            W: io::Write + WriteExt,
             F: Formatter,
         {
             fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -522,7 +544,7 @@ pub enum Compound<'a, W: 'a, F: 'a> {
 
 impl<'a, W, F> ser::SerializeSeq for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -574,7 +596,7 @@ where
 
 impl<'a, W, F> ser::SerializeTuple for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -596,7 +618,7 @@ where
 
 impl<'a, W, F> ser::SerializeTupleStruct for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -618,7 +640,7 @@ where
 
 impl<'a, W, F> ser::SerializeTupleVariant for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -657,7 +679,7 @@ where
 
 impl<'a, W, F> ser::SerializeMap for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -736,7 +758,7 @@ where
 
 impl<'a, W, F> ser::SerializeStruct for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -784,7 +806,7 @@ where
 
 impl<'a, W, F> ser::SerializeStructVariant for Compound<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -847,7 +869,7 @@ fn key_must_be_a_string() -> Error {
 
 impl<'a, W, F> ser::Serializer for MapKeySerializer<'a, W, F>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     F: Formatter,
 {
     type Ok = ();
@@ -1186,7 +1208,7 @@ where
 struct NumberStrEmitter<'a, W: 'a + io::Write, F: 'a + Formatter>(&'a mut Serializer<W, F>);
 
 #[cfg(feature = "arbitrary_precision")]
-impl<'a, W: io::Write, F: Formatter> ser::Serializer for NumberStrEmitter<'a, W, F> {
+impl<'a, W: io::Write + WriteExt, F: Formatter> ser::Serializer for NumberStrEmitter<'a, W, F> {
     type Ok = ();
     type Error = Error;
 
@@ -1367,7 +1389,7 @@ impl<'a, W: io::Write, F: Formatter> ser::Serializer for NumberStrEmitter<'a, W,
 struct RawValueStrEmitter<'a, W: 'a + io::Write, F: 'a + Formatter>(&'a mut Serializer<W, F>);
 
 #[cfg(feature = "raw_value")]
-impl<'a, W: io::Write, F: Formatter> ser::Serializer for RawValueStrEmitter<'a, W, F> {
+impl<'a, W: io::Write + WriteExt, F: Formatter> ser::Serializer for RawValueStrEmitter<'a, W, F> {
     type Ok = ();
     type Error = Error;
 
@@ -1709,7 +1731,7 @@ pub trait Formatter {
     #[inline]
     fn write_f32<W>(&mut self, writer: &mut W, value: f32) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         let mut buffer = ryu::Buffer::new();
         let s = buffer.format_finite(value);
@@ -1805,7 +1827,7 @@ pub trait Formatter {
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         writer.write_all(b"[")
     }
@@ -1815,7 +1837,7 @@ pub trait Formatter {
     #[inline]
     fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         writer.write_all(b"]")
     }
@@ -1825,7 +1847,7 @@ pub trait Formatter {
     #[inline]
     fn begin_array_value<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         if first {
             Ok(())
@@ -1848,7 +1870,7 @@ pub trait Formatter {
     #[inline]
     fn begin_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         writer.write_all(b"{")
     }
@@ -1858,7 +1880,7 @@ pub trait Formatter {
     #[inline]
     fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         writer.write_all(b"}")
     }
@@ -1867,7 +1889,7 @@ pub trait Formatter {
     #[inline]
     fn begin_object_key<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         if first {
             Ok(())
@@ -1893,7 +1915,7 @@ pub trait Formatter {
     #[inline]
     fn begin_object_value<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         writer.write_all(b":")
     }
@@ -1926,35 +1948,28 @@ impl Formatter for CompactFormatter {}
 
 /// This structure pretty prints a JSON value to make it human readable.
 #[derive(Clone, Debug)]
-pub struct PrettyFormatter<'a> {
+pub struct PrettyFormatter {
     current_indent: usize,
     has_value: bool,
-    indent: &'a [u8],
 }
 
-impl<'a> PrettyFormatter<'a> {
+impl<'a> PrettyFormatter {
     /// Construct a pretty printer formatter that defaults to using two spaces for indentation.
     pub fn new() -> Self {
-        PrettyFormatter::with_indent(b"  ")
-    }
-
-    /// Construct a pretty printer formatter that uses the `indent` string for indentation.
-    pub fn with_indent(indent: &'a [u8]) -> Self {
         PrettyFormatter {
             current_indent: 0,
             has_value: false,
-            indent,
         }
     }
 }
 
-impl<'a> Default for PrettyFormatter<'a> {
+impl<'a> Default for PrettyFormatter {
     fn default() -> Self {
         PrettyFormatter::new()
     }
 }
 
-impl<'a> Formatter for PrettyFormatter<'a> {
+impl<'a> Formatter for PrettyFormatter {
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
@@ -1968,13 +1983,13 @@ impl<'a> Formatter for PrettyFormatter<'a> {
     #[inline]
     fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         self.current_indent -= 1;
 
         if self.has_value {
             tri!(writer.write_all(b"\n"));
-            tri!(indent(writer, self.current_indent, self.indent));
+            tri!(writer.write_indent(self.current_indent * 2));
         }
 
         writer.write_all(b"]")
@@ -1983,14 +1998,14 @@ impl<'a> Formatter for PrettyFormatter<'a> {
     #[inline]
     fn begin_array_value<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         if first {
             tri!(writer.write_all(b"\n"));
         } else {
             tri!(writer.write_all(b",\n"));
         }
-        tri!(indent(writer, self.current_indent, self.indent));
+        tri!(writer.write_indent(self.current_indent * 2));
         Ok(())
     }
 
@@ -2016,13 +2031,13 @@ impl<'a> Formatter for PrettyFormatter<'a> {
     #[inline]
     fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         self.current_indent -= 1;
 
         if self.has_value {
             tri!(writer.write_all(b"\n"));
-            tri!(indent(writer, self.current_indent, self.indent));
+            tri!(writer.write_indent(self.current_indent * 2));
         }
 
         writer.write_all(b"}")
@@ -2031,14 +2046,15 @@ impl<'a> Formatter for PrettyFormatter<'a> {
     #[inline]
     fn begin_object_key<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized + io::Write + WriteExt,
     {
         if first {
             tri!(writer.write_all(b"\n"));
         } else {
             tri!(writer.write_all(b",\n"));
         }
-        indent(writer, self.current_indent, self.indent)
+        tri!(writer.write_indent(self.current_indent * 2));
+        Ok(())
     }
 
     #[inline]
@@ -2061,7 +2077,28 @@ impl<'a> Formatter for PrettyFormatter<'a> {
 
 fn format_escaped_str<W, F>(writer: &mut W, formatter: &mut F, value: &str) -> io::Result<()>
 where
-    W: ?Sized + io::Write,
+    W: ?Sized + io::Write + WriteExt,
+    F: ?Sized + Formatter,
+{
+    let no_escapes = value
+        .as_bytes()
+        .into_iter()
+        .all(|b| ESCAPE[*b as usize] == 0);
+    if no_escapes {
+        writer.write_str(value)
+    } else {
+        format_escaped_str_with_escapes(writer, formatter, value)
+    }
+}
+
+#[cold]
+fn format_escaped_str_with_escapes<W, F>(
+    writer: &mut W,
+    formatter: &mut F,
+    value: &str,
+) -> io::Result<()>
+where
+    W: ?Sized + io::Write + WriteExt,
     F: ?Sized + Formatter,
 {
     tri!(formatter.begin_string(writer));
@@ -2148,7 +2185,7 @@ static ESCAPE: [u8; 256] = [
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::new(writer);
@@ -2167,7 +2204,7 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
 where
-    W: io::Write,
+    W: io::Write + WriteExt,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::pretty(writer);
@@ -2243,15 +2280,4 @@ where
         String::from_utf8_unchecked(vec)
     };
     Ok(string)
-}
-
-fn indent<W>(wr: &mut W, n: usize, s: &[u8]) -> io::Result<()>
-where
-    W: ?Sized + io::Write,
-{
-    for _ in 0..n {
-        tri!(wr.write_all(s));
-    }
-
-    Ok(())
 }
