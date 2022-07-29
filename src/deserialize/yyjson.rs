@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::deserialize::cache::*;
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
 use crate::typeref::*;
@@ -8,8 +7,7 @@ use crate::unicode::*;
 use crate::yyjson::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
-use std::ptr::null;
-use std::ptr::NonNull;
+use std::ptr::{null, null_mut, NonNull};
 
 const YYJSON_TYPE_MASK: u8 = 0x07;
 const YYJSON_SUBTYPE_MASK: u8 = 0x18;
@@ -55,13 +53,11 @@ fn unsafe_yyjson_is_ctn(val: *mut yyjson_val) -> bool {
 
 fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
     unsafe {
-        let ofs: usize;
         if unlikely!(unsafe_yyjson_is_ctn(val)) {
-            ofs = (*val).uni.ofs;
+            ((val as *mut u8).add((*val).uni.ofs)) as *mut yyjson_val
         } else {
-            ofs = YYJSON_VAL_SIZE;
+            ((val as *mut u8).add(YYJSON_VAL_SIZE)) as *mut yyjson_val
         }
-        ((val as *mut u8).add(ofs)) as *mut yyjson_val
     }
 }
 
@@ -88,10 +84,10 @@ pub fn deserialize_yyjson(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     unsafe {
         let allocator: *mut yyjson_alc;
-        if yyjson_read_max_memory_usage(data.as_bytes().len()) < YYJSON_BUFFER_SIZE {
+        if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
             allocator = std::ptr::addr_of_mut!(*YYJSON_ALLOC);
         } else {
-            allocator = std::ptr::null_mut();
+            allocator = null_mut();
         }
         let mut err = yyjson_read_err {
             code: YYJSON_READ_SUCCESS,
@@ -99,8 +95,8 @@ pub fn deserialize_yyjson(
             pos: 0,
         };
         let doc: *mut yyjson_doc = yyjson_read_opts(
-            data.as_bytes().as_ptr() as *mut c_char,
-            data.as_bytes().len(),
+            data.as_ptr() as *mut c_char,
+            data.len(),
             YYJSON_READ_NOFLAG,
             allocator,
             &mut err,
@@ -141,7 +137,7 @@ impl ElementType {
             TAG_FALSE => Self::False,
             TAG_ARRAY => Self::Array,
             TAG_OBJECT => Self::Object,
-            _ => unreachable!(),
+            _ => unsafe { std::hint::unreachable_unchecked() },
         }
     }
 }
@@ -166,7 +162,7 @@ fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             max: len,
             cur: unsafe_yyjson_get_first(elem),
         };
-        for idx in 0..=len.saturating_sub(1) {
+        for idx in 0..=len - 1 {
             let val = yyjson_arr_iter_next(&mut iter);
             let each = parse_node(val);
             ffi!(PyList_SET_ITEM(list, idx as isize, each.as_ptr()));
@@ -189,36 +185,12 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             cur: unsafe_yyjson_get_first(elem),
             obj: elem,
         };
-        for _ in 0..=len.saturating_sub(1) {
+        for _ in 0..=len - 1 {
             let key = yyjson_obj_iter_next(&mut iter);
             let val = yyjson_obj_iter_get_val(key);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
+            let (pykey, pyhash) = get_unicode_key(key_str);
             let pyval = parse_node(val);
-            let pykey: *mut pyo3_ffi::PyObject;
-            let pyhash: pyo3_ffi::Py_hash_t;
-            if unlikely!(key_str.len() > 64) {
-                pykey = unicode_from_str(&key_str);
-                pyhash = hash_str(pykey);
-            } else {
-                let hash = cache_hash(key_str.as_bytes());
-                {
-                    let map = unsafe {
-                        KEY_MAP
-                            .get_mut()
-                            .unwrap_or_else(|| unsafe { std::hint::unreachable_unchecked() })
-                    };
-                    let entry = map.entry(&hash).or_insert_with(
-                        || hash,
-                        || {
-                            let pyob = unicode_from_str(&key_str);
-                            hash_str(pyob);
-                            CachedKey::new(pyob)
-                        },
-                    );
-                    pykey = entry.get();
-                    pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
-                }
-            };
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict,
                 pykey,

@@ -19,7 +19,7 @@ import orjson
 os.sched_setaffinity(os.getpid(), {0, 1})
 
 
-dirname = os.path.join(os.path.dirname(__file__), "data")
+dirname = os.path.join(os.path.dirname(__file__), "..", "data")
 
 
 def read_fixture_obj(filename):

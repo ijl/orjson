@@ -38,17 +38,21 @@ impl Serialize for TupleSerializer {
     where
         S: Serializer,
     {
-        let mut seq = serializer.serialize_seq(None).unwrap();
-        for i in 0..=ffi!(PyTuple_GET_SIZE(self.ptr)) - 1 {
-            let elem = nonnull!(ffi!(PyTuple_GET_ITEM(self.ptr, i as isize)));
-            seq.serialize_element(&PyObjectSerializer::new(
-                elem.as_ptr(),
-                self.opts,
-                self.default_calls,
-                self.recursion + 1,
-                self.default,
-            ))?
+        if ffi!(Py_SIZE(self.ptr)) == 0 {
+            serializer.serialize_seq(Some(0)).unwrap().end()
+        } else {
+            let mut seq = serializer.serialize_seq(None).unwrap();
+            for i in 0..=ffi!(Py_SIZE(self.ptr)).saturating_sub(1) {
+                let elem = nonnull!(ffi!(PyTuple_GET_ITEM(self.ptr, i as isize)));
+                seq.serialize_element(&PyObjectSerializer::new(
+                    elem.as_ptr(),
+                    self.opts,
+                    self.default_calls,
+                    self.recursion + 1,
+                    self.default,
+                ))?
+            }
+            seq.end()
         }
-        seq.end()
     }
 }

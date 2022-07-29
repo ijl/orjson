@@ -1,6 +1,5 @@
 use crate::opt::*;
 
-#[derive(Debug)]
 pub enum DateTimeError {
     LibraryUnsupported,
 }

@@ -1,27 +1,27 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
+import pytest
 
 import orjson
 
 from .util import read_fixture_bytes
 
 
-class JSONTestSuiteParsingTests(unittest.TestCase):
+class TestJSONTestSuiteParsing:
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
         data = read_fixture_bytes(filename, "parsing")
-        with self.assertRaises(exc, msg=data):
+        with pytest.raises(exc):
             res = orjson.loads(data)
-        with self.assertRaises(exc, msg=data):
+        with pytest.raises(exc):
             res = orjson.loads(bytearray(data))
-        with self.assertRaises(exc, msg=data):
+        with pytest.raises(exc):
             res = orjson.loads(memoryview(data))
         try:
             decoded = data.decode("utf-8")
         except UnicodeDecodeError:
             pass
         else:
-            with self.assertRaises(exc, msg=decoded):
+            with pytest.raises(exc):
                 res = orjson.loads(decoded)
 
     def _run_pass_json(self, filename, match=""):

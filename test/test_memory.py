@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import gc
 import random
-import unittest
 from typing import List
 
 try:
@@ -64,7 +63,7 @@ class Unsupported:
     pass
 
 
-class MemoryTests(unittest.TestCase):
+class TestMemory:
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
     )
@@ -79,7 +78,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.loads(FIXTURE)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -96,7 +95,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.loads(memoryview(fixture))
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -113,7 +112,8 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -133,7 +133,7 @@ class MemoryTests(unittest.TestCase):
             except orjson.JSONDecodeError:
                 i += 1
         assert n == i
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
         gc.enable()
 
     @pytest.mark.skipif(
@@ -155,7 +155,7 @@ class MemoryTests(unittest.TestCase):
             except orjson.JSONEncodeError:
                 i += 1
         assert n == i
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
         gc.enable()
 
     @pytest.mark.skipif(
@@ -182,7 +182,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(10000):
             val = orjson.dumps(fixture, default=default)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -198,7 +198,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(100):
             val = orjson.dumps(DATACLASS_FIXTURE)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None or pytz is None,
@@ -216,7 +216,7 @@ class MemoryTests(unittest.TestCase):
         for _ in range(50000):
             val = orjson.dumps(pytz.UTC.localize(dt))
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -228,14 +228,14 @@ class MemoryTests(unittest.TestCase):
         proc = psutil.Process()
         gc.collect()
         fixture = {"key_%s" % idx: "value" for idx in range(1024)}
-        self.assertEqual(len(fixture), 1024)
+        assert len(fixture) == 1024
         val = orjson.dumps(fixture)
         loaded = orjson.loads(val)
         mem = proc.memory_info().rss
         for _ in range(100):
             loaded = orjson.loads(val)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
@@ -253,4 +253,4 @@ class MemoryTests(unittest.TestCase):
         for _ in range(100):
             val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
         gc.collect()
-        self.assertTrue(proc.memory_info().rss <= mem + MAX_INCREASE)
+        assert proc.memory_info().rss <= mem + MAX_INCREASE

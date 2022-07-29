@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
@@ -52,7 +51,7 @@ impl Serialize for Dict {
         let mut pos = 0isize;
         let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=unsafe { PyDict_GET_SIZE(self.ptr) as usize } - 1 {
+        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
             unsafe {
                 pyo3_ffi::_PyDict_Next(
                     self.ptr,
@@ -115,7 +114,7 @@ impl Serialize for DictSortedKey {
     where
         S: Serializer,
     {
-        let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
+        let len = ffi!(Py_SIZE(self.ptr)) as usize;
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         let mut pos = 0isize;
@@ -236,15 +235,15 @@ impl DictNonStrKey {
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(InlinableString::from(key_as_str))
             }
-            ObType::Time => match Time::new(key, opts) {
-                Ok(val) => {
-                    let mut buf = DateTimeBuffer::new();
-                    val.write_buf(&mut buf);
-                    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-                    Ok(InlinableString::from(key_as_str))
+            ObType::Time => {
+                let mut buf = DateTimeBuffer::new();
+                let time = Time::new(key, opts);
+                if time.write_buf(&mut buf).is_err() {
+                    return Err(SerializeError::TimeHasTzinfo);
                 }
-                Err(TimeError::HasTimezone) => Err(SerializeError::TimeHasTzinfo),
-            },
+                let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                Ok(InlinableString::from(key_as_str))
+            }
             ObType::Uuid => {
                 let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
                 UUID::new(key).write_buf(&mut buf);
@@ -290,7 +289,7 @@ impl Serialize for DictNonStrKey {
     where
         S: Serializer,
     {
-        let len = unsafe { PyDict_GET_SIZE(self.ptr) as usize };
+        let len = ffi!(Py_SIZE(self.ptr)) as usize;
         let mut items: SmallVec<[(InlinableString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         let mut pos = 0isize;

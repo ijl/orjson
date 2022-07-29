@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::{PyDict_GET_SIZE, PyTypeObject};
+use crate::ffi::PyTypeObject;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -10,12 +10,13 @@ use crate::serialize::error::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
+use crate::serialize::pyenum::EnumSerializer;
 use crate::serialize::str::*;
 use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
@@ -47,6 +48,7 @@ pub fn serialize(
     }
 }
 
+#[repr(u32)]
 #[derive(Copy, Clone)]
 pub enum ObType {
     Str,
@@ -148,7 +150,6 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
 
 pub struct PyObjectSerializer {
     ptr: *mut pyo3_ffi::PyObject,
-    obtype: ObType,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
@@ -165,7 +166,6 @@ impl PyObjectSerializer {
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,
-            obtype: pyobject_to_obtype(ptr, opts),
             opts: opts,
             default_calls: default_calls,
             recursion: recursion,
@@ -179,7 +179,7 @@ impl Serialize for PyObjectSerializer {
     where
         S: Serializer,
     {
-        match self.obtype {
+        match pyobject_to_obtype(self.ptr, self.opts) {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
             ObType::Int => {
@@ -194,16 +194,13 @@ impl Serialize for PyObjectSerializer {
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
             ObType::Datetime => DateTime::new(self.ptr, self.opts).serialize(serializer),
             ObType::Date => Date::new(self.ptr).serialize(serializer),
-            ObType::Time => match Time::new(self.ptr, self.opts) {
-                Ok(val) => val.serialize(serializer),
-                Err(TimeError::HasTimezone) => err!(SerializeError::TimeHasTzinfo),
-            },
+            ObType::Time => Time::new(self.ptr, self.opts).serialize(serializer),
             ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
             ObType::Dict => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
                 }
-                if unlikely!(unsafe { PyDict_GET_SIZE(self.ptr) } == 0) {
+                if ffi!(Py_SIZE(self.ptr)) == 0 {
                     serializer.serialize_map(Some(0)).unwrap().end()
                 } else if self.opts & SORT_OR_NON_STR_KEYS == 0 {
                     Dict::new(
@@ -238,18 +235,14 @@ impl Serialize for PyObjectSerializer {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
                 }
-                if unlikely!(ffi!(PyList_GET_SIZE(self.ptr)) == 0) {
-                    serializer.serialize_seq(Some(0)).unwrap().end()
-                } else {
-                    ListSerializer::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                }
+                ListSerializer::new(
+                    self.ptr,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
             }
             ObType::Tuple => TupleSerializer::new(
                 self.ptr,
@@ -268,7 +261,7 @@ impl Serialize for PyObjectSerializer {
                 if unlikely!(
                     dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
                 ) {
-                    unsafe { pyo3_ffi::PyErr_Clear() };
+                    ffi!(PyErr_Clear());
                     DataclassFallbackSerializer::new(
                         self.ptr,
                         self.opts,
@@ -289,40 +282,22 @@ impl Serialize for PyObjectSerializer {
                     .serialize(serializer)
                 }
             }
-            ObType::Enum => {
-                let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
-                ffi!(Py_DECREF(value));
-                PyObjectSerializer::new(
-                    value,
-                    self.opts,
-                    self.default_calls,
-                    self.recursion,
-                    self.default,
-                )
-                .serialize(serializer)
-            }
-            ObType::NumpyArray => match NumpyArray::new(self.ptr, self.opts) {
-                Ok(val) => val.serialize(serializer),
-                Err(PyArrayError::Malformed) => err!(SerializeError::NumpyMalformed),
-                Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType)
-                    if self.default.is_some() =>
-                {
-                    DefaultSerializer::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                }
-                Err(PyArrayError::NotContiguous) => {
-                    err!(SerializeError::NumpyNotCContiguous)
-                }
-                Err(PyArrayError::UnsupportedDataType) => {
-                    err!(SerializeError::NumpyUnsupportedDatatype)
-                }
-            },
+            ObType::Enum => EnumSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
+            ObType::NumpyArray => NumpySerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
             ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,

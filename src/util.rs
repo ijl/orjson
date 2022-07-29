@@ -21,7 +21,7 @@ macro_rules! err {
 #[cfg(feature = "intrinsics")]
 macro_rules! unlikely {
     ($exp:expr) => {
-        core::intrinsics::unlikely($exp)
+        std::intrinsics::unlikely($exp)
     };
 }
 

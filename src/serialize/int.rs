@@ -26,8 +26,12 @@ impl Serialize for IntSerializer {
         S: Serializer,
     {
         let val = ffi!(PyLong_AsLongLong(self.ptr));
-        if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null()) {
-            UIntSerializer::new(self.ptr).serialize(serializer)
+        if val == -1 {
+            if unlikely!(!ffi!(PyErr_Occurred()).is_null()) {
+                UIntSerializer::new(self.ptr).serialize(serializer)
+            } else {
+                serializer.serialize_i64(val)
+            }
         } else {
             serializer.serialize_i64(val)
         }
@@ -46,7 +50,6 @@ impl UIntSerializer {
 }
 
 impl Serialize for UIntSerializer {
-    #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -54,10 +57,15 @@ impl Serialize for UIntSerializer {
     {
         ffi!(PyErr_Clear());
         let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
-        if unlikely!(val == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
-            err!(SerializeError::Integer64Bits)
+        if unlikely!(val == u64::MAX) {
+            if ffi!(PyErr_Occurred()).is_null() {
+                serializer.serialize_u64(val)
+            } else {
+                err!(SerializeError::Integer64Bits)
+            }
+        } else {
+            serializer.serialize_u64(val)
         }
-        serializer.serialize_u64(val)
     }
 }
 
@@ -80,11 +88,16 @@ impl Serialize for Int53Serializer {
         S: Serializer,
     {
         let val = ffi!(PyLong_AsLongLong(self.ptr));
-        if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null())
-            || !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
-        {
+        if unlikely!(val == -1) {
+            if ffi!(PyErr_Occurred()).is_null() {
+                serializer.serialize_i64(val)
+            } else {
+                err!(SerializeError::Integer53Bits)
+            }
+        } else if !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val) {
             err!(SerializeError::Integer53Bits)
+        } else {
+            serializer.serialize_i64(val)
         }
-        serializer.serialize_i64(val)
     }
 }

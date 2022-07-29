@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::PyDict_GET_SIZE;
 use crate::opt::*;
 use crate::serialize::error::*;
 use crate::serialize::serializer::*;
@@ -13,7 +12,7 @@ use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct DataclassFastSerializer {
-    dict: *mut pyo3_ffi::PyObject,
+    ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
@@ -22,14 +21,14 @@ pub struct DataclassFastSerializer {
 
 impl DataclassFastSerializer {
     pub fn new(
-        dict: *mut pyo3_ffi::PyObject,
+        ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
         DataclassFastSerializer {
-            dict: dict,
+            ptr: ptr,
             opts: opts,
             default_calls: default_calls,
             recursion: recursion,
@@ -44,7 +43,7 @@ impl Serialize for DataclassFastSerializer {
     where
         S: Serializer,
     {
-        let len = unsafe { PyDict_GET_SIZE(self.dict) as usize };
+        let len = ffi!(Py_SIZE(self.ptr));
         if unlikely!(len == 0) {
             return serializer.serialize_map(Some(0)).unwrap().end();
         }
@@ -55,7 +54,7 @@ impl Serialize for DataclassFastSerializer {
         for _ in 0..=len.saturating_sub(1) {
             unsafe {
                 pyo3_ffi::_PyDict_Next(
-                    self.dict,
+                    self.ptr,
                     addr_of_mut!(pos),
                     addr_of_mut!(key),
                     addr_of_mut!(value),
@@ -121,7 +120,7 @@ impl Serialize for DataclassFallbackSerializer {
     {
         let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
         ffi!(Py_DECREF(fields));
-        let len = unsafe { PyDict_GET_SIZE(fields) as usize };
+        let len = ffi!(Py_SIZE(fields)) as usize;
         if unlikely!(len == 0) {
             return serializer.serialize_map(Some(0)).unwrap().end();
         }

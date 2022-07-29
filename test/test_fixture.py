@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
+import pytest
 
 import orjson
 
 from .util import read_fixture_bytes, read_fixture_str
 
 
-class FixtureTests(unittest.TestCase):
+class TestFixture:
     def test_twitter(self):
         """
         loads(),dumps() twitter.json
@@ -49,5 +49,5 @@ class FixtureTests(unittest.TestCase):
         val = read_fixture_bytes("blns.txt.xz")
         for line in val.split(b"\n"):
             if line and not line.startswith(b"#"):
-                with self.assertRaises(orjson.JSONDecodeError):
+                with pytest.raises(orjson.JSONDecodeError):
                     _ = orjson.loads(b'"' + val + b'"')

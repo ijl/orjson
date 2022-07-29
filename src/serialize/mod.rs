@@ -10,6 +10,7 @@ mod error;
 mod int;
 mod list;
 mod numpy;
+mod pyenum;
 mod serializer;
 mod str;
 mod tuple;

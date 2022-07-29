@@ -8,6 +8,7 @@ bindgen \
     "${_repo}/include/yyjson/yyjson.h" \
     --size_t-is-usize \
     --disable-header-comment \
+    --no-derive-copy \
     --no-derive-debug \
     --no-doc-comments \
     --no-layout-tests \

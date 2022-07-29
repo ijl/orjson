@@ -2,51 +2,72 @@
 
 use std::borrow::Cow;
 
-#[derive(Debug, Clone)]
 pub struct DeserializeError<'a> {
     pub message: Cow<'a, str>,
-    pub line: usize,   // start at 1
+    #[cfg(not(feature = "yyjson"))]
+    pub line: usize, // start at 1
+    #[cfg(not(feature = "yyjson"))]
     pub column: usize, // start at 1
-    pub data: &'a str,
+    pub data: Option<&'a str>,
     pub pos: i64,
 }
 
 impl<'a> DeserializeError<'a> {
     #[cold]
-    pub fn new(message: Cow<'a, str>, line: usize, column: usize, data: &'a str) -> Self {
+    pub fn invalid(message: Cow<'a, str>) -> Self {
+        DeserializeError {
+            message: message,
+            #[cfg(not(feature = "yyjson"))]
+            line: 0,
+            #[cfg(not(feature = "yyjson"))]
+            column: 0,
+            data: None,
+            pos: 0,
+        }
+    }
+
+    #[cold]
+    #[cfg(not(feature = "yyjson"))]
+    pub fn from_json(message: Cow<'a, str>, line: usize, column: usize, data: &'a str) -> Self {
         DeserializeError {
             message,
             line,
             column,
-            data,
+            data: Some(data),
             pos: 0,
         }
     }
+
     #[cold]
     #[cfg(feature = "yyjson")]
     pub fn from_yyjson(message: Cow<'a, str>, pos: i64, data: &'a str) -> Self {
         DeserializeError {
-            message,
-            line: 0,
-            column: 0,
-            data,
-            pos,
+            message: message,
+            data: Some(data),
+            pos: pos,
         }
     }
 
     /// Return position of the error in the deserialized data
     #[cold]
+    #[cfg(feature = "yyjson")]
+    pub fn pos(&self) -> i64 {
+        match self.data {
+            Some(as_str) => bytecount::num_chars(&as_str.as_bytes()[0..self.pos as usize]) as i64,
+            None => 0,
+        }
+    }
+
+    /// Return position of the error in the deserialized data
+    #[cold]
+    #[cfg(not(feature = "yyjson"))]
     #[cfg_attr(feature = "unstable-simd", optimize(size))]
     pub fn pos(&self) -> i64 {
-        if self.pos != 0 {
-            // yyjson
-            return bytecount::num_chars(&self.data.as_bytes()[0..self.pos as usize]) as i64;
-        }
-        if self.line == 0 {
+        if self.line == 0 || self.data.is_none() {
             return 1;
         }
 
-        let val = self.data
+        let val = self.data.unwrap()
             .split('\n')
             // take only the relevant lines
             .take(self.line)

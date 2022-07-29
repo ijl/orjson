@@ -1,5 +1,7 @@
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
+use crate::serialize::default::*;
+use crate::serialize::error::*;
 use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use pyo3_ffi::*;
@@ -8,6 +10,65 @@ use std::convert::TryInto;
 use std::fmt;
 use std::ops::DerefMut;
 use std::os::raw::{c_char, c_int, c_void};
+use std::ptr::NonNull;
+
+pub struct NumpySerializer {
+    ptr: *mut pyo3_ffi::PyObject,
+    opts: Opt,
+    default_calls: u8,
+    recursion: u8,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
+}
+
+impl NumpySerializer {
+    pub fn new(
+        ptr: *mut pyo3_ffi::PyObject,
+        opts: Opt,
+        default_calls: u8,
+        recursion: u8,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
+    ) -> Self {
+        NumpySerializer {
+            ptr: ptr,
+            opts: opts,
+            default_calls: default_calls,
+            recursion: recursion,
+            default: default,
+        }
+    }
+}
+
+impl<'p> Serialize for NumpySerializer {
+    #[cold]
+    #[inline(never)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match NumpyArray::new(self.ptr, self.opts) {
+            Ok(val) => val.serialize(serializer),
+            Err(PyArrayError::Malformed) => err!(SerializeError::NumpyMalformed),
+            Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType)
+                if self.default.is_some() =>
+            {
+                DefaultSerializer::new(
+                    self.ptr,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
+            }
+            Err(PyArrayError::NotContiguous) => {
+                err!(SerializeError::NumpyNotCContiguous)
+            }
+            Err(PyArrayError::UnsupportedDataType) => {
+                err!(SerializeError::NumpyUnsupportedDatatype)
+            }
+        }
+    }
+}
 
 macro_rules! slice {
     ($ptr:expr, $size:expr) => {
@@ -124,6 +185,7 @@ pub struct NumpyArray {
 }
 
 impl NumpyArray {
+    #[cold]
     #[inline(never)]
     pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
         let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
@@ -229,87 +291,126 @@ impl Drop for NumpyArray {
 }
 
 impl Serialize for NumpyArray {
+    #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let mut seq = serializer.serialize_seq(None).unwrap();
-
-        if self.depth >= self.shape().len() || self.shape()[self.depth] != 0 {
-            if !self.children.is_empty() {
-                for child in &self.children {
-                    seq.serialize_element(child).unwrap();
-                }
-            } else {
-                let data_ptr = self.data();
-                let num_items = self.num_items();
-                match self.kind {
-                    ItemType::F64 => {
-                        let slice: &[f64] = slice!(data_ptr as *const f64, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeF64 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::F32 => {
-                        let slice: &[f32] = slice!(data_ptr as *const f32, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeF32 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::I64 => {
-                        let slice: &[i64] = slice!(data_ptr as *const i64, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeI64 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::I32 => {
-                        let slice: &[i32] = slice!(data_ptr as *const i32, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeI32 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::I8 => {
-                        let slice: &[i8] = slice!(data_ptr as *const i8, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeI8 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::U8 => {
-                        let slice: &[u8] = slice!(data_ptr as *const u8, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeU8 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::U32 => {
-                        let slice: &[u32] = slice!(data_ptr as *const u32, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeU32 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::U64 => {
-                        let slice: &[u64] = slice!(data_ptr as *const u64, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeU64 { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::BOOL => {
-                        let slice: &[u8] = slice!(data_ptr as *const u8, num_items);
-                        for &each in slice.iter() {
-                            seq.serialize_element(&DataTypeBOOL { obj: each }).unwrap();
-                        }
-                    }
-                    ItemType::DATETIME64(unit) => {
-                        let slice: &[i64] = slice!(data_ptr as *const i64, num_items);
-                        for &each in slice.iter() {
-                            let dt = unit
-                                .datetime(each, self.opts)
-                                .map_err(NumpyDateTimeError::into_serde_err)?;
-                            seq.serialize_element(&dt).unwrap();
-                        }
-                    }
-                }
+        if unlikely!(!(self.depth >= self.dimensions() || self.shape()[self.depth] != 0)) {
+            serializer.serialize_seq(Some(0)).unwrap().end()
+        } else if !self.children.is_empty() {
+            let mut seq = serializer.serialize_seq(None).unwrap();
+            for child in &self.children {
+                seq.serialize_element(child).unwrap();
             }
+            seq.end()
+        } else {
+            match self.kind {
+                ItemType::F64 => {
+                    NumpyF64Array::new(slice!(self.data() as *const f64, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::F32 => {
+                    NumpyF32Array::new(slice!(self.data() as *const f32, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::U64 => {
+                    NumpyU64Array::new(slice!(self.data() as *const u64, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::U32 => {
+                    NumpyU32Array::new(slice!(self.data() as *const u32, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::U8 => {
+                    NumpyU8Array::new(slice!(self.data() as *const u8, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::I64 => {
+                    NumpyI64Array::new(slice!(self.data() as *const i64, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::I32 => {
+                    NumpyI32Array::new(slice!(self.data() as *const i32, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::I8 => {
+                    NumpyI8Array::new(slice!(self.data() as *const i8, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::BOOL => {
+                    NumpyBoolArray::new(slice!(self.data() as *const u8, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::DATETIME64(unit) => NumpyDatetime64Array::new(
+                    slice!(self.data() as *const i64, self.num_items()),
+                    unit,
+                    self.opts,
+                )
+                .serialize(serializer),
+            }
+        }
+    }
+}
+
+#[repr(transparent)]
+struct NumpyF64Array<'a> {
+    data: &'a [f64],
+}
+
+impl<'a> NumpyF64Array<'a> {
+    fn new(data: &'a [f64]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyF64Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeF64 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeF64 {
+    obj: f64,
+}
+
+impl Serialize for DataTypeF64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f64(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyF32Array<'a> {
+    data: &'a [f32],
+}
+
+impl<'a> NumpyF32Array<'a> {
+    fn new(data: &'a [f32]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyF32Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeF32 { obj: each }).unwrap();
         }
         seq.end()
     }
@@ -330,86 +431,26 @@ impl Serialize for DataTypeF32 {
 }
 
 #[repr(transparent)]
-pub struct DataTypeF64 {
-    obj: f64,
+struct NumpyU64Array<'a> {
+    data: &'a [u64],
 }
 
-impl Serialize for DataTypeF64 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_f64(self.obj)
+impl<'a> NumpyU64Array<'a> {
+    fn new(data: &'a [u64]) -> Self {
+        Self { data }
     }
 }
 
-#[repr(transparent)]
-pub struct DataTypeI8 {
-    obj: i8,
-}
-
-impl Serialize for DataTypeI8 {
+impl<'a> Serialize for NumpyU64Array<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_i8(self.obj)
-    }
-}
-
-#[repr(transparent)]
-pub struct DataTypeI32 {
-    obj: i32,
-}
-
-impl Serialize for DataTypeI32 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_i32(self.obj)
-    }
-}
-
-#[repr(transparent)]
-pub struct DataTypeI64 {
-    obj: i64,
-}
-
-impl Serialize for DataTypeI64 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_i64(self.obj)
-    }
-}
-
-#[repr(transparent)]
-pub struct DataTypeU8 {
-    obj: u8,
-}
-
-impl Serialize for DataTypeU8 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u8(self.obj)
-    }
-}
-
-#[repr(transparent)]
-pub struct DataTypeU32 {
-    obj: u32,
-}
-
-impl Serialize for DataTypeU32 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u32(self.obj)
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeU64 { obj: each }).unwrap();
+        }
+        seq.end()
     }
 }
 
@@ -428,11 +469,225 @@ impl Serialize for DataTypeU64 {
 }
 
 #[repr(transparent)]
-pub struct DataTypeBOOL {
+struct NumpyU32Array<'a> {
+    data: &'a [u32],
+}
+
+impl<'a> NumpyU32Array<'a> {
+    fn new(data: &'a [u32]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyU32Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeU32 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeU32 {
+    obj: u32,
+}
+
+impl Serialize for DataTypeU32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u32(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyI64Array<'a> {
+    data: &'a [i64],
+}
+
+impl<'a> NumpyI64Array<'a> {
+    fn new(data: &'a [i64]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyI64Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeI64 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeI64 {
+    obj: i64,
+}
+
+impl Serialize for DataTypeI64 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i64(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyI32Array<'a> {
+    data: &'a [i32],
+}
+
+impl<'a> NumpyI32Array<'a> {
+    fn new(data: &'a [i32]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyI32Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeI32 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeI32 {
+    obj: i32,
+}
+
+impl Serialize for DataTypeI32 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i32(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyI8Array<'a> {
+    data: &'a [i8],
+}
+
+impl<'a> NumpyI8Array<'a> {
+    fn new(data: &'a [i8]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyI8Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeI8 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeI8 {
+    obj: i8,
+}
+
+impl Serialize for DataTypeI8 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i8(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyU8Array<'a> {
+    data: &'a [u8],
+}
+
+impl<'a> NumpyU8Array<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyU8Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeU8 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeU8 {
     obj: u8,
 }
 
-impl Serialize for DataTypeBOOL {
+impl Serialize for DataTypeU8 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u8(self.obj)
+    }
+}
+
+#[repr(transparent)]
+struct NumpyBoolArray<'a> {
+    data: &'a [u8],
+}
+
+impl<'a> NumpyBoolArray<'a> {
+    fn new(data: &'a [u8]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyBoolArray<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeBool { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeBool {
+    obj: u8,
+}
+
+impl Serialize for DataTypeBool {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -453,6 +708,7 @@ impl NumpyScalar {
 }
 
 impl Serialize for NumpyScalar {
+    #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -641,7 +897,7 @@ impl Serialize for NumpyBool {
 ///
 /// See
 /// https://github.com/numpy/numpy/blob/fc8e3bbe419748ac5c6b7f3d0845e4bafa74644b/numpy/core/include/numpy/ndarraytypes.h#L268-L282.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum NumpyDatetimeUnit {
     NaT,
     Years,
@@ -685,7 +941,7 @@ impl fmt::Display for NumpyDatetimeUnit {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 enum NumpyDateTimeError {
     UnsupportedUnit(NumpyDatetimeUnit),
     Unrepresentable { unit: NumpyDatetimeUnit, val: i64 },
@@ -799,6 +1055,35 @@ impl NumpyDatetimeUnit {
     }
 }
 
+struct NumpyDatetime64Array<'a> {
+    data: &'a [i64],
+    unit: NumpyDatetimeUnit,
+    opts: Opt,
+}
+
+impl<'a> NumpyDatetime64Array<'a> {
+    fn new(data: &'a [i64], unit: NumpyDatetimeUnit, opts: Opt) -> Self {
+        Self { data, unit, opts }
+    }
+}
+
+impl<'a> Serialize for NumpyDatetime64Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            let dt = self
+                .unit
+                .datetime(each, self.opts)
+                .map_err(NumpyDateTimeError::into_serde_err)?;
+            seq.serialize_element(&dt).unwrap();
+        }
+        seq.end()
+    }
+}
+
 #[repr(C)]
 pub struct NumpyDatetime64 {
     ob_refcnt: Py_ssize_t,
@@ -855,7 +1140,7 @@ impl Serialize for NumpyDatetime64Repr {
         S: Serializer,
     {
         let mut buf = DateTimeBuffer::new();
-        self.write_buf(&mut buf, self.opts).unwrap();
+        let _ = self.write_buf(&mut buf, self.opts);
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

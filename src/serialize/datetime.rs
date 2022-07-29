@@ -82,16 +82,16 @@ pub struct Time {
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Result<Self, TimeError> {
-        if unsafe { (*(ptr as *mut pyo3_ffi::PyDateTime_Time)).hastzinfo == 1 } {
-            return Err(TimeError::HasTimezone);
-        }
-        Ok(Time {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+        Time {
             ptr: ptr,
             opts: opts,
-        })
+        }
     }
-    pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
+    pub fn write_buf(&self, buf: &mut DateTimeBuffer) -> Result<(), TimeError> {
+        if unsafe { (*(self.ptr as *mut pyo3_ffi::PyDateTime_Time)).hastzinfo == 1 } {
+            return Err(TimeError::HasTimezone);
+        }
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
         write_double_digit!(buf, hour);
         buf.push(b':');
@@ -104,6 +104,7 @@ impl Time {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
         }
+        Ok(())
     }
 }
 
@@ -114,7 +115,9 @@ impl Serialize for Time {
         S: Serializer,
     {
         let mut buf = DateTimeBuffer::new();
-        self.write_buf(&mut buf);
+        if self.write_buf(&mut buf).is_err() {
+            err!(SerializeError::DatetimeLibraryUnsupported)
+        };
         serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

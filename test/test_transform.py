@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
+import pytest
 
 import orjson
 
@@ -11,14 +11,14 @@ def _read_file(filename):
     return read_fixture_bytes(filename, "transform").strip(b"\n").strip(b"\r")
 
 
-class JSONTestSuiteTransformTests(unittest.TestCase):
+class TestJSONTestSuiteTransform:
     def _pass_transform(self, filename, reference=None):
         data = _read_file(filename)
-        self.assertEqual(orjson.dumps(orjson.loads(data)), reference or data)
+        assert orjson.dumps(orjson.loads(data)) == (reference or data)
 
     def _fail_transform(self, filename):
         data = _read_file(filename)
-        with self.assertRaises(orjson.JSONDecodeError):
+        with pytest.raises(orjson.JSONDecodeError):
             orjson.loads(data)
 
     def test_number_1(self):
@@ -44,10 +44,9 @@ class JSONTestSuiteTransformTests(unittest.TestCase):
         number_10000000000000000999.json
         """
         # cannot serialize due to range
-        self.assertEqual(
-            orjson.loads(_read_file("number_10000000000000000999.json")),
-            [10000000000000000999],
-        )
+        assert orjson.loads(_read_file("number_10000000000000000999.json")) == [
+            10000000000000000999
+        ]
 
     def test_number_1000000000000000(self):
         """

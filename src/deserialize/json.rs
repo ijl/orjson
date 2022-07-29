@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::deserialize::cache::*;
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
 use crate::unicode::*;
@@ -18,11 +17,11 @@ pub fn deserialize_json(
     match seed.deserialize(&mut deserializer) {
         Ok(obj) => {
             deserializer.end().map_err(|e| {
-                DeserializeError::new(Cow::Owned(e.to_string()), e.line(), e.column(), data)
+                DeserializeError::from_json(Cow::Owned(e.to_string()), e.line(), e.column(), data)
             })?;
             Ok(obj)
         }
-        Err(e) => Err(DeserializeError::new(
+        Err(e) => Err(DeserializeError::from_json(
             Cow::Owned(e.to_string()),
             e.line(),
             e.column(),
@@ -127,32 +126,8 @@ impl<'de> Visitor<'de> for JsonValue {
     {
         let dict_ptr = ffi!(PyDict_New());
         while let Some(key) = map.next_key::<beef::lean::Cow<str>>()? {
+            let (pykey, pyhash) = get_unicode_key(&key);
             let value = map.next_value_seed(self)?;
-            let pykey: *mut pyo3_ffi::PyObject;
-            let pyhash: pyo3_ffi::Py_hash_t;
-            if unlikely!(key.len() > 64) {
-                pykey = unicode_from_str(&key);
-                pyhash = hash_str(pykey);
-            } else {
-                let hash = cache_hash(key.as_bytes());
-                {
-                    let map = unsafe {
-                        KEY_MAP
-                            .get_mut()
-                            .unwrap_or_else(|| unsafe { std::hint::unreachable_unchecked() })
-                    };
-                    let entry = map.entry(&hash).or_insert_with(
-                        || hash,
-                        || {
-                            let pyob = unicode_from_str(&key);
-                            hash_str(pyob);
-                            CachedKey::new(pyob)
-                        },
-                    );
-                    pykey = entry.get();
-                    pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
-                }
-            }
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,
                 pykey,

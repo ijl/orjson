@@ -1,8 +1,4 @@
-pub type __uint32_t = ::std::os::raw::c_uint;
-pub type __int64_t = ::std::os::raw::c_long;
-pub type __uint64_t = ::std::os::raw::c_ulong;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_alc {
     pub malloc: ::std::option::Option<
         unsafe extern "C" fn(
@@ -34,7 +30,6 @@ pub const YYJSON_READ_NOFLAG: yyjson_read_flag = 0;
 pub type yyjson_read_code = u32;
 pub const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_read_err {
     pub code: yyjson_read_code,
     pub msg: *const ::std::os::raw::c_char,
@@ -53,7 +48,6 @@ extern "C" {
     pub fn yyjson_doc_free(doc: *mut yyjson_doc);
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub union yyjson_val_uni {
     pub u64_: u64,
     pub i64_: i64,
@@ -63,13 +57,11 @@ pub union yyjson_val_uni {
     pub ofs: usize,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_val {
     pub tag: u64,
     pub uni: yyjson_val_uni,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_doc {
     pub root: *mut yyjson_val,
     pub alc: yyjson_alc,
@@ -78,14 +70,12 @@ pub struct yyjson_doc {
     pub str_pool: *mut ::std::os::raw::c_char,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_arr_iter {
     pub idx: usize,
     pub max: usize,
     pub cur: *mut yyjson_val,
 }
 #[repr(C)]
-#[derive(Copy, Clone)]
 pub struct yyjson_obj_iter {
     pub idx: usize,
     pub max: usize,

@@ -3,7 +3,6 @@
 use std::os::raw::c_char;
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
 pub struct PyTypeObject {
     pub ob_refcnt: pyo3_ffi::Py_ssize_t,
     pub ob_type: *mut pyo3_ffi::PyTypeObject,

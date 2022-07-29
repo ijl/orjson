@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
+import pytest
 
 import orjson
 
 
-class CircularTests(unittest.TestCase):
+class TestCircular:
     def test_circular_dict(self):
         """
         dumps() circular reference dict
         """
         obj = {}
         obj["obj"] = obj
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
 
     def test_circular_list(self):
@@ -21,7 +21,7 @@ class CircularTests(unittest.TestCase):
         """
         obj = []
         obj.append(obj)
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
 
     def test_circular_nested(self):
@@ -30,5 +30,5 @@ class CircularTests(unittest.TestCase):
         """
         obj = {}
         obj["list"] = [{"obj": obj}]
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)

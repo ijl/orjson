@@ -30,7 +30,7 @@ use std::os::raw::c_int;
 use std::os::raw::c_void;
 
 #[allow(unused_imports)]
-use core::ptr::{null, null_mut, NonNull};
+use std::ptr::{null, null_mut, NonNull};
 
 #[cfg(Py_3_10)]
 macro_rules! add {
@@ -228,12 +228,22 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     let pos = err.pos();
     let msg = err.message;
-    let doc = err.data;
+    let doc;
+    match err.data {
+        Some(as_str) => {
+            doc = unsafe {
+                PyUnicode_FromStringAndSize(as_str.as_ptr() as *const c_char, as_str.len() as isize)
+            }
+        }
+        None => {
+            ffi!(Py_INCREF(crate::typeref::EMPTY_UNICODE));
+            doc = unsafe { crate::typeref::EMPTY_UNICODE }
+        }
+    }
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         let args = PyTuple_New(3);
-        let doc = PyUnicode_FromStringAndSize(doc.as_ptr() as *const c_char, doc.len() as isize);
         let pos = PyLong_FromLongLong(pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
         PyTuple_SET_ITEM(args, 1, doc);
@@ -289,7 +299,7 @@ pub unsafe extern "C" fn dumps(
         optsptr = Some(NonNull::new_unchecked(*args.offset(2)));
     }
     if !kwnames.is_null() {
-        for i in 0..=PyTuple_GET_SIZE(kwnames) - 1 {
+        for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
             let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
@@ -342,7 +352,7 @@ pub unsafe extern "C" fn dumps(
 
     let obj = PyTuple_GET_ITEM(args, 0);
 
-    let num_args = PyTuple_GET_SIZE(args);
+    let num_args = Py_SIZE(args);
     if unlikely!(num_args == 0) {
         return raise_dumps_exception(Cow::Borrowed(
             "dumps() missing 1 required positional argument: 'obj'",
@@ -356,7 +366,7 @@ pub unsafe extern "C" fn dumps(
     }
 
     if !kwds.is_null() {
-        let len = unsafe { crate::ffi::PyDict_GET_SIZE(kwds) };
+        let len = ffi!(Py_SIZE(kwds));
         let mut pos = 0isize;
         let mut arg: *mut PyObject = null_mut();
         let mut val: *mut PyObject = null_mut();

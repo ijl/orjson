@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import unittest
 import uuid
+
+import pytest
 
 import orjson
 
@@ -30,22 +31,22 @@ def default_raises(obj):
     raise TypeError
 
 
-class TypeTests(unittest.TestCase):
+class TestType:
     def test_default_not_callable(self):
         """
         dumps() default not callable
         """
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=NotImplementedError)
 
         ran = False
         try:
             orjson.dumps(Custom(), default=NotImplementedError)
         except Exception as err:
-            self.assertIsInstance(err, orjson.JSONEncodeError)
-            self.assertEqual(str(err), "default serializer exceeds recursion limit")
+            assert isinstance(err, orjson.JSONEncodeError)
+            assert str(err) == "default serializer exceeds recursion limit"
             ran = True
-        self.assertTrue(ran)
+        assert ran
 
     def test_default_func(self):
         """
@@ -56,15 +57,13 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return str(obj)
 
-        self.assertEqual(
-            orjson.dumps(ref, default=default), b'"%s"' % str(ref).encode("utf-8")
-        )
+        assert orjson.dumps(ref, default=default) == b'"%s"' % str(ref).encode("utf-8")
 
     def test_default_func_none(self):
         """
         dumps() default function None ok
         """
-        self.assertEqual(orjson.dumps(Custom(), default=lambda x: None), b"null")
+        assert orjson.dumps(Custom(), default=lambda x: None) == b"null"
 
     def test_default_func_empty(self):
         """
@@ -76,8 +75,8 @@ class TypeTests(unittest.TestCase):
             if isinstance(obj, set):
                 return list(obj)
 
-        self.assertEqual(orjson.dumps(ref, default=default), b"null")
-        self.assertEqual(orjson.dumps({ref}, default=default), b"[null]")
+        assert orjson.dumps(ref, default=default) == b"null"
+        assert orjson.dumps({ref}, default=default) == b"[null]"
 
     def test_default_func_exc(self):
         """
@@ -87,17 +86,17 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             raise NotImplementedError
 
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=default)
 
         ran = False
         try:
             orjson.dumps(Custom(), default=default)
         except Exception as err:
-            self.assertIsInstance(err, orjson.JSONEncodeError)
-            self.assertEqual(str(err), "Type is not JSON serializable: Custom")
+            assert isinstance(err, orjson.JSONEncodeError)
+            assert str(err) == "Type is not JSON serializable: Custom"
             ran = True
-        self.assertTrue(ran)
+        assert ran
 
     def test_default_exception_type(self):
         """
@@ -105,7 +104,7 @@ class TypeTests(unittest.TestCase):
         """
         ref = Custom()
 
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default_raises)
 
     def test_default_vectorcall_str(self):
@@ -118,8 +117,9 @@ class TypeTests(unittest.TestCase):
 
         obj = SubStr("saasa")
         ref = b'"%s"' % str(obj).encode("utf-8")
-        self.assertEqual(
-            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_SUBCLASS, default=str), ref
+        assert (
+            orjson.dumps(obj, option=orjson.OPT_PASSTHROUGH_SUBCLASS, default=str)
+            == ref
         )
 
     def test_default_vectorcall_list(self):
@@ -128,7 +128,7 @@ class TypeTests(unittest.TestCase):
         """
         obj = {1, 2}
         ref = b"[1,2]"
-        self.assertEqual(orjson.dumps(obj, default=list), ref)
+        assert orjson.dumps(obj, default=list) == ref
 
     def test_default_func_nested_str(self):
         """
@@ -139,10 +139,9 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return str(obj)
 
-        self.assertEqual(
-            orjson.dumps({"a": ref}, default=default),
-            b'{"a":"%s"}' % str(ref).encode("utf-8"),
-        )
+        assert orjson.dumps({"a": ref}, default=default) == b'{"a":"%s"}' % str(
+            ref
+        ).encode("utf-8")
 
     def test_default_func_list(self):
         """
@@ -154,10 +153,9 @@ class TypeTests(unittest.TestCase):
             if isinstance(obj, Custom):
                 return [str(obj)]
 
-        self.assertEqual(
-            orjson.dumps({"a": ref}, default=default),
-            b'{"a":["%s"]}' % str(ref).encode("utf-8"),
-        )
+        assert orjson.dumps({"a": ref}, default=default) == b'{"a":["%s"]}' % str(
+            ref
+        ).encode("utf-8")
 
     def test_default_func_nested_list(self):
         """
@@ -168,9 +166,8 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return str(obj)
 
-        self.assertEqual(
-            orjson.dumps([ref] * 100, default=default),
-            b"[%s]" % b",".join(b'"%s"' % str(ref).encode("utf-8") for _ in range(100)),
+        assert orjson.dumps([ref] * 100, default=default) == b"[%s]" % b",".join(
+            b'"%s"' % str(ref).encode("utf-8") for _ in range(100)
         )
 
     def test_default_func_bytes(self):
@@ -182,17 +179,17 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return bytes(obj)
 
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
         ran = False
         try:
             orjson.dumps(ref, default=default)
         except Exception as err:
-            self.assertIsInstance(err, orjson.JSONEncodeError)
-            self.assertEqual(str(err), "Type is not JSON serializable: Custom")
+            assert isinstance(err, orjson.JSONEncodeError)
+            assert str(err) == "Type is not JSON serializable: Custom"
             ran = True
-        self.assertTrue(ran)
+        assert ran
 
     def test_default_func_invalid_str(self):
         """
@@ -203,7 +200,7 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return "\ud800"
 
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
     def test_default_lambda_ok(self):
@@ -211,9 +208,8 @@ class TypeTests(unittest.TestCase):
         dumps() default lambda
         """
         ref = Custom()
-        self.assertEqual(
-            orjson.dumps(ref, default=lambda x: str(x)),
-            b'"%s"' % str(ref).encode("utf-8"),
+        assert orjson.dumps(ref, default=lambda x: str(x)) == b'"%s"' % str(ref).encode(
+            "utf-8"
         )
 
     def test_default_callable_ok(self):
@@ -233,24 +229,24 @@ class TypeTests(unittest.TestCase):
         ref_obj = Custom()
         ref_bytes = b'"%s"' % str(ref_obj).encode("utf-8")
         for obj in [ref_obj] * 100:
-            self.assertEqual(orjson.dumps(obj, default=CustomSerializer()), ref_bytes)
+            assert orjson.dumps(obj, default=CustomSerializer()) == ref_bytes
 
     def test_default_recursion(self):
         """
         dumps() default recursion limit
         """
-        self.assertEqual(orjson.dumps(Recursive(254), default=default_recursive), b"0")
+        assert orjson.dumps(Recursive(254), default=default_recursive) == b"0"
 
     def test_default_recursion_reset(self):
         """
         dumps() default recursion limit reset
         """
-        self.assertEqual(
+        assert (
             orjson.dumps(
                 [Recursive(254), {"a": "b"}, Recursive(254), Recursive(254)],
                 default=default_recursive,
-            ),
-            b'[0,{"a":"b"},0,0]',
+            )
+            == b'[0,{"a":"b"},0,0]'
         )
 
     def test_default_recursion_infinite(self):
@@ -262,5 +258,5 @@ class TypeTests(unittest.TestCase):
         def default(obj):
             return obj
 
-        with self.assertRaises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)

@@ -11,7 +11,7 @@ from tabulate import tabulate
 
 import orjson
 
-dirname = os.path.join(os.path.dirname(__file__), "data")
+dirname = os.path.join(os.path.dirname(__file__), "..", "data")
 
 LIBRARIES = ["orjson", "ujson", "rapidjson", "simplejson", "json"]
 
