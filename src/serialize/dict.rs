@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::PyDictIter;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
@@ -12,7 +13,6 @@ use crate::unicode::*;
 use compact_str::CompactString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
-use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct Dict {
@@ -48,19 +48,7 @@ impl Serialize for Dict {
         S: Serializer,
     {
         let mut map = serializer.serialize_map(None).unwrap();
-        let mut pos = 0isize;
-        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
-            unsafe {
-                pyo3_ffi::_PyDict_Next(
-                    self.ptr,
-                    addr_of_mut!(pos),
-                    addr_of_mut!(key),
-                    addr_of_mut!(value),
-                    std::ptr::null_mut(),
-                )
-            };
+        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
@@ -117,19 +105,7 @@ impl Serialize for DictSortedKey {
         let len = ffi!(Py_SIZE(self.ptr)) as usize;
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
-        let mut pos = 0isize;
-        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=len - 1 {
-            unsafe {
-                pyo3_ffi::_PyDict_Next(
-                    self.ptr,
-                    addr_of_mut!(pos),
-                    addr_of_mut!(key),
-                    addr_of_mut!(value),
-                    std::ptr::null_mut(),
-                )
-            };
+        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
@@ -144,16 +120,15 @@ impl Serialize for DictSortedKey {
 
         let mut map = serializer.serialize_map(None).unwrap();
         for (key, val) in items.iter() {
-            map.serialize_entry(
-                key,
-                &PyObjectSerializer::new(
-                    *val,
-                    self.opts,
-                    self.default_calls,
-                    self.recursion + 1,
-                    self.default,
-                ),
-            )?;
+            let pyvalue = PyObjectSerializer::new(
+                *val,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
+            map.serialize_key(key).unwrap();
+            map.serialize_value(&pyvalue)?;
         }
         map.end()
     }
@@ -292,20 +267,8 @@ impl Serialize for DictNonStrKey {
         let len = ffi!(Py_SIZE(self.ptr)) as usize;
         let mut items: SmallVec<[(CompactString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
-        let mut pos = 0isize;
-        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
         let opts = self.opts & NOT_PASSTHROUGH;
-        for _ in 0..=len - 1 {
-            unsafe {
-                pyo3_ffi::_PyDict_Next(
-                    self.ptr,
-                    addr_of_mut!(pos),
-                    addr_of_mut!(key),
-                    addr_of_mut!(value),
-                    std::ptr::null_mut(),
-                )
-            };
+        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
             if is_type!(ob_type!(key), STR_TYPE) {
                 let uni = unicode_to_str(key);
                 if unlikely!(uni.is_none()) {
@@ -326,16 +289,16 @@ impl Serialize for DictNonStrKey {
 
         let mut map = serializer.serialize_map(None).unwrap();
         for (key, val) in items.iter() {
-            map.serialize_entry(
-                str_from_slice!(key.as_ptr(), key.len()),
-                &PyObjectSerializer::new(
-                    *val,
-                    self.opts,
-                    self.default_calls,
-                    self.recursion + 1,
-                    self.default,
-                ),
-            )?;
+            let pyvalue = PyObjectSerializer::new(
+                *val,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
+            let key_as_str = str_from_slice!(key.as_ptr(), key.len());
+            map.serialize_key(key_as_str).unwrap();
+            map.serialize_value(&pyvalue)?;
         }
         map.end()
     }

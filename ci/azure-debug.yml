@@ -24,8 +24,19 @@ steps:
   displayName: build dependencies
 - bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies
+
 - bash: PATH=$(path) maturin build --strip $(extra) --compatibility $(compatibility) --interpreter $(interpreter)
-  displayName: build debug
+  env:
+    ORJSON_DISABLE_PYDICTITER: 1
+    ORJSON_DISABLE_YYJSON: 1
+  displayName: build debug with disabled features
+- bash: PATH=$(path) $(interpreter) -m pip install --user target/wheels/orjson*.whl
+  displayName: install
+- bash: PATH=$(path) pytest -s -rxX -v test
+  displayName: pytest
+
+- bash: PATH=$(path) maturin build --strip $(extra) --compatibility $(compatibility) --interpreter $(interpreter)
+  displayName: build debug default
 - bash: PATH=$(path) $(interpreter) -m pip install --user target/wheels/orjson*.whl
   displayName: install
 - bash: PATH=$(path) pytest -s -rxX -v test

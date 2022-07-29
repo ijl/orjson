@@ -6,6 +6,7 @@ use crate::serialize::serializer::*;
 use crate::typeref::*;
 use crate::unicode::*;
 
+use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
 use std::ptr::addr_of_mut;
@@ -125,19 +126,7 @@ impl Serialize for DataclassFallbackSerializer {
             return serializer.serialize_map(Some(0)).unwrap().end();
         }
         let mut map = serializer.serialize_map(None).unwrap();
-        let mut pos = 0isize;
-        let mut attr: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut field: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=len - 1 {
-            unsafe {
-                pyo3_ffi::_PyDict_Next(
-                    fields,
-                    addr_of_mut!(pos),
-                    addr_of_mut!(attr),
-                    addr_of_mut!(field),
-                    std::ptr::null_mut(),
-                )
-            };
+        for (attr, field) in PyDictIter::from_pyobject(fields) {
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             ffi!(Py_DECREF(field_type));
             if unsafe { field_type != FIELD_TYPE.as_ptr() } {
@@ -154,15 +143,16 @@ impl Serialize for DataclassFallbackSerializer {
 
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
-
-            map.serialize_key(key_as_str).unwrap();
-            map.serialize_value(&PyObjectSerializer::new(
+            let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,
                 self.default_calls,
                 self.recursion + 1,
                 self.default,
-            ))?
+            );
+
+            map.serialize_key(key_as_str).unwrap();
+            map.serialize_value(&pyvalue)?
         }
         map.end()
     }
