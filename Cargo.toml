@@ -79,9 +79,9 @@ once_cell = { version = "1", default_features = false }
 pyo3-ffi = { version = "^0.16.5", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
-serde_json = { version = "^1.0.68", default_features = false, features = ["std", "float_roundtrip"] }
+serde_json = { path = "include/json", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
-smallvec = { version = "^1.8", default_features = false, features = ["union", "write"] }
+smallvec = { version = "^1.9", default_features = false, features = ["union", "write"] }
 
 [build-dependencies]
 cc = { version = "1" }
