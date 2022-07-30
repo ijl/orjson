@@ -81,7 +81,10 @@ pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
 
 #[cfg(feature = "yyjson")]
 pub static mut YYJSON_ALLOC: Lazy<crate::yyjson::yyjson_alc> = Lazy::new(|| unsafe {
-    let buffer = Box::<[u8; YYJSON_BUFFER_SIZE]>::new([0; YYJSON_BUFFER_SIZE]);
+    let buffer = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(
+        YYJSON_BUFFER_SIZE,
+        std::mem::align_of::<*mut ()>(),
+    ));
     let mut alloc = crate::yyjson::yyjson_alc {
         malloc: None,
         realloc: None,
@@ -90,7 +93,7 @@ pub static mut YYJSON_ALLOC: Lazy<crate::yyjson::yyjson_alc> = Lazy::new(|| unsa
     };
     crate::yyjson::yyjson_alc_pool_init(
         &mut alloc,
-        Box::into_raw(buffer) as *mut std::os::raw::c_void,
+        buffer as *mut std::os::raw::c_void,
         YYJSON_BUFFER_SIZE,
     );
     alloc
