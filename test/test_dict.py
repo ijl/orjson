@@ -8,6 +8,7 @@ class TestDict:
         """Test pop and replace a first key in a dict with other keys."""
         data = {"id": "any", "other": "any"}
         data.pop("id")
+        assert orjson.dumps(data) == b'{"other":"any"}'
         data["id"] = "new"
         assert orjson.dumps(data) == b'{"other":"any","id":"new"}'
 
@@ -15,6 +16,7 @@ class TestDict:
         """Test pop and replace a last key in a dict with other keys."""
         data = {"other": "any", "id": "any"}
         data.pop("id")
+        assert orjson.dumps(data) == b'{"other":"any"}'
         data["id"] = "new"
         assert orjson.dumps(data) == b'{"other":"any","id":"new"}'
 
@@ -22,6 +24,7 @@ class TestDict:
         """Test pop and replace a key in a dict with no other keys."""
         data = {"id": "any"}
         data.pop("id")
+        assert orjson.dumps(data) == b'{}'
         data["id"] = "new"
         assert orjson.dumps(data) == b'{"id":"new"}'
 

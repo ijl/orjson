@@ -123,12 +123,14 @@ impl Iterator for PyDictIter {
                 Some((key, value))
             } else {
                 let mut entry_ptr = self.indices_ptr.add(self.idx);
-                while self.idx < self.len && (*entry_ptr).me_value.is_null() {
-                    entry_ptr = entry_ptr.add(1);
+                while self.idx < self.len {
                     self.idx += 1;
+                    if !(*entry_ptr).me_value.is_null() {
+                        return Some(((*entry_ptr).me_key, (*entry_ptr).me_value))
+                    }
+                    entry_ptr = entry_ptr.add(1);
                 }
-                self.idx += 1;
-                Some(((*entry_ptr).me_key, (*entry_ptr).me_value))
+                None
             }
         }
     }
