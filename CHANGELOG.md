@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.10 - 2022-07-30
+
+### Fixed
+
+- Fix serializing `dict` with deleted final item. This was introduced in 3.7.9.
+
 ## 3.7.9 - 2022-07-29
 
 ### Changed
