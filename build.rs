@@ -7,12 +7,11 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
-    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_PYDICTITER");
+    println!("cargo:rerun-if-env-changed=ORJSON_ENABLE_PYDICTITER");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
 
     let py_cfg = pyo3_build_config::get();
     py_cfg.emit_pyo3_cfgs();
-    let py_version_minor = py_cfg.version.minor;
 
     if let Some(true) = version_check::supports_feature("core_intrinsics") {
         println!("cargo:rustc-cfg=feature=\"intrinsics\"");
@@ -22,7 +21,7 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 
-    if std::env::var("ORJSON_DISABLE_PYDICTITER").is_err() && py_version_minor < 11 {
+    if std::env::var("ORJSON_ENABLE_PYDICTITER").is_ok() {
         println!("cargo:rustc-cfg=feature=\"pydictiter\"");
     }
 

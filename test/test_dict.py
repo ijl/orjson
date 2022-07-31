@@ -24,7 +24,7 @@ class TestDict:
         """Test pop and replace a key in a dict with no other keys."""
         data = {"id": "any"}
         data.pop("id")
-        assert orjson.dumps(data) == b'{}'
+        assert orjson.dumps(data) == b"{}"
         data["id"] = "new"
         assert orjson.dumps(data) == b'{"id":"new"}'
 
@@ -49,3 +49,11 @@ class TestDict:
         data["112"] = 1
         data["113"] = 2
         assert orjson.loads(orjson.dumps(data)) == data
+
+    def test_dict_dict(self):
+        class C:
+            def __init__(self):
+                self.a = 0
+                self.b = 1
+
+        assert orjson.dumps(C().__dict__) == b'{"a":0,"b":1}'

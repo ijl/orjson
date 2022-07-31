@@ -9,7 +9,6 @@ use crate::unicode::*;
 use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
-use std::ptr::addr_of_mut;
 use std::ptr::NonNull;
 
 pub struct DataclassFastSerializer {
@@ -49,26 +48,7 @@ impl Serialize for DataclassFastSerializer {
             return serializer.serialize_map(Some(0)).unwrap().end();
         }
         let mut map = serializer.serialize_map(None).unwrap();
-        let mut pos = 0isize;
-        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        for _ in 0..=len.saturating_sub(1) {
-            unsafe {
-                pyo3_ffi::_PyDict_Next(
-                    self.ptr,
-                    addr_of_mut!(pos),
-                    addr_of_mut!(key),
-                    addr_of_mut!(value),
-                    std::ptr::null_mut(),
-                )
-            };
-            let pyvalue = PyObjectSerializer::new(
-                value,
-                self.opts,
-                self.default_calls,
-                self.recursion + 1,
-                self.default,
-            );
+        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
@@ -80,6 +60,13 @@ impl Serialize for DataclassFastSerializer {
             if unlikely!(key_as_str.as_bytes()[0] == b'_') {
                 continue;
             }
+            let pyvalue = PyObjectSerializer::new(
+                value,
+                self.opts,
+                self.default_calls,
+                self.recursion + 1,
+                self.default,
+            );
             map.serialize_key(key_as_str).unwrap();
             map.serialize_value(&pyvalue)?;
         }

@@ -126,7 +126,7 @@ impl Iterator for PyDictIter {
                 while self.idx < self.len {
                     self.idx += 1;
                     if !(*entry_ptr).me_value.is_null() {
-                        return Some(((*entry_ptr).me_key, (*entry_ptr).me_value))
+                        return Some(((*entry_ptr).me_key, (*entry_ptr).me_value));
                     }
                     entry_ptr = entry_ptr.add(1);
                 }
