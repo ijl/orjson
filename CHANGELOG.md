@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.11 - 2022-07-31
+
+### Fixed
+
+- Revert `dict` iterator implementation introduced in 3.7.9.
+
 ## 3.7.10 - 2022-07-30
 
 ### Fixed
