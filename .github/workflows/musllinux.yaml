@@ -30,7 +30,7 @@ jobs:
     - name: Build wheels
       uses: messense/maturin-action@v1
       with:
-        maturin-version: v0.13.0
+        maturin-version: v0.13.1
         rust-toolchain: nightly-2022-07-26
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1

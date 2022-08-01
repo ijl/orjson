@@ -25,12 +25,12 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
-        maturin-version: v0.13.0
+        maturin-version: v0.13.1
         target: ${{ matrix.target }}
         rust-toolchain: nightly-2022-07-26
         manylinux: auto
         args: -i python3.9 --release --strip --out dist
-    - uses: uraimo/run-on-arch-action@v2.0.5
+    - uses: uraimo/run-on-arch-action@v2
       name: Install built wheel
       with:
         arch: ${{ matrix.target }}
@@ -41,7 +41,7 @@ jobs:
           apt-get install -y --no-install-recommends python3-dev python3-venv software-properties-common build-essential
           add-apt-repository ppa:deadsnakes/ppa
           apt-get update
-          apt-get install -y curl python3.7-dev python3.7-venv python3.9-dev python3.9-venv python3.10-dev python3.10-venv
+          apt-get install -y curl python${{ matrix.python.version }}-dev python${{ matrix.python.version }}-venv
         run: |
           PYTHON=python${{ matrix.python.version }}
           $PYTHON -m venv venv
