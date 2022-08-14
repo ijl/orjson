@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.7.12 - 2022-08-14
+
+### Fixed
+
+- Fix datetime regression tests for tzinfo 2022b.
+
+### Changed
+
+- Improve performance.
+
 ## 3.7.11 - 2022-07-31
 
 ### Fixed
