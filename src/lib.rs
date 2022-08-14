@@ -5,6 +5,7 @@
 #![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::unnecessary_unwrap)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
 #![allow(non_camel_case_types)]
@@ -228,18 +229,15 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     let pos = err.pos();
     let msg = err.message;
-    let doc;
-    match err.data {
-        Some(as_str) => {
-            doc = unsafe {
-                PyUnicode_FromStringAndSize(as_str.as_ptr() as *const c_char, as_str.len() as isize)
-            }
-        }
+    let doc = match err.data {
+        Some(as_str) => unsafe {
+            PyUnicode_FromStringAndSize(as_str.as_ptr() as *const c_char, as_str.len() as isize)
+        },
         None => {
             ffi!(Py_INCREF(crate::typeref::EMPTY_UNICODE));
-            doc = unsafe { crate::typeref::EMPTY_UNICODE }
+            unsafe { crate::typeref::EMPTY_UNICODE }
         }
-    }
+    };
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);

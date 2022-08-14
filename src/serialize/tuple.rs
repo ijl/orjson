@@ -26,7 +26,7 @@ impl TupleSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -42,15 +42,16 @@ impl Serialize for TupleSerializer {
             serializer.serialize_seq(Some(0)).unwrap().end()
         } else {
             let mut seq = serializer.serialize_seq(None).unwrap();
-            for i in 0..=ffi!(Py_SIZE(self.ptr)).saturating_sub(1) {
-                let elem = nonnull!(ffi!(PyTuple_GET_ITEM(self.ptr, i as isize)));
-                seq.serialize_element(&PyObjectSerializer::new(
-                    elem.as_ptr(),
+            for i in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+                let elem = ffi!(PyTuple_GET_ITEM(self.ptr, i as isize));
+                let value = PyObjectSerializer::new(
+                    elem,
                     self.opts,
                     self.default_calls,
-                    self.recursion + 1,
+                    self.recursion,
                     self.default,
-                ))?
+                );
+                seq.serialize_element(&value)?;
             }
             seq.end()
         }

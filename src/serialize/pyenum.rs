@@ -32,7 +32,7 @@ impl EnumSerializer {
     }
 }
 
-impl<'p> Serialize for EnumSerializer {
+impl Serialize for EnumSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

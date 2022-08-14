@@ -38,7 +38,7 @@ impl NumpySerializer {
     }
 }
 
-impl<'p> Serialize for NumpySerializer {
+impl Serialize for NumpySerializer {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

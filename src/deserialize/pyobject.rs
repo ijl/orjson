@@ -9,7 +9,7 @@ pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_
     let pykey: *mut pyo3_ffi::PyObject;
     let pyhash: pyo3_ffi::Py_hash_t;
     if unlikely!(key_str.len() > 64) {
-        pykey = unicode_from_str(&key_str);
+        pykey = unicode_from_str(key_str);
         pyhash = hash_str(pykey);
     } else {
         let hash = cache_hash(key_str.as_bytes());
@@ -21,7 +21,7 @@ pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_
         let entry = map.entry(&hash).or_insert_with(
             || hash,
             || {
-                let pyob = unicode_from_str(&key_str);
+                let pyob = unicode_from_str(key_str);
                 hash_str(pyob);
                 CachedKey::new(pyob)
             },

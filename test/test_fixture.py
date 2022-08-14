@@ -14,7 +14,7 @@ class TestFixture:
         """
         val = read_fixture_str("twitter.json.xz")
         read = orjson.loads(val)
-        orjson.dumps(read)
+        assert orjson.loads(orjson.dumps(read)) == read
 
     def test_canada(self):
         """
@@ -22,7 +22,7 @@ class TestFixture:
         """
         val = read_fixture_str("canada.json.xz")
         read = orjson.loads(val)
-        orjson.dumps(read)
+        assert orjson.loads(orjson.dumps(read)) == read
 
     def test_citm_catalog(self):
         """
@@ -30,7 +30,7 @@ class TestFixture:
         """
         val = read_fixture_str("citm_catalog.json.xz")
         read = orjson.loads(val)
-        orjson.dumps(read)
+        assert orjson.loads(orjson.dumps(read)) == read
 
     def test_github(self):
         """
@@ -38,7 +38,7 @@ class TestFixture:
         """
         val = read_fixture_str("github.json.xz")
         read = orjson.loads(val)
-        orjson.dumps(read)
+        assert orjson.loads(orjson.dumps(read)) == read
 
     def test_blns(self):
         """

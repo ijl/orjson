@@ -31,7 +31,7 @@ impl DataclassFastSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -64,7 +64,7 @@ impl Serialize for DataclassFastSerializer {
                 value,
                 self.opts,
                 self.default_calls,
-                self.recursion + 1,
+                self.recursion,
                 self.default,
             );
             map.serialize_key(key_as_str).unwrap();
@@ -94,7 +94,7 @@ impl DataclassFallbackSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -134,7 +134,7 @@ impl Serialize for DataclassFallbackSerializer {
                 value,
                 self.opts,
                 self.default_calls,
-                self.recursion + 1,
+                self.recursion,
                 self.default,
             );
 

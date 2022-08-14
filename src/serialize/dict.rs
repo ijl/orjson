@@ -35,7 +35,7 @@ impl Dict {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -60,7 +60,7 @@ impl Serialize for Dict {
                 value,
                 self.opts,
                 self.default_calls,
-                self.recursion + 1,
+                self.recursion,
                 self.default,
             );
             map.serialize_key(key_as_str.unwrap()).unwrap();
@@ -90,7 +90,7 @@ impl DictSortedKey {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -124,7 +124,7 @@ impl Serialize for DictSortedKey {
                 *val,
                 self.opts,
                 self.default_calls,
-                self.recursion + 1,
+                self.recursion,
                 self.default,
             );
             map.serialize_key(key).unwrap();
@@ -154,7 +154,7 @@ impl DictNonStrKey {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion,
+            recursion: recursion + 1,
             default: default,
         }
     }
@@ -293,7 +293,7 @@ impl Serialize for DictNonStrKey {
                 *val,
                 self.opts,
                 self.default_calls,
-                self.recursion + 1,
+                self.recursion,
                 self.default,
             );
             let key_as_str = str_from_slice!(key.as_ptr(), key.len());
