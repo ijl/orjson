@@ -27,6 +27,17 @@ if sys.version_info >= (3, 9):
     import zoneinfo
 
 
+AMSTERDAM_1937_DATETIMES = (
+    b'["1937-01-01T12:00:27.000087+00:20"]',  # tzinfo<2022b and an example in RFC 3339
+    b'["1937-01-01T12:00:27.000087+00:00"]',  # tzinfo>=2022b
+)
+
+AMSTERDAM_1937_DATETIMES_WITH_Z = (
+    b'["1937-01-01T12:00:27.000087+00:20"]',
+    b'["1937-01-01T12:00:27.000087Z"]',
+)
+
+
 class TestDatetime:
     def test_datetime_naive(self):
         """
@@ -474,7 +485,7 @@ class TestDatetime:
                     )
                 ]
             )
-            == b'["1937-01-01T12:00:27.000087+00:20"]'
+            in AMSTERDAM_1937_DATETIMES
         )
 
     @pytest.mark.skipif(
@@ -502,7 +513,7 @@ class TestDatetime:
                     )
                 ]
             )
-            == b'["1937-01-01T12:00:27.000087+00:20"]'
+            in AMSTERDAM_1937_DATETIMES
         )
 
     @pytest.mark.skipif(pytz is None, reason="pytz optional")
@@ -527,7 +538,7 @@ class TestDatetime:
                     )
                 ]
             )
-            == b'["1937-01-01T12:00:27.000087+00:20"]'
+            in AMSTERDAM_1937_DATETIMES
         )
 
     def test_datetime_partial_second_dateutil(self):
@@ -544,7 +555,7 @@ class TestDatetime:
                     )
                 ]
             )
-            == b'["1937-01-01T12:00:27.000087+00:20"]'
+            in AMSTERDAM_1937_DATETIMES
         )
 
     def test_datetime_microsecond_max(self):
@@ -661,7 +672,7 @@ class TestDatetime:
                 ],
                 option=orjson.OPT_UTC_Z,
             )
-            == b'["1937-01-01T12:00:27.000087+00:20"]'
+            in AMSTERDAM_1937_DATETIMES_WITH_Z
         )
 
     @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
