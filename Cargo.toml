@@ -29,28 +29,6 @@ include = [
 name = "orjson"
 crate-type = ["cdylib"]
 
-[package.metadata.maturin]
-requires-python = ">=3.7"
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: MacOS",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python",
-    "Programming Language :: Rust",
-    "Typing :: Typed",
-]
-
 [features]
 default = []
 
@@ -71,7 +49,7 @@ arrayvec = { version = "0.7", default_features = false, features = ["std", "serd
 associative-cache = { version = "1" }
 beef = { version = "0.5", default_features = false, features = ["impl_serde"] }
 bytecount = { version = "^0.6.2", default_features = false, features = ["runtime-dispatch-simd"] }
-chrono = { version = "0.4", default_features = false }
+chrono = { version = "=0.4.19", default_features = false }
 compact_str = { version = "0.5", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
