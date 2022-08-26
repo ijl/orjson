@@ -32,10 +32,18 @@ elif kind == "bool":
     array = numpy.random.choice((True, False), size=(100000, 200))
 elif kind == "int8":
     array = numpy.random.randint(((2**7) - 1), size=(100000, 100), dtype=numpy.int8)
+elif kind == "int16":
+    array = numpy.random.randint(((2**15) - 1), size=(100000, 100), dtype=numpy.int16)
+elif kind == "int32":
+    array = numpy.random.randint(((2**31) - 1), size=(100000, 100), dtype=numpy.int32)
 elif kind == "uint8":
     array = numpy.random.randint(((2**8) - 1), size=(100000, 100), dtype=numpy.uint8)
+elif kind == "uint16":
+    array = numpy.random.randint(
+        ((2**16) - 1), size=(100000, 100), dtype=numpy.uint16
+    )
 else:
-    print("usage: pynumpy (bool|int32|float64|int8|uint8)")
+    print("usage: pynumpy (bool|int16|int32|float64|int8|uint8|uint16)")
     sys.exit(1)
 proc = psutil.Process()
 

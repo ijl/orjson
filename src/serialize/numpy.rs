@@ -84,11 +84,13 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
         ob_type == scalar_types.float64
             || ob_type == scalar_types.float32
             || ob_type == scalar_types.int64
+            || ob_type == scalar_types.int16
             || ob_type == scalar_types.int32
             || ob_type == scalar_types.int8
             || ob_type == scalar_types.uint64
             || ob_type == scalar_types.uint32
             || ob_type == scalar_types.uint8
+            || ob_type == scalar_types.uint16
             || ob_type == scalar_types.bool_
             || ob_type == scalar_types.datetime64
     }
@@ -134,9 +136,11 @@ pub enum ItemType {
     F32,
     F64,
     I8,
+    I16,
     I32,
     I64,
     U8,
+    U16,
     U32,
     U64,
 }
@@ -152,9 +156,11 @@ impl ItemType {
             (102, 4) => Some(ItemType::F32),
             (102, 8) => Some(ItemType::F64),
             (105, 1) => Some(ItemType::I8),
+            (105, 2) => Some(ItemType::I16),
             (105, 4) => Some(ItemType::I32),
             (105, 8) => Some(ItemType::I64),
             (117, 1) => Some(ItemType::U8),
+            (117, 2) => Some(ItemType::U16),
             (117, 4) => Some(ItemType::U32),
             (117, 8) => Some(ItemType::U64),
             _ => None,
@@ -323,6 +329,10 @@ impl Serialize for NumpyArray {
                     NumpyU32Array::new(slice!(self.data() as *const u32, self.num_items()))
                         .serialize(serializer)
                 }
+                ItemType::U16 => {
+                    NumpyU16Array::new(slice!(self.data() as *const u16, self.num_items()))
+                        .serialize(serializer)
+                }
                 ItemType::U8 => {
                     NumpyU8Array::new(slice!(self.data() as *const u8, self.num_items()))
                         .serialize(serializer)
@@ -333,6 +343,10 @@ impl Serialize for NumpyArray {
                 }
                 ItemType::I32 => {
                     NumpyI32Array::new(slice!(self.data() as *const i32, self.num_items()))
+                        .serialize(serializer)
+                }
+                ItemType::I16 => {
+                    NumpyI16Array::new(slice!(self.data() as *const i16, self.num_items()))
                         .serialize(serializer)
                 }
                 ItemType::I8 => {
@@ -507,6 +521,44 @@ impl Serialize for DataTypeU32 {
 }
 
 #[repr(transparent)]
+struct NumpyU16Array<'a> {
+    data: &'a [u16],
+}
+
+impl<'a> NumpyU16Array<'a> {
+    fn new(data: &'a [u16]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyU16Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeU16 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeU16 {
+    obj: u16
+}
+
+impl Serialize for DataTypeU16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(self.obj)
+    }
+}
+
+#[repr(transparent)]
 struct NumpyI64Array<'a> {
     data: &'a [i64],
 }
@@ -581,6 +633,45 @@ impl Serialize for DataTypeI32 {
         serializer.serialize_i32(self.obj)
     }
 }
+
+#[repr(transparent)]
+struct NumpyI16Array<'a> {
+    data: &'a [i16],
+}
+
+impl<'a> NumpyI16Array<'a> {
+    fn new(data: &'a [i16]) -> Self {
+        Self { data }
+    }
+}
+
+impl<'a> Serialize for NumpyI16Array<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(None).unwrap();
+        for &each in self.data.iter() {
+            seq.serialize_element(&DataTypeI16 { obj: each }).unwrap();
+        }
+        seq.end()
+    }
+}
+
+#[repr(transparent)]
+pub struct DataTypeI16 {
+    obj: i16,
+}
+
+impl Serialize for DataTypeI16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i16(self.obj)
+    }
+}
+
 
 #[repr(transparent)]
 struct NumpyI8Array<'a> {
@@ -725,12 +816,16 @@ impl Serialize for NumpyScalar {
                 (*(self.ptr as *mut NumpyInt64)).serialize(serializer)
             } else if ob_type == scalar_types.int32 {
                 (*(self.ptr as *mut NumpyInt32)).serialize(serializer)
+            } else if ob_type == scalar_types.int16 {
+                (*(self.ptr as *mut NumpyInt16)).serialize(serializer)
             } else if ob_type == scalar_types.int8 {
                 (*(self.ptr as *mut NumpyInt8)).serialize(serializer)
             } else if ob_type == scalar_types.uint64 {
                 (*(self.ptr as *mut NumpyUint64)).serialize(serializer)
             } else if ob_type == scalar_types.uint32 {
                 (*(self.ptr as *mut NumpyUint32)).serialize(serializer)
+            } else if ob_type == scalar_types.uint16 {
+                (*(self.ptr as *mut NumpyUint16)).serialize(serializer)
             } else if ob_type == scalar_types.uint8 {
                 (*(self.ptr as *mut NumpyUint8)).serialize(serializer)
             } else if ob_type == scalar_types.bool_ {
@@ -762,6 +857,22 @@ impl Serialize for NumpyInt8 {
         S: Serializer,
     {
         serializer.serialize_i8(self.value)
+    }
+}
+
+#[repr(C)]
+pub struct NumpyInt16 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: i16,
+}
+
+impl<'p> Serialize for NumpyInt16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_i16(self.value)
     }
 }
 
@@ -810,6 +921,22 @@ impl Serialize for NumpyUint8 {
         S: Serializer,
     {
         serializer.serialize_u8(self.value)
+    }
+}
+
+#[repr(C)]
+pub struct NumpyUint16 {
+    pub ob_refcnt: Py_ssize_t,
+    pub ob_type: *mut PyTypeObject,
+    pub value: u16,
+}
+
+impl<'p> Serialize for NumpyUint16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(self.value)
     }
 }
 
