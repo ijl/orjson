@@ -80,6 +80,24 @@ class TestNumpy:
             == b"[-2147483647,2147483647]"
         )
 
+    def test_numpy_array_d1_i16(self):
+        assert (
+            orjson.dumps(
+                numpy.array([-32768, 32767], numpy.int16),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[-32768,32767]"
+        )
+
+    def test_numpy_array_d1_u16(self):
+        assert (
+            orjson.dumps(
+                numpy.array([0, 65535], numpy.uint16),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[0,65535]"
+        )
+
     def test_numpy_array_d1_u32(self):
         assert (
             orjson.dumps(
@@ -522,6 +540,17 @@ class TestNumpy:
             == b"-128"
         )
 
+    def test_numpy_scalar_int16(self):
+        assert orjson.dumps(numpy.int16(0), option=orjson.OPT_SERIALIZE_NUMPY) == b"0"
+        assert (
+            orjson.dumps(numpy.int16(32767), option=orjson.OPT_SERIALIZE_NUMPY) 
+            == b"32767"
+        )
+        assert (
+            orjson.dumps(numpy.int16(-32768), option=orjson.OPT_SERIALIZE_NUMPY) 
+            == b"-32768"
+        )
+
     def test_numpy_scalar_int32(self):
         assert orjson.dumps(numpy.int32(1), option=orjson.OPT_SERIALIZE_NUMPY) == b"1"
         assert (
@@ -552,6 +581,10 @@ class TestNumpy:
         assert (
             orjson.dumps(numpy.uint8(255), option=orjson.OPT_SERIALIZE_NUMPY) == b"255"
         )
+
+    def test_numpy_scalar_uint16(self):
+        assert orjson.dumps(numpy.uint16(0), option=orjson.OPT_SERIALIZE_NUMPY) == b"0"
+        assert orjson.dumps(numpy.uint16(65535), option=orjson.OPT_SERIALIZE_NUMPY) == b"65535"
 
     def test_numpy_scalar_uint32(self):
         assert orjson.dumps(numpy.uint32(0), option=orjson.OPT_SERIALIZE_NUMPY) == b"0"
