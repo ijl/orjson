@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.0 - 2022-08-27
+
+### Changed
+
+- Support serializing `numpy.int16` and `numpy.uint16`.
+
 ## 3.7.12 - 2022-08-14
 
 ### Fixed
