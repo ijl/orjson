@@ -4,11 +4,11 @@ version = 3
 
 [[package]]
 name = "ahash"
-version = "0.7.6"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
+checksum = "57e6e951cfbb2db8de1828d49073a113a29fd7117b1596caa781a258c7e38d72"
 dependencies = [
- "getrandom",
+ "cfg-if",
  "once_cell",
  "version_check",
 ]
@@ -85,9 +85,9 @@ dependencies = [
 
 [[package]]
 name = "compact_str"
-version = "0.5.2"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5857fc4f27cd0fa2cd7c4a4fa780c0da3d898ae27e66bf6a719343e219e9a559"
+checksum = "5138945395949e7dfba09646dc9e766b548ff48e23deb5246890e6b64ae9e1b9"
 dependencies = [
  "castaway",
  "itoa",
@@ -106,17 +106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "getrandom"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
-dependencies = [
- "cfg-if",
- "libc",
- "wasi",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -124,9 +113,9 @@ checksum = "6c8af84674fe1f223a982c933a0ee1086ac4d4052aa0fb8060c12c6ad838e754"
 
 [[package]]
 name = "libc"
-version = "0.2.131"
+version = "0.2.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04c3b4822ccebfa39c02fc03d1534441b22ead323fa0f48bb7ddd8e6ba076a40"
+checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
 
 [[package]]
 name = "libm"
@@ -155,9 +144,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.13.0"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
+checksum = "074864da206b4973b84eb91683020dbefd6a8c3f0f38e054d93954e891935e4e"
 
 [[package]]
 name = "orjson"
@@ -196,9 +185,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-build-config"
-version = "0.16.5"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5b65b546c35d8a3b1b2f0ddbac7c6a569d759f357f2b9df884f5d6b719152c8"
+checksum = "0a35ea0dde58f923bcd30f0f9a64e79033cd51e176c32bd50efccbbe7f289b25"
 dependencies = [
  "once_cell",
  "target-lexicon",
@@ -206,9 +195,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-ffi"
-version = "0.16.5"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c275a07127c1aca33031a563e384ffdd485aee34ef131116fcd58e3430d1742b"
+checksum = "79d0d60ae1b65b927c019352e16b94ff27cedee79916f017215dab3afe2a5cb3"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -228,13 +217,13 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 
 [[package]]
 name = "serde"
-version = "1.0.143"
+version = "1.0.144"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53e8e5d5b70924f74ff5c6d64d9a5acd91422117c60f48c4e07855238a254553"
+checksum = "0f747710de3dcd43b88c9168773254e809d8ddbdf9653b84e2554ab219f17860"
 
 [[package]]
 name = "serde_json"
-version = "1.0.83"
+version = "1.0.85"
 dependencies = [
  "itoa",
  "ryu",
@@ -264,9 +253,3 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "wasi"
-version = "0.11.0+wasi-snapshot-preview1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"

@@ -303,7 +303,7 @@ yyjson_api uint32_t yyjson_version(void) {
 /*
  Unaligned memory access detection.
  
- Some architectures cannot perform unaligned memory accesse, or unaligned memory
+ Some architectures cannot perform unaligned memory access, or unaligned memory
  accesses can have a large performance penalty. Modern compilers can make some
  optimizations for unaligned access. For example: https://godbolt.org/z/Ejo3Pa
  
@@ -371,7 +371,7 @@ yyjson_api uint32_t yyjson_version(void) {
  JSON, the ratios below are used to determine the initial memory size.
  
  A too large ratio will waste memory, and a too small ratio will cause multiple
- memory growths and degrade performance. Currently these ratios are generated
+ memory growths and degrade performance. Currently, these ratios are generated
  with some commonly used JSON datasets.
  */
 #define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
@@ -464,8 +464,12 @@ yyjson_api uint32_t yyjson_version(void) {
 /* Inf raw value (positive) */
 #define F64_RAW_INF U64(0x7FF00000, 0x00000000)
 
-/* NaN raw value (positive, without payload) */
+/* NaN raw value (quiet NaN, no payload, no sign) */
+#if defined(__hppa__) || (defined(__mips__) && !defined(__mips_nan2008))
+#define F64_RAW_NAN U64(0x7FF7FFFF, 0xFFFFFFFF)
+#else
 #define F64_RAW_NAN U64(0x7FF80000, 0x00000000)
+#endif
 
 /* double number bits */
 #define F64_BITS 64
@@ -980,6 +984,25 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
     NULL
 };
 
+static void *null_malloc(void *ctx, usize size) {
+    return NULL;
+}
+
+static void *null_realloc(void *ctx, void *ptr, usize size) {
+    return NULL;
+}
+
+static void null_free(void *ctx, void *ptr) {
+    return;
+}
+
+static const yyjson_alc YYJSON_NULL_ALC = {
+    null_malloc,
+    null_realloc,
+    null_free,
+    NULL
+};
+
 
 
 /*==============================================================================
@@ -1118,7 +1141,9 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
     pool_chunk *chunk;
     pool_ctx *ctx;
     
-    if (unlikely(!alc || size < sizeof(pool_ctx) * 4)) return false;
+    if (unlikely(!alc)) return false;
+    *alc = YYJSON_NULL_ALC;
+    if (size < sizeof(pool_ctx) * 4) return false;
     ctx = (pool_ctx *)mem_align_up(buf, sizeof(pool_ctx));
     if (unlikely(!ctx)) return false;
     size -= (usize)((u8 *)ctx - (u8 *)buf);
@@ -6196,7 +6221,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             /* write with scientific notation */
             /* such as 1.234e56 */
             u8 *end = write_u64_len_15_to_17_trim(buf + 1, sig_dec);
-            end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e134 */
+            end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e34 */
             exp_dec += sig_len - 1;
             hdr[0] = hdr[1];
             hdr[1] = '.';
@@ -6291,11 +6316,14 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     } else {
         /* finite number */
         int i = 0;
+        bool fp = false;
         for (; i < len; i++) {
-            if (buf[i] == ',') {
-                buf[i] = '.';
-                break;
-            }
+            if (buf[i] == ',') buf[i] = '.';
+            if (digi_is_fp((u8)buf[i])) fp = true;
+        }
+        if (!fp) {
+            buf[len++] = '.';
+            buf[len++] = '0';
         }
     }
     return buf + len;

@@ -1,6 +1,6 @@
 [package]
 name = "serde_json"
-version = "1.0.83" # remember to update html_root_url
+version = "1.0.85" # remember to update html_root_url
 authors = ["Erick Tryzelaar <erick.tryzelaar@gmail.com>", "David Tolnay <dtolnay@gmail.com>"]
 categories = ["encoding", "parser-implementations", "no-std"]
 description = "A JSON serialization file format"
@@ -20,6 +20,7 @@ ryu = "1.0"
 
 [dev-dependencies]
 automod = "1.0"
+indoc = "1.0"
 ref-cast = "1.0"
 rustversion = "1.0"
 serde = { version = "1.0.100", features = ["derive"] }

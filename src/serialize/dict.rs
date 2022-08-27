@@ -296,8 +296,7 @@ impl Serialize for DictNonStrKey {
                 self.recursion,
                 self.default,
             );
-            let key_as_str = str_from_slice!(key.as_ptr(), key.len());
-            map.serialize_key(key_as_str).unwrap();
+            map.serialize_key(key).unwrap();
             map.serialize_value(&pyvalue)?;
         }
         map.end()
