@@ -107,6 +107,15 @@ class TestNumpy:
             == b"[0,4294967295]"
         )
 
+    def test_numpy_array_d1_f16(self):
+        assert (
+            orjson.dumps(
+                numpy.array([65504, 5.9604645e-8], numpy.float16),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[65504.0,5.9604645e-8]"
+        )
+
     def test_numpy_array_d1_f32(self):
         assert (
             orjson.dumps(
@@ -376,15 +385,6 @@ class TestNumpy:
                 == "numpy array is not C contiguous; use ndarray.tolist() in default"
             )
 
-    def test_numpy_array_unsupported_dtype(self):
-        array = numpy.array([[1, 2], [3, 4]], numpy.float16)
-        with pytest.raises(orjson.JSONEncodeError) as cm:
-            orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
-        assert "unsupported datatype in numpy array" in str(cm)
-        assert orjson.dumps(
-            array, default=numpy_default, option=orjson.OPT_SERIALIZE_NUMPY
-        ) == orjson.dumps(array.tolist())
-
     def test_numpy_array_d1(self):
         array = numpy.array([1])
         assert (
@@ -603,6 +603,12 @@ class TestNumpy:
                 numpy.uint64(18446744073709551615), option=orjson.OPT_SERIALIZE_NUMPY
             )
             == b"18446744073709551615"
+        )
+
+    def test_numpy_scalar_float16(self):
+        assert (
+            orjson.dumps(numpy.half(1.0), option=orjson.OPT_SERIALIZE_NUMPY)
+            == b"1.0"
         )
 
     def test_numpy_scalar_float32(self):

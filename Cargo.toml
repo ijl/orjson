@@ -60,6 +60,7 @@ serde = { version = "1", default_features = false }
 serde_json = { path = "include/json", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
 smallvec = { version = "^1.9", default_features = false, features = ["union", "write"] }
+half = { version = "2.1.0", default_features = false, features = ["serde"] }
 
 [build-dependencies]
 cc = { version = "1" }

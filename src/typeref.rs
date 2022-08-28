@@ -11,6 +11,7 @@ pub struct NumpyTypes {
     pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
     pub float32: *mut PyTypeObject,
+    pub float16: *mut PyTypeObject,
     pub int64: *mut PyTypeObject,
     pub int32: *mut PyTypeObject,
     pub int16: *mut PyTypeObject,
@@ -215,6 +216,7 @@ unsafe fn load_numpy_types() -> Option<NumpyTypes> {
 
     let types = Some(NumpyTypes {
         array: look_up_numpy_type(numpy, "ndarray\0"),
+        float16: look_up_numpy_type(numpy, "float16\0"),
         float32: look_up_numpy_type(numpy, "float32\0"),
         float64: look_up_numpy_type(numpy, "float64\0"),
         int8: look_up_numpy_type(numpy, "int8\0"),
