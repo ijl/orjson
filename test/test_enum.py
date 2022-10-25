@@ -107,7 +107,7 @@ class TestEnum:
     def test_bool_enum(self):
         with pytest.raises(TypeError):
 
-            class BoolEnum(bool, enum.Enum):
+            class BoolEnum(bool, enum.Enum):  # type: ignore
                 TRUE = True
 
     def test_non_str_keys_enum(self):

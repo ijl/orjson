@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2022-08-26
+  toolchain: nightly-2022-10-25
 
 jobs:
 
@@ -27,6 +27,20 @@ jobs:
   steps:
   - checkout: self
   - template: ./azure-debug.yml
+
+- job: macos_python311_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.11
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11.0-rc.2'
+      addToPath: true
+      allowUnstable: true
+  - checkout: self
+  - template: ./azure-macos.yml
 
 - job: macos_python310_amd64
   pool:
@@ -80,11 +94,26 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
+- job: win_python311_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.11.0\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
 - job: win_python310_amd64
   pool:
     vmImage: windows-2022
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.10.6\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.10.8\x64\python.exe
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0

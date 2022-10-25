@@ -16,6 +16,7 @@ jobs:
           { version: '3.8', abi: 'cp38-cp38' },
           { version: '3.9', abi: 'cp39-cp39' },
           { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.11', abi: 'cp311-cp311' },
         ]
         target: [
           armv7,
@@ -28,9 +29,9 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
-        maturin-version: v0.13.1
+        maturin-version: v0.13.6
         target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-08-26
+        rust-toolchain: nightly-2022-10-25
         manylinux: auto
         args: -i python3.9 --release --strip --out dist
     - uses: uraimo/run-on-arch-action@v2

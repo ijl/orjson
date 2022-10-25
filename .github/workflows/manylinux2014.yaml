@@ -16,6 +16,7 @@ jobs:
           { version: '3.8', abi: 'cp38-cp38' },
           { version: '3.9', abi: 'cp39-cp39' },
           { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.11', abi: 'cp311-cp311' },
         ]
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/devtoolset-10/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -27,14 +28,12 @@ jobs:
       image: quay.io/pypa/manylinux2014_x86_64:latest
       options: --user 0
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-08-26 --profile minimal -y
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
     - uses: actions/checkout@v2
     - run: python3 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - run: maturin build --release --strip --features=unstable-simd,yyjson --compatibility manylinux2014 --interpreter python${{ matrix.python.version }}
     - run: python3 -m pip install --user target/wheels/orjson*.whl
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
-    - run: pytest -s -rxX -v test
-    - run: python3 -m pip uninstall -y numpy
     - run: pytest -s -rxX -v test
     - run: ./integration/run thread
     - run: ./integration/run http

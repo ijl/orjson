@@ -1410,6 +1410,119 @@ yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     return NULL;
 }
 
+/* Count the number of values and the total length of the strings. */
+static void yyjson_mut_stat(yyjson_mut_val *val,
+                            usize *val_sum, usize *str_sum) {
+    yyjson_type type = unsafe_yyjson_get_type(val);
+    *val_sum += 1;
+    if (type == YYJSON_TYPE_ARR || type == YYJSON_TYPE_OBJ) {
+        yyjson_mut_val *child = (yyjson_mut_val *)val->uni.ptr;
+        usize len = unsafe_yyjson_get_len(val), i;
+        len <<= (u8)(type == YYJSON_TYPE_OBJ);
+        *val_sum += len;
+        for (i = 0; i < len; i++) {
+            yyjson_type stype = unsafe_yyjson_get_type(child);
+            if (stype == YYJSON_TYPE_STR || stype == YYJSON_TYPE_RAW) {
+                *str_sum += unsafe_yyjson_get_len(child) + 1;
+            } else if (stype == YYJSON_TYPE_ARR || stype == YYJSON_TYPE_OBJ) {
+                yyjson_mut_stat(child, val_sum, str_sum);
+                *val_sum -= 1;
+            }
+            child = child->next;
+        }
+    } else if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
+        *str_sum += unsafe_yyjson_get_len(val) + 1;
+    }
+}
+
+/* Copy mutable values to immutable value pool. */
+static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
+                              yyjson_mut_val *mval) {
+    yyjson_val *val = *val_ptr;
+    yyjson_type type = unsafe_yyjson_get_type(mval);
+    if (type == YYJSON_TYPE_ARR || type == YYJSON_TYPE_OBJ) {
+        yyjson_mut_val *child = (yyjson_mut_val *)mval->uni.ptr;
+        usize len = unsafe_yyjson_get_len(mval), i;
+        usize val_sum = 1;
+        if (type == YYJSON_TYPE_OBJ) {
+            if (len) child = child->next->next;
+            len <<= 1;
+        } else {
+            if (len) child = child->next;
+        }
+        *val_ptr = val + 1;
+        for (i = 0; i < len; i++) {
+            val_sum += yyjson_imut_copy(val_ptr, buf_ptr, child);
+            child = child->next;
+        }
+        val->tag = mval->tag;
+        val->uni.ofs = val_sum * sizeof(yyjson_val);
+        return val_sum;
+    } else if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
+        char *buf = *buf_ptr;
+        usize len = unsafe_yyjson_get_len(mval);
+        memcpy((void *)buf, (void *)mval->uni.str, len);
+        buf[len] = '\0';
+        val->tag = mval->tag;
+        val->uni.str = buf;
+        *val_ptr = val + 1;
+        *buf_ptr = buf + len + 1;
+        return 1;
+    } else {
+        val->tag = mval->tag;
+        val->uni = mval->uni;
+        *val_ptr = val + 1;
+        return 1;
+    }
+}
+
+yyjson_api yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *mdoc,
+                                                yyjson_alc *alc) {
+    if (!mdoc) return NULL;
+    return yyjson_mut_val_imut_copy(mdoc->root, alc);
+}
+
+yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
+                                                yyjson_alc *alc) {
+    usize val_num = 0, str_sum = 0, hdr_size, buf_size;
+    yyjson_doc *doc = NULL;
+    yyjson_val *val_hdr = NULL;
+    
+    /* This value should be NULL here. Setting a non-null value suppresses
+       warning from the clang analyzer. */
+    char *str_hdr = (char *)(void *)&str_sum;
+    if (!mval) return NULL;
+    if (!alc) alc = (yyjson_alc *)&YYJSON_DEFAULT_ALC;
+    
+    /* traverse the input value to get pool size */
+    yyjson_mut_stat(mval, &val_num, &str_sum);
+    
+    /* create doc and val pool */
+    hdr_size = size_align_up(sizeof(yyjson_doc), sizeof(yyjson_val));
+    buf_size = hdr_size + val_num * sizeof(yyjson_val);
+    doc = (yyjson_doc *)alc->malloc(alc->ctx, buf_size);
+    if (!doc) return NULL;
+    memset(doc, 0, sizeof(yyjson_doc));
+    val_hdr = (yyjson_val *)((char *)(void *)doc + hdr_size);
+    doc->root = val_hdr;
+    doc->alc = *alc;
+    
+    /* create str pool */
+    if (str_sum > 0) {
+        str_hdr = (char *)alc->malloc(alc->ctx, str_sum);
+        doc->str_pool = str_hdr;
+        if (!str_hdr) {
+            alc->free(alc->ctx, (void *)doc);
+            return NULL;
+        }
+    }
+    
+    /* copy vals and strs */
+    doc->val_read = yyjson_imut_copy(&val_hdr, &str_hdr, mval);
+    doc->dat_read = str_sum + 1;
+    return doc;
+}
+
 static_inline bool unsafe_yyjson_num_equals(void *lhs, void *rhs) {
     yyjson_val_uni *luni = &((yyjson_val *)lhs)->uni;
     yyjson_val_uni *runi = &((yyjson_val *)rhs)->uni;
@@ -4270,7 +4383,7 @@ skip_ascii_end:
      MSVC, Clang, ICC can generate expected instructions without this hint.
      */
 #if YYJSON_IS_REAL_GCC
-    __asm volatile("":"=m"(*src)::);
+    __asm__ volatile("":"=m"(*src));
 #endif
     if (likely(*src == '"')) {
         val->tag = ((u64)(src - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
@@ -4388,7 +4501,7 @@ copy_ascii:
 #if YYJSON_IS_REAL_GCC
 #   define expr_jump(i) \
     if (likely(!(char_is_ascii_stop(src[i])))) {} \
-    else { __asm volatile("":"=m"(src[i])::); goto copy_ascii_stop_##i; }
+    else { __asm__ volatile("":"=m"(src[i])); goto copy_ascii_stop_##i; }
 #else
 #   define expr_jump(i) \
     if (likely(!(char_is_ascii_stop(src[i])))) {} \
@@ -5677,6 +5790,51 @@ yyjson_doc *yyjson_read_file(const char *path,
         alc.free(alc.ctx, buf);
         return NULL;
     }
+    
+#undef return_err
+}
+
+const char *yyjson_read_number(const char *dat,
+                               yyjson_val *val,
+                               yyjson_read_flag flg,
+                               yyjson_read_err *err) {
+#define return_err(_pos, _code, _msg) do { \
+    err->pos = _pos > hdr ? (usize)(_pos - hdr) : 0; \
+    err->msg = _msg; \
+    err->code = YYJSON_READ_ERROR_##_code; \
+    return NULL; \
+} while (false)
+    
+    u8 *hdr = (u8 *)dat, *cur = hdr;
+    bool raw; /* read number as raw */
+    bool ext; /* allow inf and nan */
+    u8 *raw_end; /* raw end for null-terminator */
+    u8 **pre; /* previous raw end pointer */
+    const char *msg;
+    yyjson_read_err dummy_err;
+    if (!err) err = &dummy_err;
+    
+    if (unlikely(!dat)) {
+        return_err(cur, INVALID_PARAMETER, "input data is NULL");
+    }
+    if (unlikely(!val)) {
+        return_err(cur, INVALID_PARAMETER, "output value is NULL");
+    }
+    
+#if YYJSON_DISABLE_NON_STANDARD
+    ext = false;
+#else
+    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
+#endif
+    
+    raw = (flg & YYJSON_READ_NUMBER_AS_RAW) != 0;
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
+    
+    if (!read_number(&cur, pre, ext, val, &msg)) {
+        return_err(cur, INVALID_NUMBER, msg);
+    }
+    return (const char *)cur;
     
 #undef return_err
 }

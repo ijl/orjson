@@ -579,14 +579,15 @@ def loads(__obj: Union[bytes, bytearray, memoryview, str]) -> Any: ...
 
 `bytes`, `bytearray`, `memoryview`, and `str` input are accepted. If the input
 exists as a `memoryview`, `bytearray`, or `bytes` object, it is recommended to
-pass these directly rather than creating an unnecessary `str` object. This has
-lower memory usage and lower latency.
+pass these directly rather than creating an unnecessary `str` object. That is,
+`orjson.loads(b"{}")` instead of `orjson.loads(b"{}".decode("utf-8"))`. This
+has lower memory usage and lower latency.
 
 The input must be valid UTF-8.
 
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
-keys must be at most 64 bytes to be cached and 512 entries are stored.
+keys must be at most 64 bytes to be cached and 1024 entries are stored.
 
 The global interpreter lock (GIL) is held for the duration of the call.
 
@@ -690,10 +691,6 @@ b'"1900-01-02"'
 ```
 
 Errors with `tzinfo` result in `JSONEncodeError` being raised.
-
-It is faster to have orjson serialize datetime objects than to do so
-before calling `dumps()`. If using an unsupported type such as
-`pendulum.datetime`, use `default`.
 
 To disable serialization of `datetime` objects specify the option
 `orjson.OPT_PASSTHROUGH_DATETIME`.
@@ -1162,7 +1159,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2022-08-26` and stable 1.57. It
+The project's own CI tests against `nightly-2022-10-25` and stable 1.57. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

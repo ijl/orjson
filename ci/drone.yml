@@ -1,4 +1,33 @@
 kind: pipeline
+name: linux_python311_aarch64
+platform:
+  arch: arm64
+steps:
+- name: test
+  image: quay.io/pypa/manylinux_2_28_aarch64:latest
+  environment:
+    PATH: "/root/.local/bin:/root/.cargo/bin:/opt/python/cp311-cp311/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+    MATURIN_PYPI_TOKEN:
+      from_secret: pypi_token
+    CC: "clang"
+    CFLAGS: "-O2 -fno-plt -flto=thin"
+    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
+    RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+    CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+  commands:
+    - yum install -y clang lld
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
+    - python3.11 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
+    - cargo fetch
+    - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.11
+    - python3.11 -m pip install --user target/wheels/orjson*.whl
+    - python3.11 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+    - pytest -s -rxX -v test
+    - ./integration/run thread
+    - ./integration/run http
+    - ./ci/deploy target/wheels/*.whl
+---
+kind: pipeline
 name: linux_python310_aarch64
 platform:
   arch: arm64
@@ -16,7 +45,7 @@ steps:
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
     - yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-08-26 --profile minimal -y
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
     - python3.10 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - cargo fetch
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.10
@@ -45,7 +74,7 @@ steps:
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
     - yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-08-26 --profile minimal -y
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
     - python3.9 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.9
     - python3.9 -m pip install --user target/wheels/orjson*.whl
@@ -73,7 +102,7 @@ steps:
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
     - yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-08-26 --profile minimal -y
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
     - python3.8 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.8
     - python3.8 -m pip install --user target/wheels/orjson*.whl
@@ -101,7 +130,7 @@ steps:
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   commands:
     - yum install -y clang lld
-    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-08-26 --profile minimal -y
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-10-25 --profile minimal -y
     - python3.7 -m pip install --user --upgrade pip "maturin>=0.13,<0.14" wheel
     - maturin build --release --strip --compatibility manylinux_2_28 --features=unstable-simd,yyjson --interpreter python3.7
     - python3.7 -m pip install --user target/wheels/orjson*.whl
