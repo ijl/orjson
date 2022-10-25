@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.1 - 2022-10-25
+
+### Changed
+
+- Build maintenance for Python 3.11.
+
 ## 3.8.0 - 2022-08-27
 
 ### Changed
