@@ -821,7 +821,7 @@ b'"2021-01-01T00:00:00.172000"'
 b'"2021-01-01T00:00:00+00:00"'
 ```
 
-If an array is not a contiguous C array, contains an supported datatype,
+If an array is not a contiguous C array, contains an unsupported datatype,
 or contains a `numpy.datetime64` using an unsupported representation
 (e.g., picoseconds), orjson falls through to `default`. In `default`,
 `obj.tolist()` can be specified. If an array is malformed, which
