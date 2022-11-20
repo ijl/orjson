@@ -800,6 +800,11 @@ b'[[1,2,3],[4,5,6]]'
 The array must be a contiguous C array (`C_CONTIGUOUS`) and one of the
 supported datatypes.
 
+Note a difference between serializing `numpy.float32` using `ndarray.tolist()`
+or `orjson.dumps(..., option=orjson.OPT_SERIALIZE_NUMPY)`: `tolist()` converts
+to a `double` before serializing and orjson's native path does not. This
+can result in different rounding.
+
 `numpy.datetime64` instances are serialized as RFC 3339 strings and
 datetime options affect them.
 
