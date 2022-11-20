@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.8.2 - 2022-11-20
+
+### Fixed
+
+- Fix tests on 32-bit for `numpy.intp` and `numpy.uintp`.
+
+### Changed
+
+- Build now depends on rustc 1.60 or later.
+- Support building with maturin 0.13 or 0.14.
+
 ## 3.8.1 - 2022-10-25
 
 ### Changed
