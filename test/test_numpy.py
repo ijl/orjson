@@ -18,22 +18,20 @@ def numpy_default(obj):
 @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
 class TestNumpy:
     def test_numpy_array_d1_uintp(self):
-        assert (
-            orjson.dumps(
-                numpy.array([0, 18446744073709551615], numpy.uintp),
-                option=orjson.OPT_SERIALIZE_NUMPY,
-            )
-            == b"[0,18446744073709551615]"
-        )
+        low = numpy.iinfo(numpy.uintp).min
+        high = numpy.iinfo(numpy.uintp).max
+        assert orjson.dumps(
+            numpy.array([low, high], numpy.uintp),
+            option=orjson.OPT_SERIALIZE_NUMPY,
+        ) == f"[{low},{high}]".encode("ascii")
 
     def test_numpy_array_d1_intp(self):
-        assert (
-            orjson.dumps(
-                numpy.array([-9223372036854775807, 9223372036854775807], numpy.intp),
-                option=orjson.OPT_SERIALIZE_NUMPY,
-            )
-            == b"[-9223372036854775807,9223372036854775807]"
-        )
+        low = numpy.iinfo(numpy.intp).min
+        high = numpy.iinfo(numpy.intp).max
+        assert orjson.dumps(
+            numpy.array([low, high], numpy.intp),
+            option=orjson.OPT_SERIALIZE_NUMPY,
+        ) == f"[{low},{high}]".encode("ascii")
 
     def test_numpy_array_d1_i64(self):
         assert (
