@@ -30,8 +30,8 @@ jobs:
     - name: Build wheels
       uses: messense/maturin-action@v1
       with:
-        maturin-version: v0.13.6
-        rust-toolchain: nightly-2022-10-25
+        maturin-version: v0.14.1
+        rust-toolchain: nightly-2022-11-20
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
         args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }}
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: "3.10"
-      - run: pip install "maturin>=0.13,<0.14"
+      - run: pip install "maturin>=0.14,<0.15"
       - name: deploy
         run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
         env:

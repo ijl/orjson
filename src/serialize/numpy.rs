@@ -546,7 +546,7 @@ impl<'a> Serialize for NumpyU16Array<'a> {
 
 #[repr(transparent)]
 pub struct DataTypeU16 {
-    obj: u16
+    obj: u16,
 }
 
 impl Serialize for DataTypeU16 {
@@ -671,7 +671,6 @@ impl Serialize for DataTypeI16 {
         serializer.serialize_i16(self.obj)
     }
 }
-
 
 #[repr(transparent)]
 struct NumpyI8Array<'a> {
@@ -867,7 +866,7 @@ pub struct NumpyInt16 {
     pub value: i16,
 }
 
-impl<'p> Serialize for NumpyInt16 {
+impl Serialize for NumpyInt16 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -931,7 +930,7 @@ pub struct NumpyUint16 {
     pub value: u16,
 }
 
-impl<'p> Serialize for NumpyUint16 {
+impl Serialize for NumpyUint16 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1135,15 +1134,17 @@ impl NumpyDatetimeUnit {
     /// Returns an `Err(NumpyDateTimeError)` if the value is invalid for this unit.
     fn datetime(&self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
         match self {
-            Self::Years => Ok(NaiveDate::from_ymd(
+            Self::Years => Ok(NaiveDate::from_ymd_opt(
                 (val + 1970)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
                 1,
                 1,
             )
-            .and_hms(0, 0, 0)),
-            Self::Months => Ok(NaiveDate::from_ymd(
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()),
+            Self::Months => Ok(NaiveDate::from_ymd_opt(
                 (val / 12 + 1970)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
@@ -1152,30 +1153,37 @@ impl NumpyDatetimeUnit {
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
                 1,
             )
-            .and_hms(0, 0, 0)),
-            Self::Weeks => Ok(NaiveDateTime::from_timestamp(val * 7 * 24 * 60 * 60, 0)),
-            Self::Days => Ok(NaiveDateTime::from_timestamp(val * 24 * 60 * 60, 0)),
-            Self::Hours => Ok(NaiveDateTime::from_timestamp(val * 60 * 60, 0)),
-            Self::Minutes => Ok(NaiveDateTime::from_timestamp(val * 60, 0)),
-            Self::Seconds => Ok(NaiveDateTime::from_timestamp(val, 0)),
-            Self::Milliseconds => Ok(NaiveDateTime::from_timestamp(
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()),
+            Self::Weeks => {
+                Ok(NaiveDateTime::from_timestamp_opt(val * 7 * 24 * 60 * 60, 0).unwrap())
+            }
+            Self::Days => Ok(NaiveDateTime::from_timestamp_opt(val * 24 * 60 * 60, 0).unwrap()),
+            Self::Hours => Ok(NaiveDateTime::from_timestamp_opt(val * 60 * 60, 0).unwrap()),
+            Self::Minutes => Ok(NaiveDateTime::from_timestamp_opt(val * 60, 0).unwrap()),
+            Self::Seconds => Ok(NaiveDateTime::from_timestamp_opt(val, 0).unwrap()),
+            Self::Milliseconds => Ok(NaiveDateTime::from_timestamp_opt(
                 val / 1_000,
                 (val % 1_000 * 1_000_000)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )),
-            Self::Microseconds => Ok(NaiveDateTime::from_timestamp(
+            )
+            .unwrap()),
+            Self::Microseconds => Ok(NaiveDateTime::from_timestamp_opt(
                 val / 1_000_000,
                 (val % 1_000_000 * 1_000)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )),
-            Self::Nanoseconds => Ok(NaiveDateTime::from_timestamp(
+            )
+            .unwrap()),
+            Self::Nanoseconds => Ok(NaiveDateTime::from_timestamp_opt(
                 val / 1_000_000_000,
                 (val % 1_000_000_000)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )),
+            )
+            .unwrap()),
             _ => Err(NumpyDateTimeError::UnsupportedUnit(*self)),
         }
         .map(|dt| NumpyDatetime64Repr { dt, opts })

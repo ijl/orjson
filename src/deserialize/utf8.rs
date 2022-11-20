@@ -8,13 +8,18 @@ use crate::unicode::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", not(target_feature = "sse4.2")))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
     if std::is_x86_feature_detected!("sse4.2") {
         simdutf8::basic::from_utf8(buf).is_ok()
     } else {
         encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
     }
+}
+
+#[cfg(all(target_arch = "x86_64", target_feature = "sse4.2"))]
+fn is_valid_utf8(buf: &[u8]) -> bool {
+    simdutf8::basic::from_utf8(buf).is_ok()
 }
 
 #[cfg(target_arch = "aarch64")]

@@ -24,7 +24,7 @@ classifiers = [
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=0.13,<0.14"]
+requires = ["maturin>=0.13,<0.15"]
 
 [tool.maturin]
 sdist-include = ["build.rs", "Cargo.lock", "include/**/*"]

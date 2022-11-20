@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2022-10-25
+  toolchain: nightly-2022-11-20
 
 jobs:
 
@@ -11,7 +11,7 @@ jobs:
     interpreter: python3.10
     path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-11/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     target: x86_64-unknown-linux-gnu
-    toolchain: 1.57.0
+    toolchain: 1.60.0
   steps:
   - checkout: self
   - template: ./azure-sdist.yml
@@ -36,7 +36,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11.0-rc.2'
+      versionSpec: '3.11.0'
       addToPath: true
       allowUnstable: true
   - checkout: self
@@ -103,7 +103,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11'
+      versionSpec: '3.11.0'
       addToPath: true
       architecture: 'x64'
   - checkout: self
@@ -118,7 +118,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.10'
+      versionSpec: '3.10.8'
       addToPath: true
       architecture: 'x64'
   - checkout: self
@@ -133,7 +133,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.9'
+      versionSpec: '3.9.13'
       addToPath: true
       architecture: 'x64'
   - checkout: self
@@ -148,7 +148,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.8'
+      versionSpec: '3.8.10'
       addToPath: true
       architecture: 'x64'
   - checkout: self
@@ -163,7 +163,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: '3.7.9'
       addToPath: true
       architecture: 'x64'
   - checkout: self

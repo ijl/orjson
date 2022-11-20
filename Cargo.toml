@@ -5,7 +5,7 @@ authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
-rust-version = "1.57"
+rust-version = "1.60"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
@@ -49,7 +49,7 @@ arrayvec = { version = "0.7", default_features = false, features = ["std", "serd
 associative-cache = { version = "1", default_features = false }
 beef = { version = "0.5", default_features = false, features = ["impl_serde"] }
 bytecount = { version = "^0.6.2", default_features = false, features = ["runtime-dispatch-simd"] }
-chrono = { version = "0.4", default_features = false }
+chrono = { version = "^0.4.23", default_features = false }
 compact_str = { version = "0.6", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
@@ -59,7 +59,7 @@ ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { path = "include/json", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
-smallvec = { version = "^1.9", default_features = false, features = ["union", "write"] }
+smallvec = { version = "^1.10", default_features = false, features = ["union", "write"] }
 
 [build-dependencies]
 cc = { version = "1" }

@@ -821,7 +821,7 @@ b'"2021-01-01T00:00:00.172000"'
 b'"2021-01-01T00:00:00+00:00"'
 ```
 
-If an array is not a contiguous C array, contains an supported datatype,
+If an array is not a contiguous C array, contains an unsupported datatype,
 or contains a `numpy.datetime64` using an unsupported representation
 (e.g., picoseconds), orjson falls through to `default`. In `default`,
 `obj.tolist()` can be specified. If an array is malformed, which
@@ -1147,7 +1147,7 @@ Probably not.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.57
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.60
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
@@ -1159,7 +1159,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2022-10-25` and stable 1.57. It
+The project's own CI tests against `nightly-2022-11-20` and stable 1.60. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

@@ -3,6 +3,7 @@
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![allow(unused_unsafe)]
+#![allow(clippy::explicit_auto_deref)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::unnecessary_unwrap)]

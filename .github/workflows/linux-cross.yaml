@@ -29,9 +29,9 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
       with:
-        maturin-version: v0.13.6
+        maturin-version: v0.14.1
         target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-10-25
+        rust-toolchain: nightly-2022-11-20
         manylinux: auto
         args: -i python3.9 --release --strip --out dist
     - uses: uraimo/run-on-arch-action@v2
@@ -71,7 +71,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: "3.10"
-      - run: pip install "maturin>=0.13,<0.14"
+      - run: pip install "maturin>=0.14,<0.15"
       - name: deploy
         run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
         env:

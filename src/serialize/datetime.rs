@@ -39,7 +39,7 @@ impl Date {
     }
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
-            let year = ffi!(PyDateTime_GET_YEAR(self.ptr)) as i32;
+            let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
             let mut yearbuf = itoa::Buffer::new();
             let formatted = yearbuf.format(year);
             if unlikely!(year < 1000) {
@@ -171,7 +171,7 @@ impl DateTimeLike for DateTime {
             // pendulum
             let py_offset = call_method!(self.ptr, UTCOFFSET_METHOD_STR);
             let offset = Offset {
-                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)),
                 day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
             };
             ffi!(Py_DECREF(py_offset));
@@ -182,7 +182,7 @@ impl DateTimeLike for DateTime {
             let py_offset = call_method!(method_ptr, UTCOFFSET_METHOD_STR);
             ffi!(Py_DECREF(method_ptr));
             let offset = Offset {
-                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)),
                 day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
             };
             ffi!(Py_DECREF(py_offset));
@@ -191,7 +191,7 @@ impl DateTimeLike for DateTime {
             // dateutil/arrow, datetime.timezone.utc
             let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
             let offset = Offset {
-                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)),
                 day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
             };
             ffi!(Py_DECREF(py_offset));
@@ -211,7 +211,7 @@ impl DateTimeLike for DateTime {
                 // zoneinfo
                 let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 let offset = Offset {
-                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)) as i32,
+                    second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)),
                     day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
                 };
                 ffi!(Py_DECREF(py_offset));

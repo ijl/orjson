@@ -42,9 +42,8 @@ impl Serialize for ListSerializer {
         } else {
             let mut seq = serializer.serialize_seq(None).unwrap();
             for i in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
-                let elem = unsafe {
-                    *((*(self.ptr as *mut pyo3_ffi::PyListObject)).ob_item).offset(i as isize)
-                };
+                let elem =
+                    unsafe { *((*(self.ptr as *mut pyo3_ffi::PyListObject)).ob_item).add(i) };
                 let value = PyObjectSerializer::new(
                     elem,
                     self.opts,
