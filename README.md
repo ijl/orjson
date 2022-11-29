@@ -88,14 +88,14 @@ To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
 
 This is an example of serializing, with options specified, and deserializing:
 
-```python
+```pycon
 >>> import orjson, datetime, numpy
 >>> data = {
-    "type": "job",
-    "created_at": datetime.datetime(1970, 1, 1),
-    "status": "🆗",
-    "payload": numpy.array([[1, 2], [3, 4]]),
-}
+...     "type": "job",
+...     "created_at": datetime.datetime(1970, 1, 1),
+...     "status": "🆗",
+...     "payload": numpy.array([[1, 2], [3, 4]]),
+... }
 >>> orjson.dumps(data, option=orjson.OPT_NAIVE_UTC | orjson.OPT_SERIALIZE_NUMPY)
 b'{"type":"job","created_at":"1970-01-01T00:00:00+00:00","status":"\xf0\x9f\x86\x97","payload":[[1,2],[3,4]]}'
 >>> orjson.loads(_)
@@ -180,14 +180,14 @@ callable that returns a supported type. `default` may be a function,
 lambda, or callable class instance. To specify that a type was not
 handled by `default`, raise an exception such as `TypeError`.
 
-```python
+```pycon
 >>> import orjson, decimal
 >>>
-def default(obj):
-    if isinstance(obj, decimal.Decimal):
-        return str(obj)
-    raise TypeError
-
+>>> def default(obj):
+...     if isinstance(obj, decimal.Decimal):
+...         return str(obj)
+...     raise TypeError
+...
 >>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"))
 JSONEncodeError: Type is not JSON serializable: decimal.Decimal
 >>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
@@ -204,13 +204,13 @@ It is important that `default` raise an exception if a type cannot be handled.
 Python otherwise implicitly returns `None`, which appears to the caller
 like a legitimate value and is serialized:
 
-```python
+```pycon
 >>> import orjson, json, rapidjson
 >>>
-def default(obj):
-    if isinstance(obj, decimal.Decimal):
-        return str(obj)
-
+>>> def default(obj):
+...     if isinstance(obj, decimal.Decimal):
+...         return str(obj)
+...
 >>> orjson.dumps({"set":{1, 2}}, default=default)
 b'{"set":null}'
 >>> json.dumps({"set":{1, 2}}, default=default)
@@ -231,7 +231,7 @@ Append `\n` to the output. This is a convenience and optimization for the
 pattern of `dumps(...) + "\n"`. `bytes` objects are immutable and this
 pattern copies the original contents.
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.dumps([])
 b"[]"
@@ -247,14 +247,14 @@ larger. orjson is the fastest compared library at pretty printing and has
 much less of a slowdown to pretty print than the standard library does. This
 option is compatible with all other options.
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.dumps({"a": "b", "c": {"d": True}, "e": [1, 2]})
 b'{"a":"b","c":{"d":true},"e":[1,2]}'
 >>> orjson.dumps(
-    {"a": "b", "c": {"d": True}, "e": [1, 2]},
-    option=orjson.OPT_INDENT_2
-)
+...     {"a": "b", "c": {"d": True}, "e": [1, 2]},
+...     option=orjson.OPT_INDENT_2
+... )
 b'{\n  "a": "b",\n  "c": {\n    "d": true\n  },\n  "e": [\n    1,\n    2\n  ]\n}'
 ```
 
@@ -303,16 +303,16 @@ This can be reproduced using the `pyindent` script.
 Serialize `datetime.datetime` objects without a `tzinfo` as UTC. This
 has no effect on `datetime.datetime` objects that have `tzinfo` set.
 
-```python
+```pycon
 >>> import orjson, datetime
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0),
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0),
+... )
 b'"1970-01-01T00:00:00"'
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0),
-        option=orjson.OPT_NAIVE_UTC,
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0),
+...     option=orjson.OPT_NAIVE_UTC,
+... )
 b'"1970-01-01T00:00:00+00:00"'
 ```
 
@@ -325,17 +325,17 @@ the standard library serializes `str`, `int`, `float`, `bool` or `None` by
 default. orjson benchmarks as being faster at serializing non-`str` keys
 than other libraries. This option is slower for `str` keys than the default.
 
-```python
+```pycon
 >>> import orjson, datetime, uuid
 >>> orjson.dumps(
-        {uuid.UUID("7202d115-7ff3-4c81-a7c1-2a1f067b1ece"): [1, 2, 3]},
-        option=orjson.OPT_NON_STR_KEYS,
-    )
+...     {uuid.UUID("7202d115-7ff3-4c81-a7c1-2a1f067b1ece"): [1, 2, 3]},
+...     option=orjson.OPT_NON_STR_KEYS,
+... )
 b'{"7202d115-7ff3-4c81-a7c1-2a1f067b1ece":[1,2,3]}'
 >>> orjson.dumps(
-        {datetime.datetime(1970, 1, 1, 0, 0, 0): [1, 2, 3]},
-        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_NAIVE_UTC,
-    )
+...     {datetime.datetime(1970, 1, 1, 0, 0, 0): [1, 2, 3]},
+...     option=orjson.OPT_NON_STR_KEYS | orjson.OPT_NAIVE_UTC,
+... )
 b'{"1970-01-01T00:00:00+00:00":[1,2,3]}'
 ```
 
@@ -353,12 +353,12 @@ occurrence of a key (in the above, `false`). The first value will be lost.
 This option is compatible with `orjson.OPT_SORT_KEYS`. If sorting is used,
 note the sort is unstable and will be unpredictable for duplicate keys.
 
-```python
+```pycon
 >>> import orjson, datetime
 >>> orjson.dumps(
-    {"other": 1, datetime.date(1970, 1, 5): 2, datetime.date(1970, 1, 3): 3},
-    option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS
-)
+...     {"other": 1, datetime.date(1970, 1, 5): 2, datetime.date(1970, 1, 3): 3},
+...     option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS
+... )
 b'{"1970-01-03":3,"1970-01-05":2,"other":1}'
 ```
 
@@ -387,16 +387,16 @@ be reproduced using the `pynonstr` script.
 Do not serialize the `microsecond` field on `datetime.datetime` and
 `datetime.time` instances.
 
-```python
+```pycon
 >>> import orjson, datetime
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
+... )
 b'"1970-01-01T00:00:00.000001"'
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
-        option=orjson.OPT_OMIT_MICROSECONDS,
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0, 1),
+...     option=orjson.OPT_OMIT_MICROSECONDS,
+... )
 b'"1970-01-01T00:00:00"'
 ```
 
@@ -406,29 +406,29 @@ Passthrough `dataclasses.dataclass` instances to `default`. This allows
 customizing their output but is much slower.
 
 
-```python
+```pycon
 >>> import orjson, dataclasses
 >>>
-@dataclasses.dataclass
-class User:
-    id: str
-    name: str
-    password: str
-
-def default(obj):
-    if isinstance(obj, User):
-        return {"id": obj.id, "name": obj.name}
-    raise TypeError
-
+>>> @dataclasses.dataclass
+... class User:
+...     id: str
+...     name: str
+...     password: str
+...
+>>> def default(obj):
+...     if isinstance(obj, User):
+...         return {"id": obj.id, "name": obj.name}
+...     raise TypeError
+...
 >>> orjson.dumps(User("3b1", "asd", "zxc"))
 b'{"id":"3b1","name":"asd","password":"zxc"}'
 >>> orjson.dumps(User("3b1", "asd", "zxc"), option=orjson.OPT_PASSTHROUGH_DATACLASS)
 TypeError: Type is not JSON serializable: User
 >>> orjson.dumps(
-        User("3b1", "asd", "zxc"),
-        option=orjson.OPT_PASSTHROUGH_DATACLASS,
-        default=default,
-    )
+...     User("3b1", "asd", "zxc"),
+...     option=orjson.OPT_PASSTHROUGH_DATACLASS,
+...     default=default,
+... )
 b'{"id":"3b1","name":"asd"}'
 ```
 
@@ -438,23 +438,23 @@ Passthrough `datetime.datetime`, `datetime.date`, and `datetime.time` instances
 to `default`. This allows serializing datetimes to a custom format, e.g.,
 HTTP dates:
 
-```python
+```pycon
 >>> import orjson, datetime
 >>>
-def default(obj):
-    if isinstance(obj, datetime.datetime):
-        return obj.strftime("%a, %d %b %Y %H:%M:%S GMT")
-    raise TypeError
-
+>>> def default(obj):
+...     if isinstance(obj, datetime.datetime):
+...         return obj.strftime("%a, %d %b %Y %H:%M:%S GMT")
+...     raise TypeError
+...
 >>> orjson.dumps({"created_at": datetime.datetime(1970, 1, 1)})
 b'{"created_at":"1970-01-01T00:00:00"}'
 >>> orjson.dumps({"created_at": datetime.datetime(1970, 1, 1)}, option=orjson.OPT_PASSTHROUGH_DATETIME)
 TypeError: Type is not JSON serializable: datetime.datetime
 >>> orjson.dumps(
-        {"created_at": datetime.datetime(1970, 1, 1)},
-        option=orjson.OPT_PASSTHROUGH_DATETIME,
-        default=default,
-    )
+...     {"created_at": datetime.datetime(1970, 1, 1)},
+...     option=orjson.OPT_PASSTHROUGH_DATETIME,
+...     default=default,
+... )
 b'{"created_at":"Thu, 01 Jan 1970 00:00:00 GMT"}'
 ```
 
@@ -464,17 +464,17 @@ This does not affect datetimes in `dict` keys if using OPT_NON_STR_KEYS.
 
 Passthrough subclasses of builtin types to `default`.
 
-```python
+```pycon
 >>> import orjson
 >>>
-class Secret(str):
-    pass
-
-def default(obj):
-    if isinstance(obj, Secret):
-        return "******"
-    raise TypeError
-
+>>> class Secret(str):
+...     pass
+...
+>>> def default(obj):
+...     if isinstance(obj, Secret):
+...         return "******"
+...     raise TypeError
+...
 >>> orjson.dumps(Secret("zxc"))
 b'"zxc"'
 >>> orjson.dumps(Secret("zxc"), option=orjson.OPT_PASSTHROUGH_SUBCLASS)
@@ -512,7 +512,7 @@ library.
 This can be used to ensure the order is deterministic for hashing or tests.
 It has a substantial performance penalty and is not recommended in general.
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.dumps({"b": 1, "c": 2, "a": 3})
 b'{"b":1,"c":2,"a":3}'
@@ -534,7 +534,7 @@ The benchmark can be reproduced using the `pysort` script.
 
 The sorting is not collation/locale-aware:
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.dumps({"a": 1, "ä": 2, "A": 3}, option=orjson.OPT_SORT_KEYS)
 b'{"A":3,"a":1,"\xc3\xa4":2}'
@@ -555,16 +555,16 @@ the Python standard library. For more, see [int](https://github.com/ijl/orjson#i
 Serialize a UTC timezone on `datetime.datetime` instances as `Z` instead
 of `+00:00`.
 
-```python
+```pycon
 >>> import orjson, datetime, zoneinfo
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC")),
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC")),
+... )
 b'"1970-01-01T00:00:00+00:00"'
 >>> orjson.dumps(
-        datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC")),
-        option=orjson.OPT_UTC_Z
-    )
+...     datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=zoneinfo.ZoneInfo("UTC")),
+...     option=orjson.OPT_UTC_Z
+... )
 b'"1970-01-01T00:00:00Z"'
 ```
 
@@ -626,20 +626,20 @@ reproduced using the `pydataclass` script.
 Dataclasses are serialized as maps, with every attribute serialized and in
 the order given on class definition:
 
-```python
+```pycon
 >>> import dataclasses, orjson, typing
-
-@dataclasses.dataclass
-class Member:
-    id: int
-    active: bool = dataclasses.field(default=False)
-
-@dataclasses.dataclass
-class Object:
-    id: int
-    name: str
-    members: typing.List[Member]
-
+>>>
+>>> @dataclasses.dataclass
+... class Member:
+...     id: int
+...     active: bool = dataclasses.field(default=False)
+...
+>>> @dataclasses.dataclass
+... class Object:
+...     id: int
+...     name: str
+...     members: typing.List[Member]
+...
 >>> orjson.dumps(Object(1, "a", [Member(1, True), Member(2)]))
 b'{"id":1,"name":"a","members":[{"id":1,"active":true},{"id":2,"active":false}]}'
 ```
@@ -651,19 +651,19 @@ orjson serializes `datetime.datetime` objects to
 e.g., "1970-01-01T00:00:00+00:00". This is a subset of ISO 8601 and is
 compatible with `isoformat()` in the standard library.
 
-```python
+```pycon
 >>> import orjson, datetime, zoneinfo
 >>> orjson.dumps(
-    datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=zoneinfo.ZoneInfo("Australia/Adelaide"))
-)
+...     datetime.datetime(2018, 12, 1, 2, 3, 4, 9, tzinfo=zoneinfo.ZoneInfo("Australia/Adelaide"))
+... )
 b'"2018-12-01T02:03:04.000009+10:30"'
 >>> orjson.dumps(
-    datetime.datetime(2100, 9, 1, 21, 55, 2).replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
-)
+...     datetime.datetime(2100, 9, 1, 21, 55, 2).replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
+... )
 b'"2100-09-01T21:55:02+00:00"'
 >>> orjson.dumps(
-    datetime.datetime(2100, 9, 1, 21, 55, 2)
-)
+...     datetime.datetime(2100, 9, 1, 21, 55, 2)
+... )
 b'"2100-09-01T21:55:02"'
 ```
 
@@ -676,7 +676,7 @@ It is fastest to use the standard library's `zoneinfo.ZoneInfo` for timezones.
 
 `datetime.time` objects must not have a `tzinfo`.
 
-```python
+```pycon
 >>> import orjson, datetime
 >>> orjson.dumps(datetime.time(12, 0, 15, 290))
 b'"12:00:15.000290"'
@@ -684,7 +684,7 @@ b'"12:00:15.000290"'
 
 `datetime.date` objects will always serialize.
 
-```python
+```pycon
 >>> import orjson, datetime
 >>> orjson.dumps(datetime.date(1900, 1, 2))
 b'"1900-01-02"'
@@ -704,11 +704,12 @@ To assume datetimes without timezone are UTC, use the option `orjson.OPT_NAIVE_U
 
 orjson serializes enums natively. Options apply to their values.
 
-```python
+```pycon
 >>> import enum, datetime, orjson
 >>>
-class DatetimeEnum(enum.Enum):
-    EPOCH = datetime.datetime(1970, 1, 1, 0, 0, 0)
+>>> class DatetimeEnum(enum.Enum):
+...     EPOCH = datetime.datetime(1970, 1, 1, 0, 0, 0)
+...
 >>> orjson.dumps(DatetimeEnum.EPOCH)
 b'"1970-01-01T00:00:00"'
 >>> orjson.dumps(DatetimeEnum.EPOCH, option=orjson.OPT_NAIVE_UTC)
@@ -718,21 +719,21 @@ b'"1970-01-01T00:00:00+00:00"'
 Enums with members that are not supported types can be serialized using
 `default`:
 
-```python
+```pycon
 >>> import enum, orjson
 >>>
-class Custom:
-    def __init__(self, val):
-        self.val = val
-
-def default(obj):
-    if isinstance(obj, Custom):
-        return obj.val
-    raise TypeError
-
-class CustomEnum(enum.Enum):
-    ONE = Custom(1)
-
+>>> class Custom:
+...     def __init__(self, val):
+...         self.val = val
+...
+>>> def default(obj):
+...     if isinstance(obj, Custom):
+...         return obj.val
+...     raise TypeError
+...
+>>> class CustomEnum(enum.Enum):
+...     ONE = Custom(1)
+...
 >>> orjson.dumps(CustomEnum.ONE, default=default)
 b'1'
 ```
@@ -745,7 +746,7 @@ precision and consistent rounding.
 `orjson.dumps()` serializes Nan, Infinity, and -Infinity, which are not
 compliant JSON, as `null`:
 
-```python
+```pycon
 >>> import orjson, ujson, rapidjson, json
 >>> orjson.dumps([float("NaN"), float("Infinity"), float("-Infinity")])
 b'[null,null,null]'
@@ -767,7 +768,7 @@ that only support 53-bits for integers, e.g.,
 web browsers. For those implementations, `dumps()` can be configured to
 raise a `JSONEncodeError` on values exceeding the 53-bit range.
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.dumps(9007199254740992)
 b'9007199254740992'
@@ -788,12 +789,12 @@ orjson is faster than all compared libraries at serializing
 numpy instances. Serializing numpy data requires specifying
 `option=orjson.OPT_SERIALIZE_NUMPY`.
 
-```python
+```pycon
 >>> import orjson, numpy
 >>> orjson.dumps(
-        numpy.array([[1, 2, 3], [4, 5, 6]]),
-        option=orjson.OPT_SERIALIZE_NUMPY,
-)
+...     numpy.array([[1, 2, 3], [4, 5, 6]]),
+...     option=orjson.OPT_SERIALIZE_NUMPY,
+... )
 b'[[1,2,3],[4,5,6]]'
 ```
 
@@ -808,21 +809,21 @@ can result in different rounding.
 `numpy.datetime64` instances are serialized as RFC 3339 strings and
 datetime options affect them.
 
-```python
+```pycon
 >>> import orjson, numpy
 >>> orjson.dumps(
-        numpy.datetime64("2021-01-01T00:00:00.172"),
-        option=orjson.OPT_SERIALIZE_NUMPY,
-)
+...     numpy.datetime64("2021-01-01T00:00:00.172"),
+...     option=orjson.OPT_SERIALIZE_NUMPY,
+... )
 b'"2021-01-01T00:00:00.172000"'
 >>> orjson.dumps(
-        numpy.datetime64("2021-01-01T00:00:00.172"),
-        option=(
-            orjson.OPT_SERIALIZE_NUMPY |
-            orjson.OPT_NAIVE_UTC |
-            orjson.OPT_OMIT_MICROSECONDS
-        ),
-)
+...     numpy.datetime64("2021-01-01T00:00:00.172"),
+...     option=(
+...         orjson.OPT_SERIALIZE_NUMPY |
+...         orjson.OPT_NAIVE_UTC |
+...         orjson.OPT_OMIT_MICROSECONDS
+...     ),
+... )
 b'"2021-01-01T00:00:00+00:00"'
 ```
 
@@ -887,7 +888,7 @@ If `orjson.dumps()` is given a `str` that does not contain valid UTF-8,
 orjson and rapidjson are the only compared JSON libraries to consistently
 error on bad input.
 
-```python
+```pycon
 >>> import orjson, ujson, rapidjson, json
 >>> orjson.dumps('\ud800')
 JSONEncodeError: str is not valid UTF-8: surrogates not allowed
@@ -910,7 +911,7 @@ ValueError: Parse error at offset 1: The surrogate pair in string is invalid.
 To make a best effort at deserializing bad input, first decode `bytes` using
 the `replace` or `lossy` argument for `errors`:
 
-```python
+```pycon
 >>> import orjson
 >>> orjson.loads(b'"\xed\xa0\x80"')
 JSONDecodeError: str is not valid UTF-8: surrogates not allowed
@@ -924,7 +925,7 @@ orjson serializes `uuid.UUID` instances to
 [RFC 4122](https://tools.ietf.org/html/rfc4122) format, e.g.,
 "f81d4fae-7dec-11d0-a765-00a0c91e6bf6".
 
-``` python
+```pycon
 >>> import orjson, uuid
 >>> orjson.dumps(uuid.UUID('f81d4fae-7dec-11d0-a765-00a0c91e6bf6'))
 b'"f81d4fae-7dec-11d0-a765-00a0c91e6bf6"'
