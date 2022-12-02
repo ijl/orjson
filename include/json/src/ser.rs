@@ -2017,7 +2017,7 @@ where
     }
 }
 
-#[cold]
+#[inline(never)]
 fn format_escaped_str_with_escapes<W, F>(
     writer: &mut W,
     formatter: &mut F,

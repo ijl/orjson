@@ -36,7 +36,6 @@ default = []
 unstable-simd = [
     "bytecount/generic-simd",
     "encoding_rs/simd-accel",
-    "simdutf8/aarch64_neon",
 ]
 
 # Build yyjson as a backend and panic if it fails. The default is to attempt
@@ -58,7 +57,7 @@ pyo3-ffi = { version = "0.17", default_features = false, features = ["extension-
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { path = "include/json", default_features = false, features = ["std", "float_roundtrip"] }
-simdutf8 = { version = "0.1", default_features = false, features = ["std"] }
+simdutf8 = { version = "0.1", default_features = false, features = ["std", "aarch64_neon"] }
 smallvec = { version = "^1.10", default_features = false, features = ["union", "write"] }
 
 [build-dependencies]
