@@ -69,6 +69,15 @@ class TestApi:
         pytest.raises(orjson.JSONDecodeError, orjson.loads, "{")
         pytest.raises(ValueError, orjson.loads, "{")
 
+    def test_optional_none(self):
+        """
+        dumps() option, default None
+        """
+        assert orjson.dumps([], option=None) == b"[]"
+        assert orjson.dumps([], default=None) == b"[]"
+        assert orjson.dumps([], option=None, default=None) == b"[]"
+        assert orjson.dumps([], None, None) == b"[]"
+
     def test_option_not_int(self):
         """
         dumps() option not int or None
@@ -173,6 +182,7 @@ class TestApi:
         )
         inspect.signature(orjson.dumps).bind("str")
         inspect.signature(orjson.dumps).bind("str", default=default, option=1)
+        inspect.signature(orjson.dumps).bind("str", default=None, option=None)
 
     def test_loads_signature(self):
         """

@@ -324,12 +324,14 @@ pub unsafe extern "C" fn dumps(
 
     let mut optsbits: i32 = 0;
     if let Some(opts) = optsptr {
-        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
+        if opts.as_ptr() == typeref::NONE {
+        } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
-        }
-        optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-        if !(0..=opt::MAX_OPT).contains(&optsbits) {
-            return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+        } else {
+            optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
+            if !(0..=opt::MAX_OPT).contains(&optsbits) {
+                return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+            }
         }
     }
 
@@ -392,12 +394,14 @@ pub unsafe extern "C" fn dumps(
 
     let mut optsbits: i32 = 0;
     if let Some(opts) = optsptr {
-        if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
+        if opts.as_ptr() == typeref::NONE {
+        } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
             return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
-        }
-        optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-        if optsbits < 0 || optsbits > opt::MAX_OPT {
-            return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+        } else {
+            optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
+            if !(0..=opt::MAX_OPT).contains(&optsbits) {
+                return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+            }
         }
     }
 
