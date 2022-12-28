@@ -19,6 +19,7 @@ jobs:
           { version: '3.11', abi: 'cp311-cp311' },
         ]
         target: [
+          armv6,
           armv7,
           aarch64,
         ]
