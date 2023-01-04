@@ -127,16 +127,15 @@ impl<'de> Visitor<'de> for JsonValue {
         let dict_ptr = ffi!(PyDict_New());
         while let Some(key) = map.next_key::<beef::lean::Cow<str>>()? {
             let (pykey, pyhash) = get_unicode_key(&key);
-            let value = map.next_value_seed(self)?;
+            let pyval = map.next_value_seed(self)?;
             let _ = ffi!(_PyDict_SetItem_KnownHash(
                 dict_ptr,
                 pykey,
-                value.as_ptr(),
+                pyval.as_ptr(),
                 pyhash
             ));
-            // counter Py_INCREF in insertdict
-            ffi!(Py_DECREF(pykey));
-            ffi!(Py_DECREF(value.as_ptr()));
+            py_decref_without_destroy!(pykey);
+            py_decref_without_destroy!(pyval.as_ptr());
         }
         Ok(nonnull!(dict_ptr))
     }

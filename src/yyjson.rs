@@ -69,16 +69,3 @@ pub struct yyjson_doc {
     pub val_read: usize,
     pub str_pool: *mut ::std::os::raw::c_char,
 }
-#[repr(C)]
-pub struct yyjson_arr_iter {
-    pub idx: usize,
-    pub max: usize,
-    pub cur: *mut yyjson_val,
-}
-#[repr(C)]
-pub struct yyjson_obj_iter {
-    pub idx: usize,
-    pub max: usize,
-    pub cur: *mut yyjson_val,
-    pub obj: *mut yyjson_val,
-}

@@ -44,6 +44,14 @@ macro_rules! str_from_slice {
     };
 }
 
+macro_rules! py_decref_without_destroy {
+    ($op:expr) => {
+        unsafe {
+            (*$op).ob_refcnt -= 1;
+        }
+    };
+}
+
 macro_rules! ffi {
     ($fn:ident()) => {
         unsafe { pyo3_ffi::$fn() }

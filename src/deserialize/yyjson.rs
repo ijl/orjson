@@ -35,10 +35,6 @@ fn unsafe_yyjson_get_len(val: *mut yyjson_val) -> usize {
     unsafe { ((*val).tag >> YYJSON_TAG_BIT) as usize }
 }
 
-fn yyjson_obj_iter_get_val(key: *mut yyjson_val) -> *mut yyjson_val {
-    unsafe { key.add(1) }
-}
-
 fn unsafe_yyjson_get_first(ctn: *mut yyjson_val) -> *mut yyjson_val {
     unsafe { ctn.add(1) }
 }
@@ -58,24 +54,6 @@ fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
         } else {
             ((val as *mut u8).add(YYJSON_VAL_SIZE)) as *mut yyjson_val
         }
-    }
-}
-
-fn yyjson_arr_iter_next(iter: &mut yyjson_arr_iter) -> *mut yyjson_val {
-    unsafe {
-        let val = (*iter).cur;
-        (*iter).cur = unsafe_yyjson_get_next(val);
-        (*iter).idx += 1;
-        val
-    }
-}
-
-fn yyjson_obj_iter_next(iter: &mut yyjson_obj_iter) -> *mut yyjson_val {
-    unsafe {
-        let key = (*iter).cur;
-        (*iter).cur = unsafe_yyjson_get_next(key.add(1));
-        (*iter).idx += 1;
-        key
     }
 }
 
@@ -156,15 +134,12 @@ fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         if len == 0 {
             return nonnull!(list);
         }
-        let mut iter: yyjson_arr_iter = yyjson_arr_iter {
-            idx: 0,
-            max: len,
-            cur: unsafe_yyjson_get_first(elem),
-        };
+        let mut cur = unsafe_yyjson_get_first(elem);
         for idx in 0..=len - 1 {
-            let val = yyjson_arr_iter_next(&mut iter);
-            let each = parse_node(val);
-            ffi!(PyList_SET_ITEM(list, idx as isize, each.as_ptr()));
+            let next = unsafe_yyjson_get_next(cur);
+            let val = parse_node(cur).as_ptr();
+            ffi!(PyList_SET_ITEM(list, idx as isize, val));
+            cur = next;
         }
         nonnull!(list)
     }
@@ -177,27 +152,16 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         if len == 0 {
             return nonnull!(ffi!(PyDict_New()));
         }
+        let mut key = unsafe_yyjson_get_first(elem);
         let dict = ffi!(_PyDict_NewPresized(len as isize));
-        let mut iter = yyjson_obj_iter {
-            idx: 0,
-            max: len,
-            cur: unsafe_yyjson_get_first(elem),
-            obj: elem,
-        };
         for _ in 0..=len - 1 {
-            let key = yyjson_obj_iter_next(&mut iter);
-            let val = yyjson_obj_iter_get_val(key);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
             let (pykey, pyhash) = get_unicode_key(key_str);
-            let pyval = parse_node(val);
-            let _ = ffi!(_PyDict_SetItem_KnownHash(
-                dict,
-                pykey,
-                pyval.as_ptr(),
-                pyhash
-            ));
-            ffi!(Py_DECREF(pykey));
-            ffi!(Py_DECREF(pyval.as_ptr()));
+            let pyval = parse_node(key.add(1)).as_ptr();
+            let _ = ffi!(_PyDict_SetItem_KnownHash(dict, pykey, pyval, pyhash));
+            py_decref_without_destroy!(pykey);
+            py_decref_without_destroy!(pyval);
+            key = unsafe_yyjson_get_next(key.add(1));
         }
         nonnull!(dict)
     }
