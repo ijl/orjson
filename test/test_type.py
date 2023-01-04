@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import io
+import sys
 
 import pytest
 
@@ -66,6 +67,14 @@ class TestType:
         ref = "うぞ〜😏🙌"
         assert orjson.loads(orjson.dumps(ref)) == ref
 
+    def test_str_ascii_control(self):
+        """
+        worst case format_escaped_str_with_escapes() allocation
+        """
+        ref = "\x01\x1F" * 1024 * 16
+        assert orjson.loads(orjson.dumps(ref)) == ref
+        assert orjson.loads(orjson.dumps(ref, option=orjson.OPT_INDENT_2)) == ref
+
     def test_str_escape_0(self):
         assert orjson.dumps('"aaaaaaabb') == b'"\\"aaaaaaabb"'
 
@@ -92,6 +101,48 @@ class TestType:
 
     def test_str_escape_8(self):
         assert orjson.dumps('aaaaaaaab"') == b'"aaaaaaaab\\""'
+
+    def test_very_long_list(self):
+        orjson.dumps([[]] * 1024 * 16)
+
+    def test_very_long_list_pretty(self):
+        orjson.dumps([[]] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_dict(self):
+        orjson.dumps([{}] * 1024 * 16)
+
+    def test_very_long_dict_pretty(self):
+        orjson.dumps([{}] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_str_empty(self):
+        orjson.dumps([""] * 1024 * 16)
+
+    def test_very_long_str_empty_pretty(self):
+        orjson.dumps([""] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_str_not_empty(self):
+        orjson.dumps(["a"] * 1024 * 16)
+
+    def test_very_long_str_not_empty_pretty(self):
+        orjson.dumps(["a"] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_bool(self):
+        orjson.dumps([True] * 1024 * 16)
+
+    def test_very_long_bool_pretty(self):
+        orjson.dumps([True] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_int(self):
+        orjson.dumps([(2**64) - 1] * 1024 * 16)
+
+    def test_very_long_int_pretty(self):
+        orjson.dumps([(2**64) - 1] * 1024 * 16, option=orjson.OPT_INDENT_2)
+
+    def test_very_long_float(self):
+        orjson.dumps([sys.float_info.max] * 1024 * 16)
+
+    def test_very_long_float_pretty(self):
+        orjson.dumps([sys.float_info.max] * 1024 * 16, option=orjson.OPT_INDENT_2)
 
     def test_str_surrogates_loads(self):
         """

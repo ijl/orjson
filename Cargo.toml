@@ -52,11 +52,12 @@ chrono = { version = "^0.4.23", default_features = false }
 compact_str = { version = "0.6", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
+itoap = { version = "1", features = ["std", "simd"] }
 once_cell = { version = "1", default_features = false }
 pyo3-ffi = { version = "0.17", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
-serde_json = { path = "include/json", default_features = false, features = ["std", "float_roundtrip"] }
+serde_json = { version = "1", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std", "aarch64_neon"] }
 smallvec = { version = "^1.10", default_features = false, features = ["union", "write"] }
 

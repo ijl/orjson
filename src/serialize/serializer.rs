@@ -7,6 +7,7 @@ use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
 use crate::serialize::error::*;
+use crate::serialize::float::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
@@ -30,9 +31,9 @@ pub fn serialize(
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
     let res = if opts & INDENT_2 != INDENT_2 {
-        serde_json::to_writer(&mut buf, &obj)
+        crate::serialize::json::to_writer(&mut buf, &obj)
     } else {
-        serde_json::to_writer_pretty(&mut buf, &obj)
+        crate::serialize::json::to_writer_pretty(&mut buf, &obj)
     };
     match res {
         Ok(_) => {
@@ -190,7 +191,7 @@ impl Serialize for PyObjectSerializer {
                 }
             }
             ObType::None => serializer.serialize_unit(),
-            ObType::Float => serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr))),
+            ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
             ObType::Datetime => DateTime::new(self.ptr, self.opts).serialize(serializer),
             ObType::Date => Date::new(self.ptr).serialize(serializer),
