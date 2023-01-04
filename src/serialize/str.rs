@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::serialize::error::*;
-use crate::unicode::*;
+use crate::str::*;
 
 use serde::ser::{Serialize, Serializer};
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::*;
+use crate::str::*;
 use crate::typeref::*;
-use crate::unicode::*;
 use std::ptr::NonNull;
 
 pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_hash_t) {
@@ -27,7 +27,7 @@ pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_
             },
         );
         pykey = entry.get();
-        pyhash = unsafe { (*pykey.cast::<PyASCIIObject>()).hash }
+        pyhash = unsafe { (*pykey.cast::<pyo3_ffi::PyASCIIObject>()).hash }
     }
     (pykey, pyhash)
 }

@@ -3,8 +3,8 @@
 use crate::opt::*;
 use crate::serialize::error::*;
 use crate::serialize::serializer::*;
+use crate::str::*;
 use crate::typeref::*;
-use crate::unicode::*;
 
 use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};

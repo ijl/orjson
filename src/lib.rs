@@ -19,8 +19,8 @@ mod error;
 mod ffi;
 mod opt;
 mod serialize;
+mod str;
 mod typeref;
-mod unicode;
 
 #[cfg(feature = "yyjson")]
 mod yyjson;

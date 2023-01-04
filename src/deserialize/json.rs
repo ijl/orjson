@@ -2,7 +2,7 @@
 
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
-use crate::unicode::*;
+use crate::str::*;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
 use std::borrow::Cow;

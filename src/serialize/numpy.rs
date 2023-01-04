@@ -1104,7 +1104,7 @@ impl NumpyDatetimeUnit {
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
         ffi!(Py_DECREF(descr));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let uni = crate::unicode::unicode_to_str(descr_str).unwrap();
+        let uni = crate::str::unicode_to_str(descr_str).unwrap();
         if uni.len() < 5 {
             return Self::NaT;
         }

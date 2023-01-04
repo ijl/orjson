@@ -62,6 +62,37 @@ class TestType:
         assert orjson.dumps("�") == b'"\xef\xbf\xbd"'
         assert orjson.loads(b'"\xef\xbf\xbd"') == "�"
 
+    def test_str_trailing_4_byte(self):
+        ref = "うぞ〜😏🙌"
+        assert orjson.loads(orjson.dumps(ref)) == ref
+
+    def test_str_escape_0(self):
+        assert orjson.dumps('"aaaaaaabb') == b'"\\"aaaaaaabb"'
+
+    def test_str_escape_1(self):
+        assert orjson.dumps('a"aaaaaabb') == b'"a\\"aaaaaabb"'
+
+    def test_str_escape_2(self):
+        assert orjson.dumps('aa"aaaaabb') == b'"aa\\"aaaaabb"'
+
+    def test_str_escape_3(self):
+        assert orjson.dumps('aaa"aaaabb') == b'"aaa\\"aaaabb"'
+
+    def test_str_escape_4(self):
+        assert orjson.dumps('aaaa"aaabb') == b'"aaaa\\"aaabb"'
+
+    def test_str_escape_5(self):
+        assert orjson.dumps('aaaaa"aabb') == b'"aaaaa\\"aabb"'
+
+    def test_str_escape_6(self):
+        assert orjson.dumps('aaaaaa"abb') == b'"aaaaaa\\"abb"'
+
+    def test_str_escape_7(self):
+        assert orjson.dumps('aaaaaaa"bb') == b'"aaaaaaa\\"bb"'
+
+    def test_str_escape_8(self):
+        assert orjson.dumps('aaaaaaaab"') == b'"aaaaaaaab\\""'
+
     def test_str_surrogates_loads(self):
         """
         str unicode surrogates loads()
