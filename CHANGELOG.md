@@ -1,6 +1,14 @@
 # Changelog
 
+## 3.8.4 - 2023-01-04
+
+### Changed
+
+- Improve performance.
+
 ## 3.8.3 - 2022-12-02
+
+### Fixed
 
 - `orjson.dumps()` accepts `option=None` per `Optional[int]` type.
 
