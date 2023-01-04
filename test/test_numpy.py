@@ -534,8 +534,7 @@ class TestNumpy:
             orjson.dumps(numpy.int8(127), option=orjson.OPT_SERIALIZE_NUMPY) == b"127"
         )
         assert (
-            orjson.dumps(numpy.int8(--128), option=orjson.OPT_SERIALIZE_NUMPY)
-            == b"-128"
+            orjson.dumps(numpy.int8(-128), option=orjson.OPT_SERIALIZE_NUMPY) == b"-128"
         )
 
     def test_numpy_scalar_int16(self):

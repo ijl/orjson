@@ -21,15 +21,15 @@ jobs:
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/devtoolset-10/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       CC: "gcc"
-      CFLAGS: "-O2 -fno-plt -flto"
+      CFLAGS: "-O2 -fno-plt"
       LDFLAGS: "-O2 -flto -Wl,--as-needed"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
     container:
       image: quay.io/pypa/manylinux2014_x86_64:latest
       options: --user 0
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2022-11-20 --profile minimal -y
-    - uses: actions/checkout@v2
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-01-03 --profile minimal -y
+    - uses: actions/checkout@v3
     - run: python3 -m pip install --user --upgrade pip "maturin>=0.14,<0.15" wheel
     - run: maturin build --release --strip --features=unstable-simd,yyjson --compatibility manylinux2014 --interpreter python${{ matrix.python.version }}
     - run: python3 -m pip install --user target/wheels/orjson*.whl

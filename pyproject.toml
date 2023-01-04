@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python",
     "Programming Language :: Rust",
@@ -27,6 +28,7 @@ build-backend = "maturin"
 requires = ["maturin>=0.13,<0.15"]
 
 [tool.maturin]
+python-source = "pysrc"
 sdist-include = ["build.rs", "Cargo.lock", "include/**/*"]
 
 [tool.black]

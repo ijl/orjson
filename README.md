@@ -1164,7 +1164,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2022-11-20` and stable 1.60. It
+The project's own CI tests against `nightly-2023-01-03` and stable 1.60. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
@@ -1181,5 +1181,5 @@ tests should be run as part of the build. It can be run with
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2022, licensed
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2023, licensed
 under both the Apache 2 and MIT licenses.

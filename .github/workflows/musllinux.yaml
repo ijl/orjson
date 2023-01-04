@@ -23,23 +23,29 @@ jobs:
           - target: x86_64-unknown-linux-musl
             arch: x86_64
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python.version }}
     - name: Build wheels
-      uses: messense/maturin-action@v1
+      uses: PyO3/maturin-action@v1
+      env:
+        CC: "gcc"
+        CFLAGS: "-O2 -fno-plt"
+        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        maturin-version: v0.14.1
-        rust-toolchain: nightly-2022-11-20
+        maturin-version: v0.14.8
+        rust-toolchain: nightly-2023-01-03
+        rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
-        args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }} -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
       uses: docker/setup-qemu-action@v2
       with:
-        image: tonistiigi/binfmt:qemu-v6.2.0
+        image: tonistiigi/binfmt:qemu-v7.0.0
         platforms: all
     - name: Install built wheel
       uses: addnab/docker-run-action@v3
@@ -61,7 +67,7 @@ jobs:
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
           venv/bin/python -m pytest -s -rxX -v test
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: dist
@@ -72,10 +78,10 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ musllinux ]
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: wheels
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
       - run: pip install "maturin>=0.14,<0.15"

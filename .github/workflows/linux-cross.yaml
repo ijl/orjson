@@ -19,25 +19,30 @@ jobs:
           { version: '3.11', abi: 'cp311-cp311' },
         ]
         target: [
-          armv7,
-          aarch64,
+          { arch: 'armv7', flags: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort' },
+          { arch: 'aarch64', flags: '--features=yyjson' },  # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
         ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build Wheels
-      uses: messense/maturin-action@v1
+      uses: PyO3/maturin-action@v1
       env:
-        PYO3_CROSS_LIB_DIR: /opt/python/${{ matrix.python.abi }}
+        PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
+        CC: "gcc"
+        CFLAGS: "-O2 -fno-plt"
+        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        maturin-version: v0.14.1
-        target: ${{ matrix.target }}
-        rust-toolchain: nightly-2022-11-20
+        maturin-version: v0.14.8
+        target: ${{ matrix.target.arch }}
+        rust-toolchain: nightly-2023-01-03
+        rustup-components: rust-src
         manylinux: auto
-        args: -i python3.9 --release --strip --out dist
+        args: --release --strip --out dist -i python${{ matrix.python.version }} ${{ matrix.target.flags }}
     - uses: uraimo/run-on-arch-action@v2
       name: Install built wheel
       with:
-        arch: ${{ matrix.target }}
+        arch: ${{ matrix.target.arch }}
         distro: ubuntu20.04
         githubToken: ${{ github.token }}
         install: |
@@ -54,7 +59,7 @@ jobs:
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
           venv/bin/python -m pytest -s -rxX -v test
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: dist
@@ -65,10 +70,10 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux-cross ]
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: wheels
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
       - run: pip install "maturin>=0.14,<0.15"

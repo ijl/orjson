@@ -27,7 +27,6 @@ steps:
 
 - bash: PATH=$(path) maturin build --strip $(extra) --compatibility $(compatibility) --interpreter $(interpreter)
   env:
-    ORJSON_DISABLE_PYDICTITER: 1
     ORJSON_DISABLE_YYJSON: 1
   displayName: build debug with disabled features
 - bash: PATH=$(path) $(interpreter) -m pip install --user target/wheels/orjson*.whl

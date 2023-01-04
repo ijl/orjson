@@ -155,40 +155,6 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     add!(mptr, "JSONDecodeError\0", typeref::JsonDecodeError);
     add!(mptr, "JSONEncodeError\0", typeref::JsonEncodeError);
 
-    // maturin>=0.11.0 creates a python package that imports *, hiding dunder by default
-    let all: [&str; 20] = [
-        "__all__\0",
-        "__version__\0",
-        "dumps\0",
-        "JSONDecodeError\0",
-        "JSONEncodeError\0",
-        "loads\0",
-        "OPT_APPEND_NEWLINE\0",
-        "OPT_INDENT_2\0",
-        "OPT_NAIVE_UTC\0",
-        "OPT_NON_STR_KEYS\0",
-        "OPT_OMIT_MICROSECONDS\0",
-        "OPT_PASSTHROUGH_DATACLASS\0",
-        "OPT_PASSTHROUGH_DATETIME\0",
-        "OPT_PASSTHROUGH_SUBCLASS\0",
-        "OPT_SERIALIZE_DATACLASS\0",
-        "OPT_SERIALIZE_NUMPY\0",
-        "OPT_SERIALIZE_UUID\0",
-        "OPT_SORT_KEYS\0",
-        "OPT_STRICT_INTEGER\0",
-        "OPT_UTC_Z\0",
-    ];
-
-    let pyall = PyTuple_New(all.len() as isize);
-    for (i, obj) in all.iter().enumerate() {
-        PyTuple_SET_ITEM(
-            pyall,
-            i as isize,
-            PyUnicode_InternFromString(obj.as_ptr() as *const c_char),
-        )
-    }
-
-    add!(mptr, "__all__\0", pyall);
     0
 }
 
