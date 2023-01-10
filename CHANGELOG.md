@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.5 - 2023-01-04
+
+### Fixed
+
+- Fix `orjson.dumps()` invalid output on Windows.
+
 ## 3.8.4 - 2023-01-04
 
 ### Changed
