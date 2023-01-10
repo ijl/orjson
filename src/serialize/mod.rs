@@ -9,7 +9,6 @@ mod dict;
 mod error;
 mod float;
 mod int;
-mod json;
 mod list;
 mod numpy;
 mod pyenum;
@@ -18,5 +17,8 @@ mod str;
 mod tuple;
 mod uuid;
 mod writer;
+
+#[cfg(not(target_os = "windows"))]
+mod json;
 
 pub use serializer::serialize;

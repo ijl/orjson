@@ -21,6 +21,12 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
+#[cfg(target_os = "windows")]
+use serde_json::{to_writer, to_writer_pretty};
+
+#[cfg(not(target_os = "windows"))]
+use crate::serialize::json::{to_writer, to_writer_pretty};
+
 pub const RECURSION_LIMIT: u8 = 255;
 
 pub fn serialize(
@@ -31,9 +37,9 @@ pub fn serialize(
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
     let res = if opts & INDENT_2 != INDENT_2 {
-        crate::serialize::json::to_writer(&mut buf, &obj)
+        to_writer(&mut buf, &obj)
     } else {
-        crate::serialize::json::to_writer_pretty(&mut buf, &obj)
+        to_writer_pretty(&mut buf, &obj)
     };
     match res {
         Ok(_) => {

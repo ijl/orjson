@@ -1,61 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
+use crate::serialize::writer::WriteExt;
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
 use std::io;
-
-#[allow(missing_docs)]
-// hack based on saethlin's research and patch in https://github.com/serde-rs/json/issues/766
-pub trait WriteExt: io::Write {
-    #[inline]
-    fn as_mut_buffer_ptr(&mut self) -> *mut u8 {
-        std::ptr::null_mut()
-    }
-
-    #[inline]
-    fn reserve(&mut self, len: usize) {
-        let _ = len;
-    }
-
-    #[inline]
-    fn set_written(&mut self, len: usize) {
-        let _ = len;
-    }
-
-    #[inline]
-    fn write_str(&mut self, val: &str) -> std::result::Result<(), std::io::Error> {
-        let _ = val;
-        Ok(())
-    }
-
-    #[inline]
-    unsafe fn write_reserved_fragment(
-        &mut self,
-        val: &[u8],
-    ) -> std::result::Result<(), std::io::Error> {
-        let _ = val;
-        Ok(())
-    }
-
-    #[inline]
-    unsafe fn write_reserved_punctuation(
-        &mut self,
-        val: u8,
-    ) -> std::result::Result<(), std::io::Error> {
-        let _ = val;
-        Ok(())
-    }
-
-    #[inline]
-    unsafe fn write_reserved_indent(
-        &mut self,
-        len: usize,
-    ) -> std::result::Result<(), std::io::Error> {
-        let _ = len;
-        Ok(())
-    }
-}
 
 pub struct Serializer<W, F = CompactFormatter> {
     writer: W,
