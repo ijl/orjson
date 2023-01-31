@@ -4,29 +4,8 @@ use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::error::*;
 use crate::typeref::*;
+use crate::{write_double_digit, write_microsecond, write_triple_digit};
 use serde::ser::{Serialize, Serializer};
-
-macro_rules! write_double_digit {
-    ($buf:ident, $value:ident) => {
-        if $value < 10 {
-            $buf.push(b'0');
-        }
-        $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
-    };
-}
-
-macro_rules! write_microsecond {
-    ($buf:ident, $microsecond:ident) => {
-        if $microsecond != 0 {
-            let mut buf = itoa::Buffer::new();
-            let formatted = buf.format($microsecond);
-            $buf.extend_from_slice(
-                &[b'.', b'0', b'0', b'0', b'0', b'0', b'0'][..(7 - formatted.len())],
-            );
-            $buf.extend_from_slice(formatted.as_bytes());
-        }
-    };
-}
 
 #[repr(transparent)]
 pub struct Date {
@@ -102,10 +81,10 @@ impl Time {
         buf.push(b':');
         let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
         write_double_digit!(buf, second);
-        if opt_disabled!(self.opts, OMIT_MICROSECONDS) {
-            let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
-            write_microsecond!(buf, microsecond);
-        }
+
+        let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
+        write_microsecond!(self.opts, buf, microsecond);
+
         Ok(())
     }
 }

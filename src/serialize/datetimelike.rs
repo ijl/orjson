@@ -32,6 +32,7 @@ impl DateTimeBuffer {
     }
 }
 
+#[macro_export]
 macro_rules! write_double_digit {
     ($buf:ident, $value:expr) => {
         if $value < 10 {
@@ -41,6 +42,7 @@ macro_rules! write_double_digit {
     };
 }
 
+#[macro_export]
 macro_rules! write_triple_digit {
     ($buf:ident, $value:expr) => {
         if $value < 100 {
@@ -50,6 +52,23 @@ macro_rules! write_triple_digit {
             $buf.push(b'0');
         }
         $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
+    };
+}
+
+#[macro_export]
+macro_rules! write_microsecond {
+    ($opts:expr, $buf:ident, $microsecond:ident) => {
+        if $microsecond != 0 {
+            if $opts & DATETIME_MILLISECONDS != 0
+                || $opts & (OMIT_MICROSECONDS | DATETIME_MILLISECONDS) == 0
+            {
+                $buf.push(b'.');
+                write_triple_digit!($buf, $microsecond / 1_000);
+            }
+            if $opts & OMIT_MICROSECONDS == 0 {
+                write_triple_digit!($buf, $microsecond % 1_000);
+            }
+        }
     };
 }
 
@@ -116,22 +135,10 @@ pub trait DateTimeLike {
         write_double_digit!(buf, self.minute());
         buf.push(b':');
         write_double_digit!(buf, self.second());
-        if opt_disabled!(opts, OMIT_MICROSECONDS) {
-            let microsecond = self.microsecond();
-            if microsecond != 0 {
-                buf.push(b'.');
-                write_triple_digit!(buf, microsecond / 1_000);
-                write_triple_digit!(buf, microsecond % 1_000);
-                // Don't support writing nanoseconds for now.
-                // If requested, something like the following should work,
-                // and the `DateTimeBuffer` type alias should be changed to
-                // have length 35.
-                // let nanosecond = self.nanosecond();
-                // if nanosecond % 1_000 != 0 {
-                //     write_triple_digit!(buf, nanosecond % 1_000);
-                // }
-            }
-        }
+
+        let microsecond = self.microsecond();
+        write_microsecond!(opts, buf, microsecond);
+
         if self.has_tz() || opt_enabled!(opts, NAIVE_UTC) {
             let offset = self.offset()?;
             let mut offset_second = offset.second;
