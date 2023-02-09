@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.8.6 - 2023-02-09
+
+### Fixed
+
+- Fix crash serializing when using musl libc.
+
+### Changed
+
+- Make `python-dateutil` optional in tests.
+- Handle failure to load system timezones in tests.
+
 ## 3.8.5 - 2023-01-04
 
 ### Fixed
