@@ -1,16 +1,15 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
-import sys
 
 import pytest
-from dateutil import tz
 
 import orjson
 
 try:
     import zoneinfo
-except ImportError:
+    _ = zoneinfo.ZoneInfo("Europe/Amsterdam")
+except Exception:  # ImportError,ZoneInfoNotFoundError
     zoneinfo = None  # type: ignore
 
 try:
@@ -23,8 +22,10 @@ try:
 except ImportError:
     pendulum = None  # type: ignore
 
-if sys.version_info >= (3, 9):
-    import zoneinfo
+try:
+    from dateutil import tz
+except ImportError:
+    tz = None
 
 
 AMSTERDAM_1937_DATETIMES = (
@@ -108,6 +109,7 @@ class TestDatetime:
             == b'["0046-01-01T00:00:00+00:00"]'
         )
 
+    @pytest.mark.skipif(tz is None, reason="dateutil optional")
     def test_datetime_tz_assume(self):
         """
         datetime.datetime tz with assume UTC uses tz
@@ -149,10 +151,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04+00:00"]'
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_zoneinfo_utc(self):
         """
         zoneinfo.ZoneInfo("UTC")
@@ -168,10 +167,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04+00:00"]'
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_zoneinfo_positive(self):
         assert (
             orjson.dumps(
@@ -191,10 +187,7 @@ class TestDatetime:
             == b'["2018-01-01T02:03:04+08:00"]'
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_zoneinfo_negative(self):
         assert (
             orjson.dumps(
@@ -226,6 +219,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04+00:00"]'
         )
 
+    @pytest.mark.skipif(tz is None, reason="dateutil optional")
     def test_datetime_arrow_positive(self):
         """
         datetime.datetime positive UTC
@@ -319,10 +313,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04-04:00"]'
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_zoneinfo_negative_non_dst(self):
         """
         datetime.datetime negative UTC non-DST
@@ -391,10 +382,7 @@ class TestDatetime:
             == b'["2018-12-01T02:03:04-05:00"]'
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_zoneinfo_partial_hour(self):
         """
         datetime.datetime UTC offset partial hour
@@ -488,10 +476,7 @@ class TestDatetime:
             in AMSTERDAM_1937_DATETIMES
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 9) or sys.platform.startswith("win"),
-        reason="zoneinfo not available",
-    )
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_datetime_partial_second_zoneinfo(self):
         """
         datetime.datetime UTC offset round seconds
@@ -541,6 +526,7 @@ class TestDatetime:
             in AMSTERDAM_1937_DATETIMES
         )
 
+    @pytest.mark.skipif(tz is None, reason="dateutil optional")
     def test_datetime_partial_second_dateutil(self):
         """
         datetime.datetime UTC offset round seconds
@@ -648,6 +634,7 @@ class TestDatetime:
             == b'["2000-01-01T02:03:04.000123"]'
         )
 
+    @pytest.mark.skipif(tz is None, reason="dateutil optional")
     def test_datetime_utc_z_with_tz(self):
         """
         datetime.datetime naive OPT_UTC_Z
@@ -741,13 +728,18 @@ class TestTime:
         assert orjson.dumps([datetime.time(12, 15, 59, 111)]) == b'["12:15:59.000111"]'
         assert orjson.dumps([datetime.time(12, 15, 59)]) == b'["12:15:59"]'
 
+    @pytest.mark.skipif(zoneinfo is None, reason="zoneinfo not available")
     def test_time_tz(self):
         """
         datetime.time with tzinfo error
         """
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(
-                [datetime.time(12, 15, 59, 111, tzinfo=tz.gettz("Asia/Shanghai"))]
+                [
+                    datetime.time(
+                        12, 15, 59, 111, tzinfo=zoneinfo.ZoneInfo("Asia/Shanghai")
+                    )
+                ]
             )
 
     def test_time_microsecond_max(self):
