@@ -18,7 +18,6 @@ mod tuple;
 mod uuid;
 mod writer;
 
-#[cfg(not(target_os = "windows"))]
 mod json;
 
 pub use serializer::serialize;

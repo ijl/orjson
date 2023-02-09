@@ -93,7 +93,6 @@ impl std::io::Write for BytesWriter {
     }
 }
 
-#[allow(dead_code)]
 // hack based on saethlin's research and patch in https://github.com/serde-rs/json/issues/766
 pub trait WriteExt: std::io::Write {
     #[inline]
@@ -145,7 +144,6 @@ pub trait WriteExt: std::io::Write {
     }
 }
 
-#[allow(dead_code)]
 impl WriteExt for &mut BytesWriter {
     #[inline(always)]
     fn as_mut_buffer_ptr(&mut self) -> *mut u8 {

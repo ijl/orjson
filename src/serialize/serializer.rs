@@ -21,10 +21,6 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
-#[cfg(target_os = "windows")]
-use serde_json::{to_writer, to_writer_pretty};
-
-#[cfg(not(target_os = "windows"))]
 use crate::serialize::json::{to_writer, to_writer_pretty};
 
 pub const RECURSION_LIMIT: u8 = 255;
