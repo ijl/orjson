@@ -32,7 +32,7 @@ class TestType:
         """
         str
         """
-        for (obj, ref) in (("blah", b'"blah"'), ("東京", b'"\xe6\x9d\xb1\xe4\xba\xac"')):
+        for obj, ref in (("blah", b'"blah"'), ("東京", b'"\xe6\x9d\xb1\xe4\xba\xac"')):
             assert orjson.dumps(obj) == ref
             assert orjson.loads(ref) == obj
 
@@ -218,7 +218,7 @@ class TestType:
         """
         bool
         """
-        for (obj, ref) in ((True, "true"), (False, "false")):
+        for obj, ref in ((True, "true"), (False, "false")):
             assert orjson.dumps(obj) == ref.encode("utf-8")
             assert orjson.loads(ref) == obj
 

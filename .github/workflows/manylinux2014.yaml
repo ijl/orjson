@@ -28,7 +28,7 @@ jobs:
       image: quay.io/pypa/manylinux2014_x86_64:latest
       options: --user 0
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-01-03 --profile minimal -y
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-02-03 --profile minimal -y
     - uses: actions/checkout@v3
     - run: python3 -m pip install --user --upgrade pip "maturin>=0.14,<0.15" wheel
     - run: maturin build --release --strip --features=unstable-simd,yyjson --compatibility manylinux2014 --interpreter python${{ matrix.python.version }}

@@ -105,7 +105,6 @@ class AbstractBase(abc.ABC):
 
 @dataclass(frozen=True)
 class ConcreteAbc(AbstractBase):
-
     __slots__ = ("attr",)
 
     attr: float

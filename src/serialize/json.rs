@@ -21,7 +21,7 @@ where
     }
 }
 
-impl<'a, W> Serializer<W, PrettyFormatter>
+impl<W> Serializer<W, PrettyFormatter>
 where
     W: io::Write + WriteExt,
 {
@@ -136,9 +136,7 @@ where
 
     #[inline]
     fn serialize_f32(self, value: f32) -> Result<()> {
-        if unlikely!(value.is_infinite() == true) {
-            self.serialize_unit()
-        } else if unlikely!(value.is_nan() == true) {
+        if unlikely!(value.is_infinite() || value.is_nan()) {
             self.serialize_unit()
         } else {
             self.formatter
@@ -148,9 +146,7 @@ where
     }
     #[inline]
     fn serialize_f64(self, value: f64) -> Result<()> {
-        if unlikely!(value.is_infinite() == true) {
-            self.serialize_unit()
-        } else if unlikely!(value.is_nan() == true) {
+        if unlikely!(value.is_infinite() || value.is_nan()) {
             self.serialize_unit()
         } else {
             self.formatter
@@ -454,7 +450,7 @@ where
             .map_err(Error::io)?;
         self.state = State::Rest;
 
-        key.serialize(MapKeySerializer { ser: &mut self.ser })?;
+        key.serialize(MapKeySerializer { ser: self.ser })?;
 
         self.ser
             .formatter
@@ -1055,7 +1051,7 @@ pub struct PrettyFormatter {
     has_value: bool,
 }
 
-impl<'a> PrettyFormatter {
+impl PrettyFormatter {
     pub fn new() -> Self {
         PrettyFormatter {
             current_indent: 0,
@@ -1064,13 +1060,13 @@ impl<'a> PrettyFormatter {
     }
 }
 
-impl<'a> Default for PrettyFormatter {
+impl Default for PrettyFormatter {
     fn default() -> Self {
         PrettyFormatter::new()
     }
 }
 
-impl<'a> Formatter for PrettyFormatter {
+impl Formatter for PrettyFormatter {
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
@@ -1243,10 +1239,10 @@ where
         writer.write_reserved_punctuation(b'"').unwrap();
         if initial > 0 {
             writer
-                .write_reserved_fragment(&value.get_unchecked(0..initial))
+                .write_reserved_fragment(value.get_unchecked(0..initial))
                 .unwrap();
         }
-        format_escaped_str_contents(writer, formatter, &value.get_unchecked(initial..)).unwrap();
+        format_escaped_str_contents(writer, formatter, value.get_unchecked(initial..)).unwrap();
         writer.write_reserved_punctuation(b'"').unwrap();
     };
     Ok(())
@@ -1295,7 +1291,7 @@ where
         if start < idx {
             unsafe {
                 writer
-                    .write_reserved_fragment(&bytes.get_unchecked(start..idx))
+                    .write_reserved_fragment(bytes.get_unchecked(start..idx))
                     .unwrap()
             };
         }
@@ -1313,7 +1309,7 @@ where
     if start != len {
         unsafe {
             writer
-                .write_reserved_fragment(&bytes.get_unchecked(start..len))
+                .write_reserved_fragment(bytes.get_unchecked(start..len))
                 .unwrap()
         };
     }

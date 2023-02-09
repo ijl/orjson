@@ -42,12 +42,12 @@ const STATE_COMPACT_ASCII: u32 = STATE_COMPACT | STATE_ASCII;
 #[inline]
 pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
     unsafe {
-        let data_ptr: *mut c_void;
-        if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
-            data_ptr = (op as *mut PyASCIIObject).offset(1) as *mut c_void;
-        } else {
-            data_ptr = (op as *mut PyCompactUnicodeObject).offset(1) as *mut c_void;
-        }
+        let data_ptr: *mut c_void =
+            if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII == STATE_COMPACT_ASCII {
+                (op as *mut PyASCIIObject).offset(1) as *mut c_void
+            } else {
+                (op as *mut PyCompactUnicodeObject).offset(1) as *mut c_void
+            };
         let num_bytes = (*(op as *mut PyASCIIObject)).length
             * (((*(op as *mut PyASCIIObject)).state >> 2) & 7) as isize;
         let hash = pyo3_ffi::_Py_HashBytes(data_ptr, num_bytes);

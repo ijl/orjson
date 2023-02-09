@@ -18,7 +18,7 @@ pub fn is_four_byte(buf: &str) -> bool {
             val |= *as_bytes.get_unchecked(idx + 6) > 239;
             val |= *as_bytes.get_unchecked(idx + 7) > 239;
             idx += STRIDE_SIZE;
-            if val == true {
+            if val {
                 return true;
             }
         }

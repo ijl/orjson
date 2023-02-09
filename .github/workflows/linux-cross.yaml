@@ -33,9 +33,9 @@ jobs:
         LDFLAGS: "-O2 -flto -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        maturin-version: v0.14.8
+        maturin-version: v0.14.12
         target: ${{ matrix.target.arch }}
-        rust-toolchain: nightly-2023-01-03
+        rust-toolchain: nightly-2023-02-03
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out dist -i python${{ matrix.python.version }} ${{ matrix.target.flags }}
