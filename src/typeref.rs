@@ -38,6 +38,7 @@ pub static mut INT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut BOOL_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut NONE_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut FLOAT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut COMPLEX_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut LIST_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DICT_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut DATETIME_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -138,6 +139,7 @@ pub fn init_typerefs() {
         BOOL_TYPE = (*TRUE).ob_type;
         INT_TYPE = (*PyLong_FromLongLong(0)).ob_type;
         FLOAT_TYPE = (*PyFloat_FromDouble(0.0)).ob_type;
+        COMPLEX_TYPE = (*PyComplex_FromDoubles(0.0, 0.0)).ob_type;
         DATETIME_TYPE = look_up_datetime_type();
         DATE_TYPE = look_up_date_type();
         TIME_TYPE = look_up_time_type();

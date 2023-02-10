@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+mod complex;
 mod dataclass;
 mod datetime;
 #[macro_use]

@@ -341,6 +341,16 @@ class TestType:
         for val in (18446744073709551616, -9223372036854775809):
             pytest.raises(orjson.JSONEncodeError, orjson.dumps, val)
 
+    def test_complex(self):
+        """
+        complex float
+        """
+        c = 3+4j
+        j = orjson.dumps(c)
+        assert len(j) == 2
+        assert j[0] == 3.0
+        assert j[1] == 4.0
+
     def test_float(self):
         """
         float

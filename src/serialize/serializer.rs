@@ -8,6 +8,7 @@ use crate::serialize::default::*;
 use crate::serialize::dict::*;
 use crate::serialize::error::*;
 use crate::serialize::float::*;
+use crate::serialize::complex::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
@@ -59,6 +60,7 @@ pub enum ObType {
     Bool,
     None,
     Float,
+    Complex,
     List,
     Dict,
     Datetime,
@@ -87,6 +89,8 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
             ObType::None
         } else if ob_type == FLOAT_TYPE {
             ObType::Float
+        } else if ob_type == COMPLEX_TYPE {
+            ObType::Complex
         } else if ob_type == LIST_TYPE {
             ObType::List
         } else if ob_type == DICT_TYPE {
@@ -200,6 +204,7 @@ impl Serialize for PyObjectSerializer {
             }
             ObType::None => serializer.serialize_unit(),
             ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
+            ObType::Complex => ComplexSerializer::new(self.ptr).serialize(serializer),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
             ObType::Datetime => DateTime::new(self.ptr, self.opts).serialize(serializer),
             ObType::Date => Date::new(self.ptr).serialize(serializer),
