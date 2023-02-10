@@ -15,6 +15,8 @@ mod pyenum;
 mod serializer;
 mod str;
 mod tuple;
+mod set;
+mod frozenset;
 mod uuid;
 mod writer;
 

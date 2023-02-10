@@ -8,10 +8,12 @@ use crate::serialize::default::*;
 use crate::serialize::dict::*;
 use crate::serialize::error::*;
 use crate::serialize::float::*;
+use crate::serialize::frozenset::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
 use crate::serialize::pyenum::EnumSerializer;
+use crate::serialize::set::*;
 use crate::serialize::str::*;
 use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
@@ -65,6 +67,8 @@ pub enum ObType {
     Date,
     Time,
     Tuple,
+    Set,
+    FrozenSet,
     Uuid,
     Dataclass,
     NumpyScalar,
@@ -151,6 +155,10 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::NumpyScalar
         } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_array(ob_type) {
             ObType::NumpyArray
+        } else if opts & SERIALIZE_SET != 0 && ob_type == SET_TYPE {
+            ObType::Set
+        } else if opts & SERIALIZE_SET != 0 && ob_type == FROZENSET_TYPE {
+            ObType::FrozenSet
         } else {
             ObType::Unknown
         }
@@ -254,6 +262,22 @@ impl Serialize for PyObjectSerializer {
                 .serialize(serializer)
             }
             ObType::Tuple => TupleSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
+            ObType::Set => SetSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
+            ObType::FrozenSet => FrozenSetSerializer::new(
                 self.ptr,
                 self.opts,
                 self.default_calls,
