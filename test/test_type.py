@@ -343,13 +343,14 @@ class TestType:
 
     def test_complex(self):
         """
-        complex float
+        complex
         """
-        c = 3+4j
-        j = orjson.dumps(c)
-        assert len(j) == 2
-        assert j[0] == 3.0
-        assert j[1] == 4.0
+        assert orjson.dumps(3+4j) == b"[3.0,4.0]"
+        assert orjson.dumps(1.234567893+1.234567893j) == b"[1.234567893,1.234567893]"
+        assert orjson.dumps(1.234567893-1.234567893j) == b"[1.234567893,-1.234567893]"
+        assert orjson.dumps(-1.234567893-1.234567893j) == b"[-1.234567893,-1.234567893]"
+        assert orjson.dumps(1.234567893j) == b"[0.0,1.234567893]"
+        assert orjson.dumps(-1.234567893j) == b"[-0.0,-1.234567893]"
 
     def test_float(self):
         """

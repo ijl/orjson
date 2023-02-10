@@ -194,16 +194,6 @@ impl DictNonStrKey {
                     Ok(CompactString::from(ryu::Buffer::new().format_finite(val)))
                 }
             }
-            ObType::Complex => {
-                let real = ffi!(PyComplex_RealAsDouble(key));
-                let imag = ffi!(PyComplex_ImagAsDouble(key));
-                if !real.is_finite() || !imag.is_finite() {
-                    Ok(CompactString::from("null"))
-                } else {
-                    let s = format!("[{real},{imag}]");
-                    Ok(CompactString::from(s))
-                }
-            }
             ObType::Datetime => {
                 let mut buf = DateTimeBuffer::new();
                 let dt = DateTime::new(key, opts);
@@ -257,6 +247,7 @@ impl DictNonStrKey {
                 }
             }
             ObType::Tuple
+            | ObType::Complex
             | ObType::NumpyScalar
             | ObType::NumpyArray
             | ObType::Dict
