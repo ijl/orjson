@@ -39,16 +39,11 @@ impl Serialize for GeneratorSerializer {
     where
         S: Serializer,
     {
-        let iter_ptr = ffi!(PyObject_GetIter(self.ptr));
-        if unlikely!(iter_ptr.is_null()) {
-            err!(SerializeError::GetIterError(nonnull!(self.ptr)))
-        }
         let mut seq = serializer.serialize_seq(None).unwrap();
-        while ffi!(PyIter_Check(iter_ptr)) != 0 {
-            let elem = ffi!(PyIter_Next(iter_ptr));
+        while ffi!(PyIter_Check(self.ptr)) != 0 {
+            let elem = ffi!(PyIter_Next(self.ptr));
             if elem == null_mut() {
                 if unlikely!(!ffi!(PyErr_Occurred()).is_null()) {
-                    ffi!(Py_DECREF(iter_ptr));
                     err!(SerializeError::GeneratorError)
                 } else {
                     break;
@@ -64,7 +59,6 @@ impl Serialize for GeneratorSerializer {
             seq.serialize_element(&value)?;
             ffi!(Py_DECREF(elem));
         }
-        ffi!(Py_DECREF(iter_ptr));
         seq.end()
     }
 }
