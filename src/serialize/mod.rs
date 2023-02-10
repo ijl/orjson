@@ -8,15 +8,16 @@ mod default;
 mod dict;
 mod error;
 mod float;
+mod frozenset;
+mod generator;
 mod int;
 mod list;
 mod numpy;
 mod pyenum;
 mod serializer;
+mod set;
 mod str;
 mod tuple;
-mod set;
-mod frozenset;
 mod uuid;
 mod writer;
 

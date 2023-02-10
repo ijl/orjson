@@ -7,7 +7,7 @@ use crate::serialize::serializer::*;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::{null_mut, NonNull};
 
-pub struct FrozenSetSerializer {
+pub struct GeneratorSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
@@ -15,7 +15,7 @@ pub struct FrozenSetSerializer {
     default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
-impl FrozenSetSerializer {
+impl GeneratorSerializer {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
@@ -23,7 +23,7 @@ impl FrozenSetSerializer {
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
-        FrozenSetSerializer {
+        GeneratorSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
@@ -33,7 +33,7 @@ impl FrozenSetSerializer {
     }
 }
 
-impl Serialize for FrozenSetSerializer {
+impl Serialize for GeneratorSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -47,11 +47,11 @@ impl Serialize for FrozenSetSerializer {
         while ffi!(PyIter_Check(iter_ptr)) != 0 {
             let elem = ffi!(PyIter_Next(iter_ptr));
             if elem == null_mut() {
-                if ffi!(PyErr_Occurred()).is_null() {
-                    break;
-                } else {
+                if unlikely!(!ffi!(PyErr_Occurred()).is_null()) {
                     ffi!(Py_DECREF(iter_ptr));
-                    err!(SerializeError::FrozenSetIterError)
+                    err!(SerializeError::GeneratorError)
+                } else {
+                    break;
                 }
             }
             let value = PyObjectSerializer::new(

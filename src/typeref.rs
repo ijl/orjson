@@ -48,6 +48,7 @@ pub static mut UUID_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut ENUM_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut SET_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 pub static mut FROZENSET_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
+pub static mut GENERATOR_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
 
 #[cfg(Py_3_9)]
 pub static mut ZONEINFO_TYPE: *mut PyTypeObject = 0 as *mut PyTypeObject;
@@ -138,6 +139,7 @@ pub fn init_typerefs() {
         TUPLE_TYPE = (*PyTuple_New(0)).ob_type;
         SET_TYPE = (*PySet_New(std::ptr::null_mut())).ob_type;
         FROZENSET_TYPE = (*PyFrozenSet_New(std::ptr::null_mut())).ob_type;
+        GENERATOR_TYPE = (*PyGen_New(PyEval_GetFrame())).ob_type;
         NONE_TYPE = (*NONE).ob_type;
         BOOL_TYPE = (*TRUE).ob_type;
         INT_TYPE = (*PyLong_FromLongLong(0)).ob_type;
