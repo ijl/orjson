@@ -254,3 +254,55 @@ class TestMemory:
             val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
+    def test_memory_dumps_generator(self):
+        """
+        dumps() generator memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = lambda: (idx for idx in range(100))
+        val = orjson.dumps(fixture(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            val = orjson.dumps(fixture(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        gc.collect()
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
+
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
+    def test_memory_dumps_set(self):
+        """
+        dumps() set memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = set(range(100))
+        val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_SET)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_SET)
+        gc.collect()
+        assert proc.memory_info().rss <= mem + MAX_INCREASE
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
+    def test_memory_dumps_frozenset(self):
+        """
+        dumps() frozenset memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        fixture = frozenset(range(100))
+        val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_SET)
+        mem = proc.memory_info().rss
+        for _ in range(100):
+            val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_SET)
+        gc.collect()
+        assert proc.memory_info().rss <= mem + MAX_INCREASE

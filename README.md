@@ -22,8 +22,8 @@ usage of other libraries
 "\\\u597d"
 * serializes `float` 10x as fast and deserializes twice as fast as other
 libraries
-* serializes subclasses of `str`, `int`, `list`, and `dict` natively,
-requiring `default` to specify how to serialize others
+* serializes subclasses of `str`, `int`, `list`, and `dict` natively (and optionally 
+`set`, `frozenset`), requiring `default` to specify how to serialize others
 * serializes arbitrary types using a `default` hook
 * has strict UTF-8 conformance, more correct than the standard library
 * has strict JSON conformance in not supporting Nan/Infinity/-Infinity
@@ -192,8 +192,9 @@ def default(obj):
 JSONEncodeError: Type is not JSON serializable: decimal.Decimal
 >>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
 b'"0.0842389659712649442845"'
->>> orjson.dumps({1, 2}, default=default)
-orjson.JSONEncodeError: Type is not JSON serializable: set
+>>> class Foo(): ...
+>>> orjson.dumps(Foo(), default=default)
+orjson.JSONEncodeError: Type is not JSON serializable: Foo
 ```
 
 The `default` callable may return an object that itself
@@ -207,16 +208,17 @@ like a legitimate value and is serialized:
 ```python
 >>> import orjson, json, rapidjson
 >>>
+>>> class Foo(): ...
 def default(obj):
     if isinstance(obj, decimal.Decimal):
         return str(obj)
 
->>> orjson.dumps({"set":{1, 2}}, default=default)
-b'{"set":null}'
->>> json.dumps({"set":{1, 2}}, default=default)
-'{"set":null}'
->>> rapidjson.dumps({"set":{1, 2}}, default=default)
-'{"set":null}'
+>>> orjson.dumps({"foo": Foo()}, default=default)
+b'{"foo":null}'
+>>> json.dumps({"foo": Foo()}, default=default)
+'{"foo":null}'
+>>> rapidjson.dumps({"foo": Foo()}, default=default)
+'{"foo":null}'
 ```
 
 #### option
@@ -496,6 +498,38 @@ required to serialize  `dataclasses.dataclass` instances. For more, see
 
 Serialize `numpy.ndarray` instances. For more, see
 [numpy](https://github.com/ijl/orjson#numpy).
+
+##### OPT_SERIALIZE_SET
+
+Serialize `set` and `frozenset` instances.
+
+Sets are serialized as lists and items are not guaranteed to be in
+any particular order.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"a", "b", "c"})
+orjson.JSONEncodeError: Type is not JSON serializable: set
+>>> orjson.dumps({"ord", "ered", "un"}, option=orjson.OPT_SERIALIZE_SET)
+b'["un","ord","ered"]'
+```
+
+##### OPT_SERIALIZE_GENERATOR
+
+Serialize generators
+
+
+```python
+>>> import orjson
+>>> def gen():
+...     yield 1
+...     yield 2
+...     yield 3
+...
+>>> orjson.dumps(gen(), option=orjson.OPT_SERIALIZE_GENERATOR)
+b'[1,2,3]'
+```
+
 
 ##### OPT_SERIALIZE_UUID
 

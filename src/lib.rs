@@ -146,7 +146,9 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         opt::PASSTHROUGH_SUBCLASS
     );
     opt!(mptr, "OPT_SERIALIZE_DATACLASS\0", opt::SERIALIZE_DATACLASS);
+    opt!(mptr, "OPT_SERIALIZE_GENERATOR\0", opt::SERIALIZE_GENERATOR);
     opt!(mptr, "OPT_SERIALIZE_NUMPY\0", opt::SERIALIZE_NUMPY);
+    opt!(mptr, "OPT_SERIALIZE_SET\0", opt::SERIALIZE_SET);
     opt!(mptr, "OPT_SERIALIZE_UUID\0", opt::SERIALIZE_UUID);
     opt!(mptr, "OPT_SORT_KEYS\0", opt::SORT_KEYS);
     opt!(mptr, "OPT_STRICT_INTEGER\0", opt::STRICT_INTEGER);
@@ -224,9 +226,30 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
 #[cfg_attr(feature = "optimize", optimize(size))]
 fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
     unsafe {
+        let mut prev_err = null_mut();
+        let mut prev_val = null_mut();
+        let mut prev_tb = null_mut();
+        if !PyErr_Occurred().is_null() {
+            PyErr_Fetch(&mut prev_err, &mut prev_val, &mut prev_tb);
+            PyErr_NormalizeException(&mut prev_err, &mut prev_val, &mut prev_tb);
+        }
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
+
+        if !prev_val.is_null() {
+            let mut new_err = null_mut();
+            let mut new_val = null_mut();
+            let mut new_tb = null_mut();
+            PyErr_Fetch(&mut new_err, &mut new_val, &mut new_tb);
+            PyErr_NormalizeException(&mut new_err, &mut new_val, &mut new_tb);
+            // Set cause
+            if !new_val.is_null() {
+                PyException_SetCause(new_val, prev_val);
+            }
+            PyErr_Restore(new_err, new_val, new_tb);
+        }
+
         Py_DECREF(err_msg);
     };
     null_mut()

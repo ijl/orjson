@@ -3,6 +3,7 @@
 use crate::error::INVALID_STR;
 use std::ffi::CStr;
 use std::ptr::NonNull;
+use pyo3_ffi::{PyErr_SetNone, PyErr_SetString, PyExc_RecursionError};
 
 pub enum SerializeError {
     DatetimeLibraryUnsupported,
@@ -18,6 +19,10 @@ pub enum SerializeError {
     NumpyMalformed,
     NumpyNotCContiguous,
     NumpyUnsupportedDatatype,
+    FrozenSetIterError,
+    SetIterError,
+    GeneratorError,
+    GetIterError(NonNull<pyo3_ffi::PyObject>),
     UnsupportedType(NonNull<pyo3_ffi::PyObject>),
 }
 
@@ -34,7 +39,10 @@ impl std::fmt::Display for SerializeError {
             SerializeError::Integer64Bits => write!(f, "Integer exceeds 64-bit range"),
             SerializeError::InvalidStr => write!(f, "{}", INVALID_STR),
             SerializeError::KeyMustBeStr => write!(f, "Dict key must be str"),
-            SerializeError::RecursionLimit => write!(f, "Recursion limit reached"),
+            SerializeError::RecursionLimit => {
+                unsafe { PyErr_SetNone(PyExc_RecursionError); }
+                write!(f, "Recursion limit reached")
+            },
             SerializeError::TimeHasTzinfo => write!(f, "datetime.time must not have tzinfo set"),
             SerializeError::DictIntegerKey64Bit => {
                 write!(f, "Dict integer key must be within 64-bit range")
@@ -49,6 +57,19 @@ impl std::fmt::Display for SerializeError {
             ),
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")
+            }
+            SerializeError::FrozenSetIterError => {
+                write!(f, "Error while serializing frozenset")
+            }
+            SerializeError::SetIterError => {
+                write!(f, "Error while serializing set")
+            }
+            SerializeError::GeneratorError => {
+                write!(f, "Error while serializing generator")
+            }
+            SerializeError::GetIterError(ptr) => {
+                let name = unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
+                write!(f, "Failed to iterate over {}", name)
             }
             SerializeError::UnsupportedType(ptr) => {
                 let name = unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
