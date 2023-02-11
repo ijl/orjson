@@ -20,11 +20,10 @@ class TestGenerator:
             yield 3
 
         g = generator()
-        next(g)
-        next(g)
-        next(g)
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps(g, option=orjson.OPT_SERIALIZE_GENERATOR)
+        # Consume
+        assert list(g) == [1, 2, 3]
+        # Should be empty
+        assert orjson.dumps(g, option=orjson.OPT_SERIALIZE_GENERATOR) == b'[]'
 
     def test_generator_recursive(self):
         def generator():
