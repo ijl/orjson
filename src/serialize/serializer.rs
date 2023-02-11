@@ -8,10 +8,13 @@ use crate::serialize::default::*;
 use crate::serialize::dict::*;
 use crate::serialize::error::*;
 use crate::serialize::float::*;
+use crate::serialize::frozenset::*;
+use crate::serialize::generator::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
 use crate::serialize::pyenum::EnumSerializer;
+use crate::serialize::set::*;
 use crate::serialize::str::*;
 use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
@@ -69,6 +72,9 @@ pub enum ObType {
     Date,
     Time,
     Tuple,
+    Set,
+    FrozenSet,
+    Generator,
     Uuid,
     Dataclass,
     NumpyScalar,
@@ -155,6 +161,12 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::NumpyScalar
         } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_array(ob_type) {
             ObType::NumpyArray
+        } else if opts & SERIALIZE_SET != 0 && is_set(obj, opts & PASSTHROUGH_SUBCLASS == 0) {
+            ObType::Set
+        } else if opts & SERIALIZE_SET != 0 && is_frozenset(obj, opts & PASSTHROUGH_SUBCLASS == 0) {
+            ObType::FrozenSet
+        } else if opts & SERIALIZE_GENERATOR != 0 && is_generator(obj) {
+            ObType::Generator
         } else {
             ObType::Unknown
         }
@@ -265,6 +277,32 @@ impl Serialize for PyObjectSerializer {
                 self.default,
             )
             .serialize(serializer),
+            ObType::Set => {
+                if unlikely!(self.recursion == RECURSION_LIMIT) {
+                    err!(SerializeError::RecursionLimit)
+                }
+                SetSerializer::new(
+                    self.ptr,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
+            }
+            ObType::FrozenSet => {
+                if unlikely!(self.recursion == RECURSION_LIMIT) {
+                    err!(SerializeError::RecursionLimit)
+                }
+                FrozenSetSerializer::new(
+                    self.ptr,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
+            }
             ObType::Dataclass => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
@@ -312,6 +350,19 @@ impl Serialize for PyObjectSerializer {
             )
             .serialize(serializer),
             ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts).serialize(serializer),
+            ObType::Generator => {
+                if unlikely!(self.recursion == RECURSION_LIMIT) {
+                    err!(SerializeError::RecursionLimit)
+                }
+                GeneratorSerializer::new(
+                    self.ptr,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                )
+                .serialize(serializer)
+            }
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

@@ -22,8 +22,9 @@ usage of other libraries
 "\\\u597d"
 * serializes `float` 10x as fast and deserializes twice as fast as other
 libraries
-* serializes subclasses of `str`, `int`, `list`, and `dict` natively,
-requiring `default` to specify how to serialize others
+* serializes subclasses of `str`, `int`, `list`, and `dict` natively (and optionally 
+`set`, `frozenset`), requiring `default` to specify how to serialize others
+* Has an option to serialize generators as JSON arrays 
 * serializes arbitrary types using a `default` hook
 * has strict UTF-8 conformance, more correct than the standard library
 * has strict JSON conformance in not supporting Nan/Infinity/-Infinity
@@ -62,6 +63,8 @@ available in the repository.
     6. [numpy](https://github.com/ijl/orjson#numpy)
     7. [str](https://github.com/ijl/orjson#str)
     8. [uuid](https://github.com/ijl/orjson#uuid)
+    8. [set and frozenset](https://github.com/ijl/orjson#set-and-frozenset)
+    8. [generator](https://github.com/ijl/orjson#generator)
 3. [Testing](https://github.com/ijl/orjson#testing)
 4. [Performance](https://github.com/ijl/orjson#performance)
     1. [Latency](https://github.com/ijl/orjson#latency)
@@ -136,8 +139,8 @@ def dumps(
 `dumps()` serializes Python objects to JSON.
 
 It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
-`dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
+`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`, `set`, `frozenset`,
+`generator`, `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
 `None` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
@@ -192,8 +195,9 @@ def default(obj):
 JSONEncodeError: Type is not JSON serializable: decimal.Decimal
 >>> orjson.dumps(decimal.Decimal("0.0842389659712649442845"), default=default)
 b'"0.0842389659712649442845"'
->>> orjson.dumps({1, 2}, default=default)
-orjson.JSONEncodeError: Type is not JSON serializable: set
+>>> class Foo(): ...
+>>> orjson.dumps(Foo(), default=default)
+orjson.JSONEncodeError: Type is not JSON serializable: Foo
 ```
 
 The `default` callable may return an object that itself
@@ -207,16 +211,17 @@ like a legitimate value and is serialized:
 ```python
 >>> import orjson, json, rapidjson
 >>>
+>>> class Foo(): ...
 def default(obj):
     if isinstance(obj, decimal.Decimal):
         return str(obj)
 
->>> orjson.dumps({"set":{1, 2}}, default=default)
-b'{"set":null}'
->>> json.dumps({"set":{1, 2}}, default=default)
-'{"set":null}'
->>> rapidjson.dumps({"set":{1, 2}}, default=default)
-'{"set":null}'
+>>> orjson.dumps({"foo": Foo()}, default=default)
+b'{"foo":null}'
+>>> json.dumps({"foo": Foo()}, default=default)
+'{"foo":null}'
+>>> rapidjson.dumps({"foo": Foo()}, default=default)
+'{"foo":null}'
 ```
 
 #### option
@@ -496,6 +501,38 @@ required to serialize  `dataclasses.dataclass` instances. For more, see
 
 Serialize `numpy.ndarray` instances. For more, see
 [numpy](https://github.com/ijl/orjson#numpy).
+
+##### OPT_SERIALIZE_SET
+
+Serialize `set` and `frozenset` instances.
+
+Sets are serialized as lists and items are not guaranteed to be in
+any particular order.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"a", "b", "c"})
+orjson.JSONEncodeError: Type is not JSON serializable: set
+>>> orjson.dumps({"ord", "ered", "un"}, option=orjson.OPT_SERIALIZE_SET)
+b'["un","ord","ered"]'
+```
+
+##### OPT_SERIALIZE_GENERATOR
+
+Serialize generators
+
+
+```python
+>>> import orjson
+>>> def gen():
+...     yield 1
+...     yield 2
+...     yield 3
+...
+>>> orjson.dumps(gen(), option=orjson.OPT_SERIALIZE_GENERATOR)
+b'[1,2,3]'
+```
+
 
 ##### OPT_SERIALIZE_UUID
 
@@ -930,6 +967,57 @@ orjson serializes `uuid.UUID` instances to
 b'"f81d4fae-7dec-11d0-a765-00a0c91e6bf6"'
 >>> orjson.dumps(uuid.uuid5(uuid.NAMESPACE_DNS, "python.org"))
 b'"886313e1-3b8a-5372-9b90-0c9aee199e5d"'
+```
+
+### set and frozenset
+
+orjson serializes `set` and `frozenset` instances to JSON arrays.
+
+Any exceptions raised while iterating over the set are propagated as
+the cause of the subsequently raised `orjson.JSONEncodeError`.
+
+``` python
+>>> import orjson
+>>> orjson.dumps(set([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+b'[1,2,3]'
+>>> orjson.dumps(frozenset([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+b'[1,2,3]'
+>>> class MySet(set):
+...     def __iter__(self):
+...             1 / 0
+...
+>>> orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+ZeroDivisionError: division by zero
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: Failed to iterate over MySet
+```
+
+### generator
+
+orjson serializes `generator` instances to JSON arrays.
+
+Any exceptions raised while iterating over the generator are propagated as
+the cause of the subsequently raised `orjson.JSONEncodeError`.
+
+```python
+>>> import orjson
+>>> orjson.dumps((i for i in range(3)), option=orjson.OPT_SERIALIZE_GENERATOR)
+b'[0,1,2]'
+>>> def gen():
+...     yield 1 / 0
+...
+>>> orjson.dumps(gen(), option=orjson.OPT_SERIALIZE_GENERATOR)
+ZeroDivisionError: division by zero
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+File "<stdin>", line 1, in <module>
+TypeError: Error while serializing generator
 ```
 
 ## Testing
