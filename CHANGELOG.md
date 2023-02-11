@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.9.0 - 2023-02-11
+
+### Changed
+
+- Support serializing `set` and `frozenset` and their subclasses with OPT_SERIALIZE_SET.
+- Support serializing `generator` with OPT_SERIALIZE_GENERATOR.
+- Improved error handling by showing the cause of the error.
+
 ## 3.8.6 - 2023-02-09
 
 ### Fixed
