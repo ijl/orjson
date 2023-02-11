@@ -514,6 +514,23 @@ orjson.JSONEncodeError: Type is not JSON serializable: set
 b'["un","ord","ered"]'
 ```
 
+##### OPT_SERIALIZE_GENERATOR
+
+Serialize generators
+
+
+```python
+>>> import orjson
+>>> def gen():
+...     yield 1
+...     yield 2
+...     yield 3
+...
+>>> orjson.dumps(gen(), option=orjson.OPT_SERIALIZE_GENERATOR)
+b'[1,2,3]'
+```
+
+
 ##### OPT_SERIALIZE_UUID
 
 This is deprecated and has no effect in version 3. In version 2 this was
