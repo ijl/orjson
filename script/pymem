@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+import io
+import subprocess
+
+from tabulate import tabulate
+
+buf = io.StringIO()
+
+headers = ("Library", "import, read() RSS (MiB)", "loads() increase in RSS (MiB)")
+
+LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+
+FIXTURES = ("canada.json", "citm_catalog.json", "github.json", "twitter.json")
+
+for fixture in sorted(FIXTURES, reverse=True):
+    table = []
+    buf.write("\n" + "#### " + fixture + "\n\n")
+    for lib_name in LIBRARIES:
+        proc = subprocess.Popen(
+            ("bench/run_mem", f"data/{fixture}.xz", lib_name), stdout=subprocess.PIPE
+        )
+        output = proc.stdout.readline().decode("utf-8").strip().split(",")
+        mem_base = int(output[0]) / 1024 / 1024
+        mem_diff = int(output[1]) / 1024 / 1024
+        correct = bool(int(output[2]))
+        if correct:
+            table.append((lib_name, f"{mem_base:,.1f}", f"{mem_diff:,.1f}"))
+        else:
+            table.append((lib_name, "", ""))
+    buf.write(tabulate(table, headers, tablefmt="github") + "\n")
+
+print(buf.getvalue())

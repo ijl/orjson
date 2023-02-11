@@ -1,0 +1,91 @@
+name: musllinux
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+jobs:
+  musllinux:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.7' },
+          { version: '3.8' },
+          { version: '3.9' },
+          { version: '3.10' },
+        ]
+        platform:
+          - target: aarch64-unknown-linux-musl
+            arch: aarch64
+          - target: x86_64-unknown-linux-musl
+            arch: x86_64
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python.version }}
+    - name: Build wheels
+      uses: PyO3/maturin-action@v1
+      env:
+        CC: "gcc"
+        CFLAGS: "-O2 -fno-plt"
+        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      with:
+        maturin-version: v0.14.12
+        rust-toolchain: nightly-2023-02-03
+        rustup-components: rust-src
+        target: ${{ matrix.platform.target }}
+        manylinux: musllinux_1_1
+        args: --release --strip --out dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }} -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
+    - name: Set up QEMU
+      if: matrix.platform.arch != 'x86_64'
+      uses: docker/setup-qemu-action@v2
+      with:
+        image: tonistiigi/binfmt:qemu-v7.0.0
+        platforms: all
+    - name: Install built wheel
+      uses: addnab/docker-run-action@v3
+      with:
+        image: quay.io/pypa/musllinux_1_1_${{ matrix.platform.arch }}:latest
+        options: -v ${{ github.workspace }}:/io -w /io
+        run: |
+          # workaround zoneinfo._common.ZoneInfoNotFoundError: 'No time zone found with key UTC'
+          # exception when running tests
+          apk add tzdata
+
+          # Don't install numpy since there are no musllinux wheels
+          sed -i '/^numpy/d' test/requirements.txt
+
+          PYTHON=python${{ matrix.python.version }}
+          $PYTHON -m venv venv
+          venv/bin/pip install -U pip
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+
+  release:
+    name: Release
+    runs-on: ubuntu-22.04
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [ musllinux ]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: pip install "maturin>=0.14,<0.15"
+      - name: deploy
+        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

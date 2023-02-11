@@ -1,0 +1,14 @@
+*.patch
+/perf.*
+__pycache__
+*.pyc
+/target
+.pytest_cache
+/.venv*
+benchmark_*.svg
+.coverage
+.benchmarks
+.mypy_cache
+vendor
+build
+!json/perfect_float.patch

@@ -1,0 +1,170 @@
+variables:
+  toolchain: nightly-2023-02-03
+
+jobs:
+
+- job: linux_sdist_stable
+  pool:
+    vmImage: ubuntu-22.04
+  container: quay.io/pypa/manylinux_2_28_x86_64:latest
+  variables:
+    interpreter: python3.10
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    target: x86_64-unknown-linux-gnu
+    toolchain: 1.60.0
+  steps:
+  - checkout: self
+  - template: ./azure-sdist.yml
+
+- job: linux_debug
+  pool:
+    vmImage: ubuntu-22.04
+  container: quay.io/pypa/manylinux_2_28_x86_64:latest
+  variables:
+    interpreter: python3.10
+    compatibility: off
+    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  steps:
+  - checkout: self
+  - template: ./azure-debug.yml
+
+- job: macos_python311_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.11
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11.0'
+      addToPath: true
+      allowUnstable: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: macos_python310_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.10
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.10'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: macos_python39_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.9
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.9'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: macos_python38_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.8
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: macos_python37_amd64
+  pool:
+    vmImage: macOS-11
+  variables:
+    interpreter: python3.7
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+  - checkout: self
+  - template: ./azure-macos.yml
+
+- job: win_python311_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.11.0\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11.0'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python310_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.10.8\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.10.8'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python39_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.9.13\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.9.13'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python38_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.8.10\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8.10'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python37_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.7.9\x64\python.exe
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7.9'
+      addToPath: true
+      architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml

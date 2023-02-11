@@ -1,0 +1,12 @@
+-r bench/requirements.txt
+-r integration/requirements.txt
+-r test/requirements.txt
+autoflake
+black
+isort
+maturin
+mypy
+types-python-dateutil
+types-pytz
+types-simplejson
+types-ujson

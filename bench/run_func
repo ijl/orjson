@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+import sys
+import lzma
+import os
+
+os.sched_setaffinity(os.getpid(), {0, 1})
+
+from orjson import dumps, loads
+
+filename = sys.argv[1]
+n = int(sys.argv[3]) if len(sys.argv) >= 4 else 1000
+
+with lzma.open(filename, "r") as fileh:
+    file_bytes = fileh.read()
+
+if sys.argv[2] == "dumps":
+    file_obj = loads(file_bytes)
+    for _ in range(n):
+        dumps(file_obj)
+elif sys.argv[2] == "loads":
+    for _ in range(n):
+        loads(file_bytes)

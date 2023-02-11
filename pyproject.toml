@@ -1,0 +1,37 @@
+[project]
+name = "orjson"
+repository = "https://github.com/ijl/orjson"
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+    "Typing :: Typed",
+]
+
+[build-system]
+build-backend = "maturin"
+requires = ["maturin>=0.13,<0.15"]
+
+[tool.maturin]
+python-source = "pysrc"
+sdist-include = ["build.rs", "Cargo.lock", "include/**/*"]
+
+[tool.black]
+line-length = 88
+target-version = ["py37"]
+include = ".pyi?$"

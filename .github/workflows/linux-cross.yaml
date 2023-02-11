@@ -1,0 +1,83 @@
+name: linux-cross
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+jobs:
+  linux-cross:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.7', abi: 'cp37-cp37m' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.11', abi: 'cp311-cp311' },
+        ]
+        target: [
+          { arch: 'armv7', flags: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort' },
+          { arch: 'aarch64', flags: '--features=yyjson' },  # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
+        ]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Wheels
+      uses: PyO3/maturin-action@v1
+      env:
+        PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
+        CC: "gcc"
+        CFLAGS: "-O2 -fno-plt"
+        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      with:
+        maturin-version: v0.14.12
+        target: ${{ matrix.target.arch }}
+        rust-toolchain: nightly-2023-02-03
+        rustup-components: rust-src
+        manylinux: auto
+        args: --release --strip --out dist -i python${{ matrix.python.version }} ${{ matrix.target.flags }}
+    - uses: uraimo/run-on-arch-action@v2
+      name: Install built wheel
+      with:
+        arch: ${{ matrix.target.arch }}
+        distro: ubuntu20.04
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-dev python3-venv software-properties-common build-essential
+          add-apt-repository ppa:deadsnakes/ppa
+          apt-get update
+          apt-get install -y curl python${{ matrix.python.version }}-dev python${{ matrix.python.version }}-venv
+        run: |
+          PYTHON=python${{ matrix.python.version }}
+          $PYTHON -m venv venv
+          venv/bin/pip install -U pip
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+
+  release:
+    name: Release
+    runs-on: ubuntu-22.04
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [ linux-cross ]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: pip install "maturin>=0.14,<0.15"
+      - name: deploy
+        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

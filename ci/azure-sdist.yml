@@ -1,0 +1,34 @@
+parameters:
+  - name: interpreter
+    type: string
+    default : ''
+  - name: path
+    type: string
+    default : ''
+  - name: toolchain
+    type: string
+    default : ''
+
+steps:
+- bash: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $(toolchain) --profile minimal -y
+  displayName: rustup
+- bash: PATH=$(path) rustup default $(toolchain)
+  displayName: ensure toolchain
+- bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.14,<0.15" wheel
+  displayName: build dependencies
+- bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy==0.991
+  displayName: test dependencies
+- bash: PATH=$(path) maturin sdist
+  displayName: package sdist
+- bash: PATH=$(path) $(interpreter) -m pip install --user target/wheels/orjson*.tar.gz
+  displayName: install
+- bash: PATH=$(path) pytest -v test
+  displayName: pytest
+- bash: PATH=$(path) ./integration/run thread
+  displayName: thread
+- bash: PATH=$(path) ./integration/run http
+  displayName: http
+- bash: PATH=$(path) ./integration/run typestubs
+  displayName: typestubs
+- bash: PATH=$(path) ./ci/deploy target/wheels/*.tar.gz
+  displayName: deploy
