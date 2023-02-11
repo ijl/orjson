@@ -4,6 +4,7 @@ use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::*;
 
+use pyo3_ffi::{PySet_Type, PyType_IsSubtype, Py_TYPE};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::{null_mut, NonNull};
 
@@ -70,6 +71,7 @@ impl Serialize for SetSerializer {
 }
 
 #[inline(always)]
+#[cfg(Py_3_10)]
 pub fn is_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool {
     if unlikely!(obj.is_null()) {
         return false;
@@ -77,5 +79,18 @@ pub fn is_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool 
         ffi!(PySet_CheckExact(obj)) != 0
     } else {
         ffi!(PySet_Check(obj)) != 0
+    }
+}
+
+#[inline(always)]
+#[cfg(not(Py_3_10))]
+pub fn is_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool {
+    if unlikely!(obj.is_null()) {
+        return false;
+    } else if unlikely!(!passthrough_subclass) {
+        ffi!(PySet_Check(obj)) != 0
+            && unsafe { PyType_IsSubtype(Py_TYPE(obj), addr_of_mut_shim!(PySet_Type)) == 0 }
+    } else {
+        ffi!(PyAnySet_Check(obj)) != 0
     }
 }

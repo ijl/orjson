@@ -100,3 +100,16 @@ class TestSet:
             except orjson.JSONEncodeError as e:
                 assert isinstance(e.__cause__, ZeroDivisionError)
                 raise
+
+    def test_no_subclass_passthrough(self):
+        class MySet(set):
+            pass
+
+        class MyFrozenSet(frozenset):
+            pass
+
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET | orjson.OPT_PASSTHROUGH_SUBCLASS)
+
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET | orjson.OPT_PASSTHROUGH_SUBCLASS)
