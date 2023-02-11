@@ -41,3 +41,62 @@ class TestSet:
         # order is not guaranteed
         assert orjson.dumps(fs, option=orjson.OPT_SERIALIZE_SET) == b'[[1,2],[3,4]]' or orjson.dumps(fs, option=orjson.OPT_SERIALIZE_SET) == b'[[3,4],[1,2]]'
 
+    def test_subclassing(self):
+        class MySet(set):
+            pass
+
+        assert orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET) == b'[1,2,3]'
+
+    def test_subclassing_frozenset(self):
+        class MyFrozenSet(frozenset):
+            pass
+
+        assert orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET) == b'[1,2,3]'
+
+    def test_subclassing_new_iter_error(self):
+        class MySet(set):
+            def __iter__(self):
+                raise RuntimeError("Oh no")
+
+        with pytest.raises(orjson.JSONEncodeError):
+            try:
+                orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+            except orjson.JSONEncodeError as e:
+                assert isinstance(e.__cause__, RuntimeError)
+                raise
+
+    def test_subclassing_error_while_iterating(self):
+        class MySet(set):
+            def __iter__(self):
+                return (1 / 0 for _ in range(10))
+
+        with pytest.raises(orjson.JSONEncodeError):
+            try:
+                orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+            except orjson.JSONEncodeError as e:
+                assert isinstance(e.__cause__, ZeroDivisionError)
+                raise
+
+    def test_subclassing_new_iter_error_frozenset(self):
+        class MyFrozenSet(frozenset):
+            def __iter__(self):
+                raise RuntimeError("Oh no")
+
+        with pytest.raises(orjson.JSONEncodeError):
+            try:
+                orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+            except orjson.JSONEncodeError as e:
+                assert isinstance(e.__cause__, RuntimeError)
+                raise
+
+    def test_subclassing_error_while_iterating_frozenset(self):
+        class MyFrozenSet(frozenset):
+            def __iter__(self):
+                return (1 / 0 for _ in range(10))
+
+        with pytest.raises(orjson.JSONEncodeError):
+            try:
+                orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+            except orjson.JSONEncodeError as e:
+                assert isinstance(e.__cause__, ZeroDivisionError)
+                raise
