@@ -159,7 +159,11 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::NumpyArray
         } else if opts & SERIALIZE_SET != 0 && ob_type == SET_TYPE {
             ObType::Set
+        } else if opts & PASSTHROUGH_SUBCLASS == 0 && opts & SERIALIZE_SET != 0 && ffi!(PyType_IsSubtype(ob_type, SET_TYPE)) == 1 {
+            ObType::Set
         } else if opts & SERIALIZE_SET != 0 && ob_type == FROZENSET_TYPE {
+            ObType::FrozenSet
+        } else if opts & PASSTHROUGH_SUBCLASS == 0 && opts & SERIALIZE_SET != 0 && ffi!(PyType_IsSubtype(ob_type, FROZENSET_TYPE)) == 1 {
             ObType::FrozenSet
         } else if opts & SERIALIZE_GENERATOR != 0 && ob_type == GENERATOR_TYPE {
             ObType::Generator
@@ -197,8 +201,8 @@ impl PyObjectSerializer {
 
 impl Serialize for PyObjectSerializer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         match pyobject_to_obtype(self.ptr, self.opts) {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
@@ -231,7 +235,7 @@ impl Serialize for PyObjectSerializer {
                         self.recursion,
                         self.default,
                     )
-                    .serialize(serializer)
+                        .serialize(serializer)
                 } else if self.opts & NON_STR_KEYS != 0 {
                     DictNonStrKey::new(
                         self.ptr,
@@ -240,7 +244,7 @@ impl Serialize for PyObjectSerializer {
                         self.recursion,
                         self.default,
                     )
-                    .serialize(serializer)
+                        .serialize(serializer)
                 } else {
                     DictSortedKey::new(
                         self.ptr,
@@ -249,7 +253,7 @@ impl Serialize for PyObjectSerializer {
                         self.recursion,
                         self.default,
                     )
-                    .serialize(serializer)
+                        .serialize(serializer)
                 }
             }
             ObType::List => {
@@ -263,7 +267,7 @@ impl Serialize for PyObjectSerializer {
                     self.recursion,
                     self.default,
                 )
-                .serialize(serializer)
+                    .serialize(serializer)
             }
             ObType::Tuple => TupleSerializer::new(
                 self.ptr,
@@ -272,7 +276,7 @@ impl Serialize for PyObjectSerializer {
                 self.recursion,
                 self.default,
             )
-            .serialize(serializer),
+                .serialize(serializer),
             ObType::Set => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
@@ -284,7 +288,7 @@ impl Serialize for PyObjectSerializer {
                     self.recursion,
                     self.default,
                 )
-                .serialize(serializer)
+                    .serialize(serializer)
             }
             ObType::FrozenSet => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
@@ -297,7 +301,7 @@ impl Serialize for PyObjectSerializer {
                     self.recursion,
                     self.default,
                 )
-                .serialize(serializer)
+                    .serialize(serializer)
             }
             ObType::Dataclass => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
@@ -316,7 +320,7 @@ impl Serialize for PyObjectSerializer {
                         self.recursion,
                         self.default,
                     )
-                    .serialize(serializer)
+                        .serialize(serializer)
                 } else {
                     ffi!(Py_DECREF(dict));
                     DataclassFastSerializer::new(
@@ -326,7 +330,7 @@ impl Serialize for PyObjectSerializer {
                         self.recursion,
                         self.default,
                     )
-                    .serialize(serializer)
+                        .serialize(serializer)
                 }
             }
             ObType::Enum => EnumSerializer::new(
@@ -336,7 +340,7 @@ impl Serialize for PyObjectSerializer {
                 self.recursion,
                 self.default,
             )
-            .serialize(serializer),
+                .serialize(serializer),
             ObType::NumpyArray => NumpySerializer::new(
                 self.ptr,
                 self.opts,
@@ -344,7 +348,7 @@ impl Serialize for PyObjectSerializer {
                 self.recursion,
                 self.default,
             )
-            .serialize(serializer),
+                .serialize(serializer),
             ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts).serialize(serializer),
             ObType::Generator => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
@@ -357,7 +361,7 @@ impl Serialize for PyObjectSerializer {
                     self.recursion,
                     self.default,
                 )
-                .serialize(serializer)
+                    .serialize(serializer)
             }
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
@@ -366,7 +370,7 @@ impl Serialize for PyObjectSerializer {
                 self.recursion,
                 self.default,
             )
-            .serialize(serializer),
+                .serialize(serializer),
         }
     }
 }
