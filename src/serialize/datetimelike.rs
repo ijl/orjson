@@ -58,20 +58,22 @@ macro_rules! write_triple_digit {
 #[macro_export]
 macro_rules! write_microsecond {
     ($opts:expr, $buf:ident, $microsecond:ident) => {
-        let millisecond = $microsecond / 1_000;
-        let microsecond = $microsecond % 1_000;
-        let write_microseconds = $opts & OMIT_MICROSECONDS == 0
-            && $opts & DATETIME_MILLISECONDS == 0
-            && microsecond != 0;
-        let write_milliseconds = $opts & DATETIME_MILLISECONDS != 0 && millisecond != 0;
+        let millis = $microsecond / 1_000;
+        let micros = $microsecond % 1_000;
 
-        if write_milliseconds || write_microseconds {
+        let write_milliseconds = ($opts & DATETIME_MILLISECONDS != 0
+            || $opts & OMIT_MICROSECONDS == 0)
+            && (millis != 0 || micros != 0);
+        let write_microseconds =
+            $opts & OMIT_MICROSECONDS == 0 && $opts & DATETIME_MILLISECONDS == 0 && micros != 0;
+
+        if write_milliseconds {
             $buf.push(b'.');
-            write_triple_digit!($buf, millisecond);
+            write_triple_digit!($buf, millis);
         }
 
         if write_microseconds {
-            write_triple_digit!($buf, microsecond);
+            write_triple_digit!($buf, micros);
         }
     };
 }
