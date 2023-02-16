@@ -56,6 +56,11 @@ impl Serialize for Dict {
             if unlikely!(key_as_str.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
+
+            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+                continue;
+            }
+
             let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,

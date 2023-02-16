@@ -153,6 +153,7 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     opt!(mptr, "OPT_SORT_KEYS\0", opt::SORT_KEYS);
     opt!(mptr, "OPT_STRICT_INTEGER\0", opt::STRICT_INTEGER);
     opt!(mptr, "OPT_UTC_Z\0", opt::UTC_Z);
+    opt!(mptr, "OPT_SKIP_NONE\0", opt::SKIP_NONE);
 
     add!(mptr, "JSONDecodeError\0", typeref::JsonDecodeError);
     add!(mptr, "JSONEncodeError\0", typeref::JsonEncodeError);

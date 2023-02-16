@@ -60,6 +60,11 @@ impl Serialize for DataclassFastSerializer {
             if unlikely!(key_as_str.as_bytes()[0] == b'_') {
                 continue;
             }
+
+            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+                continue;
+            }
+
             let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,
@@ -130,6 +135,11 @@ impl Serialize for DataclassFallbackSerializer {
 
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
+
+            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+                continue;
+            }
+
             let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,

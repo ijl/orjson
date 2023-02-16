@@ -14,6 +14,7 @@ pub const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
 pub const PASSTHROUGH_DATETIME: Opt = 1 << 9;
 pub const APPEND_NEWLINE: Opt = 1 << 10;
 pub const PASSTHROUGH_DATACLASS: Opt = 1 << 11;
+pub const SKIP_NONE: Opt = 1 << 12;
 
 // deprecated
 pub const SERIALIZE_DATACLASS: Opt = 0;
@@ -37,4 +38,5 @@ pub const MAX_OPT: i32 = (APPEND_NEWLINE
     | SERIALIZE_UUID
     | SORT_KEYS
     | STRICT_INTEGER
-    | UTC_Z) as i32;
+    | UTC_Z
+    | SKIP_NONE) as i32;
