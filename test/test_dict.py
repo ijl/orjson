@@ -57,3 +57,8 @@ class TestDict:
                 self.b = 1
 
         assert orjson.dumps(C().__dict__) == b'{"a":0,"b":1}'
+
+    def test_dict_none(self):
+        data = {"test1": "test", "test2": None}
+
+        assert orjson.dumps(data, option=orjson.OPT_SKIP_NONE) == b'{"test1":"test"}'
