@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::error::INVALID_STR;
+use pyo3_ffi::{PyErr_SetNone, PyExc_RecursionError};
 use std::ffi::CStr;
 use std::ptr::NonNull;
 
@@ -34,7 +35,10 @@ impl std::fmt::Display for SerializeError {
             SerializeError::Integer64Bits => write!(f, "Integer exceeds 64-bit range"),
             SerializeError::InvalidStr => write!(f, "{}", INVALID_STR),
             SerializeError::KeyMustBeStr => write!(f, "Dict key must be str"),
-            SerializeError::RecursionLimit => write!(f, "Recursion limit reached"),
+            SerializeError::RecursionLimit => {
+                unsafe { PyErr_SetNone(PyExc_RecursionError); }
+                write!(f, "Recursion limit reached")
+            },
             SerializeError::TimeHasTzinfo => write!(f, "datetime.time must not have tzinfo set"),
             SerializeError::DictIntegerKey64Bit => {
                 write!(f, "Dict integer key must be within 64-bit range")

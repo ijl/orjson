@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8.8 - 2023-03-03
+
+- Improved error handling by showing the cause of errors
+
 ## 3.8.7 - 2023-02-28
 
 ### Fixed
