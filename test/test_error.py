@@ -93,3 +93,17 @@ class TestJsonDecodeError:
             "lineno": 1,
             "colno": 7,
         }
+
+
+def test_error_cause():
+    """
+    dumps() error cause
+    """
+    nesting_level = 1000
+
+    too_deep = {'a': '0'}
+    for _ in range(nesting_level):
+        too_deep = {'a': dict(too_deep)}
+    with pytest.raises(orjson.JSONEncodeError) as exc_info:
+        orjson.dumps(too_deep)
+    assert isinstance(exc_info.value.__cause__, RecursionError)

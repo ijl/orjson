@@ -29,6 +29,7 @@ impl std::fmt::Display for SerializeError {
         match *self {
             SerializeError::DatetimeLibraryUnsupported => write!(f, "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil"),
             SerializeError::DefaultRecursionLimit => {
+                unsafe { PyErr_SetNone(PyExc_RecursionError); }
                 write!(f, "default serializer exceeds recursion limit")
             }
             SerializeError::Integer53Bits => write!(f, "Integer exceeds 53-bit range"),
