@@ -19,7 +19,6 @@ pub enum SerializeError {
     NumpyMalformed,
     NumpyNotCContiguous,
     NumpyUnsupportedDatatype,
-    FrozenSetIterError,
     SetIterError,
     GeneratorError,
     GetIterError(NonNull<pyo3_ffi::PyObject>),
@@ -58,9 +57,6 @@ impl std::fmt::Display for SerializeError {
             ),
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")
-            }
-            SerializeError::FrozenSetIterError => {
-                write!(f, "Error while serializing frozenset")
             }
             SerializeError::SetIterError => {
                 write!(f, "Error while serializing set")

@@ -4,8 +4,9 @@ use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::*;
 
+use crate::util::iter_next;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-use std::ptr::{null_mut, NonNull};
+use std::ptr::NonNull;
 
 pub struct GeneratorSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -40,15 +41,7 @@ impl Serialize for GeneratorSerializer {
         S: Serializer,
     {
         let mut seq = serializer.serialize_seq(None).unwrap();
-        while ffi!(PyIter_Check(self.ptr)) != 0 {
-            let elem = ffi!(PyIter_Next(self.ptr));
-            if elem == null_mut() {
-                if unlikely!(!ffi!(PyErr_Occurred()).is_null()) {
-                    err!(SerializeError::GeneratorError)
-                } else {
-                    break;
-                }
-            }
+        while let Some(elem) = iter_next(self.ptr) {
             let value = PyObjectSerializer::new(
                 elem,
                 self.opts,
@@ -59,15 +52,16 @@ impl Serialize for GeneratorSerializer {
             seq.serialize_element(&value)?;
             ffi!(Py_DECREF(elem));
         }
+        let err = ffi!(PyErr_Occurred());
+        if unlikely!(!err.is_null()) {
+            err!(SerializeError::GeneratorError)
+        }
+        ffi!(PyErr_Clear());
         seq.end()
     }
 }
 
 #[inline(always)]
 pub fn is_generator(obj: *mut pyo3_ffi::PyObject) -> bool {
-    if unlikely!(obj.is_null()) {
-        false
-    } else {
-        ffi!(PyGen_Check(obj)) != 0
-    }
+    ffi!(PyGen_Check(obj)) != 0
 }

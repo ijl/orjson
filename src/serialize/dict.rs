@@ -252,8 +252,7 @@ impl DictNonStrKey {
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
-            | ObType::Set
-            | ObType::FrozenSet
+            | ObType::AnySet
             | ObType::Generator
             | ObType::Unknown => Err(SerializeError::DictKeyInvalidType),
         }

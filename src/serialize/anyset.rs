@@ -4,11 +4,11 @@ use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::*;
 
-use pyo3_ffi::{PySet_Type, PyType_IsSubtype, Py_TYPE};
+use crate::util::iter_next;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-use std::ptr::{null_mut, NonNull};
+use std::ptr::NonNull;
 
-pub struct SetSerializer {
+pub struct AnySetSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
@@ -16,7 +16,7 @@ pub struct SetSerializer {
     default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
-impl SetSerializer {
+impl AnySetSerializer {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
@@ -24,7 +24,7 @@ impl SetSerializer {
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
     ) -> Self {
-        SetSerializer {
+        AnySetSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
@@ -34,7 +34,7 @@ impl SetSerializer {
     }
 }
 
-impl Serialize for SetSerializer {
+impl Serialize for AnySetSerializer {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -45,16 +45,7 @@ impl Serialize for SetSerializer {
             err!(SerializeError::GetIterError(nonnull!(self.ptr)))
         }
         let mut seq = serializer.serialize_seq(None).unwrap();
-        while ffi!(PyIter_Check(iter_ptr)) != 0 {
-            let elem = ffi!(PyIter_Next(iter_ptr));
-            if elem == null_mut() {
-                if ffi!(PyErr_Occurred()).is_null() {
-                    break;
-                } else {
-                    ffi!(Py_DECREF(iter_ptr));
-                    err!(SerializeError::SetIterError)
-                }
-            }
+        while let Some(elem) = iter_next(iter_ptr) {
             let value = PyObjectSerializer::new(
                 elem,
                 self.opts,
@@ -66,31 +57,16 @@ impl Serialize for SetSerializer {
             ffi!(Py_DECREF(elem));
         }
         ffi!(Py_DECREF(iter_ptr));
+        let err = ffi!(PyErr_Occurred());
+        if unlikely!(!err.is_null()) {
+            err!(SerializeError::SetIterError)
+        }
+        ffi!(PyErr_Clear());
         seq.end()
     }
 }
 
 #[inline(always)]
-#[cfg(Py_3_10)]
-pub fn is_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool {
-    if unlikely!(obj.is_null()) {
-        return false;
-    } else if unlikely!(!passthrough_subclass) {
-        ffi!(PySet_CheckExact(obj)) != 0
-    } else {
-        ffi!(PySet_Check(obj)) != 0
-    }
-}
-
-#[inline(always)]
-#[cfg(not(Py_3_10))]
-pub fn is_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool {
-    if unlikely!(obj.is_null()) {
-        return false;
-    } else if unlikely!(!passthrough_subclass) {
-        ffi!(PySet_Check(obj)) != 0
-            && unsafe { PyType_IsSubtype(Py_TYPE(obj), addr_of_mut_shim!(PySet_Type)) == 0 }
-    } else {
-        ffi!(PyAnySet_Check(obj)) != 0
-    }
+pub fn is_any_set(obj: *mut pyo3_ffi::PyObject, passthrough_subclass: bool) -> bool {
+    ffi!(PyAnySet_CheckExact(obj)) != 0 || (passthrough_subclass && ffi!(PyAnySet_Check(obj)) != 0)
 }

@@ -119,16 +119,12 @@ macro_rules! call_method {
     };
 }
 
-// Taken from pyo3
-macro_rules! addr_of_mut_shim {
-    ($place:expr) => {{
-        #[cfg(addr_of)]
-        {
-            ::std::ptr::addr_of_mut!($place)
-        }
-        #[cfg(not(addr_of))]
-        {
-            &mut $place as *mut _
-        }
-    }};
+#[inline(always)]
+pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<*mut pyo3_ffi::PyObject> {
+    let elem = ffi!(PyIter_Next(iter));
+    if unlikely!(elem.is_null()) {
+        None
+    } else {
+        Some(elem)
+    }
 }
