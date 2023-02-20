@@ -58,48 +58,36 @@ class TestSet:
             def __iter__(self):
                 raise RuntimeError("Oh no")
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, RuntimeError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+        assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     def test_subclassing_error_while_iterating(self):
         class MySet(set):
             def __iter__(self):
                 return (1 / 0 for _ in range(10))
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, ZeroDivisionError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(MySet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
     def test_subclassing_new_iter_error_frozenset(self):
         class MyFrozenSet(frozenset):
             def __iter__(self):
                 raise RuntimeError("Oh no")
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, RuntimeError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+        assert isinstance(exc_info.value.__cause__, RuntimeError)
 
     def test_subclassing_error_while_iterating_frozenset(self):
         class MyFrozenSet(frozenset):
             def __iter__(self):
                 return (1 / 0 for _ in range(10))
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, ZeroDivisionError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(MyFrozenSet([1, 2, 3]), option=orjson.OPT_SERIALIZE_SET)
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
     def test_no_subclass_passthrough(self):
         class MySet(set):

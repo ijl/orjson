@@ -25,6 +25,21 @@ class TestGenerator:
         # Should be empty
         assert orjson.dumps(g, option=orjson.OPT_SERIALIZE_GENERATOR) == b'[]'
 
+    def test_yield_from(self):
+
+        def gen2():
+            yield 4
+            yield 5
+            yield 6
+
+        def gen1():
+            yield 1
+            yield 2
+            yield 3
+            yield from gen2()
+
+        assert orjson.dumps(gen1(), option=orjson.OPT_SERIALIZE_GENERATOR) == b'[1,2,3,4,5,6]'
+
     def test_generator_recursive(self):
         def generator():
             yield 1
@@ -32,8 +47,9 @@ class TestGenerator:
             yield 3
             yield from generator()
 
-        with pytest.raises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
             orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        assert isinstance(exc_info.value.__cause__, RecursionError)
 
     def test_other_types(self):
         def generator():
@@ -55,8 +71,9 @@ class TestGenerator:
             yield 2
             raise ValueError('error')
 
-        with pytest.raises(orjson.JSONEncodeError):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
             orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        assert isinstance(exc_info.value.__cause__, ValueError)
 
     def test_error_cause(self):
         def generator():
@@ -64,12 +81,9 @@ class TestGenerator:
             yield 2
             yield 1 / 0
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, ZeroDivisionError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
     def test_error_cause_recursive(self):
         def generator():
@@ -77,13 +91,9 @@ class TestGenerator:
             yield 2
             yield from generator()
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
-            except orjson.JSONEncodeError as e:
-                print(e.__cause__)
-                assert isinstance(e.__cause__, RecursionError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR)
+        assert isinstance(exc_info.value.__cause__, RecursionError)
 
     def test_default(self):
         class SomeClass:
@@ -129,9 +139,6 @@ class TestGenerator:
             yield 1 / 0
             yield 2
 
-        with pytest.raises(orjson.JSONEncodeError):
-            try:
-                orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR, default=default)
-            except orjson.JSONEncodeError as e:
-                assert isinstance(e.__cause__, ZeroDivisionError)
-                raise
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(generator(), option=orjson.OPT_SERIALIZE_GENERATOR, default=default)
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
