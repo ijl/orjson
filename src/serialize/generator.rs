@@ -56,7 +56,6 @@ impl Serialize for GeneratorSerializer {
         if unlikely!(!err.is_null()) {
             err!(SerializeError::GeneratorError)
         }
-        ffi!(PyErr_Clear());
         seq.end()
     }
 }

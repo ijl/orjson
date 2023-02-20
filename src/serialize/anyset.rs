@@ -61,7 +61,6 @@ impl Serialize for AnySetSerializer {
         if unlikely!(!err.is_null()) {
             err!(SerializeError::SetIterError)
         }
-        ffi!(PyErr_Clear());
         seq.end()
     }
 }
