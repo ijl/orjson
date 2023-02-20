@@ -128,3 +128,13 @@ pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<*mut pyo3_ffi::PyObjec
         Some(elem)
     }
 }
+
+#[inline(always)]
+pub fn get_iter(obj: *mut pyo3_ffi::PyObject) -> Option<*mut pyo3_ffi::PyObject> {
+    let iter = ffi!(PyObject_GetIter(obj));
+    if unlikely!(iter.is_null()) {
+        None
+    } else {
+        Some(iter)
+    }
+}

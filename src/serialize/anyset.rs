@@ -4,7 +4,7 @@ use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::*;
 
-use crate::util::iter_next;
+use crate::util::{get_iter, iter_next};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
 
@@ -40,28 +40,30 @@ impl Serialize for AnySetSerializer {
     where
         S: Serializer,
     {
-        let iter_ptr = ffi!(PyObject_GetIter(self.ptr));
-        if unlikely!(iter_ptr.is_null()) {
+        if ffi!(Py_SIZE(self.ptr)) == 0 {
+            serializer.serialize_seq(Some(0)).unwrap().end()
+        } else if let Some(iter_ptr) = get_iter(self.ptr) {
+            let mut seq = serializer.serialize_seq(None).unwrap();
+            while let Some(elem) = iter_next(iter_ptr) {
+                let value = PyObjectSerializer::new(
+                    elem,
+                    self.opts,
+                    self.default_calls,
+                    self.recursion,
+                    self.default,
+                );
+                seq.serialize_element(&value)?;
+                ffi!(Py_DECREF(elem));
+            }
+            ffi!(Py_DECREF(iter_ptr));
+            let err = ffi!(PyErr_Occurred());
+            if unlikely!(!err.is_null()) {
+                err!(SerializeError::SetIterError)
+            }
+            seq.end()
+        } else {
             err!(SerializeError::GetIterError(nonnull!(self.ptr)))
         }
-        let mut seq = serializer.serialize_seq(None).unwrap();
-        while let Some(elem) = iter_next(iter_ptr) {
-            let value = PyObjectSerializer::new(
-                elem,
-                self.opts,
-                self.default_calls,
-                self.recursion,
-                self.default,
-            );
-            seq.serialize_element(&value)?;
-            ffi!(Py_DECREF(elem));
-        }
-        ffi!(Py_DECREF(iter_ptr));
-        let err = ffi!(PyErr_Occurred());
-        if unlikely!(!err.is_null()) {
-            err!(SerializeError::SetIterError)
-        }
-        seq.end()
     }
 }
 
