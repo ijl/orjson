@@ -61,18 +61,15 @@ macro_rules! write_microsecond {
         let millis = $microsecond / 1_000;
         let micros = $microsecond % 1_000;
 
-        let write_milliseconds = ($opts & DATETIME_MILLISECONDS != 0
-            || $opts & OMIT_MICROSECONDS == 0)
-            && (millis != 0 || micros != 0);
-        let write_microseconds =
-            $opts & OMIT_MICROSECONDS == 0 && $opts & DATETIME_MILLISECONDS == 0 && micros != 0;
+        let write_millis = (is_opt_set!($opts, DATETIME_MILLISECONDS) || !is_opt_set!($opts, OMIT_MICROSECONDS)) && millis > 0;
+        let write_micros = !is_opt_set!($opts, OMIT_MICROSECONDS) && !is_opt_set!($opts, DATETIME_MILLISECONDS) && micros > 0;
 
-        if write_milliseconds {
+        if write_millis || write_micros {
             $buf.push(b'.');
             write_triple_digit!($buf, millis);
         }
 
-        if write_microseconds {
+        if write_micros {
             write_triple_digit!($buf, micros);
         }
     };

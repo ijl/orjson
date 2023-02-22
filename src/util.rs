@@ -106,3 +106,9 @@ macro_rules! call_method {
         }
     };
 }
+
+macro_rules! is_opt_set {
+    ($opts:expr, $opt:expr) => {
+        $opts & $opt != 0
+    }
+}
