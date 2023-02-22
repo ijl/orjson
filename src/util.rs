@@ -121,8 +121,8 @@ macro_rules! call_method {
 }
 
 #[inline(always)]
-pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<NonNull<pyo3_ffi::PyObject>> {
-    let elem = ffi!(PyIter_Next(iter));
+pub fn iter_next(iter: NonNull<pyo3_ffi::PyObject>) -> Option<NonNull<pyo3_ffi::PyObject>> {
+    let elem = ffi!(PyIter_Next(iter.as_ptr()));
     if unlikely!(elem.is_null()) {
         None
     } else {
@@ -131,11 +131,11 @@ pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<NonNull<pyo3_ffi::PyOb
 }
 
 #[inline(always)]
-pub fn get_iter(obj: *mut pyo3_ffi::PyObject) -> Option<*mut pyo3_ffi::PyObject> {
-    let iter = ffi!(PyObject_GetIter(obj));
+pub fn get_iter(obj: NonNull<pyo3_ffi::PyObject>) -> Option<NonNull<pyo3_ffi::PyObject>> {
+    let iter = ffi!(PyObject_GetIter(obj.as_ptr()));
     if unlikely!(iter.is_null()) {
         None
     } else {
-        Some(iter)
+        Some(nonnull!(iter))
     }
 }

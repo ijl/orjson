@@ -40,8 +40,9 @@ impl Serialize for GeneratorSerializer {
     where
         S: Serializer,
     {
+        let iter = nonnull!(self.ptr);
         let mut seq = serializer.serialize_seq(None).unwrap();
-        while let Some(elem) = iter_next(self.ptr) {
+        while let Some(elem) = iter_next(iter) {
             let value = PyObjectSerializer::new(
                 elem.as_ptr(),
                 self.opts,
@@ -50,7 +51,7 @@ impl Serialize for GeneratorSerializer {
                 self.default,
             );
             seq.serialize_element(&value)?;
-            ffi!(Py_DECREF(elem));
+            ffi!(Py_DECREF(elem.as_ptr()));
         }
         let err = ffi!(PyErr_Occurred());
         if unlikely!(!err.is_null()) {

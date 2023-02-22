@@ -42,9 +42,9 @@ impl Serialize for AnySetSerializer {
     {
         if ffi!(Py_SIZE(self.ptr)) == 0 {
             serializer.serialize_seq(Some(0)).unwrap().end()
-        } else if let Some(iter_ptr) = get_iter(self.ptr) {
+        } else if let Some(iter) = get_iter(nonnull!(self.ptr)) {
             let mut seq = serializer.serialize_seq(None).unwrap();
-            while let Some(elem) = iter_next(iter_ptr) {
+            while let Some(elem) = iter_next(iter) {
                 let value = PyObjectSerializer::new(
                     elem.as_ptr(),
                     self.opts,
@@ -53,9 +53,9 @@ impl Serialize for AnySetSerializer {
                     self.default,
                 );
                 seq.serialize_element(&value)?;
-                ffi!(Py_DECREF(elem));
+                ffi!(Py_DECREF(elem.as_ptr()));
             }
-            ffi!(Py_DECREF(iter_ptr));
+            ffi!(Py_DECREF(iter.as_ptr()));
             let err = ffi!(PyErr_Occurred());
             if unlikely!(!err.is_null()) {
                 err!(SerializeError::SetIterError)
