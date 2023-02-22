@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::ptr::NonNull;
 macro_rules! is_type {
     ($obj_ptr:expr, $type_ptr:expr) => {
         unsafe { $obj_ptr == $type_ptr }
@@ -120,12 +121,12 @@ macro_rules! call_method {
 }
 
 #[inline(always)]
-pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<*mut pyo3_ffi::PyObject> {
+pub fn iter_next(iter: *mut pyo3_ffi::PyObject) -> Option<NonNull<pyo3_ffi::PyObject>> {
     let elem = ffi!(PyIter_Next(iter));
     if unlikely!(elem.is_null()) {
         None
     } else {
-        Some(elem)
+        Some(nonnull!(elem))
     }
 }
 

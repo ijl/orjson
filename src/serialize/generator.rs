@@ -43,7 +43,7 @@ impl Serialize for GeneratorSerializer {
         let mut seq = serializer.serialize_seq(None).unwrap();
         while let Some(elem) = iter_next(self.ptr) {
             let value = PyObjectSerializer::new(
-                elem,
+                elem.as_ptr(),
                 self.opts,
                 self.default_calls,
                 self.recursion,
