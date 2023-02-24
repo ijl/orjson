@@ -57,9 +57,6 @@ impl Serialize for DataclassFastSerializer {
                 err!(SerializeError::InvalidStr)
             }
             let key_as_str = data.unwrap();
-            if unlikely!(key_as_str.as_bytes()[0] == b'_') {
-                continue;
-            }
             let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,
@@ -124,10 +121,6 @@ impl Serialize for DataclassFallbackSerializer {
                 err!(SerializeError::InvalidStr);
             }
             let key_as_str = data.unwrap();
-            if key_as_str.as_bytes()[0] == b'_' {
-                continue;
-            }
-
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
             let pyvalue = PyObjectSerializer::new(

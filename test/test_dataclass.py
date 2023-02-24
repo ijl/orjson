@@ -200,7 +200,8 @@ class TestDataclass:
         """
         obj = Slotsdataclass("a", 1, "c", "d")
         assert "__dict__" not in dir(obj)
-        assert orjson.dumps(obj) == b'{"a":"a","b":1}'
+        assert orjson.dumps(obj) == orjson.dumps(asdict(obj))
+        assert orjson.dumps(obj) == b'{"a":"a","b":1,"_c":"c"}'
 
     def test_dataclass_default(self):
         """
@@ -246,7 +247,7 @@ class TestDataclass:
         dumps() does not include under attributes, InitVar, or ClassVar
         """
         obj = InitDataclass("zxc", "vbn")
-        assert orjson.dumps(obj) == b'{"ab":"zxc vbn"}'
+        assert orjson.dumps(obj) == b'{"ab":"zxc vbn","_other":1}'
 
     def test_dataclass_option(self):
         """
