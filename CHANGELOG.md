@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.8.7 - 2023-02-28
+
+### Fixed
+
+- Use serialization backend introduced in 3.8.4 only on well-tested
+platforms such as glibc, macOS by default.
+
 ## 3.8.6 - 2023-02-09
 
 ### Fixed
@@ -11,7 +18,7 @@
 - Make `python-dateutil` optional in tests.
 - Handle failure to load system timezones in tests.
 
-## 3.8.5 - 2023-01-04
+## 3.8.5 - 2023-01-10
 
 ### Fixed
 
