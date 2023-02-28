@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::env;
+
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=include/yyjson/*");
@@ -7,7 +9,9 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
+    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_WRITEEXT");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
+    println!("cargo:rerun-if-env-changed=ORJSON_ENABLE_WRITEEXT");
 
     let py_cfg = pyo3_build_config::get();
     py_cfg.emit_pyo3_cfgs();
@@ -20,8 +24,16 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 
-    if std::env::var("ORJSON_DISABLE_YYJSON").is_ok() {
-        if std::env::var("CARGO_FEATURE_YYJSON").is_ok() {
+    if env::var("ORJSON_DISABLE_WRITEEXT").is_ok() {
+    } else if env::var("ORJSON_ENABLE_WRITEEXT").is_ok()
+        || env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
+        || env::var("CARGO_CFG_TARGET_ENV").unwrap() == "gnu"
+    {
+        println!("cargo:rustc-cfg=feature=\"writeext\"");
+    }
+
+    if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
+        if env::var("CARGO_FEATURE_YYJSON").is_ok() {
             panic!("ORJSON_DISABLE_YYJSON and --features=yyjson both enabled.")
         }
     } else {
@@ -36,7 +48,7 @@ fn main() {
                 println!("cargo:rustc-cfg=feature=\"yyjson\"");
             }
             Err(_) => {
-                if std::env::var("CARGO_FEATURE_YYJSON").is_ok() {
+                if env::var("CARGO_FEATURE_YYJSON").is_ok() {
                     panic!("yyjson was enabled but the build failed. To build with a different backend do not specify the feature.")
                 }
             }

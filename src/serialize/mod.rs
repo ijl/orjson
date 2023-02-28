@@ -18,6 +18,7 @@ mod tuple;
 mod uuid;
 mod writer;
 
+#[cfg(feature = "writeext")]
 mod json;
 
 pub use serializer::serialize;

@@ -27,6 +27,7 @@ jobs:
         CFLAGS: "-O2 -fno-plt"
         LDFLAGS: "-O2 -flto -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+        ORJSON_ENABLE_WRITEEXT: "1"
       with:
         maturin-version: v0.14.14
         target: ${{ matrix.target.arch }}
