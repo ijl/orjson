@@ -115,7 +115,7 @@ pub trait DateTimeLike {
         write_double_digit!(buf, self.minute());
         buf.push(b':');
         write_double_digit!(buf, self.second());
-        if opts & OMIT_MICROSECONDS == 0 {
+        if opt_disabled!(opts, OMIT_MICROSECONDS) {
             let microsecond = self.microsecond();
             if microsecond != 0 {
                 buf.push(b'.');
@@ -131,11 +131,11 @@ pub trait DateTimeLike {
                 // }
             }
         }
-        if self.has_tz() || opts & NAIVE_UTC != 0 {
+        if self.has_tz() || opt_enabled!(opts, NAIVE_UTC) {
             let offset = self.offset()?;
             let mut offset_second = offset.second;
             if offset_second == 0 {
-                if opts & UTC_Z != 0 {
+                if opt_enabled!(opts, UTC_Z) {
                     buf.push(b'Z');
                 } else {
                     buf.extend_from_slice(&[b'+', b'0', b'0', b':', b'0', b'0']);

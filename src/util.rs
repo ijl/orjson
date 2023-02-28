@@ -18,6 +18,18 @@ macro_rules! err {
     };
 }
 
+macro_rules! opt_enabled {
+    ($var:expr, $flag:expr) => {
+        $var & $flag != 0
+    };
+}
+
+macro_rules! opt_disabled {
+    ($var:expr, $flag:expr) => {
+        $var & $flag == 0
+    };
+}
+
 #[cfg(feature = "intrinsics")]
 macro_rules! unlikely {
     ($exp:expr) => {

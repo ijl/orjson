@@ -100,7 +100,7 @@ impl Time {
         buf.push(b':');
         let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
         write_double_digit!(buf, second);
-        if self.opts & OMIT_MICROSECONDS == 0 {
+        if opt_disabled!(self.opts, OMIT_MICROSECONDS) {
             let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
             write_microsecond!(buf, microsecond);
         }
