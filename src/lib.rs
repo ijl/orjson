@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
+#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![allow(unused_unsafe)]
 #![allow(non_camel_case_types)]

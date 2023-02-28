@@ -24,6 +24,10 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 
+    if let Some(true) = version_check::supports_feature("trusted_len") {
+        println!("cargo:rustc-cfg=feature=\"trusted_len\"");
+    }
+
     if env::var("ORJSON_DISABLE_WRITEEXT").is_ok() {
     } else if env::var("ORJSON_ENABLE_WRITEEXT").is_ok()
         || env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
