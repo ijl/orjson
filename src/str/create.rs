@@ -25,7 +25,7 @@ fn find_str_kind(buf: &str, num_chars: usize) -> PyUnicodeKind {
 }
 
 pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
-    if buf.len() == 0 {
+    if buf.is_empty() {
         ffi!(Py_INCREF(EMPTY_UNICODE));
         unsafe { EMPTY_UNICODE }
     } else {

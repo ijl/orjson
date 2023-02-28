@@ -16,10 +16,9 @@ OBJ_CACHE: Dict[str, Any] = {}
 
 def read_fixture_bytes(filename, subdir=None):
     if subdir is None:
-        parts = (dirname, filename)
+        path = Path(dirname, filename)
     else:
-        parts = (dirname, subdir, filename)
-    path = Path(*parts)
+        path = Path(dirname, subdir, filename)
     if path.suffix == ".xz":
         contents = lzma.decompress(path.read_bytes())
     else:

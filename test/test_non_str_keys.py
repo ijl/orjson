@@ -291,7 +291,6 @@ class TestNonStrKeyTests:
             orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS)
 
     def test_dict_keys_unknown(self):
-        obj = {frozenset(): True}
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps({frozenset(): True}, option=orjson.OPT_NON_STR_KEYS)
 

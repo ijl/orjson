@@ -3,13 +3,14 @@
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![allow(unused_unsafe)]
+#![allow(non_camel_case_types)]
 #![allow(clippy::explicit_auto_deref)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::uninlined_format_args)] // MSRV 1.66
 #![allow(clippy::unnecessary_unwrap)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
-#![allow(non_camel_case_types)]
 
 #[macro_use]
 mod util;

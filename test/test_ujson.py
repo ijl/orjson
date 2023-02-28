@@ -61,7 +61,7 @@ class TestUltraJSON:
         orjson.dumps(val)
 
     def test_encodeArrayOfNestedArrays(self):
-        val = [[[[]]]] * 20
+        val = [[[[]]]] * 20  # type: ignore
         output = orjson.dumps(val)
         assert val == orjson.loads(output)
         assert val == orjson.loads(output)
@@ -152,7 +152,7 @@ class TestUltraJSON:
         assert s == decoded
 
     def test_encodeArrayInArray(self):
-        val = [[[[]]]]
+        val = [[[[]]]]  # type: ignore
         output = orjson.dumps(val)
 
         assert val == orjson.loads(output)
@@ -219,8 +219,7 @@ class TestUltraJSON:
         assert val == orjson.loads(output)
 
     def test_encodeToUTF8(self):
-        val = b"\xe6\x97\xa5\xd1\x88"
-        val = val.decode("utf-8")
+        val = b"\xe6\x97\xa5\xd1\x88".decode("utf-8")
         enc = orjson.dumps(val)
         dec = orjson.loads(enc)
         assert enc == orjson.dumps(val)

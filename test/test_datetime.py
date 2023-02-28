@@ -8,6 +8,7 @@ import orjson
 
 try:
     import zoneinfo
+
     _ = zoneinfo.ZoneInfo("Europe/Amsterdam")
 except Exception:  # ImportError,ZoneInfoNotFoundError
     zoneinfo = None  # type: ignore
@@ -25,7 +26,7 @@ except ImportError:
 try:
     from dateutil import tz
 except ImportError:
-    tz = None
+    tz = None  # type: ignore
 
 
 AMSTERDAM_1937_DATETIMES = (
@@ -267,7 +268,7 @@ class TestDatetime:
                         3,
                         4,
                         0,
-                        tzinfo=pendulum.timezone("Asia/Shanghai"),
+                        tzinfo=pendulum.timezone("Asia/Shanghai"),  # type: ignore
                     )
                 ]
             )
@@ -306,7 +307,7 @@ class TestDatetime:
                         3,
                         4,
                         0,
-                        tzinfo=pendulum.timezone("America/New_York"),
+                        tzinfo=pendulum.timezone("America/New_York"),  # type: ignore
                     )
                 ]
             )
@@ -375,7 +376,7 @@ class TestDatetime:
                         3,
                         4,
                         0,
-                        tzinfo=pendulum.timezone("America/New_York"),
+                        tzinfo=pendulum.timezone("America/New_York"),  # type: ignore
                     )
                 ]
             )
@@ -444,7 +445,7 @@ class TestDatetime:
                         3,
                         4,
                         0,
-                        tzinfo=pendulum.timezone("Australia/Adelaide"),
+                        tzinfo=pendulum.timezone("Australia/Adelaide"),  # type: ignore
                     )
                 ]
             )
@@ -469,7 +470,7 @@ class TestDatetime:
                         0,
                         27,
                         87,
-                        tzinfo=pendulum.timezone("Europe/Amsterdam"),
+                        tzinfo=pendulum.timezone("Europe/Amsterdam"),  # type: ignore
                     )
                 ]
             )

@@ -1,10 +1,5 @@
 name: manylinux_2_28
-on:
-  push:
-    branches:
-      - '*'
-    tags:
-      - '*'
+on: push
 jobs:
   manylinux_2_28:
     runs-on: ubuntu-22.04
