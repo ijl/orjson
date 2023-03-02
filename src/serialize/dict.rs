@@ -282,7 +282,7 @@ impl Serialize for DictNonStrKey {
             }
         }
 
-        if opts & SORT_KEYS != 0 {
+        if opt_enabled!(opts, SORT_KEYS) {
             items.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         }
 

@@ -39,4 +39,12 @@ impl Iterator for PyDictIter {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = ffi!(Py_SIZE(self.dict_ptr)) as usize;
+        (len, Some(len))
+    }
 }
+
+#[cfg(feature = "trusted_len")]
+unsafe impl std::iter::TrustedLen for PyDictIter {}

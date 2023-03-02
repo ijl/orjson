@@ -21,6 +21,10 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
+#[cfg(not(feature = "writeext"))]
+use serde_json::{to_writer, to_writer_pretty};
+
+#[cfg(feature = "writeext")]
 use crate::serialize::json::{to_writer, to_writer_pretty};
 
 pub const RECURSION_LIMIT: u8 = 255;
@@ -32,14 +36,14 @@ pub fn serialize(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
-    let res = if opts & INDENT_2 != INDENT_2 {
+    let res = if opt_disabled!(opts, INDENT_2) {
         to_writer(&mut buf, &obj)
     } else {
         to_writer_pretty(&mut buf, &obj)
     };
     match res {
         Ok(_) => {
-            if opts & APPEND_NEWLINE != 0 {
+            if opt_enabled!(opts, APPEND_NEWLINE) {
                 let _ = buf.write(b"\n");
             }
             Ok(buf.finish())
@@ -91,7 +95,7 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
             ObType::List
         } else if ob_type == DICT_TYPE {
             ObType::Dict
-        } else if ob_type == DATETIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
+        } else if ob_type == DATETIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Datetime
         } else {
             pyobject_to_obtype_unlikely(obj, opts)
@@ -117,9 +121,9 @@ macro_rules! is_subclass_by_type {
 pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
-        if ob_type == DATE_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
+        if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Date
-        } else if ob_type == TIME_TYPE && opts & PASSTHROUGH_DATETIME == 0 {
+        } else if ob_type == TIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Time
         } else if ob_type == TUPLE_TYPE {
             ObType::Tuple
@@ -127,29 +131,29 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::Uuid
         } else if is_subclass_by_type!(ob_type, ENUM_TYPE) {
             ObType::Enum
-        } else if opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
             && is_subclass_by_flag!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
         {
             ObType::StrSubclass
-        } else if opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
             && is_subclass_by_flag!(ob_type, Py_TPFLAGS_LONG_SUBCLASS)
         {
             ObType::Int
-        } else if opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
             && is_subclass_by_flag!(ob_type, Py_TPFLAGS_LIST_SUBCLASS)
         {
             ObType::List
-        } else if opts & PASSTHROUGH_SUBCLASS == 0
+        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
             && is_subclass_by_flag!(ob_type, Py_TPFLAGS_DICT_SUBCLASS)
         {
             ObType::Dict
-        } else if opts & PASSTHROUGH_DATACLASS == 0
+        } else if opt_disabled!(opts, PASSTHROUGH_DATACLASS)
             && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
         {
             ObType::Dataclass
-        } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_scalar(ob_type) {
+        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_scalar(ob_type) {
             ObType::NumpyScalar
-        } else if opts & SERIALIZE_NUMPY != 0 && is_numpy_array(ob_type) {
+        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_array(ob_type) {
             ObType::NumpyArray
         } else {
             ObType::Unknown
@@ -192,7 +196,7 @@ impl Serialize for PyObjectSerializer {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
             ObType::Int => {
-                if unlikely!(self.opts & STRICT_INTEGER != 0) {
+                if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER)) {
                     Int53Serializer::new(self.ptr).serialize(serializer)
                 } else {
                     IntSerializer::new(self.ptr).serialize(serializer)
@@ -211,7 +215,7 @@ impl Serialize for PyObjectSerializer {
                 }
                 if ffi!(Py_SIZE(self.ptr)) == 0 {
                     serializer.serialize_map(Some(0)).unwrap().end()
-                } else if self.opts & SORT_OR_NON_STR_KEYS == 0 {
+                } else if opt_disabled!(self.opts, SORT_OR_NON_STR_KEYS) {
                     Dict::new(
                         self.ptr,
                         self.opts,
@@ -220,7 +224,7 @@ impl Serialize for PyObjectSerializer {
                         self.default,
                     )
                     .serialize(serializer)
-                } else if self.opts & NON_STR_KEYS != 0 {
+                } else if opt_enabled!(self.opts, NON_STR_KEYS) {
                     DictNonStrKey::new(
                         self.ptr,
                         self.opts,

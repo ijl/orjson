@@ -14,9 +14,9 @@ class TestUUID:
         """
         val = uuid.uuid4()
         with pytest.raises(TypeError):
-            val.int = 1
+            val.int = 1  # type: ignore
         with pytest.raises(TypeError):
-            val.int = None
+            val.int = None  # type: ignore
 
     def test_uuid_int(self):
         """

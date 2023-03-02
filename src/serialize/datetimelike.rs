@@ -145,7 +145,7 @@ pub trait DateTimeLike {
             let offset = self.offset()?;
             let mut offset_second = offset.second;
             if offset_second == 0 {
-                if opts & UTC_Z != 0 {
+                if opt_enabled!(opts, UTC_Z) {
                     buf.push(b'Z');
                 } else {
                     buf.extend_from_slice(&[b'+', b'0', b'0', b':', b'0', b'0']);

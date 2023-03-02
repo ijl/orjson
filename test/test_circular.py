@@ -10,7 +10,7 @@ class TestCircular:
         """
         dumps() circular reference dict
         """
-        obj = {}
+        obj = {}  # type: ignore
         obj["obj"] = obj
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
@@ -19,8 +19,8 @@ class TestCircular:
         """
         dumps() circular reference list
         """
-        obj = []
-        obj.append(obj)
+        obj = []  # type: ignore
+        obj.append(obj)  # type: ignore
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
 
@@ -28,7 +28,7 @@ class TestCircular:
         """
         dumps() circular reference nested dict, list
         """
-        obj = {}
+        obj = {}  # type: ignore
         obj["list"] = [{"obj": obj}]
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)

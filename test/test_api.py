@@ -123,16 +123,16 @@ class TestApi:
         dumps() positional arg
         """
         with pytest.raises(TypeError):
-            orjson.dumps(__obj={})
+            orjson.dumps(__obj={})  # type: ignore
         with pytest.raises(TypeError):
-            orjson.dumps(zxc={})
+            orjson.dumps(zxc={})  # type: ignore
 
     def test_default_unknown_kwarg(self):
         """
         dumps() unknown kwarg
         """
         with pytest.raises(TypeError):
-            orjson.dumps({}, zxc=default)
+            orjson.dumps({}, zxc=default)  # type: ignore
 
     def test_default_empty_kwarg(self):
         """
@@ -145,14 +145,14 @@ class TestApi:
         dumps() default twice
         """
         with pytest.raises(TypeError):
-            orjson.dumps({}, default, default=default)
+            orjson.dumps({}, default, default=default)  # type: ignore
 
     def test_option_twice(self):
         """
         dumps() option twice
         """
         with pytest.raises(TypeError):
-            orjson.dumps({}, None, orjson.OPT_NAIVE_UTC, option=orjson.OPT_NAIVE_UTC)
+            orjson.dumps({}, None, orjson.OPT_NAIVE_UTC, option=orjson.OPT_NAIVE_UTC)  # type: ignore
 
     def test_option_mixed(self):
         """

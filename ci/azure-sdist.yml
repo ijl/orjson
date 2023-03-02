@@ -16,7 +16,7 @@ steps:
   displayName: ensure toolchain
 - bash: PATH=$(path) $(interpreter) -m pip install --user --upgrade pip "maturin>=0.14,<0.15" wheel
   displayName: build dependencies
-- bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy==0.991
+- bash: PATH=$(path) $(interpreter) -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
   displayName: test dependencies
 - bash: PATH=$(path) maturin sdist
   displayName: package sdist
