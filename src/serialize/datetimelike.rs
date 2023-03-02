@@ -61,8 +61,8 @@ macro_rules! write_microsecond {
         let millis = $microsecond / 1_000;
         let micros = $microsecond % 1_000;
 
-        let write_millis = (is_opt_set!($opts, DATETIME_MILLISECONDS) || !is_opt_set!($opts, OMIT_MICROSECONDS)) && millis > 0;
-        let write_micros = !is_opt_set!($opts, OMIT_MICROSECONDS) && !is_opt_set!($opts, DATETIME_MILLISECONDS) && micros > 0;
+        let write_millis = (opt_enabled!($opts, DATETIME_MILLISECONDS) || opt_disabled!($opts, OMIT_MICROSECONDS)) && millis > 0;
+        let write_micros = opt_disabled!($opts, OMIT_MICROSECONDS) && opt_disabled!($opts, DATETIME_MILLISECONDS) && micros > 0;
 
         if write_millis || write_micros {
             $buf.push(b'.');
