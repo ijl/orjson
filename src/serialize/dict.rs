@@ -57,7 +57,7 @@ impl Serialize for Dict {
                 err!(SerializeError::InvalidStr)
             }
 
-            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+            if opt_enabled!(self.opts, SKIP_NONE) && ffi!(Py_IsNone(value)) != 0 {
                 continue;
             }
 

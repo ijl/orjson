@@ -61,7 +61,7 @@ impl Serialize for DataclassFastSerializer {
                 continue;
             }
 
-            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+            if opt_enabled!(self.opts, SKIP_NONE) && ffi!(Py_IsNone(value)) != 0 {
                 continue;
             }
 
@@ -136,7 +136,7 @@ impl Serialize for DataclassFallbackSerializer {
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
 
-            if self.opts & SKIP_NONE != 0 && ffi!(Py_IsNone(value)) != 0 {
+            if opt_enabled!(self.opts, SKIP_NONE) && ffi!(Py_IsNone(value)) != 0 {
                 continue;
             }
 
