@@ -272,7 +272,6 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-
     @pytest.mark.skipif(
         psutil is None, reason="psutil install broken on win, python3.9, Azure"
     )

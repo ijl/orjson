@@ -101,9 +101,9 @@ def test_error_cause():
     """
     nesting_level = 1000
 
-    too_deep = {'a': '0'}
+    too_deep = {"a": "0"}
     for _ in range(nesting_level):
-        too_deep = {'a': dict(too_deep)}
+        too_deep = {"a": dict(too_deep)}  # type: ignore
     with pytest.raises(orjson.JSONEncodeError) as exc_info:
         orjson.dumps(too_deep)
     assert isinstance(exc_info.value.__cause__, RecursionError)

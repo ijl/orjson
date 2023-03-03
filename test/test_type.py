@@ -8,7 +8,7 @@ import pytest
 try:
     import xxhash
 except ImportError:
-    xxhash = None
+    xxhash = None  # type: ignore
 
 import orjson
 
