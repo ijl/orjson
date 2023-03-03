@@ -40,7 +40,7 @@ impl Serialize for AnySetSerializer {
     where
         S: Serializer,
     {
-        if ffi!(Py_SIZE(self.ptr)) == 0 {
+        if ffi!(PySet_GET_SIZE(self.ptr)) == 0 {
             serializer.serialize_seq(Some(0)).unwrap().end()
         } else if let Some(iter) = get_iter(nonnull!(self.ptr)) {
             let mut seq = serializer.serialize_seq(None).unwrap();
