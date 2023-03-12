@@ -15,8 +15,6 @@ jobs:
         platform:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
-          - target: powerpc64le-unknown-linux-musl
-            arch: ppc64le
           - target: x86_64-unknown-linux-musl
             arch: x86_64
     steps:
