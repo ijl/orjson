@@ -16,6 +16,7 @@ jobs:
         target: [
           { arch: 'armv7', flags: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort' },
           { arch: 'aarch64', flags: '--features=yyjson' },  # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
+          { arch: 'ppc64le', flags: '--features=yyjson' },
         ]
     steps:
     - uses: actions/checkout@v3
