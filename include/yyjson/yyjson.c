@@ -258,6 +258,7 @@ yyjson_api uint32_t yyjson_version(void) {
     defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || \
     defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
     defined(__riscv) || defined(__riscv__) || \
+    defined(__loongarch__) || \
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__) || \
     defined(__EMSCRIPTEN__) || defined(__wasm__)
 #   define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
@@ -307,6 +308,9 @@ yyjson_api uint32_t yyjson_version(void) {
 #   elif defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
         defined(__ia64__) || defined(_M_IA64) || defined(__itanium__)
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* Itanium */
+
+#   elif defined(__loongarch__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* loongarch */
 
 #   elif defined(__arm64) || defined(__arm64__) || \
         defined(__AARCH64EL__) || defined(__AARCH64EB__) || \
