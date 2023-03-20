@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::PyListIter;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
@@ -41,11 +42,9 @@ impl Serialize for ListSerializer {
             serializer.serialize_seq(Some(0)).unwrap().end()
         } else {
             let mut seq = serializer.serialize_seq(None).unwrap();
-            for i in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
-                let elem =
-                    unsafe { *((*(self.ptr as *mut pyo3_ffi::PyListObject)).ob_item).add(i) };
+            for elem in PyListIter::from_pyobject(self.ptr) {
                 let value = PyObjectSerializer::new(
-                    elem,
+                    elem.as_ptr(),
                     self.opts,
                     self.default_calls,
                     self.recursion,
