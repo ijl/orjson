@@ -32,11 +32,12 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.7, 3.8, 3.9, 3.10, and 3.11. It distributes x86_64/amd64,
-aarch64/armv8, and arm7 wheels for Linux, amd64 and aarch64 wheels for macOS,
-and amd64 wheels for Windows. orjson does not support PyPy. Releases
-follow semantic versioning and serializing a new object type
-without an opt-in flag is considered a breaking change.
+orjson supports CPython 3.7, 3.8, 3.9, 3.10, and 3.11. It distributes
+x86_64/amd64, aarch64/armv8, arm7, and POWER/ppc64le wheels for Linux,
+amd64 and aarch64 wheels for macOS, and amd64 wheels for Windows.
+orjson  does not support PyPy. Releases follow semantic versioning and
+serializing a new object type without an opt-in flag is considered a
+breaking change.
 
 orjson is licensed under both the Apache 2.0 and MIT licenses. The
 repository and issue tracker is
@@ -1164,11 +1165,11 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2023-02-03` and stable 1.60. It
+The project's own CI tests against `nightly-2023-03-20` and stable 1.60. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
-orjson is tested for amd64, aarch64, and arm7 on Linux. It is tested for
+orjson is tested for amd64, aarch64, arm7, and ppc64le on Linux. It is tested for
 amd64 on macOS and cross-compiles for aarch64. For Windows it is tested on
 amd64.
 

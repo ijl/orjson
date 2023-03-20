@@ -14,8 +14,21 @@ jobs:
           { version: '3.11', abi: 'cp311-cp311' },
         ]
         target: [
-          { arch: 'armv7', flags: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort' },
-          { arch: 'aarch64', flags: '--features=yyjson' },  # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
+          {
+            arch: 'aarch64',
+            cflags: '-O2',
+            args: '--features=yyjson' # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
+          },
+          {
+            arch: 'armv7',
+            cflags: '-Os',
+            args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort'
+          },
+          {
+            arch: 'ppc64le',
+            cflags: '-O2',
+            args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort'
+          },
         ]
     steps:
     - uses: actions/checkout@v3
@@ -24,17 +37,17 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
         CC: "gcc"
-        CFLAGS: "-O2 -fno-plt"
-        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        CFLAGS: "${{ matrix.target.cflags }} -fno-plt"
+        LDFLAGS: "${{ matrix.target.cflags }} -flto -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
         ORJSON_ENABLE_WRITEEXT: "1"
       with:
-        maturin-version: v0.14.14
+        maturin-version: v1.0.0-beta.5
         target: ${{ matrix.target.arch }}
-        rust-toolchain: nightly-2023-02-03
+        rust-toolchain: nightly-2023-03-20
         rustup-components: rust-src
         manylinux: auto
-        args: --release --strip --out dist -i python${{ matrix.python.version }} ${{ matrix.target.flags }}
+        args: --release --strip --out dist -i python${{ matrix.python.version }}
     - uses: uraimo/run-on-arch-action@v2
       name: Install built wheel
       with:
@@ -72,7 +85,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - run: pip install "maturin>=0.14,<0.15"
+      - run: pip install --pre "maturin>=0.14,<2"
       - name: deploy
         run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
         env:

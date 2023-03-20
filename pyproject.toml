@@ -25,7 +25,7 @@ classifiers = [
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=0.13,<0.15"]
+requires = ["maturin>=0.13,<2"]
 
 [tool.maturin]
 python-source = "pysrc"
