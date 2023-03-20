@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.8 - 2023-03-20
+
+### Changed
+
+- Publish ppc64le wheels.
+
 ## 3.8.7 - 2023-02-28
 
 ### Fixed
