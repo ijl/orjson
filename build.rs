@@ -24,6 +24,10 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 
+    if let Some(true) = version_check::supports_feature("strict_provenance") {
+        println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
+    }
+
     if let Some(true) = version_check::supports_feature("trusted_len") {
         println!("cargo:rustc-cfg=feature=\"trusted_len\"");
     }
