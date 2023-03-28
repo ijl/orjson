@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.8.9 - 2023-03-28
+
+### Fixed
+
+- Fix parallel initialization of orjson.
+
 ## 3.8.8 - 2023-03-20
 
 ### Changed
