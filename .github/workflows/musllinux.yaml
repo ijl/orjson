@@ -31,7 +31,7 @@ jobs:
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
         maturin-version: v1.0.0-beta.5
-        rust-toolchain: nightly-2023-03-20
+        rust-toolchain: nightly-2023-03-28
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1

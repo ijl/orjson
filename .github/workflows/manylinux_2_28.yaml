@@ -26,8 +26,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-03-20 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-03-20-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-03-28 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-03-28-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v3
     - run: python3 -m pip install --user --upgrade --pre pip "maturin>=0.14,<2" wheel
     - run: |

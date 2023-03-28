@@ -44,10 +44,10 @@ jobs:
       with:
         maturin-version: v1.0.0-beta.5
         target: ${{ matrix.target.arch }}
-        rust-toolchain: nightly-2023-03-20
+        rust-toolchain: nightly-2023-03-28
         rustup-components: rust-src
         manylinux: auto
-        args: --release --strip --out dist -i python${{ matrix.python.version }}
+        args: --release --strip --out dist -i python${{ matrix.python.version }} ${{ matrix.target.args }}
     - uses: uraimo/run-on-arch-action@v2
       name: Install built wheel
       with:
