@@ -30,6 +30,8 @@ steps:
   displayName: thread
 - bash: ./integration/run http
   displayName: http
+- bash: ./integration/run init
+  displayName: init
 
 - bash: PATH=$HOME/.cargo/bin:$PATH PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") maturin build --release --strip --features=unstable-simd,yyjson --interpreter $(interpreter) --universal2
   env:

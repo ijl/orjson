@@ -2,13 +2,12 @@ use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::default::*;
 use crate::serialize::error::*;
-use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
+use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use pyo3_ffi::*;
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::convert::TryInto;
 use std::fmt;
-use std::ops::DerefMut;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr::NonNull;
 
@@ -77,10 +76,11 @@ macro_rules! slice {
 }
 
 pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
-    if unsafe { NUMPY_TYPES.is_none() } {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+    if numpy_types.is_none() {
         false
     } else {
-        let scalar_types = unsafe { NUMPY_TYPES.as_ref().unwrap() };
+        let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
         ob_type == scalar_types.float64
             || ob_type == scalar_types.float32
             || ob_type == scalar_types.int64
@@ -97,10 +97,12 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
 }
 
 pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
-    if unsafe { NUMPY_TYPES.is_none() } {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+    if numpy_types.is_none() {
         false
     } else {
-        unsafe { ob_type == NUMPY_TYPES.as_ref().unwrap().array }
+        let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
+        unsafe { ob_type == scalar_types.array }
     }
 }
 
@@ -806,7 +808,8 @@ impl Serialize for NumpyScalar {
     {
         unsafe {
             let ob_type = ob_type!(self.ptr);
-            let scalar_types = NUMPY_TYPES.deref_mut().as_ref().unwrap();
+            let scalar_types =
+                unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
             if ob_type == scalar_types.float64 {
                 (*(self.ptr as *mut NumpyFloat64)).serialize(serializer)
             } else if ob_type == scalar_types.float32 {

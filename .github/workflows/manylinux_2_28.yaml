@@ -42,6 +42,7 @@ jobs:
     - run: pytest -s -rxX -v test
     - run: ./integration/run thread
     - run: ./integration/run http
+    - run: ./integration/run init
     - run: git config --global --add safe.directory /__w/orjson/orjson
     - name: deploy
       run: maturin upload --skip-existing --username "$MATURIN_USERNAME" target/wheels/orjson-*.whl

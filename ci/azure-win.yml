@@ -27,5 +27,7 @@ steps:
   displayName: pytest without optional packages
 - script: python.exe integration\thread
   displayName: thread
+- script: python.exe integration\init
+  displayName: init
 - bash: ./ci/deploy /d/a/1/s/target/wheels/*.whl
   displayName: deploy
