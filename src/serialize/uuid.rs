@@ -15,6 +15,7 @@ impl UUID {
     pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         UUID { ptr: ptr }
     }
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn write_buf(&self, buf: &mut UUIDBuffer) {
         let value: u128;
         {

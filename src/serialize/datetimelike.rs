@@ -94,6 +94,7 @@ pub trait DateTimeLike {
 
     /// Write `self` to a buffer in RFC3339 format, using `opts` to
     /// customise if desired.
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn write_buf(&self, buf: &mut DateTimeBuffer, opts: Opt) -> Result<(), DateTimeError> {
         {
             let year = self.year();
