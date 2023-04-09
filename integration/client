@@ -27,4 +27,6 @@ async def main():
     sys.stdout.write(f"\r{TEST_MESSAGE} ok, {count} requests made\n")
 
 
-asyncio.get_event_loop().run_until_complete(main())
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+asyncio.run(main())

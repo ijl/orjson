@@ -42,7 +42,7 @@ pub type KeyMap =
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 pub fn cache_hash(key: &[u8]) -> u64 {
-    let mut hasher = unsafe { HASH_BUILDER.get_or_init(ahash_init).build_hasher() };
+    let mut hasher = unsafe { HASH_BUILDER.get().unwrap().build_hasher() };
     hasher.write(key);
     hasher.finish()
 }

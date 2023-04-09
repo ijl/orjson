@@ -3,19 +3,6 @@ variables:
 
 jobs:
 
-- job: linux_sdist_stable
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_28_x86_64:latest
-  variables:
-    interpreter: python3.10
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    target: x86_64-unknown-linux-gnu
-    toolchain: 1.60.0
-  steps:
-  - checkout: self
-  - template: ./azure-sdist.yml
-
 - job: linux_debug
   pool:
     vmImage: ubuntu-22.04

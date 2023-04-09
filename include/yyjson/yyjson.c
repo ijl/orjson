@@ -247,7 +247,8 @@ yyjson_api uint32_t yyjson_version(void) {
     defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
     defined(__riscv) || defined(__riscv__) || \
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__) || \
-    defined(__EMSCRIPTEN__) || defined(__wasm__)
+    defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__loongarch__)
 #   define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 
 #elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
@@ -315,6 +316,9 @@ yyjson_api uint32_t yyjson_version(void) {
         defined(__PPCGECKO__) || defined(__PPCBROADWAY__) || defined(_XENON)
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* PowerPC */
 
+#   elif defined(__loongarch__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* loongarch */
+
 #   else
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* Unknown */
 #   endif
@@ -341,6 +345,12 @@ yyjson_api uint32_t yyjson_version(void) {
 #define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
 #define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
 #define YYJSON_WRITER_ESTIMATED_MINIFY_RATIO 18
+
+/* The initial and maximum size of the memory pool's chunk in yyjson_mut_doc. */
+#define YYJSON_MUT_DOC_STR_POOL_INIT_SIZE   0x100
+#define YYJSON_MUT_DOC_STR_POOL_MAX_SIZE    0x10000000
+#define YYJSON_MUT_DOC_VAL_POOL_INIT_SIZE   (0x10 * sizeof(yyjson_mut_val))
+#define YYJSON_MUT_DOC_VAL_POOL_MAX_SIZE    (0x1000000 * sizeof(yyjson_mut_val))
 
 /* Default value for compile-time options. */
 #ifndef YYJSON_DISABLE_READER
@@ -1157,17 +1167,26 @@ static_inline void unsafe_yyjson_val_pool_release(yyjson_val_pool *pool,
 bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
                                  const yyjson_alc *alc, usize len) {
     yyjson_str_chunk *chunk;
-    usize size = len + sizeof(yyjson_str_chunk);
+    usize size, max_len;
+    
+    /* create a new chunk */
+    max_len = USIZE_MAX - sizeof(yyjson_str_chunk);
+    if (unlikely(len > max_len)) return false;
+    size = len + sizeof(yyjson_str_chunk);
     size = yyjson_max(pool->chunk_size, size);
     chunk = (yyjson_str_chunk *)alc->malloc(alc->ctx, size);
-    if (yyjson_unlikely(!chunk)) return false;
+    if (unlikely(!chunk)) return false;
     
+    /* insert the new chunk as the head of the linked list */
     chunk->next = pool->chunks;
+    chunk->chunk_size = size;
     pool->chunks = chunk;
     pool->cur = (char *)chunk + sizeof(yyjson_str_chunk);
     pool->end = (char *)chunk + size;
     
+    /* the next chunk is twice the size of the current one */
     size = yyjson_min(pool->chunk_size * 2, pool->chunk_size_max);
+    if (size < pool->chunk_size) size = pool->chunk_size_max; /* overflow */
     pool->chunk_size = size;
     return true;
 }
@@ -1175,22 +1194,41 @@ bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
 bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
                                  const yyjson_alc *alc, usize count) {
     yyjson_val_chunk *chunk;
-    usize size;
+    usize size, max_count;
     
-    if (count >= USIZE_MAX / sizeof(yyjson_mut_val) - 16) return false;
+    /* create a new chunk */
+    max_count = USIZE_MAX / sizeof(yyjson_mut_val) - 1;
+    if (unlikely(count > max_count)) return false;
     size = (count + 1) * sizeof(yyjson_mut_val);
     size = yyjson_max(pool->chunk_size, size);
     chunk = (yyjson_val_chunk *)alc->malloc(alc->ctx, size);
-    if (yyjson_unlikely(!chunk)) return false;
+    if (unlikely(!chunk)) return false;
     
+    /* insert the new chunk as the head of the linked list */
     chunk->next = pool->chunks;
+    chunk->chunk_size = size;
     pool->chunks = chunk;
-    pool->cur = (yyjson_mut_val *)(void *)((u8 *)chunk
-                                           + sizeof(yyjson_mut_val));
+    pool->cur = (yyjson_mut_val *)(void *)((u8 *)chunk) + 1;
     pool->end = (yyjson_mut_val *)(void *)((u8 *)chunk + size);
     
+    /* the next chunk is twice the size of the current one */
     size = yyjson_min(pool->chunk_size * 2, pool->chunk_size_max);
+    if (size < pool->chunk_size) size = pool->chunk_size_max; /* overflow */
     pool->chunk_size = size;
+    return true;
+}
+
+bool yyjson_mut_doc_set_str_pool_size(yyjson_mut_doc *doc, size_t len) {
+    usize max_size = USIZE_MAX - sizeof(yyjson_str_chunk);
+    if (!doc || !len || len > max_size) return false;
+    doc->str_pool.chunk_size = len + sizeof(yyjson_str_chunk);
+    return true;
+}
+
+bool yyjson_mut_doc_set_val_pool_size(yyjson_mut_doc *doc, size_t count) {
+    usize max_count = USIZE_MAX / sizeof(yyjson_mut_val) - 1;
+    if (!doc || !count || count > max_count) return false;
+    doc->val_pool.chunk_size = (count + 1) * sizeof(yyjson_mut_val);
     return true;
 }
 
@@ -1211,10 +1249,10 @@ yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc) {
     memset(doc, 0, sizeof(yyjson_mut_doc));
     
     doc->alc = *alc;
-    doc->str_pool.chunk_size = 0x100;
-    doc->str_pool.chunk_size_max = 0x10000000;
-    doc->val_pool.chunk_size = 0x10 * sizeof(yyjson_mut_val);
-    doc->val_pool.chunk_size_max = 0x1000000 * sizeof(yyjson_mut_val);
+    doc->str_pool.chunk_size = YYJSON_MUT_DOC_STR_POOL_INIT_SIZE;
+    doc->str_pool.chunk_size_max = YYJSON_MUT_DOC_STR_POOL_MAX_SIZE;
+    doc->val_pool.chunk_size = YYJSON_MUT_DOC_VAL_POOL_INIT_SIZE;
+    doc->val_pool.chunk_size_max = YYJSON_MUT_DOC_VAL_POOL_MAX_SIZE;
     return doc;
 }
 
@@ -7855,6 +7893,21 @@ static_inline void yyjson_mut_write_ctx_get(yyjson_mut_write_ctx *ctx,
     *ctn = ctx->ctn;
 }
 
+/** Get the estimated number of values for the mutable JSON document. */
+static_inline usize yyjson_mut_doc_estimated_val_num(
+    const yyjson_mut_doc *doc) {
+    usize sum = 0;
+    yyjson_val_chunk *chunk = doc->val_pool.chunks;
+    while (chunk) {
+        sum += chunk->chunk_size / sizeof(yyjson_mut_val) - 1;
+        if (chunk == doc->val_pool.chunks) {
+            sum -= (usize)(doc->val_pool.end - doc->val_pool.cur);
+        }
+        chunk = chunk->next;
+    }
+    return sum;
+}
+
 /** Write single JSON value. */
 static_inline u8 *yyjson_mut_write_single(yyjson_mut_val *val,
                                           yyjson_write_flag flg,
@@ -7867,6 +7920,7 @@ static_inline u8 *yyjson_mut_write_single(yyjson_mut_val *val,
 /** Write JSON document minify.
     The root of this document should be a non-empty container. */
 static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
+                                          usize estimated_val_num,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -7916,7 +7970,7 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
     bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
     bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
-    alc_len = 0 * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
+    alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
     hdr = (u8 *)alc.malloc(alc.ctx, alc_len);
     if (!hdr) goto fail_alloc;
@@ -8044,6 +8098,7 @@ fail_str:
 /** Write JSON document pretty.
     The root of this document should be a non-empty container. */
 static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
+                                          usize estimated_val_num,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -8094,7 +8149,7 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
     bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     usize spaces = (flg & YYJSON_WRITE_PRETTY_TWO_SPACES) ? 2 : 4;
     
-    alc_len = 0 * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
+    alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
     hdr = (u8 *)alc.malloc(alc.ctx, alc_len);
     if (!hdr) goto fail_alloc;
@@ -8243,11 +8298,12 @@ fail_str:
 #undef check_str_len
 }
 
-char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
-                                yyjson_write_flag flg,
-                                const yyjson_alc *alc_ptr,
-                                usize *dat_len,
-                                yyjson_write_err *err) {
+static char *yyjson_mut_write_opts_impl(const yyjson_mut_val *val,
+                                        usize estimated_val_num,
+                                        yyjson_write_flag flg,
+                                        const yyjson_alc *alc_ptr,
+                                        usize *dat_len,
+                                        yyjson_write_err *err) {
     yyjson_write_err dummy_err;
     usize dummy_dat_len;
     yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
@@ -8271,10 +8327,20 @@ char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
         return (char *)yyjson_mut_write_single(root, flg, alc, dat_len, err);
     } else if (flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES)) {
-        return (char *)yyjson_mut_write_pretty(root, flg, alc, dat_len, err);
+        return (char *)yyjson_mut_write_pretty(root, estimated_val_num,
+                                               flg, alc, dat_len, err);
     } else {
-        return (char *)yyjson_mut_write_minify(root, flg, alc, dat_len, err);
+        return (char *)yyjson_mut_write_minify(root, estimated_val_num,
+                                               flg, alc, dat_len, err);
     }
+}
+
+char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
+                                yyjson_write_flag flg,
+                                const yyjson_alc *alc_ptr,
+                                usize *dat_len,
+                                yyjson_write_err *err) {
+    return yyjson_mut_write_opts_impl(val, 0, flg, alc_ptr, dat_len, err);
 }
 
 char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
@@ -8282,8 +8348,17 @@ char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                             const yyjson_alc *alc_ptr,
                             usize *dat_len,
                             yyjson_write_err *err) {
-    yyjson_mut_val *root = doc ? doc->root : NULL;
-    return yyjson_mut_val_write_opts(root, flg, alc_ptr, dat_len, err);
+    yyjson_mut_val *root;
+    usize estimated_val_num;
+    if (likely(doc)) {
+        root = doc->root;
+        estimated_val_num = yyjson_mut_doc_estimated_val_num(doc);
+    } else {
+        root = NULL;
+        estimated_val_num = 0;
+    }
+    return yyjson_mut_write_opts_impl(root, estimated_val_num,
+                                      flg, alc_ptr, dat_len, err);
 }
 
 bool yyjson_mut_val_write_file(const char *path,

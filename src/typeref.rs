@@ -124,6 +124,7 @@ pub fn init_typerefs() {
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
+        HASH_BUILDER.get_or_init(ahash_init);
         PyDateTime_IMPORT();
         NONE = Py_None();
         TRUE = Py_True();

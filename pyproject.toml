@@ -29,7 +29,11 @@ requires = ["maturin>=0.13,<2"]
 
 [tool.maturin]
 python-source = "pysrc"
-sdist-include = ["build.rs", "Cargo.lock", "include/**/*"]
+include = [
+    { format = "sdist", path = "build.rs" },
+    { format = "sdist", path = "Cargo.lock" },
+    { format = "sdist", path = "include/**/*" },
+]
 
 [tool.black]
 line-length = 88

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+yyjson_version="9e9ca66b8c91c5c99cae780fa6285b0bb67d45ca"
+
+curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
+curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"
+
+sed -i 's/yyjson_api_inline void yyjson_doc_free/yyjson_api void yyjson_doc_free/g' include/yyjson/yyjson.h

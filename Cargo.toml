@@ -53,7 +53,7 @@ compact_str = { version = "0.7", default_features = false, features = ["serde"] 
 encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
 itoap = { version = "1", features = ["std", "simd"] }
-once_cell = { version = "1", default_features = false }
+once_cell = { version = "1", default_features = false, features = ["race"] }
 pyo3-ffi = { version = "0.18", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
