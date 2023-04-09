@@ -219,6 +219,11 @@ jobs:
             cflags: '-O2',
             args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort',
           },
+          {
+            arch: 's390x',
+            cflags: '-O2 -march=z10',
+            args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort',
+          },
         ]
     steps:
     - uses: actions/checkout@v3
@@ -231,6 +236,7 @@ jobs:
         LDFLAGS: "${{ matrix.target.cflags }} -flto -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
         ORJSON_ENABLE_WRITEEXT: "1"
+        CFLAGS_s390x_unknown_linux_gnu: "-march=z10"
       with:
         maturin-version: v1.0.0-beta.7
         target: ${{ matrix.target.arch }}
