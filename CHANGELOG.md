@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.8.10 - 2023-04-09
+
+### Fixed
+
+- Fix compatibility with CPython 3.12.0a7.
+- Fix compatibility with big-endian architectures.
+- Fix crash in serialization.
+
+### Changed
+
+- Publish musllinux 3.11 wheels.
+- Publish s390x wheels.
+
 ## 3.8.9 - 2023-03-28
 
 ### Fixed
