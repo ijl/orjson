@@ -48,7 +48,7 @@ pub fn read_input_to_buf(
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
     } else if is_type!(obj_type_ptr, STR_TYPE) {
-        let uni = unicode_to_str(ptr);
+        let uni = unicode_to_str(ptr, None);
         if unlikely!(uni.is_none()) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }

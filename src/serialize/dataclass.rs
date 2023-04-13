@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::cell::RefCell;
 use crate::opt::*;
 use crate::serialize::error::*;
 use crate::serialize::serializer::*;
@@ -10,6 +11,8 @@ use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
 use std::ptr::NonNull;
+use std::rc::Rc;
+use crate::ffi::SuspendGIL;
 
 pub struct DataclassFastSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -17,6 +20,7 @@ pub struct DataclassFastSerializer {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl DataclassFastSerializer {
@@ -26,6 +30,7 @@ impl DataclassFastSerializer {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
+        gil: Rc<RefCell<SuspendGIL>>,
     ) -> Self {
         DataclassFastSerializer {
             ptr: ptr,
@@ -33,6 +38,7 @@ impl DataclassFastSerializer {
             default_calls: default_calls,
             recursion: recursion + 1,
             default: default,
+            gil: gil,
         }
     }
 }
@@ -52,7 +58,7 @@ impl Serialize for DataclassFastSerializer {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key);
+            let data = unicode_to_str(key, Some(Rc::clone(&self.gil)));
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
@@ -66,6 +72,7 @@ impl Serialize for DataclassFastSerializer {
                 self.default_calls,
                 self.recursion,
                 self.default,
+                Rc::clone(&self.gil),
             );
             map.serialize_key(key_as_str).unwrap();
             map.serialize_value(&pyvalue)?;
@@ -80,6 +87,7 @@ pub struct DataclassFallbackSerializer {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl DataclassFallbackSerializer {
@@ -89,6 +97,7 @@ impl DataclassFallbackSerializer {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
+        gil: Rc<RefCell<SuspendGIL>>,
     ) -> Self {
         DataclassFallbackSerializer {
             ptr: ptr,
@@ -96,6 +105,7 @@ impl DataclassFallbackSerializer {
             default_calls: default_calls,
             recursion: recursion + 1,
             default: default,
+            gil: gil,
         }
     }
 }
@@ -106,20 +116,25 @@ impl Serialize for DataclassFallbackSerializer {
     where
         S: Serializer,
     {
+        self.gil.replace_with(|v| v.restore());
         let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
         ffi!(Py_DECREF(fields));
         let len = ffi!(Py_SIZE(fields)) as usize;
+        self.gil.replace_with(|v| v.release());
         if unlikely!(len == 0) {
             return serializer.serialize_map(Some(0)).unwrap().end();
         }
         let mut map = serializer.serialize_map(None).unwrap();
         for (attr, field) in PyDictIter::from_pyobject(fields) {
+            self.gil.replace_with(|v| v.restore());
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             ffi!(Py_DECREF(field_type));
+            self.gil.replace_with(|v| v.release());
+
             if unsafe { field_type as *mut pyo3_ffi::PyTypeObject != FIELD_TYPE } {
                 continue;
             }
-            let data = unicode_to_str(attr);
+            let data = unicode_to_str(attr, Some(Rc::clone(&self.gil)));
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr);
             }
@@ -128,14 +143,18 @@ impl Serialize for DataclassFallbackSerializer {
                 continue;
             }
 
+            self.gil.replace_with(|v| v.restore());
             let value = ffi!(PyObject_GetAttr(self.ptr, attr));
             ffi!(Py_DECREF(value));
+            self.gil.replace_with(|v| v.release());
+
             let pyvalue = PyObjectSerializer::new(
                 value,
                 self.opts,
                 self.default_calls,
                 self.recursion,
                 self.default,
+                Rc::clone(&self.gil),
             );
 
             map.serialize_key(key_as_str).unwrap();

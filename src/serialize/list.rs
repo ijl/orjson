@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::cell::RefCell;
 use crate::ffi::PyListIter;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
+use std::rc::Rc;
+use crate::ffi::SuspendGIL;
 
 pub struct ListSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -13,6 +16,7 @@ pub struct ListSerializer {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl ListSerializer {
@@ -22,6 +26,7 @@ impl ListSerializer {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
+        gil: Rc<RefCell<SuspendGIL>>,
     ) -> Self {
         ListSerializer {
             ptr: ptr,
@@ -29,6 +34,7 @@ impl ListSerializer {
             default_calls: default_calls,
             recursion: recursion + 1,
             default: default,
+            gil: gil,
         }
     }
 }
@@ -49,6 +55,7 @@ impl Serialize for ListSerializer {
                     self.default_calls,
                     self.recursion,
                     self.default,
+                    Rc::clone(&self.gil),
                 );
                 seq.serialize_element(&value)?;
             }

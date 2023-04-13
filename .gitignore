@@ -10,3 +10,5 @@
 /target
 /vendor
 __pycache__
+/.idea/
+/env/

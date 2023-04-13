@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::default::*;
@@ -10,6 +11,8 @@ use std::convert::TryInto;
 use std::fmt;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr::NonNull;
+use std::rc::Rc;
+use crate::ffi::SuspendGIL;
 
 pub struct NumpySerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -17,6 +20,7 @@ pub struct NumpySerializer {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl NumpySerializer {
@@ -26,6 +30,7 @@ impl NumpySerializer {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
+        gil: Rc<RefCell<SuspendGIL>>,
     ) -> Self {
         NumpySerializer {
             ptr: ptr,
@@ -33,6 +38,7 @@ impl NumpySerializer {
             default_calls: default_calls,
             recursion: recursion,
             default: default,
+            gil: gil,
         }
     }
 }
@@ -44,7 +50,7 @@ impl Serialize for NumpySerializer {
     where
         S: Serializer,
     {
-        match NumpyArray::new(self.ptr, self.opts) {
+        match NumpyArray::new(self.ptr, self.opts, Rc::clone(&self.gil)) {
             Ok(val) => val.serialize(serializer),
             Err(PyArrayError::Malformed) => err!(SerializeError::NumpyMalformed),
             Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType)
@@ -56,6 +62,7 @@ impl Serialize for NumpySerializer {
                     self.default_calls,
                     self.recursion,
                     self.default,
+                    Rc::clone(&self.gil),
                 )
                 .serialize(serializer)
             }
@@ -75,8 +82,13 @@ macro_rules! slice {
     };
 }
 
-pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
-    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: Rc<RefCell<SuspendGIL>>) -> bool {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(|| {
+        gil.replace_with(|v| v.restore());
+        let types = load_numpy_types();
+        gil.replace_with(|v| v.release());
+        types
+    }) };
     if numpy_types.is_none() {
         false
     } else {
@@ -96,8 +108,13 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     }
 }
 
-pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
-    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+pub fn is_numpy_array(ob_type: *mut PyTypeObject, gil: Rc<RefCell<SuspendGIL>>) -> bool {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(|| {
+        gil.replace_with(|v| v.restore());
+        let types = load_numpy_types();
+        gil.replace_with(|v| v.release());
+        types
+    }) };
     if numpy_types.is_none() {
         false
     } else {
@@ -148,11 +165,11 @@ pub enum ItemType {
 }
 
 impl ItemType {
-    fn find(array: *mut PyArrayInterface, ptr: *mut PyObject) -> Option<ItemType> {
+    fn find(array: *mut PyArrayInterface, ptr: *mut PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Option<ItemType> {
         match unsafe { ((*array).typekind, (*array).itemsize) } {
             (098, 1) => Some(ItemType::BOOL),
             (077, 8) => {
-                let unit = NumpyDatetimeUnit::from_pyobject(ptr);
+                let unit = NumpyDatetimeUnit::from_pyobject(ptr, Rc::clone(&gil));
                 Some(ItemType::DATETIME64(unit))
             }
             (102, 4) => Some(ItemType::F32),
@@ -190,28 +207,34 @@ pub struct NumpyArray {
     capsule: *mut PyCapsule,
     kind: ItemType,
     opts: Opt,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl NumpyArray {
     #[cold]
     #[inline(never)]
     #[cfg_attr(feature = "optimize", optimize(size))]
-    pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
+    pub fn new(ptr: *mut PyObject, opts: Opt, gil: Rc<RefCell<SuspendGIL>>) -> Result<Self, PyArrayError> {
+        gil.replace_with(|v| v.restore());
         let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
         let array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
         if unsafe { (*array).two != 2 } {
             ffi!(Py_DECREF(capsule));
+            gil.replace_with(|v| v.release());
             Err(PyArrayError::Malformed)
         } else if unsafe { (*array).flags } & 0x1 != 0x1 {
             ffi!(Py_DECREF(capsule));
+            gil.replace_with(|v| v.release());
             Err(PyArrayError::NotContiguous)
         } else {
             let num_dimensions = unsafe { (*array).nd as usize };
             if num_dimensions == 0 {
                 ffi!(Py_DECREF(capsule));
+                gil.replace_with(|v| v.release());
                 return Err(PyArrayError::UnsupportedDataType);
             }
-            match ItemType::find(array, ptr) {
+            gil.replace_with(|v| v.release());
+            match ItemType::find(array, ptr, Rc::clone(&gil)) {
                 None => Err(PyArrayError::UnsupportedDataType),
                 Some(kind) => {
                     let mut pyarray = NumpyArray {
@@ -222,6 +245,7 @@ impl NumpyArray {
                         capsule: capsule as *mut PyCapsule,
                         kind: kind,
                         opts,
+                        gil: Rc::clone(&gil),
                     };
                     if pyarray.dimensions() > 1 {
                         pyarray.build();
@@ -241,6 +265,7 @@ impl NumpyArray {
             capsule: self.capsule,
             kind: self.kind,
             opts: self.opts,
+            gil: Rc::clone(&self.gil),
         };
         arr.build();
         arr
@@ -293,8 +318,10 @@ impl NumpyArray {
 impl Drop for NumpyArray {
     fn drop(&mut self) {
         if self.depth == 0 {
+            self.gil.replace_with(|v| v.restore());
             ffi!(Py_DECREF(self.array as *mut pyo3_ffi::PyObject));
             ffi!(Py_DECREF(self.capsule as *mut pyo3_ffi::PyObject));
+            self.gil.replace_with(|v| v.release());
         }
     }
 }
@@ -804,11 +831,12 @@ impl Serialize for DataTypeBool {
 pub struct NumpyScalar {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl NumpyScalar {
-    pub fn new(ptr: *mut PyObject, opts: Opt) -> Self {
-        NumpyScalar { ptr, opts }
+    pub fn new(ptr: *mut PyObject, opts: Opt, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+        NumpyScalar { ptr, opts, gil }
     }
 }
 
@@ -823,7 +851,12 @@ impl Serialize for NumpyScalar {
         unsafe {
             let ob_type = ob_type!(self.ptr);
             let scalar_types =
-                unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
+                unsafe { NUMPY_TYPES.get_or_init(|| {
+                    self.gil.replace_with(|v| v.restore());
+                    let types = load_numpy_types();
+                    self.gil.replace_with(|v| v.release());
+                    types
+                }).unwrap().as_ref() };
             if ob_type == scalar_types.float64 {
                 (*(self.ptr as *mut NumpyFloat64)).serialize(serializer)
             } else if ob_type == scalar_types.float32 {
@@ -847,7 +880,7 @@ impl Serialize for NumpyScalar {
             } else if ob_type == scalar_types.bool_ {
                 (*(self.ptr as *mut NumpyBool)).serialize(serializer)
             } else if ob_type == scalar_types.datetime64 {
-                let unit = NumpyDatetimeUnit::from_pyobject(self.ptr);
+                let unit = NumpyDatetimeUnit::from_pyobject(self.ptr, Rc::clone(&self.gil));
                 let obj = &*(self.ptr as *mut NumpyDatetime64);
                 let dt = unit
                     .datetime(obj.value, self.opts)
@@ -1115,14 +1148,16 @@ impl NumpyDatetimeUnit {
     /// object rather than using the `descr` field of the `__array_struct__`
     /// because that field isn't populated for datetime64 arrays; see
     /// https://github.com/numpy/numpy/issues/5350.
-    fn from_pyobject(ptr: *mut PyObject) -> Self {
+    fn from_pyobject(ptr: *mut PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+        gil.replace_with(|v| v.restore());
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
         ffi!(Py_DECREF(dtype));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
         ffi!(Py_DECREF(descr));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let uni = crate::str::unicode_to_str(descr_str).unwrap();
+        gil.replace_with(|v| v.release());
+        let uni = crate::str::unicode_to_str(descr_str, Some(gil)).unwrap();
         if uni.len() < 5 {
             return Self::NaT;
         }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::cell::RefCell;
 use crate::opt::*;
 use crate::serialize::error::*;
 use crate::serialize::serializer::*;
@@ -7,6 +8,8 @@ use crate::serialize::serializer::*;
 use serde::ser::{Serialize, Serializer};
 
 use std::ptr::NonNull;
+use std::rc::Rc;
+use crate::ffi::SuspendGIL;
 
 pub struct DefaultSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -14,6 +17,7 @@ pub struct DefaultSerializer {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
+    gil: Rc<RefCell<SuspendGIL>>,
 }
 
 impl DefaultSerializer {
@@ -23,6 +27,7 @@ impl DefaultSerializer {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
+        gil: Rc<RefCell<SuspendGIL>>,
     ) -> Self {
         DefaultSerializer {
             ptr: ptr,
@@ -30,6 +35,7 @@ impl DefaultSerializer {
             default_calls: default_calls,
             recursion: recursion,
             default: default,
+            gil: gil,
         }
     }
 }
@@ -46,12 +52,14 @@ impl Serialize for DefaultSerializer {
                 if unlikely!(self.default_calls == RECURSION_LIMIT) {
                     err!(SerializeError::DefaultRecursionLimit)
                 }
+                self.gil.replace_with(|v| v.restore());
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
                     self.ptr,
                     std::ptr::null_mut() as *mut pyo3_ffi::PyObject
                 ));
                 if unlikely!(default_obj.is_null()) {
+                    self.gil.replace_with(|v| v.release());
                     err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
                 } else {
                     let res = PyObjectSerializer::new(
@@ -60,9 +68,11 @@ impl Serialize for DefaultSerializer {
                         self.default_calls + 1,
                         self.recursion,
                         self.default,
+                        Rc::clone(&self.gil),
                     )
                     .serialize(serializer);
                     ffi!(Py_DECREF(default_obj));
+                    self.gil.replace_with(|v| v.release());
                     res
                 }
             }
