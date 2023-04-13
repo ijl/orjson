@@ -6,8 +6,8 @@ use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, Serializer};
 
-use std::ptr::NonNull;
 use crate::ffi::ReleasedGIL;
+use std::ptr::NonNull;
 
 pub struct DefaultSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
@@ -50,27 +50,36 @@ impl<'a> Serialize for DefaultSerializer<'a> {
                 if unlikely!(self.default_calls == RECURSION_LIMIT) {
                     err!(SerializeError::DefaultRecursionLimit)
                 }
-                let mut _guard = self.gil.gil_locked();
-                let default_obj = ffi!(PyObject_CallFunctionObjArgs(
-                    callable.as_ptr(),
-                    self.ptr,
-                    std::ptr::null_mut() as *mut pyo3_ffi::PyObject
-                ));
-                if unlikely!(default_obj.is_null()) {
-                    err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
-                } else {
-                    let res = PyObjectSerializer::new(
-                        default_obj,
-                        self.opts,
-                        self.default_calls + 1,
-                        self.recursion,
-                        self.default,
-                        self.gil,
-                    )
-                    .serialize(serializer);
-                    ffi!(Py_DECREF(default_obj));
-                    res
+
+                let default_obj: *mut pyo3_ffi::PyObject;
+                {
+                    let mut _guard = self.gil.gil_locked();
+                    default_obj = ffi!(PyObject_CallFunctionObjArgs(
+                        callable.as_ptr(),
+                        self.ptr,
+                        std::ptr::null_mut() as *mut pyo3_ffi::PyObject
+                    ));
+                    if unlikely!(default_obj.is_null()) {
+                        err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
+                    }
                 }
+
+                let res = PyObjectSerializer::new(
+                    default_obj,
+                    self.opts,
+                    self.default_calls + 1,
+                    self.recursion,
+                    self.default,
+                    self.gil,
+                )
+                .serialize(serializer);
+
+                {
+                    let mut _guard = self.gil.gil_locked();
+                    ffi!(Py_DECREF(default_obj));
+                }
+
+                res
             }
             None => err!(SerializeError::UnsupportedType(nonnull!(self.ptr))),
         }

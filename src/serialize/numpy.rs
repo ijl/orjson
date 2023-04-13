@@ -1,3 +1,4 @@
+use crate::ffi::ReleasedGIL;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::default::*;
@@ -10,7 +11,6 @@ use std::convert::TryInto;
 use std::fmt;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr::NonNull;
-use crate::ffi::ReleasedGIL;
 
 pub struct NumpySerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
@@ -81,10 +81,12 @@ macro_rules! slice {
 }
 
 pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
-    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(|| {
-        let _guard = gil.gil_locked();
-        load_numpy_types()
-    }) };
+    let numpy_types = unsafe {
+        NUMPY_TYPES.get_or_init(|| {
+            let _guard = gil.gil_locked();
+            load_numpy_types()
+        })
+    };
     if numpy_types.is_none() {
         false
     } else {
@@ -105,10 +107,12 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
 }
 
 pub fn is_numpy_array(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
-    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(|| {
-        let _guard = gil.gil_locked();
-        load_numpy_types()
-    }) };
+    let numpy_types = unsafe {
+        NUMPY_TYPES.get_or_init(|| {
+            let _guard = gil.gil_locked();
+            load_numpy_types()
+        })
+    };
     if numpy_types.is_none() {
         false
     } else {
@@ -159,7 +163,11 @@ pub enum ItemType {
 }
 
 impl ItemType {
-    fn find(array: *mut PyArrayInterface, ptr: *mut PyObject, gil: &ReleasedGIL) -> Option<ItemType> {
+    fn find(
+        array: *mut PyArrayInterface,
+        ptr: *mut PyObject,
+        gil: &ReleasedGIL,
+    ) -> Option<ItemType> {
         match unsafe { ((*array).typekind, (*array).itemsize) } {
             (098, 1) => Some(ItemType::BOOL),
             (077, 8) => {
@@ -215,10 +223,10 @@ impl<'a> NumpyArray<'a> {
             let array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
             if unsafe { (*array).two != 2 } {
                 ffi!(Py_DECREF(capsule));
-                return Err(PyArrayError::Malformed)
+                return Err(PyArrayError::Malformed);
             } else if unsafe { (*array).flags } & 0x1 != 0x1 {
                 ffi!(Py_DECREF(capsule));
-                return Err(PyArrayError::NotContiguous)
+                return Err(PyArrayError::NotContiguous);
             } else {
                 let num_dimensions = unsafe { (*array).nd as usize };
                 if num_dimensions == 0 {
@@ -842,11 +850,15 @@ impl<'a> Serialize for NumpyScalar<'a> {
     {
         unsafe {
             let ob_type = ob_type!(self.ptr);
-            let scalar_types =
-                unsafe { NUMPY_TYPES.get_or_init(|| {
-                    let mut _guard = self.gil.gil_locked();
-                    load_numpy_types()
-                }).unwrap().as_ref() };
+            let scalar_types = unsafe {
+                NUMPY_TYPES
+                    .get_or_init(|| {
+                        let mut _guard = self.gil.gil_locked();
+                        load_numpy_types()
+                    })
+                    .unwrap()
+                    .as_ref()
+            };
             if ob_type == scalar_types.float64 {
                 (*(self.ptr as *mut NumpyFloat64)).serialize(serializer)
             } else if ob_type == scalar_types.float32 {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::ReleasedGIL;
 use core::ffi::c_void;
 use pyo3_ffi::*;
-use crate::ffi::ReleasedGIL;
 
 // see unicodeobject.h for documentation
 
@@ -25,7 +25,10 @@ pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
 }
 
 #[inline(never)]
-pub fn unicode_to_str_via_ffi(op: *mut PyObject, gil: Option<&ReleasedGIL>) -> Option<&'static str> {
+pub fn unicode_to_str_via_ffi(
+    op: *mut PyObject,
+    gil: Option<&ReleasedGIL>,
+) -> Option<&'static str> {
     let _guard = gil.map(|g| g.gil_locked());
     let mut str_size: pyo3_ffi::Py_ssize_t = 0;
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)) as *const u8;

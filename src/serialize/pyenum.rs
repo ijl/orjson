@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::ReleasedGIL;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 use std::ptr::NonNull;
-use crate::ffi::ReleasedGIL;
 
 pub struct EnumSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,

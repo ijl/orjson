@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::ReleasedGIL;
 use crate::typeref::*;
+use pyo3_ffi::PyObject;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
 use std::os::raw::c_uchar;
-use crate::ffi::ReleasedGIL;
 
 pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
@@ -20,12 +21,16 @@ impl<'a> UUID<'a> {
 
     #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn write_buf(&self, buf: &mut UUIDBuffer) {
-        let value: u128;
+        // test_uuid_immutable, test_uuid_int
+        let py_int: *mut PyObject;
         {
             let mut _guard = self.gil.gil_locked();
-            // test_uuid_immutable, test_uuid_int
-            let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
+            py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
             ffi!(Py_DECREF(py_int));
+        };
+
+        let value: u128;
+        {
             let buffer: [c_uchar; 16] = [0; 16];
             unsafe {
                 // test_uuid_overflow

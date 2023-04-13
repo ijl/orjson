@@ -3,9 +3,9 @@
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
+use crate::ffi::ReleasedGIL;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
-use crate::ffi::ReleasedGIL;
 
 pub struct TupleSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,

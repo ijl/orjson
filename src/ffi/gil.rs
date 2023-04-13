@@ -7,11 +7,11 @@ struct State {
 }
 
 pub struct ReleasedGIL {
-    state: Option<Rc<RefCell<State>>>
+    state: Option<Rc<RefCell<State>>>,
 }
 
 pub struct LockedGIL<'a> {
-    locked_state: &'a Rc<RefCell<State>>
+    locked_state: &'a Rc<RefCell<State>>,
 }
 
 impl<'a> Drop for LockedGIL<'a> {
@@ -23,8 +23,13 @@ impl<'a> Drop for LockedGIL<'a> {
 impl ReleasedGIL {
     pub fn new_unlocked() -> Self {
         let thread_state = unsafe { pyo3_ffi::PyEval_SaveThread() };
-        let state = State { thread_state: Some(thread_state), gil_count: 0 };
-        Self { state: Some(Rc::new(RefCell::new(state))) }
+        let state = State {
+            thread_state: Some(thread_state),
+            gil_count: 0,
+        };
+        Self {
+            state: Some(Rc::new(RefCell::new(state))),
+        }
     }
 
     pub fn new_dummy() -> Self {
@@ -35,10 +40,19 @@ impl ReleasedGIL {
     pub fn gil_locked(&self) -> Option<LockedGIL> {
         if let Some(state) = &self.state {
             ReleasedGIL::lock(state);
-            Some(LockedGIL { locked_state: state })
+            Some(LockedGIL {
+                locked_state: state,
+            })
         } else {
             None
         }
+    }
+
+    #[inline]
+    pub fn is_released(&self) -> bool {
+        self.state
+            .as_ref()
+            .map_or(false, |s| s.borrow().thread_state.is_some())
     }
 
     fn lock(state: &Rc<RefCell<State>>) {
@@ -46,7 +60,10 @@ impl ReleasedGIL {
             if let Some(thread_state) = s.thread_state {
                 unsafe { pyo3_ffi::PyEval_RestoreThread(thread_state) };
             }
-            State { thread_state: None, gil_count: s.gil_count + 1 }
+            State {
+                thread_state: None,
+                gil_count: s.gil_count + 1,
+            }
         });
     }
 
@@ -54,9 +71,15 @@ impl ReleasedGIL {
         state.replace_with(|s| {
             if s.gil_count == 1 {
                 let thread_state = unsafe { pyo3_ffi::PyEval_SaveThread() };
-                State { thread_state: Some(thread_state), gil_count: 0 }
+                State {
+                    thread_state: Some(thread_state),
+                    gil_count: 0,
+                }
             } else {
-                State { thread_state: None, gil_count: s.gil_count - 1 }
+                State {
+                    thread_state: None,
+                    gil_count: s.gil_count - 1,
+                }
             }
         });
     }

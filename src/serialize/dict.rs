@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::ffi::c_int;
 use crate::ffi::PyDictIter;
+use crate::ffi::ReleasedGIL;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
@@ -14,8 +14,8 @@ use crate::typeref::*;
 use compact_str::CompactString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
+use std::ffi::c_int;
 use std::ptr::NonNull;
-use crate::ffi::ReleasedGIL;
 
 pub struct Dict<'a> {
     ptr: *mut pyo3_ffi::PyObject,

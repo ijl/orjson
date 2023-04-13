@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::env;
+use crate::ffi::ReleasedGIL;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -17,8 +17,8 @@ use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use crate::ffi::ReleasedGIL;
 use serde::ser::{Serialize, SerializeMap, Serializer};
+use std::env;
 use std::io::Write;
 use std::ptr::NonNull;
 
@@ -137,7 +137,11 @@ macro_rules! is_subclass_by_type {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &ReleasedGIL) -> ObType {
+pub fn pyobject_to_obtype_unlikely(
+    obj: *mut pyo3_ffi::PyObject,
+    opts: Opt,
+    gil: &ReleasedGIL,
+) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
@@ -216,7 +220,9 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
     {
         match pyobject_to_obtype(self.ptr, self.opts, self.gil) {
             ObType::Str => StrSerializer::new(self.ptr, self.gil).serialize(serializer),
-            ObType::StrSubclass => StrSubclassSerializer::new(self.ptr, self.gil).serialize(serializer),
+            ObType::StrSubclass => {
+                StrSubclassSerializer::new(self.ptr, self.gil).serialize(serializer)
+            }
             ObType::Int => {
                 if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER)) {
                     Int53Serializer::new(self.ptr).serialize(serializer)
@@ -350,7 +356,9 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
                 self.gil,
             )
             .serialize(serializer),
-            ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts, self.gil).serialize(serializer),
+            ObType::NumpyScalar => {
+                NumpyScalar::new(self.ptr, self.opts, self.gil).serialize(serializer)
+            }
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

@@ -11,4 +11,4 @@
 /vendor
 __pycache__
 /.idea/
-/env/
+/pyenv/

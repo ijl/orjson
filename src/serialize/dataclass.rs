@@ -9,8 +9,8 @@ use crate::typeref::*;
 use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
-use std::ptr::NonNull;
 use crate::ffi::ReleasedGIL;
+use std::ptr::NonNull;
 
 pub struct DataclassFastSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,

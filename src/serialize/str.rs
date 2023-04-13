@@ -3,8 +3,8 @@
 use crate::serialize::error::*;
 use crate::str::*;
 
-use serde::ser::{Serialize, Serializer};
 use crate::ffi::ReleasedGIL;
+use serde::ser::{Serialize, Serializer};
 
 pub struct StrSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
