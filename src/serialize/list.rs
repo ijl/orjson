@@ -1,32 +1,30 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
 use crate::ffi::PyListIter;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
-use std::rc::Rc;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
-pub struct ListSerializer {
+pub struct ListSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl ListSerializer {
+impl<'a> ListSerializer<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         ListSerializer {
             ptr: ptr,
@@ -39,7 +37,7 @@ impl ListSerializer {
     }
 }
 
-impl Serialize for ListSerializer {
+impl<'a> Serialize for ListSerializer<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -55,7 +53,7 @@ impl Serialize for ListSerializer {
                     self.default_calls,
                     self.recursion,
                     self.default,
-                    Rc::clone(&self.gil),
+                    self.gil,
                 );
                 seq.serialize_element(&value)?;
             }

@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::error::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
 macro_rules! write_double_digit {
     ($buf:ident, $value:ident) => {
@@ -127,14 +125,14 @@ impl Serialize for Time {
     }
 }
 
-pub struct DateTime {
+pub struct DateTime<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl DateTime {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+impl<'a> DateTime<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt, gil: &'a ReleasedGIL) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
@@ -151,7 +149,7 @@ macro_rules! pydatetime_get {
     };
 }
 
-impl DateTimeLike for DateTime {
+impl<'a> DateTimeLike for DateTime<'a> {
     pydatetime_get!(year, PyDateTime_GET_YEAR, i32);
     pydatetime_get!(month, PyDateTime_GET_MONTH, u8);
     pydatetime_get!(day, PyDateTime_GET_DAY, u8);
@@ -216,20 +214,17 @@ impl DateTimeLike for DateTime {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
             if unsafe { ob_type!(tzinfo) == ZONEINFO_TYPE } {
                 // zoneinfo
-                self.gil.replace_with(|v| v.restore());
+                let mut _guard = self.gil.gil_locked();
                 let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 let offset = Offset {
                     second: ffi!(PyDateTime_DELTA_GET_SECONDS(py_offset)),
                     day: ffi!(PyDateTime_DELTA_GET_DAYS(py_offset)),
                 };
                 ffi!(Py_DECREF(py_offset));
-                self.gil.replace_with(|v| v.release());
                 Ok(offset)
             } else {
-                self.gil.replace_with(|v| v.restore());
-                let res = self.slow_offset();
-                self.gil.replace_with(|v| v.release());
-                res
+                let mut _guard = self.gil.gil_locked();
+                self.slow_offset()
             }
         }
     }
@@ -239,15 +234,13 @@ impl DateTimeLike for DateTime {
         if !self.has_tz() {
             Ok(Offset::default())
         } else {
-            self.gil.replace_with(|v| v.restore());
-            let res = self.slow_offset();
-            self.gil.replace_with(|v| v.release());
-            res
+            let mut _guard = self.gil.gil_locked();
+            self.slow_offset()
         }
     }
 }
 
-impl Serialize for DateTime {
+impl<'a> Serialize for DateTime<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

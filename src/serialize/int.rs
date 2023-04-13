@@ -1,29 +1,27 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
 use std::ffi::c_int;
-use std::rc::Rc;
 use crate::serialize::error::*;
 use serde::ser::{Serialize, Serializer};
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
 // https://tools.ietf.org/html/rfc7159#section-6
 // "[-(2**53)+1, (2**53)-1]"
 const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
-pub struct IntSerializer {
+pub struct IntSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl IntSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+impl<'a> IntSerializer<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
         IntSerializer { ptr: ptr, gil: gil }
     }
 }
 
-impl Serialize for IntSerializer {
+impl<'a> Serialize for IntSerializer<'a> {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -32,43 +30,40 @@ impl Serialize for IntSerializer {
         let mut overflow: c_int = 0;
         let val = ffi!(PyLong_AsLongLongAndOverflow(self.ptr, &mut overflow));
         if unlikely!(overflow != 0) {
-            UIntSerializer::new(self.ptr, Rc::clone(&self.gil)).serialize(serializer)
+            UIntSerializer::new(self.ptr, self.gil).serialize(serializer)
         } else {
             serializer.serialize_i64(val)
         }
     }
 }
 
-pub struct UIntSerializer {
+pub struct UIntSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl UIntSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+impl<'a> UIntSerializer<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
         UIntSerializer { ptr: ptr, gil: gil }
     }
 }
 
-impl Serialize for UIntSerializer {
+impl<'a> Serialize for UIntSerializer<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        self.gil.replace_with(|v| v.restore());
+        let mut _guard = self.gil.gil_locked();
         ffi!(PyErr_Clear());
         let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
         if unlikely!(val == u64::MAX) {
             if ffi!(PyErr_Occurred()).is_null() {
-                self.gil.replace_with(|v| v.release());
                 serializer.serialize_u64(val)
             } else {
-                self.gil.replace_with(|v| v.release());
                 err!(SerializeError::Integer64Bits)
             }
         } else {
-            self.gil.replace_with(|v| v.release());
             serializer.serialize_u64(val)
         }
     }

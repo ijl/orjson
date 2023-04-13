@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use core::ffi::c_void;
-use std::cell::RefCell;
-use std::rc::Rc;
 use pyo3_ffi::*;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
 // see unicodeobject.h for documentation
 
@@ -27,27 +25,19 @@ pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
 }
 
 #[inline(never)]
-pub fn unicode_to_str_via_ffi(op: *mut PyObject, gil: Option<Rc<RefCell<SuspendGIL>>>) -> Option<&'static str> {
+pub fn unicode_to_str_via_ffi(op: *mut PyObject, gil: Option<&ReleasedGIL>) -> Option<&'static str> {
+    let _guard = gil.map(|g| g.gil_locked());
     let mut str_size: pyo3_ffi::Py_ssize_t = 0;
-    if gil.is_some() {
-        gil.as_ref().unwrap().replace_with(|v| v.restore());
-    }
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)) as *const u8;
     if unlikely!(ptr.is_null()) {
-        if gil.is_some() {
-            gil.as_ref().unwrap().replace_with(|v| v.release());
-        }
         None
     } else {
-        if gil.is_some() {
-            gil.as_ref().unwrap().as_ref().replace_with(|v| v.release());
-        }
         Some(str_from_slice!(ptr, str_size as usize))
     }
 }
 
 #[inline]
-pub fn unicode_to_str(op: *mut PyObject, gil: Option<Rc<RefCell<SuspendGIL>>>) -> Option<&'static str> {
+pub fn unicode_to_str(op: *mut PyObject, gil: Option<&ReleasedGIL>) -> Option<&'static str> {
     unsafe {
         if unlikely!((*op.cast::<PyASCIIObject>()).compact() == 0) {
             unicode_to_str_via_ffi(op, gil)

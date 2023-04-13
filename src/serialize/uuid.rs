@@ -1,29 +1,28 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
 use std::os::raw::c_uchar;
-use std::rc::Rc;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
 pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
-pub struct UUID {
+pub struct UUID<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl UUID {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: Rc<RefCell<SuspendGIL>>,) -> Self {
+impl<'a> UUID<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
         UUID { ptr: ptr, gil: gil }
     }
+
     #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn write_buf(&self, buf: &mut UUIDBuffer) {
         let value: u128;
         {
-            self.gil.replace_with(|v| v.restore());
+            let mut _guard = self.gil.gil_locked();
             // test_uuid_immutable, test_uuid_int
             let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
             ffi!(Py_DECREF(py_int));
@@ -39,7 +38,6 @@ impl UUID {
                 )
             };
             value = u128::from_le_bytes(buffer);
-            self.gil.replace_with(|v| v.release());
         }
 
         let mut hexadecimal = arrayvec::ArrayVec::<u8, 32>::new();
@@ -56,7 +54,7 @@ impl UUID {
         buf.try_extend_from_slice(&hexadecimal[20..32]).unwrap();
     }
 }
-impl Serialize for UUID {
+impl<'a> Serialize for UUID<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

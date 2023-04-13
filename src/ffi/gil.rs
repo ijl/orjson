@@ -1,38 +1,71 @@
-pub struct SuspendGIL {
-    tstate: Option<*mut pyo3_ffi::PyThreadState>,
+use std::cell::RefCell;
+use std::rc::Rc;
+
+struct State {
+    thread_state: Option<*mut pyo3_ffi::PyThreadState>,
     gil_count: i16,
 }
 
-impl SuspendGIL {
-    pub fn new(can_suspend: bool) -> Self {
-        if can_suspend {
-            Self { tstate: None, gil_count: 1 }
+pub struct ReleasedGIL {
+    state: Option<Rc<RefCell<State>>>
+}
+
+pub struct LockedGIL<'a> {
+    locked_state: &'a Rc<RefCell<State>>
+}
+
+impl<'a> Drop for LockedGIL<'a> {
+    fn drop(&mut self) {
+        ReleasedGIL::do_unlock(self.locked_state);
+    }
+}
+
+impl ReleasedGIL {
+    pub fn new_unlocked() -> Self {
+        let thread_state = unsafe { pyo3_ffi::PyEval_SaveThread() };
+        let state = State { thread_state: Some(thread_state), gil_count: 0 };
+        Self { state: Some(Rc::new(RefCell::new(state))) }
+    }
+
+    pub fn new_dummy() -> Self {
+        Self { state: None }
+    }
+
+    #[inline]
+    pub fn gil_locked(&self) -> Option<LockedGIL> {
+        if let Some(state) = &self.state {
+            ReleasedGIL::lock(state);
+            Some(LockedGIL { locked_state: state })
         } else {
-            Self { tstate: None, gil_count: -1 }
+            None
         }
     }
 
-    pub fn restore(&self) -> Self {
-        if self.gil_count == -1 {
-            Self { tstate: None, gil_count: -1 }
-        } else {
-            if let Some(tstate) = self.tstate {
-                unsafe { pyo3_ffi::PyEval_RestoreThread(tstate) };
+    fn lock(state: &Rc<RefCell<State>>) {
+        state.replace_with(|s| {
+            if let Some(thread_state) = s.thread_state {
+                unsafe { pyo3_ffi::PyEval_RestoreThread(thread_state) };
             }
-            Self { tstate: None, gil_count: self.gil_count + 1 }
-        }
+            State { thread_state: None, gil_count: s.gil_count + 1 }
+        });
     }
 
-    pub fn release(&self) -> Self {
-        if self.gil_count == -1 {
-            Self { tstate: None, gil_count: -1 }
-        } else if self.gil_count == 1 {
-            unsafe {
-                let tstate = pyo3_ffi::PyEval_SaveThread();
-                Self { tstate: Some(tstate), gil_count: 0 }
+    fn do_unlock(state: &Rc<RefCell<State>>) {
+        state.replace_with(|s| {
+            if s.gil_count == 1 {
+                let thread_state = unsafe { pyo3_ffi::PyEval_SaveThread() };
+                State { thread_state: Some(thread_state), gil_count: 0 }
+            } else {
+                State { thread_state: None, gil_count: s.gil_count - 1 }
             }
-        } else {
-            Self { tstate: None, gil_count: self.gil_count - 1 }
+        });
+    }
+}
+
+impl Drop for ReleasedGIL {
+    fn drop(&mut self) {
+        if let Some(state) = &self.state {
+            ReleasedGIL::lock(state);
         }
     }
 }

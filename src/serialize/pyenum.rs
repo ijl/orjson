@@ -1,31 +1,29 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 use std::ptr::NonNull;
-use std::rc::Rc;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
-pub struct EnumSerializer {
+pub struct EnumSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl EnumSerializer {
+impl<'a> EnumSerializer<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         EnumSerializer {
             ptr: ptr,
@@ -38,23 +36,25 @@ impl EnumSerializer {
     }
 }
 
-impl Serialize for EnumSerializer {
+impl<'a> Serialize for EnumSerializer<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        self.gil.replace_with(|v| v.restore());
-        let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
-        ffi!(Py_DECREF(value));
-        self.gil.replace_with(|v| v.release());
+        let value = {
+            let mut _guard = self.gil.gil_locked();
+            let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
+            ffi!(Py_DECREF(value));
+            value
+        };
         PyObjectSerializer::new(
             value,
             self.opts,
             self.default_calls,
             self.recursion,
             self.default,
-            Rc::clone(&self.gil),
+            self.gil,
         )
         .serialize(serializer)
     }

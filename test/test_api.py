@@ -39,70 +39,6 @@ class TestApi:
         for obj in SIMPLE_TYPES:
             assert orjson.dumps(obj) == json.dumps(obj).encode("utf-8")
 
-    @dataclass(kw_only=True)
-    class PerfDC:
-        k1: list
-        k2: list
-        k3: list
-        k4: list
-        k5: list
-
-    @pytest.mark.parametrize("obj_kind", [dict, PerfDC])
-    @pytest.mark.parametrize("item_kind", [int, float, str])
-    @pytest.mark.parametrize("gil", ["gil", "gil_release"])
-    def test_simple_perf(self, obj_kind, item_kind, gil):
-        vals = [
-            obj_kind(**{
-                "k1": [item_kind(i) for i in range(20000)],
-                "k2": [item_kind(i) for i in range(20000)],
-                "k3": [item_kind(i) for i in range(20000)],
-                "k4": [item_kind(i) for i in range(20000)],
-                "k5": [item_kind(i) for i in range(20000)],
-            })
-            for _ in range(100)
-        ]
-
-        option = 0
-        option = option | orjson.OPT_NO_GIL if gil == "gil_release" else option
-
-        def fn(v):
-            orjson.dumps(v, option=option)
-        fn(vals[0])
-
-        print("")
-        for t in [1, 2, 3, 4]:
-            s = time()
-            with ThreadPoolExecutor(max_workers=t) as pool:
-                res = [*pool.map(fn, vals)]
-            print(f"{item_kind.__name__} t={t}: {time() - s}s")
-
-    @pytest.mark.parametrize("kind", [int, float, str])
-    @pytest.mark.parametrize("non_str_keys", [False, True])
-    @pytest.mark.parametrize("release_gil", [True, False])
-    def test_simple_many_keys_perf(self, kind, non_str_keys, release_gil):
-        vals = [
-            {
-                (kind(ki) if non_str_keys else f"k{ki}"): [kind(i) for i in range(100)]
-                for ki in range(1000)
-            }
-            for _ in range(100)
-        ]
-
-        option = 0
-        option = option | orjson.OPT_NON_STR_KEYS if non_str_keys else option
-        option = option | orjson.OPT_NO_GIL if release_gil else option
-
-        def fn(v):
-            orjson.dumps(v, option=option)
-        fn(vals[0])
-
-        print("")
-        for t in [1, 2, 3, 4]:
-            s = time()
-            with ThreadPoolExecutor(max_workers=t) as pool:
-                res = [*pool.map(fn, vals)]
-            print(f"{kind.__name__} t={t}: {time() - s}s")
-
     def test_simple_round_trip(self):
         """
         dumps(), loads() round trip on simple types
@@ -171,7 +107,7 @@ class TestApi:
         dumps() option out of range high
         """
         with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps(True, option=1 << 12)
+            orjson.dumps(True, option=1 << 13)
 
     def test_opts_multiple(self):
         """

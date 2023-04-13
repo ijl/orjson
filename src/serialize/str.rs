@@ -1,30 +1,28 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::serialize::error::*;
 use crate::str::*;
 
 use serde::ser::{Serialize, Serializer};
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
-pub struct StrSerializer {
+pub struct StrSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl StrSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+impl<'a> StrSerializer<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
         StrSerializer { ptr: ptr, gil: gil }
     }
 }
 
-impl Serialize for StrSerializer {
+impl<'a> Serialize for StrSerializer<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let uni = unicode_to_str(self.ptr, Some(Rc::clone(&self.gil)));
+        let uni = unicode_to_str(self.ptr, Some(self.gil));
         if unlikely!(uni.is_none()) {
             err!(SerializeError::InvalidStr)
         }
@@ -32,24 +30,24 @@ impl Serialize for StrSerializer {
     }
 }
 
-pub struct StrSubclassSerializer {
+pub struct StrSubclassSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl StrSubclassSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: Rc<RefCell<SuspendGIL>>) -> Self {
+impl<'a> StrSubclassSerializer<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
         StrSubclassSerializer { ptr: ptr, gil: gil }
     }
 }
 
-impl Serialize for StrSubclassSerializer {
+impl<'a> Serialize for StrSubclassSerializer<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let uni = unicode_to_str_via_ffi(self.ptr, Some(Rc::clone(&self.gil)));
+        let uni = unicode_to_str_via_ffi(self.ptr, Some(self.gil));
         if unlikely!(uni.is_none()) {
             err!(SerializeError::InvalidStr)
         }

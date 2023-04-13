@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::RefCell;
 use std::ffi::c_int;
 use crate::ffi::PyDictIter;
 use crate::opt::*;
@@ -16,26 +15,25 @@ use compact_str::CompactString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
 use std::ptr::NonNull;
-use std::rc::Rc;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 
-pub struct Dict {
+pub struct Dict<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl Dict {
+impl<'a> Dict<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         Dict {
             ptr: ptr,
@@ -48,7 +46,7 @@ impl Dict {
     }
 }
 
-impl Serialize for Dict {
+impl<'a> Serialize for Dict<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -59,7 +57,7 @@ impl Serialize for Dict {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let key_as_str = unicode_to_str(key, Some(Rc::clone(&self.gil)));
+            let key_as_str = unicode_to_str(key, Some(self.gil));
             if unlikely!(key_as_str.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
@@ -69,7 +67,7 @@ impl Serialize for Dict {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             );
             map.serialize_key(key_as_str.unwrap()).unwrap();
             map.serialize_value(&pyvalue)?;
@@ -78,23 +76,23 @@ impl Serialize for Dict {
     }
 }
 
-pub struct DictSortedKey {
+pub struct DictSortedKey<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl DictSortedKey {
+impl<'a> DictSortedKey<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         DictSortedKey {
             ptr: ptr,
@@ -107,7 +105,7 @@ impl DictSortedKey {
     }
 }
 
-impl Serialize for DictSortedKey {
+impl<'a> Serialize for DictSortedKey<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -120,7 +118,7 @@ impl Serialize for DictSortedKey {
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key, Some(Rc::clone(&self.gil)));
+            let data = unicode_to_str(key, Some(self.gil));
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
@@ -137,7 +135,7 @@ impl Serialize for DictSortedKey {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             );
             map.serialize_key(key).unwrap();
             map.serialize_value(&pyvalue)?;
@@ -146,23 +144,23 @@ impl Serialize for DictSortedKey {
     }
 }
 
-pub struct DictNonStrKey {
+pub struct DictNonStrKey<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl DictNonStrKey {
+impl<'a> DictNonStrKey<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         DictNonStrKey {
             ptr: ptr,
@@ -178,9 +176,9 @@ impl DictNonStrKey {
     fn pyobject_to_string(
         key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &ReleasedGIL,
     ) -> Result<CompactString, SerializeError> {
-        match pyobject_to_obtype(key, opts, Rc::clone(&gil)) {
+        match pyobject_to_obtype(key, opts, gil) {
             ObType::None => Ok(CompactString::from("null")),
             ObType::Bool => {
                 let key_as_str = if unsafe { key == TRUE } {
@@ -194,12 +192,11 @@ impl DictNonStrKey {
                 let mut overflow: c_int = 0;
                 let ival = ffi!(PyLong_AsLongLongAndOverflow(key, &mut overflow));
                 if unlikely!(overflow != 0) {
-                    gil.replace_with(|v| v.restore());
+                    let _guard = gil.gil_locked();
                     let uval = ffi!(PyLong_AsUnsignedLongLong(key));
                     if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
                         return Err(SerializeError::DictIntegerKey64Bit);
                     }
-                    gil.replace_with(|v| v.release());
                     Ok(CompactString::from(itoa::Buffer::new().format(uval)))
                 } else {
                     Ok(CompactString::from(itoa::Buffer::new().format(ival)))
@@ -215,7 +212,7 @@ impl DictNonStrKey {
             }
             ObType::Datetime => {
                 let mut buf = DateTimeBuffer::new();
-                let dt = DateTime::new(key, opts, Rc::clone(&gil));
+                let dt = DateTime::new(key, opts, gil);
                 if dt.write_buf(&mut buf, opts).is_err() {
                     return Err(SerializeError::DatetimeLibraryUnsupported);
                 }
@@ -244,11 +241,13 @@ impl DictNonStrKey {
                 Ok(CompactString::from(key_as_str))
             }
             ObType::Enum => {
-                gil.replace_with(|v| v.restore());
-                let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
-                ffi!(Py_DECREF(value));
-                gil.replace_with(|v| v.release());
-                Self::pyobject_to_string(value, opts, Rc::clone(&gil))
+                let value = {
+                    let _guard = gil.gil_locked();
+                    let val = ffi!(PyObject_GetAttr(key, VALUE_STR));
+                    ffi!(Py_DECREF(val));
+                    val
+                };
+                Self::pyobject_to_string(value, opts, gil)
             }
             ObType::Str => {
                 // because of ObType::Enum
@@ -278,7 +277,7 @@ impl DictNonStrKey {
     }
 }
 
-impl Serialize for DictNonStrKey {
+impl<'a> Serialize for DictNonStrKey<'a> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -290,13 +289,13 @@ impl Serialize for DictNonStrKey {
         let opts = self.opts & NOT_PASSTHROUGH;
         for (key, value) in PyDictIter::from_pyobject(self.ptr) {
             if is_type!(ob_type!(key), STR_TYPE) {
-                let uni = unicode_to_str(key, Some(Rc::clone(&self.gil)));
+                let uni = unicode_to_str(key, Some(self.gil));
                 if unlikely!(uni.is_none()) {
                     err!(SerializeError::InvalidStr)
                 }
                 items.push((CompactString::from(uni.unwrap()), value));
             } else {
-                match Self::pyobject_to_string(key, opts, Rc::clone(&self.gil)) {
+                match Self::pyobject_to_string(key, opts, self.gil) {
                     Ok(key_as_str) => items.push((key_as_str, value)),
                     Err(err) => err!(err),
                 }
@@ -315,7 +314,7 @@ impl Serialize for DictNonStrKey {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             );
             map.serialize_key(key).unwrap();
             map.serialize_value(&pyvalue)?;

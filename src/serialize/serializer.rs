@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::cell::{RefCell};
+use std::env;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -17,11 +17,10 @@ use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use crate::ffi::SuspendGIL;
+use crate::ffi::ReleasedGIL;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
-use std::rc::Rc;
 
 #[cfg(not(feature = "writeext"))]
 use serde_json::{to_writer, to_writer_pretty};
@@ -36,18 +35,26 @@ pub fn serialize(
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
-    let gil = Rc::new(RefCell::new(SuspendGIL::new(opt_enabled!(opts, NO_GIL))));
-    gil.replace_with(|v| v.release());
+    let mut can_suspend_gil = opt_enabled!(opts, NO_GIL);
+    if let Ok(var_val) = env::var("ORJSON_FORCE_NO_GIL") {
+        if var_val == "1" {
+            can_suspend_gil = true;
+        }
+    }
+
+    let gil = if can_suspend_gil {
+        ReleasedGIL::new_unlocked()
+    } else {
+        ReleasedGIL::new_dummy()
+    };
 
     let mut buf = BytesWriter::default();
-    let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default, Rc::clone(&gil));
+    let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default, &gil);
     let res = if opt_disabled!(opts, INDENT_2) {
         to_writer(&mut buf, &obj)
     } else {
         to_writer_pretty(&mut buf, &obj)
     };
-
-    gil.replace_with(|v| v.restore());
 
     match res {
         Ok(_) => {
@@ -86,7 +93,7 @@ pub enum ObType {
     Unknown,
 }
 
-pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: Rc<RefCell<SuspendGIL>>) -> ObType {
+pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &ReleasedGIL) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == STR_TYPE {
@@ -106,7 +113,7 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: Rc<RefCe
         } else if ob_type == DATETIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Datetime
         } else {
-            pyobject_to_obtype_unlikely(obj, opts, Rc::clone(&gil))
+            pyobject_to_obtype_unlikely(obj, opts, gil)
         }
     }
 }
@@ -130,7 +137,7 @@ macro_rules! is_subclass_by_type {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: Rc<RefCell<SuspendGIL>>) -> ObType {
+pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &ReleasedGIL) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
@@ -163,9 +170,9 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil:
             && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
         {
             ObType::Dataclass
-        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_scalar(ob_type, Rc::clone(&gil)) {
+        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_scalar(ob_type, gil) {
             ObType::NumpyScalar
-        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_array(ob_type, Rc::clone(&gil)) {
+        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_array(ob_type, gil) {
             ObType::NumpyArray
         } else {
             ObType::Unknown
@@ -173,23 +180,23 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil:
     }
 }
 
-pub struct PyObjectSerializer {
+pub struct PyObjectSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: Rc<RefCell<SuspendGIL>>,
+    gil: &'a ReleasedGIL,
 }
 
-impl PyObjectSerializer {
+impl<'a> PyObjectSerializer<'a> {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
         opts: Opt,
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: Rc<RefCell<SuspendGIL>>,
+        gil: &'a ReleasedGIL,
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,
@@ -202,28 +209,28 @@ impl PyObjectSerializer {
     }
 }
 
-impl Serialize for PyObjectSerializer {
+impl<'a> Serialize for PyObjectSerializer<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        match pyobject_to_obtype(self.ptr, self.opts, Rc::clone(&self.gil)) {
-            ObType::Str => StrSerializer::new(self.ptr, Rc::clone(&self.gil)).serialize(serializer),
-            ObType::StrSubclass => StrSubclassSerializer::new(self.ptr, Rc::clone(&self.gil)).serialize(serializer),
+        match pyobject_to_obtype(self.ptr, self.opts, self.gil) {
+            ObType::Str => StrSerializer::new(self.ptr, self.gil).serialize(serializer),
+            ObType::StrSubclass => StrSubclassSerializer::new(self.ptr, self.gil).serialize(serializer),
             ObType::Int => {
                 if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER)) {
                     Int53Serializer::new(self.ptr).serialize(serializer)
                 } else {
-                    IntSerializer::new(self.ptr, Rc::clone(&self.gil)).serialize(serializer)
+                    IntSerializer::new(self.ptr, self.gil).serialize(serializer)
                 }
             }
             ObType::None => serializer.serialize_unit(),
             ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
             ObType::Bool => serializer.serialize_bool(unsafe { self.ptr == TRUE }),
-            ObType::Datetime => DateTime::new(self.ptr, self.opts, Rc::clone(&self.gil)).serialize(serializer),
+            ObType::Datetime => DateTime::new(self.ptr, self.opts, self.gil).serialize(serializer),
             ObType::Date => Date::new(self.ptr).serialize(serializer),
             ObType::Time => Time::new(self.ptr, self.opts).serialize(serializer),
-            ObType::Uuid => UUID::new(self.ptr, Rc::clone(&self.gil)).serialize(serializer),
+            ObType::Uuid => UUID::new(self.ptr, self.gil).serialize(serializer),
             ObType::Dict => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
@@ -237,7 +244,7 @@ impl Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        Rc::clone(&self.gil),
+                        self.gil,
                     )
                     .serialize(serializer)
                 } else if opt_enabled!(self.opts, NON_STR_KEYS) {
@@ -247,7 +254,7 @@ impl Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        Rc::clone(&self.gil),
+                        self.gil,
                     )
                     .serialize(serializer)
                 } else {
@@ -257,7 +264,7 @@ impl Serialize for PyObjectSerializer {
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        Rc::clone(&self.gil),
+                        self.gil,
                     )
                     .serialize(serializer)
                 }
@@ -272,7 +279,7 @@ impl Serialize for PyObjectSerializer {
                     self.default_calls,
                     self.recursion,
                     self.default,
-                    Rc::clone(&self.gil),
+                    self.gil,
                 )
                 .serialize(serializer)
             }
@@ -282,40 +289,45 @@ impl Serialize for PyObjectSerializer {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             )
             .serialize(serializer),
             ObType::Dataclass => {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
                 }
-                self.gil.replace_with(|v| v.restore());
-                let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                let ob_type = ob_type!(self.ptr);
-                if unlikely!(
-                    dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
-                ) {
-                    ffi!(PyErr_Clear());
-                    self.gil.replace_with(|v| v.release());
+                let dict = {
+                    let mut _guard = self.gil.gil_locked();
+                    let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
+                    let ob_type = ob_type!(self.ptr);
+                    if unlikely!(
+                        dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
+                    ) {
+                        ffi!(PyErr_Clear());
+                        None
+                    } else {
+                        ffi!(Py_DECREF(dict));
+                        Some(dict)
+                    }
+                };
+                if unlikely!(dict.is_none()) {
                     DataclassFallbackSerializer::new(
                         self.ptr,
                         self.opts,
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        Rc::clone(&self.gil),
+                        self.gil,
                     )
                     .serialize(serializer)
                 } else {
-                    ffi!(Py_DECREF(dict));
-                    self.gil.replace_with(|v| v.release());
                     DataclassFastSerializer::new(
-                        dict,
+                        dict.unwrap(),
                         self.opts,
                         self.default_calls,
                         self.recursion,
                         self.default,
-                        Rc::clone(&self.gil),
+                        self.gil,
                     )
                     .serialize(serializer)
                 }
@@ -326,7 +338,7 @@ impl Serialize for PyObjectSerializer {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             )
             .serialize(serializer),
             ObType::NumpyArray => NumpySerializer::new(
@@ -335,17 +347,17 @@ impl Serialize for PyObjectSerializer {
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             )
             .serialize(serializer),
-            ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts, Rc::clone(&self.gil)).serialize(serializer),
+            ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts, self.gil).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,
                 self.default_calls,
                 self.recursion,
                 self.default,
-                Rc::clone(&self.gil),
+                self.gil,
             )
             .serialize(serializer),
         }
