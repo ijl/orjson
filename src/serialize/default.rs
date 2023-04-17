@@ -6,7 +6,7 @@ use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, Serializer};
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use std::ptr::NonNull;
 
 pub struct DefaultSerializer<'a> {
@@ -15,7 +15,7 @@ pub struct DefaultSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DefaultSerializer<'a> {
@@ -25,7 +25,7 @@ impl<'a> DefaultSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         DefaultSerializer {
             ptr: ptr,

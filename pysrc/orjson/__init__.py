@@ -23,5 +23,5 @@ __all__ = (
     "OPT_SORT_KEYS",
     "OPT_STRICT_INTEGER",
     "OPT_UTC_Z",
-    "OPT_NO_GIL",
+    "OPT_RELEASE_GIL",
 )

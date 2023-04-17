@@ -9,7 +9,7 @@ use crate::typeref::*;
 use crate::ffi::PyDictIter;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use std::ptr::NonNull;
 
 pub struct DataclassFastSerializer<'a> {
@@ -18,7 +18,7 @@ pub struct DataclassFastSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DataclassFastSerializer<'a> {
@@ -28,7 +28,7 @@ impl<'a> DataclassFastSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         DataclassFastSerializer {
             ptr: ptr,
@@ -85,7 +85,7 @@ pub struct DataclassFallbackSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DataclassFallbackSerializer<'a> {
@@ -95,7 +95,7 @@ impl<'a> DataclassFallbackSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         DataclassFallbackSerializer {
             ptr: ptr,
@@ -114,11 +114,11 @@ impl<'a> Serialize for DataclassFallbackSerializer<'a> {
     where
         S: Serializer,
     {
-        let fields = {
+        let fields: *mut pyo3_ffi::PyObject;
+        {
             let mut _guard = self.gil.gil_locked();
-            let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
+            fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
             ffi!(Py_DECREF(fields));
-            fields
         };
         let len = ffi!(Py_SIZE(fields)) as usize;
         if unlikely!(len == 0) {
@@ -126,7 +126,9 @@ impl<'a> Serialize for DataclassFallbackSerializer<'a> {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         for (attr, field) in PyDictIter::from_pyobject(fields) {
-            let (key_as_str, value) = {
+            let key_as_str: &str;
+            let value: *mut pyo3_ffi::PyObject;
+            {
                 let mut _guard = self.gil.gil_locked();
                 let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
                 ffi!(Py_DECREF(field_type));
@@ -138,14 +140,13 @@ impl<'a> Serialize for DataclassFallbackSerializer<'a> {
                 if unlikely!(data.is_none()) {
                     err!(SerializeError::InvalidStr);
                 }
-                let key_as_str = data.unwrap();
+                key_as_str = data.unwrap();
                 if key_as_str.as_bytes()[0] == b'_' {
                     continue;
                 }
 
-                let value = ffi!(PyObject_GetAttr(self.ptr, attr));
+                value = ffi!(PyObject_GetAttr(self.ptr, attr));
                 ffi!(Py_DECREF(value));
-                (key_as_str, value)
             };
 
             let pyvalue = PyObjectSerializer::new(

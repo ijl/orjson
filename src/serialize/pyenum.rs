@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::opt::*;
 use crate::serialize::serializer::*;
 use crate::typeref::*;
@@ -13,7 +13,7 @@ pub struct EnumSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> EnumSerializer<'a> {
@@ -23,7 +23,7 @@ impl<'a> EnumSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         EnumSerializer {
             ptr: ptr,
@@ -42,11 +42,11 @@ impl<'a> Serialize for EnumSerializer<'a> {
     where
         S: Serializer,
     {
-        let value = {
+        let value: *mut pyo3_ffi::PyObject;
+        {
             let mut _guard = self.gil.gil_locked();
-            let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
+            value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
             ffi!(Py_DECREF(value));
-            value
         };
         PyObjectSerializer::new(
             value,

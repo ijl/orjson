@@ -1,4 +1,4 @@
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::default::*;
@@ -18,7 +18,7 @@ pub struct NumpySerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> NumpySerializer<'a> {
@@ -28,7 +28,7 @@ impl<'a> NumpySerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         NumpySerializer {
             ptr: ptr,
@@ -80,7 +80,7 @@ macro_rules! slice {
     };
 }
 
-pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
+pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: &GIL) -> bool {
     let numpy_types = unsafe {
         NUMPY_TYPES.get_or_init(|| {
             let _guard = gil.gil_locked();
@@ -106,7 +106,7 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
     }
 }
 
-pub fn is_numpy_array(ob_type: *mut PyTypeObject, gil: &ReleasedGIL) -> bool {
+pub fn is_numpy_array(ob_type: *mut PyTypeObject, gil: &GIL) -> bool {
     let numpy_types = unsafe {
         NUMPY_TYPES.get_or_init(|| {
             let _guard = gil.gil_locked();
@@ -163,11 +163,7 @@ pub enum ItemType {
 }
 
 impl ItemType {
-    fn find(
-        array: *mut PyArrayInterface,
-        ptr: *mut PyObject,
-        gil: &ReleasedGIL,
-    ) -> Option<ItemType> {
+    fn find(array: *mut PyArrayInterface, ptr: *mut PyObject, gil: &GIL) -> Option<ItemType> {
         match unsafe { ((*array).typekind, (*array).itemsize) } {
             (098, 1) => Some(ItemType::BOOL),
             (077, 8) => {
@@ -209,18 +205,21 @@ pub struct NumpyArray<'a> {
     capsule: *mut PyCapsule,
     kind: ItemType,
     opts: Opt,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> NumpyArray<'a> {
     #[cold]
     #[inline(never)]
     #[cfg_attr(feature = "optimize", optimize(size))]
-    pub fn new(ptr: *mut PyObject, opts: Opt, gil: &'a ReleasedGIL) -> Result<Self, PyArrayError> {
-        let (capsule, array, num_dimensions) = {
+    pub fn new(ptr: *mut PyObject, opts: Opt, gil: &'a GIL) -> Result<Self, PyArrayError> {
+        let capsule: *mut pyo3_ffi::PyObject;
+        let array: *mut PyArrayInterface;
+        let num_dimensions: usize;
+        {
             let mut _guard = gil.gil_locked();
-            let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
-            let array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
+            capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
+            array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
             if unsafe { (*array).two != 2 } {
                 ffi!(Py_DECREF(capsule));
                 return Err(PyArrayError::Malformed);
@@ -228,12 +227,11 @@ impl<'a> NumpyArray<'a> {
                 ffi!(Py_DECREF(capsule));
                 return Err(PyArrayError::NotContiguous);
             } else {
-                let num_dimensions = unsafe { (*array).nd as usize };
+                num_dimensions = unsafe { (*array).nd as usize };
                 if num_dimensions == 0 {
                     ffi!(Py_DECREF(capsule));
                     return Err(PyArrayError::UnsupportedDataType);
                 }
-                (capsule, array, num_dimensions)
             }
         };
         match ItemType::find(array, ptr, gil) {
@@ -831,11 +829,11 @@ impl Serialize for DataTypeBool {
 pub struct NumpyScalar<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> NumpyScalar<'a> {
-    pub fn new(ptr: *mut PyObject, opts: Opt, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut PyObject, opts: Opt, gil: &'a GIL) -> Self {
         NumpyScalar { ptr, opts, gil }
     }
 }
@@ -1150,7 +1148,7 @@ impl NumpyDatetimeUnit {
     /// object rather than using the `descr` field of the `__array_struct__`
     /// because that field isn't populated for datetime64 arrays; see
     /// https://github.com/numpy/numpy/issues/5350.
-    fn from_pyobject(ptr: *mut PyObject, gil: &ReleasedGIL) -> Self {
+    fn from_pyobject(ptr: *mut PyObject, gil: &GIL) -> Self {
         let descr_str = {
             let mut _guard = gil.gil_locked();
             let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));

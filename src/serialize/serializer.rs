@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -35,17 +35,12 @@ pub fn serialize(
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
-    let mut can_suspend_gil = opt_enabled!(opts, NO_GIL);
-    if let Ok(var_val) = env::var("ORJSON_FORCE_NO_GIL") {
-        if var_val == "1" {
-            can_suspend_gil = true;
-        }
-    }
-
-    let gil = if can_suspend_gil {
-        ReleasedGIL::new_unlocked()
+    let gil: GIL;
+    if opt_enabled!(opts, RELEASE_GIL) || env::var("ORJSON_RELEASE_GIL").map_or(false, |v| v == "1")
+    {
+        gil = GIL::new_released()
     } else {
-        ReleasedGIL::new_dummy()
+        gil = GIL::new_unreleasable()
     };
 
     let mut buf = BytesWriter::default();
@@ -93,7 +88,7 @@ pub enum ObType {
     Unknown,
 }
 
-pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &ReleasedGIL) -> ObType {
+pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &GIL) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == STR_TYPE {
@@ -137,11 +132,7 @@ macro_rules! is_subclass_by_type {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(
-    obj: *mut pyo3_ffi::PyObject,
-    opts: Opt,
-    gil: &ReleasedGIL,
-) -> ObType {
+pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt, gil: &GIL) -> ObType {
     unsafe {
         let ob_type = ob_type!(obj);
         if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
@@ -190,7 +181,7 @@ pub struct PyObjectSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> PyObjectSerializer<'a> {
@@ -200,7 +191,7 @@ impl<'a> PyObjectSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,
@@ -302,7 +293,7 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
                 if unlikely!(self.recursion == RECURSION_LIMIT) {
                     err!(SerializeError::RecursionLimit)
                 }
-                let dict = {
+                let dict_py_obj = {
                     let mut _guard = self.gil.gil_locked();
                     let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
                     let ob_type = ob_type!(self.ptr);
@@ -316,7 +307,7 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
                         Some(dict)
                     }
                 };
-                if unlikely!(dict.is_none()) {
+                if unlikely!(dict_py_obj.is_none()) {
                     DataclassFallbackSerializer::new(
                         self.ptr,
                         self.opts,
@@ -328,7 +319,7 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
                     .serialize(serializer)
                 } else {
                     DataclassFastSerializer::new(
-                        dict.unwrap(),
+                        dict_py_obj.unwrap(),
                         self.opts,
                         self.default_calls,
                         self.recursion,

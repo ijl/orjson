@@ -3,7 +3,7 @@
 use crate::opt::*;
 use crate::serialize::serializer::*;
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;
 
@@ -13,7 +13,7 @@ pub struct TupleSerializer<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> TupleSerializer<'a> {
@@ -23,7 +23,7 @@ impl<'a> TupleSerializer<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         TupleSerializer {
             ptr: ptr,

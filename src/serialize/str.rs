@@ -3,16 +3,16 @@
 use crate::serialize::error::*;
 use crate::str::*;
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use serde::ser::{Serialize, Serializer};
 
 pub struct StrSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> StrSerializer<'a> {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a GIL) -> Self {
         StrSerializer { ptr: ptr, gil: gil }
     }
 }
@@ -32,11 +32,11 @@ impl<'a> Serialize for StrSerializer<'a> {
 
 pub struct StrSubclassSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> StrSubclassSerializer<'a> {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a GIL) -> Self {
         StrSubclassSerializer { ptr: ptr, gil: gil }
     }
 }

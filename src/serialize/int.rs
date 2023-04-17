@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::serialize::error::*;
 use serde::ser::{Serialize, Serializer};
 use std::ffi::c_int;
@@ -12,11 +12,11 @@ const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub struct IntSerializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> IntSerializer<'a> {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a GIL) -> Self {
         IntSerializer { ptr: ptr, gil: gil }
     }
 }

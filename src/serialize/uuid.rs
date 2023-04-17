@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::typeref::*;
 use pyo3_ffi::PyObject;
 use serde::ser::{Serialize, Serializer};
@@ -11,11 +11,11 @@ pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
 pub struct UUID<'a> {
     ptr: *mut pyo3_ffi::PyObject,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> UUID<'a> {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a GIL) -> Self {
         UUID { ptr: ptr, gil: gil }
     }
 

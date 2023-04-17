@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::PyDictIter;
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::opt::*;
 use crate::serialize::datetime::*;
 use crate::serialize::datetimelike::*;
@@ -23,7 +23,7 @@ pub struct Dict<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> Dict<'a> {
@@ -33,7 +33,7 @@ impl<'a> Dict<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         Dict {
             ptr: ptr,
@@ -82,7 +82,7 @@ pub struct DictSortedKey<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DictSortedKey<'a> {
@@ -92,7 +92,7 @@ impl<'a> DictSortedKey<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         DictSortedKey {
             ptr: ptr,
@@ -150,7 +150,7 @@ pub struct DictNonStrKey<'a> {
     default_calls: u8,
     recursion: u8,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DictNonStrKey<'a> {
@@ -160,7 +160,7 @@ impl<'a> DictNonStrKey<'a> {
         default_calls: u8,
         recursion: u8,
         default: Option<NonNull<pyo3_ffi::PyObject>>,
-        gil: &'a ReleasedGIL,
+        gil: &'a GIL,
     ) -> Self {
         DictNonStrKey {
             ptr: ptr,
@@ -176,7 +176,7 @@ impl<'a> DictNonStrKey<'a> {
     fn pyobject_to_string(
         key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,
-        gil: &ReleasedGIL,
+        gil: &GIL,
     ) -> Result<CompactString, SerializeError> {
         match pyobject_to_obtype(key, opts, gil) {
             ObType::None => Ok(CompactString::from("null")),
@@ -241,11 +241,11 @@ impl<'a> DictNonStrKey<'a> {
                 Ok(CompactString::from(key_as_str))
             }
             ObType::Enum => {
-                let value = {
+                let value: *mut pyo3_ffi::PyObject;
+                {
                     let _guard = gil.gil_locked();
-                    let val = ffi!(PyObject_GetAttr(key, VALUE_STR));
-                    ffi!(Py_DECREF(val));
-                    val
+                    value = ffi!(PyObject_GetAttr(key, VALUE_STR));
+                    ffi!(Py_DECREF(value));
                 };
                 Self::pyobject_to_string(value, opts, gil)
             }

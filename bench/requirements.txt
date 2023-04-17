@@ -1,5 +1,5 @@
 memory-profiler
-pytest-benchmark
+pytest-benchmark[histogram]
 pytest-random-order
 python-rapidjson
 simplejson

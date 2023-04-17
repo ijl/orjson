@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::ReleasedGIL;
+use crate::ffi::GIL;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::error::*;
@@ -128,11 +128,11 @@ impl Serialize for Time {
 pub struct DateTime<'a> {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
-    gil: &'a ReleasedGIL,
+    gil: &'a GIL,
 }
 
 impl<'a> DateTime<'a> {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt, gil: &'a ReleasedGIL) -> Self {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt, gil: &'a GIL) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
