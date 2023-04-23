@@ -216,7 +216,7 @@ impl<'a> Serialize for PyObjectSerializer<'a> {
             }
             ObType::Int => {
                 if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER)) {
-                    Int53Serializer::new(self.ptr).serialize(serializer)
+                    Int53Serializer::new(self.ptr, self.gil).serialize(serializer)
                 } else {
                     IntSerializer::new(self.ptr, self.gil).serialize(serializer)
                 }

@@ -27,23 +27,29 @@ impl<'a> Serialize for IntSerializer<'a> {
     where
         S: Serializer,
     {
-        let val: i64;
-        let maybe_u64: bool;
+        let serialize_i64: Option<i64>;
         if self.gil.is_released() {
+            // PyLong_AsLongLongAndOverflow doesnt require GIL on errors
             let mut overflow: c_int = 0;
-            val = ffi!(PyLong_AsLongLongAndOverflow(self.ptr, &mut overflow));
-            maybe_u64 = overflow != 0;
+            let val = ffi!(PyLong_AsLongLongAndOverflow(self.ptr, &mut overflow));
+            if unlikely!(overflow != 0) {
+                serialize_i64 = None
+            } else {
+                serialize_i64 = Some(val);
+            }
         } else {
-            val = ffi!(PyLong_AsLongLong(self.ptr));
+            let val = ffi!(PyLong_AsLongLong(self.ptr));
             if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null()) {
                 ffi!(PyErr_Clear());
-                maybe_u64 = true;
+                serialize_i64 = None;
             } else {
-                maybe_u64 = false;
+                serialize_i64 = Some(val);
             }
         }
 
-        if unlikely!(maybe_u64) {
+        if let Some(val) = serialize_i64 {
+            serializer.serialize_i64(val)
+        } else {
             let uval: u64;
             {
                 let _guard = self.gil.gil_locked();
@@ -53,34 +59,44 @@ impl<'a> Serialize for IntSerializer<'a> {
                 }
             }
             serializer.serialize_u64(uval)
-        } else {
-            serializer.serialize_i64(val)
         }
     }
 }
 
-pub struct Int53Serializer {
+pub struct Int53Serializer<'a> {
     ptr: *mut pyo3_ffi::PyObject,
+    gil: &'a GIL,
 }
 
-impl Int53Serializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
-        Int53Serializer { ptr: ptr }
+impl<'a> Int53Serializer<'a> {
+    pub fn new(ptr: *mut pyo3_ffi::PyObject, gil: &'a GIL) -> Self {
+        Int53Serializer { ptr: ptr, gil: gil }
     }
 }
 
-impl Serialize for Int53Serializer {
+impl<'a> Serialize for Int53Serializer<'a> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let mut overflow: c_int = 0;
-        let val = ffi!(PyLong_AsLongLongAndOverflow(self.ptr, &mut overflow));
-        if unlikely!(overflow != 0) {
-            err!(SerializeError::Integer53Bits)
-        } else if !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val) {
+        let val: i64;
+        if self.gil.is_released() {
+            // PyLong_AsLongLongAndOverflow doesnt require GIL on errors
+            let mut overflow: c_int = 0;
+            val = ffi!(PyLong_AsLongLongAndOverflow(self.ptr, &mut overflow));
+            if unlikely!(overflow != 0) {
+                err!(SerializeError::Integer53Bits)
+            }
+        } else {
+            val = ffi!(PyLong_AsLongLong(self.ptr));
+            if unlikely!(val == -1 && !ffi!(PyErr_Occurred()).is_null()) {
+                err!(SerializeError::Integer53Bits)
+            }
+        }
+
+        if !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val) {
             err!(SerializeError::Integer53Bits)
         } else {
             serializer.serialize_i64(val)
