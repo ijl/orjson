@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.8.11 - 2023-04-27
+
+### Changed
+
+- `orjson.loads()` on an empty document has a specific error message.
+- PyPI `manylinux_2_28_x86_64` wheels are compiled for `x86-64-v2`.
+- PyPI macOS wheels are only `universal2` and compiled for
+`x86-64-v2` and `apple-m1`.
+
 ## 3.8.10 - 2023-04-09
 
 ### Fixed
