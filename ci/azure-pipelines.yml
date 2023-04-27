@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2023-03-28
+  toolchain: nightly-2023-04-25
 
 jobs:
 
@@ -15,11 +15,12 @@ jobs:
   - checkout: self
   - template: ./azure-debug.yml
 
-- job: macos_python311_amd64
+- job: macos_python311_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.11
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -29,11 +30,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python310_amd64
+- job: macos_python310_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.10
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -42,11 +44,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python39_amd64
+- job: macos_python39_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.9
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -55,11 +58,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python38_amd64
+- job: macos_python38_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.8
+    macosx_deployment_target: '10.9'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -68,11 +72,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python37_amd64
+- job: macos_python37_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.7
+    macosx_deployment_target: '10.9'
   steps:
   - task: UsePythonVersion@0
     inputs:

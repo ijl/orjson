@@ -2,7 +2,7 @@
 
 set -eou pipefail
 
-yyjson_version="9e9ca66b8c91c5c99cae780fa6285b0bb67d45ca"
+yyjson_version="4950308edb2e1c722f475635176e901656646520"
 
 curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
 curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"

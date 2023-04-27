@@ -22,8 +22,8 @@ jobs:
       image: registry.hub.docker.com/library/python:3.12-rc-bullseye
       options: --user 0
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-03-28 --profile minimal -y
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin>=0.14,<2" wheel
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-04-25 --profile minimal -y
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
     - uses: actions/checkout@v3
 
     - name: build

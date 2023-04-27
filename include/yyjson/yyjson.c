@@ -1861,6 +1861,21 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
         orig->uni = builder->uni;
     }
     
+    /* If orig is contributing, copy any items not modified by the patch */
+    if (orig != &local_orig)
+    {
+        yyjson_obj_foreach(orig, idx, max, key, orig_val) {
+            patch_val = yyjson_obj_getn(patch,
+                                        unsafe_yyjson_get_str(key),
+                                        unsafe_yyjson_get_len(key));
+            if (!patch_val) {
+                mut_key = yyjson_val_mut_copy(doc, key);
+                mut_val = yyjson_val_mut_copy(doc, orig_val);
+                if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
+            }
+        }
+    }
+
     /* Merge items modified by the patch. */
     yyjson_obj_foreach(patch, idx, max, key, patch_val) {
         /* null indicates the field is removed. */
@@ -1873,23 +1888,6 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                    unsafe_yyjson_get_len(key));
         merged_val = yyjson_merge_patch(doc, orig_val, patch_val);
         if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
-    }
-    
-    /* Exit early, if orig is not contributing to the final result. */
-    if (orig == &local_orig) {
-        return builder;
-    }
-    
-    /* Copy over any items that weren't modified by the patch. */
-    yyjson_obj_foreach(orig, idx, max, key, orig_val) {
-        patch_val = yyjson_obj_getn(patch,
-                                    unsafe_yyjson_get_str(key),
-                                    unsafe_yyjson_get_len(key));
-        if (!patch_val) {
-            mut_key = yyjson_val_mut_copy(doc, key);
-            mut_val = yyjson_val_mut_copy(doc, orig_val);
-            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
-        }
     }
     
     return builder;
@@ -1915,6 +1913,21 @@ yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
         orig->uni = builder->uni;
     }
     
+    /* If orig is contributing, copy any items not modified by the patch */
+    if (orig != &local_orig)
+    {
+        yyjson_mut_obj_foreach(orig, idx, max, key, orig_val) {
+            patch_val = yyjson_mut_obj_getn(patch,
+                                            unsafe_yyjson_get_str(key),
+                                            unsafe_yyjson_get_len(key));
+            if (!patch_val) {
+                mut_key = yyjson_mut_val_mut_copy(doc, key);
+                mut_val = yyjson_mut_val_mut_copy(doc, orig_val);
+                if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
+            }
+        }
+    }
+
     /* Merge items modified by the patch. */
     yyjson_mut_obj_foreach(patch, idx, max, key, patch_val) {
         /* null indicates the field is removed. */
@@ -1927,23 +1940,6 @@ yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
                                        unsafe_yyjson_get_len(key));
         merged_val = yyjson_mut_merge_patch(doc, orig_val, patch_val);
         if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
-    }
-    
-    /* Exit early, if orig is not contributing to the final result. */
-    if (orig == &local_orig) {
-        return builder;
-    }
-    
-    /* Copy over any items that weren't modified by the patch. */
-    yyjson_mut_obj_foreach(orig, idx, max, key, orig_val) {
-        patch_val = yyjson_mut_obj_getn(patch,
-                                        unsafe_yyjson_get_str(key),
-                                        unsafe_yyjson_get_len(key));
-        if (!patch_val) {
-            mut_key = yyjson_mut_val_mut_copy(doc, key);
-            mut_val = yyjson_mut_val_mut_copy(doc, orig_val);
-            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
-        }
     }
     
     return builder;
