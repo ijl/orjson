@@ -210,6 +210,11 @@ jobs:
             args: '--features=yyjson', # build-std: aarch64-linux-gnu.so: undefined symbol: __aarch64_swp4_rel, likely QEMU?
           },
           {
+            arch: 'armv6',
+            cflags: '-Os',
+            args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort',
+          },
+          {
             arch: 'armv7',
             cflags: '-Os',
             args: '--features=yyjson -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort',
