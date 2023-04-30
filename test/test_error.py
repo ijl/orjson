@@ -44,6 +44,13 @@ class TestJsonDecodeError:
             == expected_err_infos
         )
 
+    def test_empty(self):
+        with pytest.raises(orjson.JSONDecodeError) as json_exc_info:
+            orjson.loads("")
+        assert str(json_exc_info.value).startswith(
+            "Input is a zero-length, empty document:"
+        )
+
     def test_ascii(self):
         self._test(
             ASCII_TEST,

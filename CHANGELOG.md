@@ -1,13 +1,38 @@
 # Changelog
 
-# 3.8.9 - 2023-03-03
+## 3.8.11 - 2023-04-27
 
-- Support serializing `set` and `frozenset` and their subclasses with OPT_SERIALIZE_SET.
-- Support serializing `generator` with OPT_SERIALIZE_GENERATOR.
+### Changed
 
-## 3.8.8 - 2023-03-03
+- `orjson.loads()` on an empty document has a specific error message.
+- PyPI `manylinux_2_28_x86_64` wheels are compiled for `x86-64-v2`.
+- PyPI macOS wheels are only `universal2` and compiled for
+`x86-64-v2` and `apple-m1`.
 
-- Improved error handling by showing the cause of errors
+## 3.8.10 - 2023-04-09
+
+### Fixed
+
+- Fix compatibility with CPython 3.12.0a7.
+- Fix compatibility with big-endian architectures.
+- Fix crash in serialization.
+
+### Changed
+
+- Publish musllinux 3.11 wheels.
+- Publish s390x wheels.
+
+## 3.8.9 - 2023-03-28
+
+### Fixed
+
+- Fix parallel initialization of orjson.
+
+## 3.8.8 - 2023-03-20
+
+### Changed
+
+- Publish ppc64le wheels.
 
 ## 3.8.7 - 2023-02-28
 

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
-#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
+#![cfg_attr(feature = "strict_provenance", feature(strict_provenance))]
+#![cfg_attr(feature = "strict_provenance", warn(fuzzy_provenance_casts))]
+#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 #![allow(unused_unsafe)]
 #![allow(non_camel_case_types)]
 #![allow(clippy::explicit_auto_deref)]

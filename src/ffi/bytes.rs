@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use pyo3_ffi::*;
+use pyo3_ffi::{PyBytesObject, PyObject, PyVarObject, Py_ssize_t};
 use std::os::raw::c_char;
-
-#[repr(C)]
-pub struct PyBytesObject {
-    pub ob_base: PyVarObject,
-    pub ob_shash: Py_hash_t,
-    pub ob_sval: [c_char; 1],
-}
 
 #[allow(non_snake_case)]
 #[inline(always)]

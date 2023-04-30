@@ -1,0 +1,321 @@
+name: linux
+on: push
+jobs:
+
+  sdist:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    env:
+      RUST_TOOLCHAIN: "1.60" # MSRV
+    steps:
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $RUST_TOOLCHAIN -y
+    - run: rustup default $RUST_TOOLCHAIN
+
+    - uses: actions/checkout@v3
+
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
+    - run: maturin sdist --out=dist
+
+    - run: python3 -m pip install --user dist/orjson*.tar.gz
+    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
+
+    - run: pytest -s -rxX -v test
+    - run: ./integration/run thread
+    - run: ./integration/run http
+    - run: ./integration/run init
+    - run: ./integration/run typestubs
+
+    - name: Store sdist
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+        retention-days: 1
+
+  manylinux_2_28:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.11', abi: 'cp311-cp311' },
+          { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.7', abi: 'cp37-cp37m' },
+        ]
+    env:
+      PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      CC: "clang"
+      CFLAGS: "-O2 -fno-plt -flto=thin -march=x86-64-v2 -mtune=generic"
+      LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
+      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C target-cpu=x86-64-v2 -Z tune-cpu=generic"
+      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      ORJSON_ENABLE_WRITEEXT: "1"
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64:latest
+      options: --user 0
+    steps:
+    - run: yum install -y clang lld
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-04-25 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-04-25-x86_64-unknown-linux-gnu
+    - uses: actions/checkout@v3
+
+    - name: build-std
+      if: matrix.target.arch != 'aarch64'
+      run: |
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
+
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
+    - run: |
+        maturin build --release --strip \
+          --out=dist \
+          --features=unstable-simd,yyjson \
+          --compatibility manylinux_2_28 \
+          --interpreter python${{ matrix.python.version }} \
+          --target=x86_64-unknown-linux-gnu
+    - run: python3 -m pip install --user dist/orjson*.whl
+    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+
+    - run: pytest -s -rxX -v test
+    - run: ./integration/run thread
+    - run: ./integration/run http
+    - run: ./integration/run init
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+        retention-days: 1
+
+  manylinux2014:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.11', abi: 'cp311-cp311' },
+          { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.7', abi: 'cp37-cp37m' },
+        ]
+    env:
+      PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/devtoolset-10/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      CC: "gcc"
+      CFLAGS: "-O2 -fno-plt -flto"
+      LDFLAGS: "-O2 -flto -Wl,--as-needed"
+      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      ORJSON_ENABLE_WRITEEXT: "1"
+    container:
+      image: quay.io/pypa/manylinux2014_x86_64:latest
+      options: --user 0
+    steps:
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-04-25 --profile minimal -y
+    - uses: actions/checkout@v3
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
+    - run: maturin build --release --strip --out=dist --features=unstable-simd,yyjson --compatibility manylinux2014 --interpreter python${{ matrix.python.version }}
+    - run: python3 -m pip install --user dist/orjson*.whl
+    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+    - run: pytest -s -rxX -v test
+    - run: ./integration/run thread
+    - run: ./integration/run http
+    - run: ./integration/run init
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+        retention-days: 1
+
+  musllinux:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.11' },
+          { version: '3.10' },
+          { version: '3.9' },
+          { version: '3.8' },
+          { version: '3.7' },
+        ]
+        platform:
+          - target: aarch64-unknown-linux-musl
+            arch: aarch64
+            platform: linux/arm64
+          - target: x86_64-unknown-linux-musl
+            arch: x86_64
+            platform: linux/amd64
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: build-std
+      if: matrix.target.arch != 'aarch64'
+      run: |
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
+
+    - name: Build
+      uses: PyO3/maturin-action@v1
+      env:
+        CC: "gcc"
+        CFLAGS: "-O2 -fno-plt"
+        LDFLAGS: "-O2 -flto -Wl,--as-needed"
+        RUSTFLAGS: "-C target-feature=-crt-static"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      with:
+        maturin-version: v1.0.0-beta.7
+        rust-toolchain: nightly-2023-04-25
+        rustup-components: rust-src
+        target: ${{ matrix.platform.target }}
+        manylinux: musllinux_1_1
+        args: --release --strip --out=dist --features=unstable-simd,yyjson -i python${{ matrix.python.version }}
+
+    - name: Set up QEMU
+      if: matrix.platform.arch != 'x86_64'
+      uses: docker/setup-qemu-action@v2
+      with:
+        image: tonistiigi/binfmt:qemu-v7.0.0
+        platforms: ${{ matrix.platform.platform }}
+
+    - name: Test
+      uses: addnab/docker-run-action@v3
+      with:
+        image: quay.io/pypa/musllinux_1_1_${{ matrix.platform.arch }}:latest
+        options: -v ${{ github.workspace }}:/io -w /io
+        run: |
+          apk add tzdata
+          sed -i '/^numpy/d' test/requirements.txt
+
+          python${{ matrix.python.version }} -m venv venv
+          venv/bin/pip install -U pip wheel
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+        retention-days: 1
+
+  linux-cross:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.11', abi: 'cp311-cp311' },
+          { version: '3.10', abi: 'cp310-cp310' },
+          { version: '3.9', abi: 'cp39-cp39' },
+          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.7', abi: 'cp37-cp37m' },
+        ]
+        target: [
+          {
+            arch: 'aarch64',
+            target: 'aarch64-unknown-linux-gnu',
+            cflags: '-O2',
+          },
+          {
+            arch: 'armv7',
+            target: 'armv7-unknown-linux-gnueabihf',
+            cflags: '-Os',
+          },
+          {
+            arch: 'ppc64le',
+            target: 'powerpc64le-unknown-linux-gnu',
+            cflags: '-O2',
+          },
+          {
+            arch: 's390x',
+            target: 's390x-unknown-linux-gnu',
+            cflags: '-O2 -march=z10',
+          },
+        ]
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: build-std
+      if: matrix.target.arch != 'aarch64'
+      run: |
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
+
+    - name: Build
+      uses: PyO3/maturin-action@v1
+      env:
+        PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
+        CFLAGS: "${{ matrix.target.cflags }}"
+        LDFLAGS: "${{ matrix.target.cflags }} -flto -Wl,--as-needed"
+        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+        CARGO_FEATURE_YYJSON: "1"
+        ORJSON_ENABLE_WRITEEXT: "1"
+      with:
+        maturin-version: v1.0.0-beta.7
+        target: ${{ matrix.target.target }}
+        rust-toolchain: nightly-2023-04-25
+        rustup-components: rust-src
+        manylinux: auto
+        args: --release --strip --out=dist -i python${{ matrix.python.version }}
+
+    - uses: uraimo/run-on-arch-action@v2
+      name: Test
+      with:
+        arch: ${{ matrix.target.arch }}
+        distro: ubuntu22.04
+        githubToken: ${{ github.token }}
+        install: |
+          export TZ=UTC
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends software-properties-common gpg gpg-agent curl
+          add-apt-repository ppa:deadsnakes/ppa
+          apt-get update
+          apt-get install -y python${{ matrix.python.version }}-dev python${{ matrix.python.version }}-venv
+        run: |
+          python${{ matrix.python.version }} -m venv venv
+          venv/bin/pip install -U pip wheel
+          venv/bin/pip install -r test/requirements.txt
+          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
+          venv/bin/python -m pytest -s -rxX -v test
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels
+        path: dist
+        retention-days: 1
+
+  pypi:
+    name: PyPI
+    runs-on: ubuntu-22.04
+    if: "startsWith(github.ref, 'refs/tags/')"
+    needs: [ manylinux_2_28, manylinux2014, linux-cross, musllinux, sdist ]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: pip install --pre "maturin==1.0.0-beta.7"
+      - run: ls -1 .
+      - name: deploy wheel
+        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      - name: deploy sdist
+        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.tar.gz
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}

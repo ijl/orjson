@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::PyBytesObject;
-use pyo3_ffi::*;
+use pyo3_ffi::{
+    PyBytesObject, PyBytes_FromStringAndSize, PyObject, PyVarObject, Py_ssize_t, _PyBytes_Resize,
+};
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
@@ -78,7 +79,7 @@ impl std::io::Write for BytesWriter {
     fn write_all(&mut self, buf: &[u8]) -> Result<(), std::io::Error> {
         let to_write = buf.len();
         let end_length = self.len + to_write;
-        if unlikely!(end_length > self.cap) {
+        if unlikely!(end_length >= self.cap) {
             self.grow(end_length);
         }
         unsafe {
@@ -153,7 +154,7 @@ impl WriteExt for &mut BytesWriter {
     #[inline(always)]
     fn reserve(&mut self, len: usize) {
         let end_length = self.len + len;
-        if unlikely!(end_length > self.cap) {
+        if unlikely!(end_length >= self.cap) {
             self.grow(end_length);
         }
     }
@@ -166,7 +167,7 @@ impl WriteExt for &mut BytesWriter {
     fn write_str(&mut self, val: &str) -> Result<(), std::io::Error> {
         let to_write = val.len();
         let end_length = self.len + to_write + 2;
-        if unlikely!(end_length > self.cap) {
+        if unlikely!(end_length >= self.cap) {
             self.grow(end_length);
         }
         unsafe {

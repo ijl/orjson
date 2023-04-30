@@ -1,20 +1,7 @@
 variables:
-  toolchain: nightly-2023-02-03
+  toolchain: nightly-2023-04-25
 
 jobs:
-
-- job: linux_sdist_stable
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_28_x86_64:latest
-  variables:
-    interpreter: python3.10
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    target: x86_64-unknown-linux-gnu
-    toolchain: 1.60.0
-  steps:
-  - checkout: self
-  - template: ./azure-sdist.yml
 
 - job: linux_debug
   pool:
@@ -28,11 +15,12 @@ jobs:
   - checkout: self
   - template: ./azure-debug.yml
 
-- job: macos_python311_amd64
+- job: macos_python311_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.11
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -42,11 +30,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python310_amd64
+- job: macos_python310_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.10
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -55,11 +44,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python39_amd64
+- job: macos_python39_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.9
+    macosx_deployment_target: '11.0'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -68,11 +58,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python38_amd64
+- job: macos_python38_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.8
+    macosx_deployment_target: '10.9'
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -81,11 +72,12 @@ jobs:
   - checkout: self
   - template: ./azure-macos.yml
 
-- job: macos_python37_amd64
+- job: macos_python37_univeral2
   pool:
     vmImage: macOS-11
   variables:
     interpreter: python3.7
+    macosx_deployment_target: '10.9'
   steps:
   - task: UsePythonVersion@0
     inputs:

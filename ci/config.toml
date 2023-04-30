@@ -1,0 +1,18 @@
+[unstable]
+build-std = ["core", "std", "alloc", "proc_macro", "panic_abort"]
+build-std-features = ["panic_immediate_abort"]
+
+[target.x86_64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "target-cpu=x86-64-v2", "-Z", "tune-cpu=generic"]
+
+[target.aarch64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "target-cpu=apple-m1"]
+
+[target.armv7-unknown-linux-gnueabihf]
+rustflags = ["-C", "opt-level=s"]
+
+[target.s390x-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "target-cpu=z10", "-Z", "tune-cpu=generic"]

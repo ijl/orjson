@@ -37,6 +37,7 @@ impl Date {
     pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         Date { ptr: ptr }
     }
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
@@ -88,6 +89,7 @@ impl Time {
             opts: opts,
         }
     }
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn write_buf(&self, buf: &mut DateTimeBuffer) -> Result<(), TimeError> {
         if unsafe { (*(self.ptr as *mut pyo3_ffi::PyDateTime_Time)).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);

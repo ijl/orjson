@@ -62,7 +62,7 @@ pub fn deserialize_yyjson(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     unsafe {
         let allocator = if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
-            std::ptr::addr_of_mut!(*YYJSON_ALLOC)
+            YYJSON_ALLOC.get_or_init(yyjson_init) as *const yyjson_alc
         } else {
             null_mut()
         };
