@@ -8,7 +8,7 @@ use std::io;
 
 macro_rules! reserve_minimum {
     ($writer:expr) => {
-        $writer.reserve(32);
+        $writer.reserve(64);
     };
 }
 
@@ -62,7 +62,7 @@ where
     type Error = Error;
 
     type SerializeSeq = Compound<'a, W, F>;
-    type SerializeTuple = Compound<'a, W, F>;
+    type SerializeTuple = Impossible<(), Error>;
     type SerializeTupleStruct = Impossible<(), Error>;
     type SerializeTupleVariant = Impossible<(), Error>;
     type SerializeMap = Compound<'a, W, F>;
@@ -227,7 +227,7 @@ where
         value.serialize(self)
     }
 
-    #[inline]
+    #[inline(always)]
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         if len == Some(0) {
             unsafe {
@@ -249,21 +249,8 @@ where
         }
     }
 
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple> {
-        self.formatter
-            .begin_array(&mut self.writer)
-            .map_err(Error::io)?;
-        if len == 0 {
-            Ok(Compound {
-                ser: self,
-                state: State::Empty,
-            })
-        } else {
-            Ok(Compound {
-                ser: self,
-                state: State::First,
-            })
-        }
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
+        unreachable!();
     }
 
     fn serialize_tuple_struct(
@@ -284,7 +271,7 @@ where
         unreachable!();
     }
 
-    #[inline]
+    #[inline(always)]
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap> {
         if len == Some(0) {
             unsafe {
@@ -380,33 +367,15 @@ where
     type Ok = ();
     type Error = Error;
 
-    #[inline]
-    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        self.ser
-            .formatter
-            .begin_array_value(&mut self.ser.writer, self.state == State::First)
-            .map_err(Error::io)?;
-        self.state = State::Rest;
-        value.serialize(&mut *self.ser)?;
-        self.ser
-            .formatter
-            .end_array_value(&mut self.ser.writer)
-            .map_err(Error::io)
+        unreachable!();
     }
 
-    #[inline]
     fn end(self) -> Result<()> {
-        match self.state {
-            State::Empty => Ok(()),
-            _ => self
-                .ser
-                .formatter
-                .end_array(&mut self.ser.writer)
-                .map_err(Error::io),
-        }
+        unreachable!();
     }
 }
 
@@ -418,7 +387,7 @@ where
     type Ok = ();
     type Error = Error;
 
-    #[inline]
+    #[inline(always)]
     fn serialize_entry<K, V>(&mut self, key: &K, value: &V) -> Result<()>
     where
         K: ?Sized + Serialize,
@@ -518,7 +487,6 @@ where
         self.ser.serialize_str(value)
     }
 
-    #[inline]
     fn serialize_unit_variant(
         self,
         _name: &'static str,
@@ -528,7 +496,6 @@ where
         unreachable!();
     }
 
-    #[inline]
     fn serialize_newtype_struct<T>(self, _name: &'static str, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
@@ -889,30 +856,27 @@ pub trait Formatter {
     }
 
     #[inline]
-    fn begin_string<W>(&mut self, writer: &mut W) -> io::Result<()>
+    fn begin_string<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe { writer.write_reserved_punctuation(b'"').unwrap() };
-        Ok(())
+        unreachable!();
     }
 
     #[inline]
-    fn end_string<W>(&mut self, writer: &mut W) -> io::Result<()>
+    fn end_string<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe { writer.write_reserved_punctuation(b'"').unwrap() };
-        Ok(())
+        unreachable!();
     }
 
     #[inline]
-    fn write_string_fragment<W>(&mut self, writer: &mut W, fragment: &str) -> io::Result<()>
+    fn write_string_fragment<W>(&mut self, _writer: &mut W, _fragment: &str) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        writer.reserve(fragment.len());
-        unsafe { writer.write_reserved_fragment(fragment.as_bytes()) }
+        unreachable!();
     }
 
     #[inline]
@@ -962,6 +926,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
+        reserve_minimum!(writer);
         unsafe { writer.write_reserved_punctuation(b']').unwrap() };
         Ok(())
     }
@@ -971,8 +936,8 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe {
-            if !first {
+        if !first {
+            unsafe {
                 reserve_minimum!(writer);
                 writer.write_reserved_punctuation(b',').unwrap()
             }
@@ -1005,6 +970,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
+        reserve_minimum!(writer);
         unsafe {
             writer.write_reserved_punctuation(b'}').unwrap();
         }
@@ -1083,6 +1049,7 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent += 1;
         self.has_value = false;
+        reserve_minimum!(writer);
         unsafe { writer.write_reserved_punctuation(b'[') }
     }
 
@@ -1135,6 +1102,8 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent += 1;
         self.has_value = false;
+
+        reserve_minimum!(writer);
         unsafe { writer.write_reserved_punctuation(b'{') }
     }
 

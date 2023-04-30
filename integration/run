@@ -4,7 +4,7 @@ set -eou pipefail
 
 _dir="$(dirname "${BASH_SOURCE[0]}")"
 
-to_run="${@:-thread http}"
+to_run="${@:-thread http init}"
 
 if [[ $to_run == *"thread"* ]]; then
 	"${_dir}"/thread
@@ -22,4 +22,8 @@ fi
 if [[ $to_run == *"typestubs"* ]]; then
 	python "${_dir}"/typestubs.py
 	mypy "${_dir}"/typestubs.py
+fi
+
+if [[ $to_run == *"init"* ]]; then
+	"${_dir}"/init
 fi

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::PyTypeObject;
 use crate::opt::*;
 use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
@@ -111,7 +110,11 @@ macro_rules! is_subclass_by_flag {
 
 macro_rules! is_subclass_by_type {
     ($ob_type:expr, $type:ident) => {
-        (*($ob_type as *mut PyTypeObject)).ob_type == $type
+        (*($ob_type as *mut pyo3_ffi::PyTypeObject))
+            .ob_base
+            .ob_base
+            .ob_type
+            == $type
     };
 }
 

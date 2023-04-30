@@ -2,13 +2,12 @@ use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::default::*;
 use crate::serialize::error::*;
-use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
+use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use pyo3_ffi::*;
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::convert::TryInto;
 use std::fmt;
-use std::ops::DerefMut;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr::NonNull;
 
@@ -77,10 +76,11 @@ macro_rules! slice {
 }
 
 pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
-    if unsafe { NUMPY_TYPES.is_none() } {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+    if numpy_types.is_none() {
         false
     } else {
-        let scalar_types = unsafe { NUMPY_TYPES.as_ref().unwrap() };
+        let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
         ob_type == scalar_types.float64
             || ob_type == scalar_types.float32
             || ob_type == scalar_types.int64
@@ -97,10 +97,12 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
 }
 
 pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
-    if unsafe { NUMPY_TYPES.is_none() } {
+    let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
+    if numpy_types.is_none() {
         false
     } else {
-        unsafe { ob_type == NUMPY_TYPES.as_ref().unwrap().array }
+        let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
+        unsafe { ob_type == scalar_types.array }
     }
 }
 
@@ -193,6 +195,7 @@ pub struct NumpyArray {
 impl NumpyArray {
     #[cold]
     #[inline(never)]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
         let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
         let array = unsafe { (*(capsule as *mut PyCapsule)).pointer as *mut PyArrayInterface };
@@ -299,6 +302,7 @@ impl Drop for NumpyArray {
 impl Serialize for NumpyArray {
     #[cold]
     #[inline(never)]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -380,6 +384,7 @@ impl<'a> NumpyF64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyF64Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -418,6 +423,7 @@ impl<'a> NumpyF32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyF32Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -456,6 +462,7 @@ impl<'a> NumpyU64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU64Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -494,6 +501,7 @@ impl<'a> NumpyU32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU32Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -532,6 +540,7 @@ impl<'a> NumpyU16Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU16Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -570,6 +579,7 @@ impl<'a> NumpyI64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI64Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -608,6 +618,7 @@ impl<'a> NumpyI32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI32Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -646,6 +657,7 @@ impl<'a> NumpyI16Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI16Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -684,6 +696,7 @@ impl<'a> NumpyI8Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI8Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -722,6 +735,7 @@ impl<'a> NumpyU8Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU8Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -760,6 +774,7 @@ impl<'a> NumpyBoolArray<'a> {
 }
 
 impl<'a> Serialize for NumpyBoolArray<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -800,13 +815,15 @@ impl NumpyScalar {
 impl Serialize for NumpyScalar {
     #[cold]
     #[inline(never)]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         unsafe {
             let ob_type = ob_type!(self.ptr);
-            let scalar_types = NUMPY_TYPES.deref_mut().as_ref().unwrap();
+            let scalar_types =
+                unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
             if ob_type == scalar_types.float64 {
                 (*(self.ptr as *mut NumpyFloat64)).serialize(serializer)
             } else if ob_type == scalar_types.float32 {
@@ -851,6 +868,7 @@ pub struct NumpyInt8 {
 }
 
 impl Serialize for NumpyInt8 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1203,6 +1221,7 @@ impl<'a> NumpyDatetime64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyDatetime64Array<'a> {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

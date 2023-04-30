@@ -1,0 +1,101 @@
+diff --git a/include/yyjson/yyjson.c b/include/yyjson/yyjson.c
+index 02c16b3..d1d50c1 100644
+--- a/include/yyjson/yyjson.c
++++ b/include/yyjson/yyjson.c
+@@ -4388,81 +4388,52 @@ static_inline bool read_string(u8 **ptr,
+     const u32 b1_patt = 0x00000000UL;
+     const u32 b2_mask = 0xE0C00000UL;
+     const u32 b2_patt = 0xC0800000UL;
+-    const u32 b2_requ = 0x1E000000UL;
+     const u32 b3_mask = 0xF0C0C000UL;
+     const u32 b3_patt = 0xE0808000UL;
+-    const u32 b3_requ = 0x0F200000UL;
+-    const u32 b3_erro = 0x0D200000UL;
+     const u32 b4_mask = 0xF8C0C0C0UL;
+     const u32 b4_patt = 0xF0808080UL;
+-    const u32 b4_requ = 0x07300000UL;
+-    const u32 b4_err0 = 0x04000000UL;
+-    const u32 b4_err1 = 0x03300000UL;
+ #elif YYJSON_ENDIAN == YYJSON_LITTLE_ENDIAN
+     const u32 b1_mask = 0x00000080UL;
+     const u32 b1_patt = 0x00000000UL;
+     const u32 b2_mask = 0x0000C0E0UL;
+     const u32 b2_patt = 0x000080C0UL;
+-    const u32 b2_requ = 0x0000001EUL;
+     const u32 b3_mask = 0x00C0C0F0UL;
+     const u32 b3_patt = 0x008080E0UL;
+-    const u32 b3_requ = 0x0000200FUL;
+-    const u32 b3_erro = 0x0000200DUL;
+     const u32 b4_mask = 0xC0C0C0F8UL;
+     const u32 b4_patt = 0x808080F0UL;
+-    const u32 b4_requ = 0x00003007UL;
+-    const u32 b4_err0 = 0x00000004UL;
+-    const u32 b4_err1 = 0x00003003UL;
+ #else
+     v32_uni b1_mask_uni = {{ 0x80, 0x00, 0x00, 0x00 }};
+     v32_uni b1_patt_uni = {{ 0x00, 0x00, 0x00, 0x00 }};
+     v32_uni b2_mask_uni = {{ 0xE0, 0xC0, 0x00, 0x00 }};
+     v32_uni b2_patt_uni = {{ 0xC0, 0x80, 0x00, 0x00 }};
+-    v32_uni b2_requ_uni = {{ 0x1E, 0x00, 0x00, 0x00 }};
+     v32_uni b3_mask_uni = {{ 0xF0, 0xC0, 0xC0, 0x00 }};
+     v32_uni b3_patt_uni = {{ 0xE0, 0x80, 0x80, 0x00 }};
+-    v32_uni b3_requ_uni = {{ 0x0F, 0x20, 0x00, 0x00 }};
+-    v32_uni b3_erro_uni = {{ 0x0D, 0x20, 0x00, 0x00 }};
+     v32_uni b4_mask_uni = {{ 0xF8, 0xC0, 0xC0, 0xC0 }};
+     v32_uni b4_patt_uni = {{ 0xF0, 0x80, 0x80, 0x80 }};
+-    v32_uni b4_requ_uni = {{ 0x07, 0x30, 0x00, 0x00 }};
+-    v32_uni b4_err0_uni = {{ 0x04, 0x00, 0x00, 0x00 }};
+-    v32_uni b4_err1_uni = {{ 0x03, 0x30, 0x00, 0x00 }};
+     u32 b1_mask = b1_mask_uni.u;
+     u32 b1_patt = b1_patt_uni.u;
+     u32 b2_mask = b2_mask_uni.u;
+     u32 b2_patt = b2_patt_uni.u;
+-    u32 b2_requ = b2_requ_uni.u;
+     u32 b3_mask = b3_mask_uni.u;
+     u32 b3_patt = b3_patt_uni.u;
+-    u32 b3_requ = b3_requ_uni.u;
+-    u32 b3_erro = b3_erro_uni.u;
+     u32 b4_mask = b4_mask_uni.u;
+     u32 b4_patt = b4_patt_uni.u;
+-    u32 b4_requ = b4_requ_uni.u;
+-    u32 b4_err0 = b4_err0_uni.u;
+-    u32 b4_err1 = b4_err1_uni.u;
+ #endif
+-    
++
+ #define is_valid_seq_1(uni) ( \
+     ((uni & b1_mask) == b1_patt) \
+ )
+ 
+ #define is_valid_seq_2(uni) ( \
+-    ((uni & b2_mask) == b2_patt) && \
+-    ((uni & b2_requ)) \
++    ((uni & b2_mask) == b2_patt) \
+ )
+-    
++
+ #define is_valid_seq_3(uni) ( \
+-    ((uni & b3_mask) == b3_patt) && \
+-    ((tmp = (uni & b3_requ))) && \
+-    ((tmp != b3_erro)) \
++    ((uni & b3_mask) == b3_patt) \
+ )
+-    
++
+ #define is_valid_seq_4(uni) ( \
+-    ((uni & b4_mask) == b4_patt) && \
+-    ((tmp = (uni & b4_requ))) && \
+-    ((tmp & b4_err0) == 0 || (tmp & b4_err1) == 0) \
++    ((uni & b4_mask) == b4_patt) \
+ )
+     
+ #define return_err(_end, _msg) do { \
+@@ -4475,7 +4446,7 @@ static_inline bool read_string(u8 **ptr,
+     u8 **end = ptr;
+     u8 *src = ++cur, *dst, *pos;
+     u16 hi, lo;
+-    u32 uni, tmp;
++    u32 uni;
+     
+ skip_ascii:
+     /* Most strings have no escaped characters, so we can jump them quickly. */

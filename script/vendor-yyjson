@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+yyjson_version="4950308edb2e1c722f475635176e901656646520"
+
+curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
+curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"
+
+sed -i 's/yyjson_api_inline void yyjson_doc_free/yyjson_api void yyjson_doc_free/g' include/yyjson/yyjson.h
+
+sed -i 's/has_flag(ALLOW_TRAILING_COMMAS)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_flag(ALLOW_COMMENTS)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_flag(STOP_WHEN_DONE)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_flag(INSITU)/false/g' include/yyjson/yyjson.c
+
+sed -i 's/(flg & YYJSON_READ_NUMBER_AS_RAW) != 0/false/g' include/yyjson/yyjson.c
+sed -i 's/(flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0/false/g' include/yyjson/yyjson.c
+sed -i 's/(flg & YYJSON_READ_ALLOW_INF_AND_NAN)/(false)/g' include/yyjson/yyjson.c
+sed -i 's/(flg & YYJSON_READ_ALLOW_INVALID_UNICODE) \!= 0/false/g' include/yyjson/yyjson.c
+
+sed -i 's/unlikely(pre)/false/g' include/yyjson/yyjson.c
+sed -i 's/unlikely(ext)/false/g' include/yyjson/yyjson.c
+sed -i 's/if (pre)/if (false)/g' include/yyjson/yyjson.c
+
+sed -i 's/!false/true/g' include/yyjson/yyjson.c
+sed -i 's/ && true//g' include/yyjson/yyjson.c
+sed -i 's/true && //g' include/yyjson/yyjson.c
+
+sed -i 's/unlikely(pos == src)/false/g' include/yyjson/yyjson.c
+$(cd include/yyjson; git apply skip-utf8.patch)

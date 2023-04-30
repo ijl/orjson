@@ -36,6 +36,7 @@ impl DefaultSerializer {
 
 impl Serialize for DefaultSerializer {
     #[inline(never)]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

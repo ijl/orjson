@@ -159,6 +159,7 @@ impl DictNonStrKey {
         }
     }
 
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn pyobject_to_string(
         key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,

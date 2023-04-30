@@ -82,5 +82,11 @@ pub fn read_input_to_buf(
             "Input must be bytes, bytearray, memoryview, or str",
         )));
     }
-    Ok(buffer)
+    if unlikely!(buffer.is_empty()) {
+        Err(DeserializeError::invalid(Cow::Borrowed(
+            "Input is a zero-length, empty document",
+        )))
+    } else {
+        Ok(buffer)
+    }
 }
