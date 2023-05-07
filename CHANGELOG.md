@@ -1,5 +1,14 @@
 # Changelog
 
+
+## 3.8.12 - 2023-05-07
+
+### Changed
+
+- Exceptions raised in `default` are now chained as the `__cause__` attribute
+on `orjson.JSONEncodeError`.
+
+
 ## 3.8.11 - 2023-04-27
 
 ### Changed
@@ -8,6 +17,7 @@
 - PyPI `manylinux_2_28_x86_64` wheels are compiled for `x86-64-v2`.
 - PyPI macOS wheels are only `universal2` and compiled for
 `x86-64-v2` and `apple-m1`.
+
 
 ## 3.8.10 - 2023-04-09
 
@@ -22,11 +32,13 @@
 - Publish musllinux 3.11 wheels.
 - Publish s390x wheels.
 
+
 ## 3.8.9 - 2023-03-28
 
 ### Fixed
 
 - Fix parallel initialization of orjson.
+
 
 ## 3.8.8 - 2023-03-20
 
@@ -34,12 +46,14 @@
 
 - Publish ppc64le wheels.
 
+
 ## 3.8.7 - 2023-02-28
 
 ### Fixed
 
 - Use serialization backend introduced in 3.8.4 only on well-tested
 platforms such as glibc, macOS by default.
+
 
 ## 3.8.6 - 2023-02-09
 
@@ -52,11 +66,13 @@ platforms such as glibc, macOS by default.
 - Make `python-dateutil` optional in tests.
 - Handle failure to load system timezones in tests.
 
+
 ## 3.8.5 - 2023-01-10
 
 ### Fixed
 
 - Fix `orjson.dumps()` invalid output on Windows.
+
 
 ## 3.8.4 - 2023-01-04
 
@@ -64,11 +80,13 @@ platforms such as glibc, macOS by default.
 
 - Improve performance.
 
+
 ## 3.8.3 - 2022-12-02
 
 ### Fixed
 
 - `orjson.dumps()` accepts `option=None` per `Optional[int]` type.
+
 
 ## 3.8.2 - 2022-11-20
 
@@ -81,17 +99,20 @@ platforms such as glibc, macOS by default.
 - Build now depends on rustc 1.60 or later.
 - Support building with maturin 0.13 or 0.14.
 
+
 ## 3.8.1 - 2022-10-25
 
 ### Changed
 
 - Build maintenance for Python 3.11.
 
+
 ## 3.8.0 - 2022-08-27
 
 ### Changed
 
 - Support serializing `numpy.int16` and `numpy.uint16`.
+
 
 ## 3.7.12 - 2022-08-14
 
@@ -103,17 +124,20 @@ platforms such as glibc, macOS by default.
 
 - Improve performance.
 
+
 ## 3.7.11 - 2022-07-31
 
 ### Fixed
 
 - Revert `dict` iterator implementation introduced in 3.7.9.
 
+
 ## 3.7.10 - 2022-07-30
 
 ### Fixed
 
 - Fix serializing `dict` with deleted final item. This was introduced in 3.7.9.
+
 
 ## 3.7.9 - 2022-07-29
 
@@ -125,6 +149,7 @@ to be much nearer to compact.
 - Improve performance of deserializing `str` input.
 - orjson now requires Rust 1.57 instead of 1.54 to build.
 
+
 ## 3.7.8 - 2022-07-19
 
 ### Changed
@@ -132,11 +157,13 @@ to be much nearer to compact.
 - Build makes best effort instead of requiring "--features".
 - Build using maturin 0.13.
 
+
 ## 3.7.7 - 2022-07-06
 
 ### Changed
 
 - Support Python 3.11.
+
 
 ## 3.7.6 - 2022-07-03
 
@@ -145,12 +172,14 @@ to be much nearer to compact.
 - Handle unicode changes in CPython 3.12.
 - Build PyPI macOS wheels on 10.15 instead of 12 for compatibility.
 
+
 ## 3.7.5 - 2022-06-28
 
 ### Fixed
 
 - Fix issue serializing dicts that had keys popped and replaced. This was
 introduced in 3.7.4.
+
 
 ## 3.7.4 - 2022-06-28
 
@@ -162,18 +191,23 @@ introduced in 3.7.4.
 
 - Fix deallocation of `orjson.JSONDecodeError`.
 
+
 ## 3.7.3 - 2022-06-23
+
 
 ## Changed
 
 - Improve build.
 - Publish aarch64 musllinux wheels.
 
+
 ## 3.7.2 - 2022-06-07
+
 
 ## Changed
 
 - Improve deserialization performance.
+
 
 ## 3.7.1 - 2022-06-03
 
@@ -183,6 +217,7 @@ introduced in 3.7.4.
 `json.JSONDecodeError` instead of `ValueError`
 - Null-terminate the internal buffer of `orjson.dumps()` output.
 
+
 ## 3.7.0 - 2022-06-03
 
 ### Changed
@@ -191,11 +226,13 @@ introduced in 3.7.4.
 backend. PyPI wheels for manylinux_2_28 and macOS have it enabled. Packagers
 are advised to see the README.
 
+
 ## 3.6.9 - 2022-06-01
 
 ### Changed
 
 - Improve serialization and deserialization performance.
+
 
 ## 3.6.8 - 2022-04-15
 
@@ -203,6 +240,7 @@ are advised to see the README.
 
 - Fix serialization of `numpy.datetime64("NaT")` to raise on an
 unsupported type.
+
 
 ## 3.6.7 - 2022-02-14
 
@@ -215,6 +253,7 @@ unsupported type.
 ### Fixed
 
 - Fix build requiring `python` on `PATH`.
+
 
 ## 3.6.6 - 2022-01-21
 
@@ -230,12 +269,14 @@ are `zoneinfo.ZoneInfo`.
 - Fix `orjson.OPT_STRICT_INTEGER` not raising an error on
 values exceeding a 64-bit integer maximum.
 
+
 ## 3.6.5 - 2021-12-05
 
 ### Fixed
 
 - Fix build on macOS aarch64 CPython 3.10.
 - Fix build issue on 32-bit.
+
 
 ## 3.6.4 - 2021-10-01
 
@@ -246,11 +287,13 @@ using `__slots__`.
 - Decrement refcount for numpy `PyArrayInterface`.
 - Fix build on recent versions of Rust nightly.
 
+
 ## 3.6.3 - 2021-08-20
 
 ### Fixed
 
 - Fix build on aarch64 using the Rust stable channel.
+
 
 ## 3.6.2 - 2021-08-17
 
@@ -264,6 +307,7 @@ usage is now disabled by default and packagers are advised to add
 implementations that use AVX2 or SSE4.2.
 - Drop support for Python 3.6.
 
+
 ## 3.6.1 - 2021-08-04
 
 ### Changed
@@ -275,12 +319,14 @@ implementations that use AVX2 or SSE4.2.
 
 - Fix compilation on latest Rust nightly.
 
+
 ## 3.6.0 - 2021-07-08
 
 ### Added
 
 - `orjson.dumps()` serializes `numpy.datetime64` instances as RFC 3339
 strings.
+
 
 ## 3.5.4 - 2021-06-30
 
@@ -294,12 +340,14 @@ without default specified.
 
 - Publish python3.10 and python3.9 manylinux_2_24 wheels.
 
+
 ## 3.5.3 - 2021-06-01
 
 ### Fixed
 
 - `orjson.JSONDecodeError` now has `pos`, `lineno`, and `colno`.
 - Fix build on recent versions of Rust nightly.
+
 
 ## 3.5.2 - 2021-04-15
 
@@ -308,11 +356,13 @@ without default specified.
 - Improve serialization and deserialization performance.
 - `orjson.dumps()` serializes individual `numpy.bool_` objects.
 
+
 ## 3.5.1 - 2021-03-06
 
 ### Changed
 
 - Publish `universal2` wheels for macOS supporting Apple Silicon (aarch64).
+
 
 ## 3.5.0 - 2021-02-24
 
@@ -331,6 +381,7 @@ four digits.
 - `orjson.dumps()` when given a non-C contiguous `numpy.ndarray` has
 an error message suggesting to use `default`.
 
+
 ## 3.4.8 - 2021-02-04
 
 ### Fixed
@@ -341,6 +392,7 @@ an error message suggesting to use `default`.
 
 - Fix build warnings on ppcle64.
 
+
 ## 3.4.7 - 2021-01-19
 
 ### Changed
@@ -348,17 +400,20 @@ an error message suggesting to use `default`.
 - Use vectorcall APIs for method calls on python3.9 and above.
 - Publish python3.10 wheels for Linux on amd64 and aarch64.
 
+
 ## 3.4.6 - 2020-12-07
 
 ### Fixed
 
 - Fix compatibility with debug builds of CPython.
 
+
 ## 3.4.5 - 2020-12-02
 
 ### Fixed
 
 - Fix deserializing long strings on processors without AVX2.
+
 
 ## 3.4.4 - 2020-11-25
 
@@ -367,11 +422,13 @@ an error message suggesting to use `default`.
 - `orjson.dumps()` serializes integers up to a 64-bit unsigned integer's
 maximum. It was previously the maximum of a 64-bit signed integer.
 
+
 ## 3.4.3 - 2020-10-30
 
 ### Fixed
 
 - Fix regression in parsing similar `dict` keys.
+
 
 ## 3.4.2 - 2020-10-29
 
@@ -380,6 +437,7 @@ maximum. It was previously the maximum of a 64-bit signed integer.
 - Improve deserialization performance.
 - Publish Windows python3.9 wheel.
 - Disable unsupported SIMD features on non-x86, non-ARM targets
+
 
 ## 3.4.1 - 2020-10-20
 
@@ -392,6 +450,7 @@ maximum. It was previously the maximum of a 64-bit signed integer.
 
 - Publish macos python3.9 wheel.
 - More packaging documentation.
+
 
 ## 3.4.0 - 2020-09-25
 
@@ -407,6 +466,7 @@ maximum. It was previously the maximum of a 64-bit signed integer.
 
 - No longer publish `manylinux1` wheels due to tooling dropping support.
 
+
 ## 3.3.1 - 2020-08-17
 
 ### Fixed
@@ -419,6 +479,7 @@ was introduced in 3.2.0.
 
 - Publish `manylinux2014` wheels for amd64 in addition to `manylinux1`.
 
+
 ## 3.3.0 - 2020-07-24
 
 ### Added
@@ -427,6 +488,7 @@ was introduced in 3.2.0.
 `numpy.float64(1.0)`.
 - `orjson.OPT_PASSTHROUGH_DATACLASS` causes `orjson.dumps()` to pass
 `dataclasses.dataclass` instances to `default`.
+
 
 ## 3.2.2 - 2020-07-13
 
@@ -438,11 +500,13 @@ was introduced in 3.2.0.
 
 - Improve deserialization performance of `str`.
 
+
 ## 3.2.1 - 2020-07-03
 
 ### Fixed
 
 - Fix `orjson.dumps(..., **{})` raising `TypeError` on python3.6.
+
 
 ## 3.2.0 - 2020-06-30
 
@@ -454,11 +518,13 @@ was introduced in 3.2.0.
 
 - Improve deserialization performance of `str`.
 
+
 ## 3.1.2 - 2020-06-23
 
 ### Fixed
 
 - Fix serializing zero-dimension `numpy.ndarray`.
+
 
 ## 3.1.1 - 2020-06-20
 
@@ -466,6 +532,7 @@ was introduced in 3.2.0.
 
 - Fix repeated serialization of `str` that are ASCII-only and have a legacy
 (non-compact) layout.
+
 
 ## 3.1.0 - 2020-06-08
 
@@ -478,6 +545,7 @@ output.
 `datetime` objects to `default` so the caller can customize the
 output.
 
+
 ## 3.0.2 - 2020-05-27
 
 ### Changed
@@ -487,6 +555,7 @@ that begin with a leading underscore, e.g., `_attr`. This is because of the
 Python idiom that a leading underscores marks an attribute as "private."
 - `orjson.dumps()` does not serialize `dataclasses.dataclass` attributes that
 are `InitVar` or `ClassVar` whether using `__slots__` or not.
+
 
 ## 3.0.1 - 2020-05-19
 
@@ -505,6 +574,7 @@ garbage collector runs.
 calling convention on python3.7 and above.
 - Reduce build time.
 
+
 ## 3.0.0 - 2020-05-01
 
 ### Added
@@ -517,11 +587,13 @@ calling convention on python3.7 and above.
 instances by default. The options `OPT_SERIALIZE_DATACLASS` and
 `OPT_SERIALIZE_UUID` can still be specified but have no effect.
 
+
 ## 2.6.8 - 2020-04-30
 
 ### Changed
 
 - The source distribution vendors a forked dependency.
+
 
 ## 2.6.7 - 2020-04-30
 
@@ -533,6 +605,7 @@ instances by default. The options `OPT_SERIALIZE_DATACLASS` and
 
 - The source distribution sets the recommended RUSTFLAGS in `.cargo/config`.
 
+
 ## 2.6.6 - 2020-04-24
 
 ### Fixed
@@ -541,6 +614,7 @@ instances by default. The options `OPT_SERIALIZE_DATACLASS` and
 interpreter start time when not used.
 - Reduce build time by half.
 
+
 ## 2.6.5 - 2020-04-08
 
 ### Fixed
@@ -548,11 +622,13 @@ interpreter start time when not used.
 - Fix deserialization raising `JSONDecodeError` on some valid negative
 floats with large exponents.
 
+
 ## 2.6.4 - 2020-04-08
 
 ### Changed
 
 - Improve deserialization performance of floats by about 40%.
+
 
 ## 2.6.3 - 2020-04-01
 
@@ -560,6 +636,7 @@ floats with large exponents.
 
 - Serialize `enum.Enum` objects.
 - Minor performance improvements.
+
 
 ## 2.6.2 - 2020-03-27
 
@@ -572,12 +649,14 @@ floats with large exponents.
 
 - Fix compilation failure on 32-bit.
 
+
 ## 2.6.1 - 2020-03-19
 
 ### Changed
 
 - Serialization is 10-20% faster and uses about 50% less memory by writing
 directly to the returned `bytes` object.
+
 
 ## 2.6.0 - 2020-03-10
 
@@ -586,12 +665,14 @@ directly to the returned `bytes` object.
 - `orjson.dumps()` pretty prints with an indentation of two spaces if
 `option=orjson.OPT_INDENT_2` is specified.
 
+
 ## 2.5.2 - 2020-03-07
 
 ### Changed
 
 - Publish `manylinux2014` wheels for `aarch64`.
 - numpy support now includes `numpy.uint32` and `numpy.uint64`.
+
 
 ## 2.5.1 - 2020-02-24
 
@@ -600,12 +681,14 @@ directly to the returned `bytes` object.
 - `manylinux1` wheels for 3.6, 3.7, and 3.8 are now compliant with the spec by
 not depending on glibc 2.18.
 
+
 ## 2.5.0 - 2020-02-19
 
 ### Added
 
 - `orjson.dumps()` serializes `dict` keys of type other than `str` if
 `option=orjson.OPT_NON_STR_KEYS` is specified.
+
 
 ## 2.4.0 - 2020-02-14
 
@@ -618,6 +701,7 @@ not depending on glibc 2.18.
 
 - Fix `dataclasses.dataclass` attributes that are `dict` to be effected by
 `orjson.OPT_SORT_KEYS`.
+
 
 ## 2.3.0 - 2020-02-12
 
@@ -636,12 +720,14 @@ specified.
 - Fix documentation on `default`, in particular documenting the need to raise
 an exception if the type cannot be handled.
 
+
 ## 2.2.2 - 2020-02-10
 
 ### Changed
 
 - Performance improvements to serializing a list containing elements of the
 same type.
+
 
 ## 2.2.1 - 2020-02-04
 
@@ -653,6 +739,7 @@ the decimal, e.g., `-2.`, `2.e-3`.
 ### Changed
 
 - Build Linux, macOS, and Windows wheels on more recent distributions.
+
 
 ## 2.2.0 - 2020-01-22
 
@@ -666,6 +753,7 @@ the decimal, e.g., `-2.`, `2.e-3`.
 - Minor performance improvements.
 - Publish Python 3.9 wheel for Linux.
 
+
 ## 2.1.4 - 2020-01-08
 
 ### Fixed
@@ -676,11 +764,13 @@ the decimal, e.g., `-2.`, `2.e-3`.
 
 - Improve documentation.
 
+
 ## 2.1.3 - 2019-11-12
 
 ### Changed
 
 - Publish Python 3.8 wheels for macOS and Windows.
+
 
 ## 2.1.2 - 2019-11-07
 
@@ -689,11 +779,13 @@ the decimal, e.g., `-2.`, `2.e-3`.
 - The recursion limit of `default` on `orjson.dumps()` has been increased from
 5 to 254.
 
+
 ## 2.1.1 - 2019-10-29
 
 ### Changed
 
 - Publish `manylinux1` wheels instead of `manylinux2010`.
+
 
 ## 2.1.0 - 2019-10-24
 
@@ -713,11 +805,13 @@ instances.
 - Drop support for Python 3.5.
 - Publish `manylinux2010` wheels instead of `manylinux1`.
 
+
 ## 2.0.11 - 2019-10-01
 
 ### Changed
 
 - Publish Python 3.8 wheel for Linux.
+
 
 ## 2.0.10 - 2019-09-25
 
@@ -725,6 +819,7 @@ instances.
 
 - Performance improvements and lower memory usage in deserialization
 by creating only one `str` object for repeated map keys.
+
 
 ## 2.0.9 - 2019-09-22
 
@@ -737,12 +832,14 @@ by creating only one `str` object for repeated map keys.
 - Fix inaccurate zero padding in serialization of microseconds on
 `datetime.time` objects.
 
+
 ## 2.0.8 - 2019-09-18
 
 ### Fixed
 
 - Fix inaccurate zero padding in serialization of microseconds on
 `datetime.datetime` objects.
+
 
 ## 2.0.7 - 2019-08-29
 
@@ -754,11 +851,13 @@ by creating only one `str` object for repeated map keys.
 
 - `orjson.dumps()` raises `JSONEncodeError` on circular references.
 
+
 ## 2.0.6 - 2019-05-11
 
 ### Changed
 
 - Performance improvements.
+
 
 ## 2.0.5 - 2019-04-19
 
@@ -768,6 +867,7 @@ by creating only one `str` object for repeated map keys.
 31.245270191439438 was parsed to 31.24527019143944. Serialization was
 unaffected.
 
+
 ## 2.0.4 - 2019-04-02
 
 ### Changed
@@ -775,11 +875,13 @@ unaffected.
 - `orjson.dumps()` now serializes `datetime.datetime` objects without a
 `tzinfo` rather than raising `JSONEncodeError`.
 
+
 ## 2.0.3 - 2019-03-23
 
 ### Changed
 
 - `orjson.loads()` uses SSE2 to validate `bytes` input.
+
 
 ## 2.0.2 - 2019-03-12
 
@@ -787,11 +889,13 @@ unaffected.
 
 - Support Python 3.5.
 
+
 ## 2.0.1 - 2019-02-05
 
 ### Changed
 
 - Publish Windows wheel.
+
 
 ## 2.0.0 - 2019-01-28
 
@@ -811,11 +915,13 @@ implementations.
 
 - `orjson.dumps()` no longer accepts `bytes`.
 
+
 ## 1.3.1 - 2019-01-03
 
 ### Fixed
 
 - Handle invalid UTF-8 in str.
+
 
 ## 1.3.0 - 2019-01-02
 
@@ -823,17 +929,20 @@ implementations.
 
 - Performance improvements of 15-25% on serialization, 10% on deserialization.
 
+
 ## 1.2.1 - 2018-12-31
 
 ### Fixed
 
 - Fix memory leak in deserializing dict.
 
+
 ## 1.2.0 - 2018-12-16
 
 ### Changed
 
 - Performance improvements.
+
 
 ## 1.1.0 - 2018-12-04
 
@@ -845,11 +954,13 @@ implementations.
 
 - Dict key can only be str.
 
+
 ## 1.0.1 - 2018-11-26
 
 ### Fixed
 
 - pyo3 bugfix update.
+
 
 ## 1.0.0 - 2018-11-23
 
