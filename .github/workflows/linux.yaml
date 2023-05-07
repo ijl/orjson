@@ -14,7 +14,7 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
     - run: maturin sdist --out=dist
 
     - run: python3 -m pip install --user dist/orjson*.tar.gz
@@ -34,7 +34,7 @@ jobs:
         path: dist
         retention-days: 1
 
-  manylinux_2_28:
+  manylinux_2_17_amd64:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -59,8 +59,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-04-25 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-04-25-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-05-07 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-05-07-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v3
 
     - name: build-std
@@ -69,12 +69,12 @@ jobs:
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
 
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
+    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
     - run: |
         maturin build --release --strip \
           --out=dist \
           --features=unstable-simd,yyjson \
-          --compatibility manylinux_2_28 \
+          --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
     - run: python3 -m pip install --user dist/orjson*.whl
@@ -93,48 +93,7 @@ jobs:
         path: dist
         retention-days: 1
 
-  manylinux2014:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python: [
-          { version: '3.11', abi: 'cp311-cp311' },
-          { version: '3.10', abi: 'cp310-cp310' },
-          { version: '3.9', abi: 'cp39-cp39' },
-          { version: '3.8', abi: 'cp38-cp38' },
-          { version: '3.7', abi: 'cp37-cp37m' },
-        ]
-    env:
-      PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/devtoolset-10/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      CC: "gcc"
-      CFLAGS: "-O2 -fno-plt -flto"
-      LDFLAGS: "-O2 -flto -Wl,--as-needed"
-      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      ORJSON_ENABLE_WRITEEXT: "1"
-    container:
-      image: quay.io/pypa/manylinux2014_x86_64:latest
-      options: --user 0
-    steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-04-25 --profile minimal -y
-    - uses: actions/checkout@v3
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.7" wheel
-    - run: maturin build --release --strip --out=dist --features=unstable-simd,yyjson --compatibility manylinux2014 --interpreter python${{ matrix.python.version }}
-    - run: python3 -m pip install --user dist/orjson*.whl
-    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
-    - run: pytest -s -rxX -v test
-    - run: ./integration/run thread
-    - run: ./integration/run http
-    - run: ./integration/run init
-    - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheels
-        path: dist
-        retention-days: 1
-
-  musllinux:
+  musllinux_1_1:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -172,7 +131,7 @@ jobs:
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
         maturin-version: v1.0.0-beta.7
-        rust-toolchain: nightly-2023-04-25
+        rust-toolchain: nightly-2023-05-07
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
@@ -208,7 +167,7 @@ jobs:
         path: dist
         retention-days: 1
 
-  linux-cross:
+  manylinux_2_17_non_amd64:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -263,7 +222,7 @@ jobs:
       with:
         maturin-version: v1.0.0-beta.7
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-04-25
+        rust-toolchain: nightly-2023-05-07
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist -i python${{ matrix.python.version }}
@@ -301,7 +260,7 @@ jobs:
     name: PyPI
     runs-on: ubuntu-22.04
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ manylinux_2_28, manylinux2014, linux-cross, musllinux, sdist ]
+    needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_1, sdist ]
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -309,7 +268,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - run: pip install --pre "maturin==1.0.0-beta.7"
+      - run: pip install --pre "maturin==1.0.0-beta.9"
       - run: ls -1 .
       - name: deploy wheel
         run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl

@@ -1,6 +1,3 @@
-Please don't open issues asking for support specific to your environment.
-
-Please don't open an issue asking about something already explained in
-the README.
-
-If you would like to add functionality please first propose it in an issue.
+orjson is stable. Contributions will be reviewed only if they are well
+documented, tested to the same standard as the rest of the library, not
+a breaking change, and important to other users.

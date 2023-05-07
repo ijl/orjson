@@ -67,6 +67,22 @@
 #endif
 
 /*
+ Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ 
+ This will disable these functions at compile-time:
+    - yyjson_ptr_xxx()
+    - yyjson_mut_ptr_xxx()
+    - yyjson_doc_ptr_xxx()
+    - yyjson_mut_doc_ptr_xxx()
+    - yyjson_patch()
+    - yyjson_mut_patch()
+    - yyjson_merge_patch()
+    - yyjson_mut_merge_patch()
+ */
+#ifndef YYJSON_DISABLE_UTILS
+#endif
+
+/*
  Define as 1 to disable the fast floating-point number conversion in yyjson,
  and use libc's `strtod/snprintf` instead.
  
@@ -176,6 +192,15 @@
 #   endif
 #endif
 
+/** compiler feature check (since clang 2.6, icc 17) */
+#ifndef yyjson_has_feature
+#   ifdef __has_feature
+#       define yyjson_has_feature(x) __has_feature(x)
+#   else
+#       define yyjson_has_feature(x) 0
+#   endif
+#endif
+
 /** include check (since gcc 5.0, clang 2.7, icc 16, msvc 2017 15.3) */
 #ifndef yyjson_has_include
 #   ifdef __has_include
@@ -243,6 +268,20 @@
 #       define yyjson_unlikely(expr) __builtin_expect(!!(expr), 0)
 #   else
 #       define yyjson_unlikely(expr) (expr)
+#   endif
+#endif
+
+/** deprecate warning */
+#ifndef yyjson_deprecated
+#   if YYJSON_MSC_VER >= 1400
+#       define yyjson_deprecated(msg) __declspec(deprecated(msg))
+#   elif yyjson_has_feature(attribute_deprecated_with_message) || \
+        (YYJSON_GCC_VER > 4 || (YYJSON_GCC_VER == 4 && __GNUC_MINOR__ >= 5))
+#       define yyjson_deprecated(msg) __attribute__((deprecated(msg)))
+#   elif YYJSON_GCC_VER >= 3
+#       define yyjson_deprecated(msg) __attribute__((deprecated))
+#   else
+#       define yyjson_deprecated(msg)
 #   endif
 #endif
 
@@ -756,7 +795,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
                                           size_t len,
                                           yyjson_read_flag flg) {
     flg &= ~YYJSON_READ_INSITU; /* const string cannot be modified */
-    return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat, 
+    return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat,
                             len, flg, NULL, NULL);
 }
 
@@ -1429,7 +1468,10 @@ yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
                                           size_t len);
 
 /** Returns whether two JSON values are equal (deep compare).
-    Returns false if input is NULL. */
+    Returns false if input is NULL.
+    @note the result may be inaccurate if object has duplicate keys.
+    @warning This function is recursive and may cause a stack overflow
+        if the object level is too deep. */
 yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
 
 /** Set the value to raw.
@@ -1524,9 +1566,9 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
  @endcode
  */
 typedef struct yyjson_arr_iter {
-    size_t idx; /**< current index, from 0 */
-    size_t max; /**< maximum index, `idx < max` */
-    yyjson_val *cur; /**< current value */
+    size_t idx; /**< next value's index */
+    size_t max; /**< maximum index (arr.size) */
+    yyjson_val *cur; /**< next value */
 } yyjson_arr_iter;
 
 /**
@@ -1648,9 +1690,9 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
  @see yyjson_obj_iter_get() and yyjson_obj_iter_getn()
  */
 typedef struct yyjson_obj_iter {
-    size_t idx; /**< current key index, from 0 */
-    size_t max; /**< maximum key index, `idx < max` */
-    yyjson_val *cur; /**< current key */
+    size_t idx; /**< next key's index */
+    size_t max; /**< maximum key index (obj.size) */
+    yyjson_val *cur; /**< next key */
     yyjson_val *obj; /**< the object being iterated */
 } yyjson_obj_iter;
 
@@ -1999,7 +2041,7 @@ yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
 
 /** Returns whether two JSON values are equal (deep compare).
     Returns false if input is NULL.
-    
+    @note the result may be inaccurate if object has duplicate keys.
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
 yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
@@ -2204,8 +2246,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
  @endcode
  */
 typedef struct yyjson_mut_arr_iter {
-    size_t idx; /**< current index, from 0 */
-    size_t max; /**< maximum index, `idx < max` */
+    size_t idx; /**< next value's index */
+    size_t max; /**< maximum index (arr.size) */
     yyjson_mut_val *cur; /**< current value */
     yyjson_mut_val *pre; /**< previous value */
     yyjson_mut_val *arr; /**< the array being iterated */
@@ -3006,8 +3048,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  @see `yyjson_mut_obj_iter_get()` and `yyjson_mut_obj_iter_getn()`
  */
 typedef struct yyjson_mut_obj_iter {
-    size_t idx; /**< current key index, from 0 */
-    size_t max; /**< maximum key index, `idx < max` */
+    size_t idx; /**< next key's index */
+    size_t max; /**< maximum key index (obj.size) */
     yyjson_mut_val *cur; /**< current key */
     yyjson_mut_val *pre; /**< previous key */
     yyjson_mut_val *obj; /**< the object being iterated */
@@ -3061,7 +3103,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
     yyjson_mut_val *key);
 
 /**
- Removes and returns current key-value pair in the iteration.
+ Removes current key-value pair in the iteration, returns the removed value.
  If `iter` is NULL, this function will return NULL.
  */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
@@ -3483,98 +3525,683 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * JSON Pointer API
+ * JSON Pointer API (RFC 6901)
  * https://tools.ietf.org/html/rfc6901
  *============================================================================*/
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a null-terminated UTF-8 string.
-    
-    Returns NULL if there's no matched value.
-    Returns NULL if `val/ptr` is NULL or `val` is not object. */
-yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
+/** JSON Pointer error code. */
+typedef uint32_t yyjson_ptr_code;
+
+/** No JSON pointer error. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_NONE = 0;
+
+/** Invalid input parameter, such as NULL input. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_PARAMETER = 1;
+
+/** JSON pointer syntax error, such as invalid escape, token no prefix. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_SYNTAX = 2;
+
+/** JSON pointer resolve failed, such as index out of range, key not found. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_RESOLVE = 3;
+
+/** Document's root is NULL, but it is required for the function call. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_NULL_ROOT = 4;
+
+/** Cannot set root as the target is not a document. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_SET_ROOT = 5;
+
+/** The memory allocation failed and a new value could not be created. */
+static const yyjson_ptr_code YYJSON_PTR_ERR_MEMORY_ALLOCATION = 6;
+
+/** Error information for JSON pointer. */
+typedef struct yyjson_ptr_err {
+    /** Error code, see `yyjson_ptr_code` for all possible values. */
+    yyjson_ptr_code code;
+    /** Error message, constant, no need to free (NULL if no error). */
+    const char *msg;
+    /** Error byte position for input JSON pointer (0 if no error). */
+    size_t pos;
+} yyjson_ptr_err;
+
+/**
+ A context for JSON pointer operation.
+ 
+ This struct stores the context of JSON Pointer operation result. The struct
+ can be used with three helper functions: `ctx_append()`, `ctx_replace()`, and
+ `ctx_remove()`, which perform the corresponding operations on the container
+ without re-parsing the JSON Pointer.
+ 
+ For example:
+ @code
+    // doc before: {"a":[0,1,null]}
+    // ptr: "/a/2"
+    val = yyjson_mut_doc_ptr_getx(doc, ptr, strlen(ptr), &ctx, &err);
+    if (yyjson_is_null(val)) {
+        yyjson_ptr_ctx_remove(&ctx);
+    }
+    // doc after: {"a":[0,1]}
+ @endcode
+ */
+typedef struct yyjson_ptr_ctx {
+    /**
+     The container (parent) of the target value. It can be either an array or
+     an object. If the target location has no value, but all its parent
+     containers exist, and the target location can be used to insert a new
+     value, then `ctn` is the parent container of the target location.
+     Otherwise, `ctn` is NULL.
+     */
+    yyjson_mut_val *ctn;
+    /**
+     The previous sibling of the target value. It can be either a value in an
+     array or a key in an object. As the container is a `circular linked list`
+     of elements, `pre` is the previous node of the target value. If the
+     operation is `add` or `set`, then `pre` is the previous node of the new
+     value, not the original target value. If the target value does not exist,
+     `pre` is NULL.
+     */
+    yyjson_mut_val *pre;
+    /**
+     The removed value if the operation is `set`, `replace` or `remove`. It can
+     be used to restore the original state of the document if needed.
+     */
+    yyjson_mut_val *old;
+} yyjson_ptr_ctx;
+
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc,
                                                  const char *ptr);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a UTF-8 string, null-terminator is not required.
-    The `len` should be the length of the `ptr`, in bytes.
-    
-    Returns NULL if there's no matched value.
-    Returns NULL if `val/ptr` is NULL or `val` is not object. */
-yyjson_api_inline yyjson_val *yyjson_get_pointern(yyjson_val *val,
-                                                  const char *ptr,
-                                                  size_t len);
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc,
+                                                  const char *ptr, size_t len);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a null-terminated UTF-8 string.
-    
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
-                                                     const char *ptr);
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
+                                                  const char *ptr, size_t len,
+                                                  yyjson_ptr_err *err);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a UTF-8 string, null-terminator is not required.
-    The `len` should be the length of the `ptr`, in bytes.
- 
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc,
-                                                     const char *ptr,
-                                                      size_t len);
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_ptr_get(yyjson_val *val,
+                                             const char *ptr);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a null-terminated UTF-8 string.
-    
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_ptr_getn(yyjson_val *val,
+                                              const char *ptr, size_t len);
+
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
+                                              const char *ptr, size_t len,
+                                              yyjson_ptr_err *err);
+
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc,
                                                          const char *ptr);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a UTF-8 string, null-terminator is not required.
-    The `len` should be the length of the `ptr`, in bytes.
-    
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val,
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc,
                                                           const char *ptr,
                                                           size_t len);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a null-terminated UTF-8 string.
-    
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
+/**
+ Get value by a JSON Pointer.
+ @param doc The JSON document to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The value referenced by the JSON pointer.
+    NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
+                                                          const char *ptr,
+                                                          size_t len,
+                                                          yyjson_ptr_ctx *ctx,
+                                                          yyjson_ptr_err *err);
+
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val,
+                                                     const char *ptr);
+
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val,
+                                                      const char *ptr,
+                                                      size_t len);
+
+/**
+ Get value by a JSON Pointer.
+ @param val The JSON value to be queried.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The value referenced by the JSON pointer.
+    NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
+                                                      const char *ptr,
+                                                      size_t len,
+                                                      yyjson_ptr_ctx *ctx,
+                                                      yyjson_ptr_err *err);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param new_val The value to be added.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_add(yyjson_mut_doc *doc,
+                                              const char *ptr,
+                                              yyjson_mut_val *new_val);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be added.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_addn(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be added.
+ @param create_parent Whether to create parent nodes if not exist.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val,
+                                               bool create_parent,
+                                               yyjson_ptr_ctx *ctx,
+                                               yyjson_ptr_err *err);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param doc Only used to create new values when needed.
+ @param new_val The value to be added.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_add(yyjson_mut_val *val,
+                                          const char *ptr,
+                                          yyjson_mut_val *new_val,
+                                          yyjson_mut_doc *doc);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param doc Only used to create new values when needed.
+ @param new_val The value to be added.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_addn(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc);
+
+/**
+ Add (insert) value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param doc Only used to create new values when needed.
+ @param new_val The value to be added.
+ @param create_parent Whether to create parent nodes if not exist.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return true if JSON pointer is valid and new value is added, false otherwise.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_addx(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err);
+
+/**
+ Set value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param new_val The value to be set, pass NULL to remove.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+    If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_set(yyjson_mut_doc *doc,
+                                              const char *ptr,
+                                              yyjson_mut_val *new_val);
+
+/**
+ Set value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be set, pass NULL to remove.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+    If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_setn(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val);
+
+/**
+ Set value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be set, pass NULL to remove.
+ @param create_parent Whether to create parent nodes if not exist.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val,
+                                               bool create_parent,
+                                               yyjson_ptr_ctx *ctx,
+                                               yyjson_ptr_err *err);
+
+/**
+ Set value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param new_val The value to be set, pass NULL to remove.
+ @param doc Only used to create new values when needed.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+    If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_set(yyjson_mut_val *val,
+                                          const char *ptr,
+                                          yyjson_mut_val *new_val,
+                                          yyjson_mut_doc *doc);
+
+/**
+ Set value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be set, pass NULL to remove.
+ @param doc Only used to create new values when needed.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note The parent nodes will be created if they do not exist.
+    If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_setn(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc);
+
+/**
+ Set value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The value to be set, pass NULL to remove.
+ @param doc Only used to create new values when needed.
+ @param create_parent Whether to create parent nodes if not exist.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return true if JSON pointer is valid and new value is set, false otherwise.
+ @note If the target value already exists, it will be replaced by the new value.
+ */
+yyjson_api_inline bool yyjson_mut_ptr_setx(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err);
+
+/**
+ Replace value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param new_val The new value to replace the old one.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replace(
+    yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
+
+/**
+ Replace value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The new value to replace the old one.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replacen(
+    yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
+
+/**
+ Replace value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The new value to replace the old one.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replacex(
+    yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+/**
+ Replace value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @param new_val The new value to replace the old one.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replace(
+    yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val);
+
+/**
+ Replace value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The new value to replace the old one.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replacen(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val);
+
+/**
+ Replace value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param new_val The new value to replace the old one.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The old value that was replaced, or NULL if not found.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replacex(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+/**
+ Remove value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_remove(
     yyjson_mut_doc *doc, const char *ptr);
 
-/** Get a JSON value with JSON Pointer (RFC 6901).
-    The `ptr` should be a UTF-8 string, null-terminator is not required.
-    The `len` should be the length of the `ptr`, in bytes.
-    
-    Returns NULL if there's no matched value. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointern(
+/**
+ Remove value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_removen(
     yyjson_mut_doc *doc, const char *ptr, size_t len);
+
+/**
+ Remove value by a JSON pointer.
+ @param doc The target JSON document.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_removex(
+    yyjson_mut_doc *doc, const char *ptr, size_t len,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+/**
+ Remove value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8 with null-terminator).
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_remove(yyjson_mut_val *val,
+                                                        const char *ptr);
+
+/**
+ Remove value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_removen(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len);
+
+/**
+ Remove value by a JSON pointer.
+ @param val The target JSON value.
+ @param ptr The JSON pointer string (UTF-8, null-terminator is not required).
+ @param len The length of `ptr` in bytes.
+ @param ctx A pointer to store the result context, or NULL if not needed.
+ @param err A pointer to store the error information, or NULL if not needed.
+ @return The removed value, or NULL on error.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_removex(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len,
+                                                         yyjson_ptr_ctx *ctx,
+                                                         yyjson_ptr_err *err);
+
+/**
+ Append value by JSON pointer context.
+ @param ctx The context from the `yyjson_mut_ptr_xxx()` calls.
+ @param key New key if `ctx->ctn` is object, or NULL if `ctx->ctn` is array.
+ @param val New value to be added.
+ @return true on success or false on fail.
+ */
+yyjson_api_inline bool yyjson_ptr_ctx_append(yyjson_ptr_ctx *ctx,
+                                             yyjson_mut_val *key,
+                                             yyjson_mut_val *val);
+
+/**
+ Replace value by JSON pointer context.
+ @param ctx The context from the `yyjson_mut_ptr_xxx()` calls.
+ @param val New value to be replaced.
+ @return true on success or false on fail.
+ @note If success, the old value will be returned via `ctx->old`.
+ */
+yyjson_api_inline bool yyjson_ptr_ctx_replace(yyjson_ptr_ctx *ctx,
+                                              yyjson_mut_val *val);
+
+/**
+ Remove value by JSON pointer context.
+ @param ctx The context from the `yyjson_mut_ptr_xxx()` calls.
+ @return true on success or false on fail.
+ @note If success, the old value will be returned via `ctx->old`.
+ */
+yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx);
 
 
 
 /*==============================================================================
- * JSON Merge-Patch API
+ * JSON Patch API (RFC 6902)
+ * https://tools.ietf.org/html/rfc6902
+ *============================================================================*/
+
+/** Result code for JSON patch. */
+typedef uint32_t yyjson_patch_code;
+
+/** Success, no error. */
+static const yyjson_patch_code YYJSON_PATCH_SUCCESS = 0;
+
+/** Invalid parameter, such as NULL input or non-array patch. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_INVALID_PARAMETER = 1;
+
+/** Memory allocation failure occurs. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_MEMORY_ALLOCATION = 2;
+
+/** JSON patch operation is not object type. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_INVALID_OPERATION = 3;
+
+/** JSON patch operation is missing a required key. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_MISSING_KEY = 4;
+
+/** JSON patch operation member is invalid. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_INVALID_MEMBER = 5;
+
+/** JSON patch operation `test` not equal. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_EQUAL = 6;
+
+/** JSON patch operation failed on JSON pointer. */
+static const yyjson_patch_code YYJSON_PATCH_ERROR_POINTER = 7;
+
+/** Error information for JSON patch. */
+typedef struct yyjson_patch_err {
+    /** Error code, see `yyjson_patch_code` for all possible values. */
+    yyjson_patch_code code;
+    /** Index of the error operation (0 if no error). */
+    size_t idx;
+    /** Error message, constant, no need to free (NULL if no error). */
+    const char *msg;
+    /** JSON pointer error if `code == YYJSON_PATCH_ERROR_POINTER`. */
+    yyjson_ptr_err ptr;
+} yyjson_patch_err;
+
+/**
+ Creates and returns a patched JSON value (RFC 6902).
+ The memory of the returned value is allocated by the `doc`.
+ The `err` is used to receive error information, pass NULL if not needed.
+ Returns NULL if the patch could not be applied.
+ */
+yyjson_api yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
+                                        yyjson_val *orig,
+                                        yyjson_val *patch,
+                                        yyjson_patch_err *err);
+
+/**
+ Creates and returns a patched JSON value (RFC 6902).
+ The memory of the returned value is allocated by the `doc`.
+ The `err` is used to receive error information, pass NULL if not needed.
+ Returns NULL if the patch could not be applied.
+ */
+yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
+                                            yyjson_mut_val *orig,
+                                            yyjson_mut_val *patch,
+                                            yyjson_patch_err *err);
+
+
+
+/*==============================================================================
+ * JSON Merge-Patch API (RFC 7386)
  * https://tools.ietf.org/html/rfc7386
  *============================================================================*/
 
-/** Creates and returns a merge-patched JSON value (RFC 7386).
-    The memory of the returned value is allocated by the `doc`.
-    Returns NULL if the patch could not be applied.
-    
-    @warning This function is recursive and may cause a stack overflow if the
-        object level is too deep. */
+/**
+ Creates and returns a merge-patched JSON value (RFC 7386).
+ The memory of the returned value is allocated by the `doc`.
+ Returns NULL if the patch could not be applied.
+
+ @warning This function is recursive and may cause a stack overflow if the
+    object level is too deep.
+ */
 yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                               yyjson_val *orig,
                                               yyjson_val *patch);
 
-/** Creates and returns a merge-patched JSON value (RFC 7386).
-    The memory of the returned value is allocated by the `doc`.
-    Returns NULL if the patch could not be applied.
-    
-    @warning This function is recursive and may cause a stack overflow if the
-        object level is too deep. */
+/**
+ Creates and returns a merge-patched JSON value (RFC 7386).
+ The memory of the returned value is allocated by the `doc`.
+ Returns NULL if the patch could not be applied.
+
+ @warning This function is recursive and may cause a stack overflow if the
+    object level is too deep.
+ */
 yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *orig,
                                                   yyjson_mut_val *patch);
@@ -3804,6 +4431,18 @@ yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
     ((yyjson_val *)val)->tag = tag;
 }
 
+yyjson_api_inline void unsafe_yyjson_inc_len(void *val) {
+    uint64_t tag = ((yyjson_val *)val)->tag;
+    tag += (uint64_t)(1 << YYJSON_TAG_BIT);
+    ((yyjson_val *)val)->tag = tag;
+}
+
+yyjson_api_inline void unsafe_yyjson_dec_len(void *val) {
+    uint64_t tag = ((yyjson_val *)val)->tag;
+    tag -= (uint64_t)(1 << YYJSON_TAG_BIT);
+    ((yyjson_val *)val)->tag = tag;
+}
+
 yyjson_api_inline void unsafe_yyjson_set_raw(void *val, const char *raw,
                                              size_t len) {
     unsafe_yyjson_set_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE);
@@ -3847,7 +4486,7 @@ yyjson_api_inline void unsafe_yyjson_set_str(void *val, const char *str) {
 }
 
 yyjson_api_inline void unsafe_yyjson_set_strn(void *val, const char *str,
-                                             size_t len) {
+                                              size_t len) {
     unsafe_yyjson_set_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE);
     unsafe_yyjson_set_len(val, len);
     ((yyjson_val *)val)->uni.str = str;
@@ -4377,21 +5016,26 @@ yyjson_api bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
                                             const yyjson_alc *alc,
                                             size_t count);
 
-yyjson_api_inline char *unsafe_yyjson_mut_strncpy(yyjson_mut_doc *doc,
-                                                  const char *str, size_t len) {
+/* Allocate memory for string. */
+yyjson_api_inline char *unsafe_yyjson_mut_str_alc(yyjson_mut_doc *doc,
+                                                  size_t len) {
     char *mem;
     const yyjson_alc *alc = &doc->alc;
     yyjson_str_pool *pool = &doc->str_pool;
-    
-    if (!str) return NULL;
     if (yyjson_unlikely((size_t)(pool->end - pool->cur) <= len)) {
         if (yyjson_unlikely(!unsafe_yyjson_str_pool_grow(pool, alc, len + 1))) {
             return NULL;
         }
     }
-    
     mem = pool->cur;
     pool->cur = mem + len + 1;
+    return mem;
+}
+
+yyjson_api_inline char *unsafe_yyjson_mut_strncpy(yyjson_mut_doc *doc,
+                                                  const char *str, size_t len) {
+    char *mem = unsafe_yyjson_mut_str_alc(doc, len);
+    if (yyjson_unlikely(!mem)) return NULL;
     memcpy((void *)mem, (const void *)str, len);
     mem[len] = '\0';
     return mem;
@@ -4407,7 +5051,6 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_val(yyjson_mut_doc *doc,
             return NULL;
         }
     }
-    
     val = pool->cur;
     pool->cur += count;
     return val;
@@ -5547,8 +6190,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
         iter->max--;
         unsafe_yyjson_set_len(iter->obj, iter->max);
         prev->next->next = next;
-        iter->cur = next;
-        return cur;
+        iter->cur = prev;
+        return cur->next;
     }
     return NULL;
 }
@@ -5756,17 +6399,28 @@ yyjson_api_inline bool yyjson_mut_obj_add(yyjson_mut_val *obj,
 yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-                      yyjson_mut_is_str(key))) {
-        unsafe_yyjson_mut_obj_remove(obj, key->uni.str,
-                                     unsafe_yyjson_get_len(key), key->tag);
-        if (yyjson_likely(val)) {
-            unsafe_yyjson_mut_obj_add(obj, key, val,
-                                      unsafe_yyjson_get_len(obj));
+    bool replaced = false;
+    size_t key_len;
+    yyjson_mut_obj_iter iter;
+    yyjson_mut_val *cur_key;
+    if (yyjson_unlikely(!yyjson_mut_is_obj(obj) ||
+                        !yyjson_mut_is_str(key))) return false;
+    key_len = unsafe_yyjson_get_len(key);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    while ((cur_key = yyjson_mut_obj_iter_next(&iter))) {
+        if (key->tag == cur_key->tag &&
+            memcmp(key->uni.str, cur_key->uni.ptr, key_len) == 0) {
+            if (!replaced && val) {
+                replaced = true;
+                val->next = cur_key->next->next;
+                cur_key->next = val;
+            } else {
+                yyjson_mut_obj_iter_remove(&iter);
+            }
         }
-        return true;
     }
-    return false;
+    if (!replaced && val) unsafe_yyjson_mut_obj_add(obj, key, val, iter.max);
+    return true;
 }
 
 yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
@@ -6064,66 +6718,658 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
  * JSON Pointer API (Implementation)
  *============================================================================*/
 
-/* `val` not null, `ptr` start with '/', `len` > 0. */
-yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
-                                                 const char *ptr,
-                                                 size_t len);
+#define yyjson_ptr_set_err(_code, _msg) do { \
+    if (err) { \
+        err->code = YYJSON_PTR_ERR_##_code; \
+        err->msg = _msg; \
+        err->pos = 0; \
+    } \
+} while(false)
 
-/* `val` not null, `ptr` start with '/', `len` > 0. */
-yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
-                                                         const char *ptr,
-                                                         size_t len);
+/* require: val != NULL, *ptr == '/', len > 0 */
+yyjson_api yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
+                                              const char *ptr, size_t len,
+                                              yyjson_ptr_err *err);
 
-yyjson_api_inline yyjson_val *yyjson_get_pointern(yyjson_val *val,
-                                                  const char *ptr,
-                                                  size_t len) {
-    if (!val || !ptr) return NULL;
-    if (len == 0) return val;
-    if (*ptr != '/') return NULL;
-    return unsafe_yyjson_get_pointer(val, ptr, len);
-}
-
-yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
-                                                 const char *ptr) {
-    if (!val || !ptr) return NULL;
-    return yyjson_get_pointern(val, ptr, strlen(ptr));
-}
-
-yyjson_api_inline yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc,
+/* require: val != NULL, *ptr == '/', len > 0 */
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(yyjson_mut_val *val,
                                                       const char *ptr,
-                                                      size_t len) {
-    return yyjson_get_pointern(doc ? doc->root : NULL, ptr, len);
+                                                      size_t len,
+                                                      yyjson_ptr_ctx *ctx,
+                                                      yyjson_ptr_err *err);
+
+/* require: val/new_val/doc != NULL, *ptr == '/', len > 0 */
+yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent, bool insert_new,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err);
+
+/* require: val/err != NULL, *ptr == '/', len > 0 */
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_replacex(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+/* require: val/err != NULL, *ptr == '/', len > 0 */
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_removex(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len,
+                                                         yyjson_ptr_ctx *ctx,
+                                                         yyjson_ptr_err *err);
+
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc,
+                                                 const char *ptr) {
+    if (yyjson_unlikely(!ptr)) return NULL;
+    return yyjson_doc_ptr_getn(doc, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
-                                                     const char *ptr) {
-    return yyjson_get_pointer(doc ? doc->root : NULL, ptr);
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc,
+                                                  const char *ptr, size_t len) {
+    return yyjson_doc_ptr_getx(doc, ptr, len, NULL);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
+                                                  const char *ptr, size_t len,
+                                                  yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (yyjson_unlikely(!doc || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        return doc->root;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_ptr_getx(doc->root, ptr, len, err);
+}
+
+yyjson_api_inline yyjson_val *yyjson_ptr_get(yyjson_val *val,
+                                             const char *ptr) {
+    if (yyjson_unlikely(!ptr)) return NULL;
+    return yyjson_ptr_getn(val, ptr, strlen(ptr));
+}
+
+yyjson_api_inline yyjson_val *yyjson_ptr_getn(yyjson_val *val,
+                                              const char *ptr, size_t len) {
+    return yyjson_ptr_getx(val, ptr, len, NULL);
+}
+
+yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
+                                              const char *ptr, size_t len,
+                                              yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (yyjson_unlikely(!val || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        return val;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_ptr_getx(val, ptr, len, err);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc,
+                                                         const char *ptr) {
+    if (!ptr) return NULL;
+    return yyjson_mut_doc_ptr_getn(doc, ptr, strlen(ptr));
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc,
                                                           const char *ptr,
                                                           size_t len) {
-    if (!val || !ptr) return NULL;
-    if (len == 0) return val;
-    if (*ptr != '/') return NULL;
-    return unsafe_yyjson_mut_get_pointer(val, ptr, len);
+    return yyjson_mut_doc_ptr_getx(doc, ptr, len, NULL, NULL);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
-                                                         const char *ptr) {
-    if (!val || !ptr) return NULL;
-    return yyjson_mut_get_pointern(val, ptr, strlen(ptr));
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
+                                                          const char *ptr,
+                                                          size_t len,
+                                                          yyjson_ptr_ctx *ctx,
+                                                          yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!doc || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        return doc->root;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_getx(doc->root, ptr, len, ctx, err);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointern(
-    yyjson_mut_doc *doc, const char *ptr, size_t len) {
-    return yyjson_mut_get_pointern(doc ? doc->root : NULL, ptr, len);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val,
+                                                     const char *ptr) {
+    if (!ptr) return NULL;
+    return yyjson_mut_ptr_getn(val, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val,
+                                                      const char *ptr,
+                                                      size_t len) {
+    return yyjson_mut_ptr_getx(val, ptr, len, NULL, NULL);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
+                                                      const char *ptr,
+                                                      size_t len,
+                                                      yyjson_ptr_ctx *ctx,
+                                                      yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!val || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        return val;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_getx(val, ptr, len, ctx, err);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_add(yyjson_mut_doc *doc,
+                                              const char *ptr,
+                                              yyjson_mut_val *new_val) {
+    if (yyjson_unlikely(!ptr)) return false;
+    return yyjson_mut_doc_ptr_addn(doc, ptr, strlen(ptr), new_val);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_addn(yyjson_mut_doc *doc,
+                                               const char *ptr,
+                                               size_t len,
+                                               yyjson_mut_val *new_val) {
+    return yyjson_mut_doc_ptr_addx(doc, ptr, len, new_val, true, NULL, NULL);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val,
+                                               bool create_parent,
+                                               yyjson_ptr_ctx *ctx,
+                                               yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!doc || !ptr || !new_val)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        if (doc->root) {
+            yyjson_ptr_set_err(SET_ROOT, "cannot set document's root");
+            return false;
+        } else {
+            doc->root = new_val;
+            return true;
+        }
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return false;
+    }
+    if (yyjson_unlikely(!doc->root && !create_parent)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_mut_val *root = yyjson_mut_obj(doc);
+        if (yyjson_unlikely(!root)) {
+            yyjson_ptr_set_err(MEMORY_ALLOCATION, "failed to create value");
+            return false;
+        }
+        if (unsafe_yyjson_mut_ptr_putx(root, ptr, len, new_val, doc,
+                                       create_parent, true, ctx, err)) {
+            doc->root = root;
+            return true;
+        }
+        return false;
+    }
+    return unsafe_yyjson_mut_ptr_putx(doc->root, ptr, len, new_val, doc,
+                                      create_parent, true, ctx, err);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_add(yyjson_mut_val *val,
+                                          const char *ptr,
+                                          yyjson_mut_val *new_val,
+                                          yyjson_mut_doc *doc) {
+    if (yyjson_unlikely(!ptr)) return false;
+    return yyjson_mut_ptr_addn(val, ptr, strlen(ptr), new_val, doc);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_addn(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc) {
+    return yyjson_mut_ptr_addx(val, ptr, len, new_val, doc, true, NULL, NULL);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_addx(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!val || !ptr || !new_val || !doc)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_ptr_set_err(SET_ROOT, "cannot set root");
+        return false;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return false;
+    }
+    return unsafe_yyjson_mut_ptr_putx(val, ptr, len, new_val,
+                                       doc, create_parent, true, ctx, err);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_set(yyjson_mut_doc *doc,
+                                              const char *ptr,
+                                              yyjson_mut_val *new_val) {
+    if (yyjson_unlikely(!ptr)) return false;
+    return yyjson_mut_doc_ptr_setn(doc, ptr, strlen(ptr), new_val);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_setn(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val) {
+    return yyjson_mut_doc_ptr_setx(doc, ptr, len, new_val, true, NULL, NULL);
+}
+
+yyjson_api_inline bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc,
+                                               const char *ptr, size_t len,
+                                               yyjson_mut_val *new_val,
+                                               bool create_parent,
+                                               yyjson_ptr_ctx *ctx,
+                                               yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!doc || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        if (ctx) ctx->old = doc->root;
+        doc->root = new_val;
+        return true;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return false;
+    }
+    if (!new_val) {
+        if (!doc->root) {
+            yyjson_ptr_set_err(RESOLVE, "JSON pointer cannot be resolved");
+            return false;
+        }
+        return !!unsafe_yyjson_mut_ptr_removex(doc->root, ptr, len, ctx, err);
+    }
+    if (yyjson_unlikely(!doc->root && !create_parent)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_mut_val *root = yyjson_mut_obj(doc);
+        if (yyjson_unlikely(!root)) {
+            yyjson_ptr_set_err(MEMORY_ALLOCATION, "failed to create value");
+            return false;
+        }
+        if (unsafe_yyjson_mut_ptr_putx(root, ptr, len, new_val, doc,
+                                       create_parent, false, ctx, err)) {
+            doc->root = root;
+            return true;
+        }
+        return false;
+    }
+    return unsafe_yyjson_mut_ptr_putx(doc->root, ptr, len, new_val, doc,
+                                      create_parent, false, ctx, err);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_set(yyjson_mut_val *val,
+                                          const char *ptr,
+                                          yyjson_mut_val *new_val,
+                                          yyjson_mut_doc *doc) {
+    if (yyjson_unlikely(!ptr)) return false;
+    return yyjson_mut_ptr_setn(val, ptr, strlen(ptr), new_val, doc);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_setn(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc) {
+    return yyjson_mut_ptr_setx(val, ptr, len, new_val, doc, true, NULL, NULL);
+}
+
+yyjson_api_inline bool yyjson_mut_ptr_setx(yyjson_mut_val *val,
+                                           const char *ptr, size_t len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!val || !ptr || !doc)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return false;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_ptr_set_err(SET_ROOT, "cannot set root");
+        return false;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return false;
+    }
+    if (!new_val) {
+        return !!unsafe_yyjson_mut_ptr_removex(val, ptr, len, ctx, err);
+    }
+    return unsafe_yyjson_mut_ptr_putx(val, ptr, len, new_val, doc,
+                                      create_parent, false, ctx, err);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replace(
+    yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val) {
+    if (!ptr) return NULL;
+    return yyjson_mut_doc_ptr_replacen(doc, ptr, strlen(ptr), new_val);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replacen(
+    yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val) {
+    return yyjson_mut_doc_ptr_replacex(doc, ptr, len, new_val, NULL, NULL);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replacex(
+    yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
+    
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!doc || !ptr || !new_val)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_mut_val *root = doc->root;
+        if (yyjson_unlikely(!root)) {
+            yyjson_ptr_set_err(RESOLVE, "JSON pointer cannot be resolved");
+            return NULL;
+        }
+        if (ctx) ctx->old = root;
+        doc->root = new_val;
+        return root;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_replacex(doc->root, ptr, len, new_val,
+                                          ctx, err);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replace(
+    yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val) {
+    if (!ptr) return NULL;
+    return yyjson_mut_ptr_replacen(val, ptr, strlen(ptr), new_val);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replacen(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val) {
+    return yyjson_mut_ptr_replacex(val, ptr, len, new_val, NULL, NULL);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replacex(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
+    
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!val || !ptr || !new_val)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_ptr_set_err(SET_ROOT, "cannot set root");
+        return NULL;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_replacex(val, ptr, len, new_val, ctx, err);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_remove(
     yyjson_mut_doc *doc, const char *ptr) {
-    return yyjson_mut_get_pointer(doc ? doc->root : NULL, ptr);
+    if (!ptr) return NULL;
+    return yyjson_mut_doc_ptr_removen(doc, ptr, strlen(ptr));
 }
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_removen(
+    yyjson_mut_doc *doc, const char *ptr, size_t len) {
+    return yyjson_mut_doc_ptr_removex(doc, ptr, len, NULL, NULL);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_removex(
+    yyjson_mut_doc *doc, const char *ptr, size_t len,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
+    
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!doc || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(!doc->root)) {
+        yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_mut_val *root = doc->root;
+        if (ctx) ctx->old = root;
+        doc->root = NULL;
+        return root;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_removex(doc->root, ptr, len, ctx, err);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_remove(yyjson_mut_val *val,
+                                                        const char *ptr) {
+    if (!ptr) return NULL;
+    return yyjson_mut_ptr_removen(val, ptr, strlen(ptr));
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_removen(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len) {
+    return yyjson_mut_ptr_removex(val, ptr, len, NULL, NULL);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_removex(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len,
+                                                         yyjson_ptr_ctx *ctx,
+                                                         yyjson_ptr_err *err) {
+    yyjson_ptr_set_err(NONE, NULL);
+    if (ctx) memset(ctx, 0, sizeof(*ctx));
+    
+    if (yyjson_unlikely(!val || !ptr)) {
+        yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
+        return NULL;
+    }
+    if (yyjson_unlikely(len == 0)) {
+        yyjson_ptr_set_err(SET_ROOT, "cannot set root");
+        return NULL;
+    }
+    if (yyjson_unlikely(*ptr != '/')) {
+        yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
+        return NULL;
+    }
+    return unsafe_yyjson_mut_ptr_removex(val, ptr, len, ctx, err);
+}
+
+yyjson_api_inline bool yyjson_ptr_ctx_append(yyjson_ptr_ctx *ctx,
+                                             yyjson_mut_val *key,
+                                             yyjson_mut_val *val) {
+    yyjson_mut_val *ctn, *pre_key, *pre_val, *cur_key, *cur_val;
+    if (!ctx || !ctx->ctn || !val) return false;
+    ctn = ctx->ctn;
+    
+    if (yyjson_mut_is_obj(ctn)) {
+        if (!key) return false;
+        key->next = val;
+        pre_key = ctx->pre;
+        if (unsafe_yyjson_get_len(ctn) == 0) {
+            val->next = key;
+            ctn->uni.ptr = key;
+            ctx->pre = key;
+        } else if (!pre_key) {
+            pre_key = (yyjson_mut_val *)ctn->uni.ptr;
+            pre_val = pre_key->next;
+            val->next = pre_val->next;
+            pre_val->next = key;
+            ctn->uni.ptr = key;
+            ctx->pre = pre_key;
+        } else {
+            cur_key = pre_key->next->next;
+            cur_val = cur_key->next;
+            val->next = cur_val->next;
+            cur_val->next = key;
+            if (ctn->uni.ptr == cur_key) ctn->uni.ptr = key;
+            ctx->pre = cur_key;
+        }
+    } else {
+        pre_val = ctx->pre;
+        if (unsafe_yyjson_get_len(ctn) == 0) {
+            val->next = val;
+            ctn->uni.ptr = val;
+            ctx->pre = val;
+        } else if (!pre_val) {
+            pre_val = (yyjson_mut_val *)ctn->uni.ptr;
+            val->next = pre_val->next;
+            pre_val->next = val;
+            ctn->uni.ptr = val;
+            ctx->pre = pre_val;
+        } else {
+            cur_val = pre_val->next;
+            val->next = cur_val->next;
+            cur_val->next = val;
+            if (ctn->uni.ptr == cur_val) ctn->uni.ptr = val;
+            ctx->pre = cur_val;
+        }
+    }
+    unsafe_yyjson_inc_len(ctn);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_ptr_ctx_replace(yyjson_ptr_ctx *ctx,
+                                              yyjson_mut_val *val) {
+    yyjson_mut_val *ctn, *pre_key, *cur_key, *pre_val, *cur_val;
+    if (!ctx || !ctx->ctn || !ctx->pre || !val) return false;
+    ctn = ctx->ctn;
+    if (yyjson_mut_is_obj(ctn)) {
+        pre_key = ctx->pre;
+        pre_val = pre_key->next;
+        cur_key = pre_val->next;
+        cur_val = cur_key->next;
+        /* replace current value */
+        cur_key->next = val;
+        val->next = cur_val->next;
+        ctx->old = cur_val;
+    } else {
+        pre_val = ctx->pre;
+        cur_val = pre_val->next;
+        /* replace current value */
+        if (pre_val != cur_val) {
+            val->next = cur_val->next;
+            pre_val->next = val;
+            if (ctn->uni.ptr == cur_val) ctn->uni.ptr = val;
+        } else {
+            val->next = val;
+            ctn->uni.ptr = val;
+            ctx->pre = val;
+        }
+        ctx->old = cur_val;
+    }
+    return true;
+}
+
+yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx) {
+    yyjson_mut_val *ctn, *pre_key, *pre_val, *cur_key, *cur_val;
+    size_t len;
+    if (!ctx || !ctx->ctn || !ctx->pre) return false;
+    ctn = ctx->ctn;
+    if (yyjson_mut_is_obj(ctn)) {
+        pre_key = ctx->pre;
+        pre_val = pre_key->next;
+        cur_key = pre_val->next;
+        cur_val = cur_key->next;
+        /* remove current key-value */
+        pre_val->next = cur_val->next;
+        if (ctn->uni.ptr == cur_key) ctn->uni.ptr = pre_key;
+        ctx->pre = NULL;
+        ctx->old = cur_val;
+    } else {
+        pre_val = ctx->pre;
+        cur_val = pre_val->next;
+        /* remove current key-value */
+        pre_val->next = cur_val->next;
+        if (ctn->uni.ptr == cur_val) ctn->uni.ptr = pre_val;
+        ctx->pre = NULL;
+        ctx->old = cur_val;
+    }
+    len = unsafe_yyjson_get_len(ctn) - 1;
+    if (len == 0) ctn->uni.ptr = NULL;
+    unsafe_yyjson_set_len(ctn, len);
+    return true;
+}
+
+#undef yyjson_ptr_set_err
 
 
 
@@ -6135,9 +7381,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is type bool.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_bool_pointer(
+yyjson_api_inline bool yyjson_ptr_get_bool(
     yyjson_val *root, const char *ptr, bool *value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_bool(val)) {
         *value = unsafe_yyjson_get_bool (val);
         return true;
@@ -6150,9 +7396,9 @@ yyjson_api_inline bool yyjson_get_bool_pointer(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is type uint.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_uint_pointer(
+yyjson_api_inline bool yyjson_ptr_get_uint(
     yyjson_val *root, const char *ptr, uint64_t *value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_uint(val)) {
         *value = unsafe_yyjson_get_uint(val);
         return true;
@@ -6165,9 +7411,9 @@ yyjson_api_inline bool yyjson_get_uint_pointer(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is type sint.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_sint_pointer(
+yyjson_api_inline bool yyjson_ptr_get_sint(
     yyjson_val *root, const char *ptr, int64_t *value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_sint(val)) {
         *value = unsafe_yyjson_get_sint(val);
         return true;
@@ -6180,9 +7426,9 @@ yyjson_api_inline bool yyjson_get_sint_pointer(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is type real.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_real_pointer(
+yyjson_api_inline bool yyjson_ptr_get_real(
     yyjson_val *root, const char *ptr, double *value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_real(val)) {
         *value = unsafe_yyjson_get_real(val);
         return true;
@@ -6196,9 +7442,9 @@ yyjson_api_inline bool yyjson_get_real_pointer(
  uint or real.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_num_pointer(
+yyjson_api_inline bool yyjson_ptr_get_num(
     yyjson_val *root, const char *ptr, double *value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_num(val)) {
         *value = unsafe_yyjson_get_num(val);
         return true;
@@ -6211,15 +7457,97 @@ yyjson_api_inline bool yyjson_get_num_pointer(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is type string.
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
-yyjson_api_inline bool yyjson_get_str_pointer(
+yyjson_api_inline bool yyjson_ptr_get_str(
     yyjson_val *root, const char *ptr, const char **value) {
-    yyjson_val *val = yyjson_get_pointer(root, ptr);
+    yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_str(val)) {
         *value = unsafe_yyjson_get_str(val);
         return true;
     } else {
         return false;
     }
+}
+
+
+
+/*==============================================================================
+ * Deprecated
+ *============================================================================*/
+
+/** @deprecated renamed to `yyjson_doc_ptr_get` */
+yyjson_deprecated("renamed to yyjson_doc_ptr_get")
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
+                                                     const char *ptr) {
+    return yyjson_doc_ptr_get(doc, ptr);
+}
+
+/** @deprecated renamed to `yyjson_doc_ptr_getn` */
+yyjson_deprecated("renamed to yyjson_doc_ptr_getn")
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc,
+                                                      const char *ptr,
+                                                      size_t len) {
+    return yyjson_doc_ptr_getn(doc, ptr, len);
+}
+
+/** @deprecated renamed to `yyjson_mut_doc_ptr_get` */
+yyjson_deprecated("renamed to yyjson_mut_doc_ptr_get")
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
+    yyjson_mut_doc *doc, const char *ptr) {
+    return yyjson_mut_doc_ptr_get(doc, ptr);
+}
+
+/** @deprecated renamed to `yyjson_mut_doc_ptr_getn` */
+yyjson_deprecated("renamed to yyjson_mut_doc_ptr_getn")
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointern(
+    yyjson_mut_doc *doc, const char *ptr, size_t len) {
+    return yyjson_mut_doc_ptr_getn(doc, ptr, len);
+}
+
+/** @deprecated renamed to `yyjson_ptr_get` */
+yyjson_deprecated("renamed to yyjson_ptr_get")
+yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
+                                                 const char *ptr) {
+    return yyjson_ptr_get(val, ptr);
+}
+
+/** @deprecated renamed to `yyjson_ptr_getn` */
+yyjson_deprecated("renamed to yyjson_ptr_getn")
+yyjson_api_inline yyjson_val *yyjson_get_pointern(yyjson_val *val,
+                                                  const char *ptr,
+                                                  size_t len) {
+    return yyjson_ptr_getn(val, ptr, len);
+}
+
+/** @deprecated renamed to `yyjson_mut_ptr_get` */
+yyjson_deprecated("renamed to yyjson_mut_ptr_get")
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
+                                                         const char *ptr) {
+    return yyjson_mut_ptr_get(val, ptr);
+}
+
+/** @deprecated renamed to `yyjson_mut_ptr_getn` */
+yyjson_deprecated("renamed to yyjson_mut_ptr_getn")
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val,
+                                                          const char *ptr,
+                                                          size_t len) {
+    return yyjson_mut_ptr_getn(val, ptr, len);
+}
+
+/** @deprecated renamed to `yyjson_mut_ptr_getn` */
+yyjson_deprecated("renamed to unsafe_yyjson_ptr_getn")
+yyjson_api_inline yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
+                                                        const char *ptr,
+                                                        size_t len) {
+    yyjson_ptr_err err;
+    return unsafe_yyjson_ptr_getx(val, ptr, len, &err);
+}
+
+/** @deprecated renamed to `unsafe_yyjson_mut_ptr_getx` */
+yyjson_deprecated("renamed to unsafe_yyjson_mut_ptr_getx")
+yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
+    yyjson_mut_val *val, const char *ptr, size_t len) {
+    yyjson_ptr_err err;
+    return unsafe_yyjson_mut_ptr_getx(val, ptr, len, NULL, &err);
 }
 
 
