@@ -30,7 +30,6 @@ mod typeref;
 mod yyjson;
 
 use pyo3_ffi::*;
-use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::os::raw::c_int;
 use std::os::raw::c_void;
@@ -226,12 +225,41 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
 #[cold]
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
-fn raise_dumps_exception(msg: Cow<str>) -> *mut PyObject {
+fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
     unsafe {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
         Py_DECREF(err_msg);
+    };
+    null_mut()
+}
+
+#[cold]
+#[inline(never)]
+#[cfg_attr(feature = "optimize", optimize(size))]
+fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
+    unsafe {
+        let mut cause_tp: *mut PyObject = null_mut();
+        let mut cause_val: *mut PyObject = null_mut();
+        let mut cause_traceback: *mut PyObject = null_mut();
+        PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
+
+        let err_msg =
+            PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
+        PyErr_SetObject(typeref::JsonEncodeError, err_msg);
+        Py_DECREF(err_msg);
+        let mut tp: *mut PyObject = null_mut();
+        let mut val: *mut PyObject = null_mut();
+        let mut traceback: *mut PyObject = null_mut();
+        PyErr_Fetch(&mut tp, &mut val, &mut traceback);
+        PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
+
+        if !cause_tp.is_null() {
+            PyException_SetCause(val, cause_val);
+        }
+
+        PyErr_Restore(tp, val, traceback);
     };
     null_mut()
 }
@@ -257,9 +285,9 @@ pub unsafe extern "C" fn dumps(
 
     let num_args = PyVectorcall_NARGS(nargs as usize);
     if unlikely!(num_args == 0) {
-        return raise_dumps_exception(Cow::Borrowed(
+        return raise_dumps_exception_fixed(
             "dumps() missing 1 required positional argument: 'obj'",
-        ));
+        );
     }
     if num_args & 2 == 2 {
         default = Some(NonNull::new_unchecked(*args.offset(1)));
@@ -272,22 +300,20 @@ pub unsafe extern "C" fn dumps(
             let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
-                    return raise_dumps_exception(Cow::Borrowed(
+                    return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'default'",
-                    ));
+                    );
                 }
                 default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
             } else if arg == typeref::OPTION {
                 if unlikely!(num_args & 3 == 3) {
-                    return raise_dumps_exception(Cow::Borrowed(
+                    return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'option'",
-                    ));
+                    );
                 }
                 optsptr = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
             } else {
-                return raise_dumps_exception(Cow::Borrowed(
-                    "dumps() got an unexpected keyword argument",
-                ));
+                return raise_dumps_exception_fixed("dumps() got an unexpected keyword argument");
             }
         }
     }
@@ -296,18 +322,18 @@ pub unsafe extern "C" fn dumps(
     if let Some(opts) = optsptr {
         if opts.as_ptr() == typeref::NONE {
         } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
-            return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+            return raise_dumps_exception_fixed("Invalid opts");
         } else {
             optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
             if !(0..=opt::MAX_OPT).contains(&optsbits) {
-                return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+                return raise_dumps_exception_fixed("Invalid opts");
             }
         }
     }
 
     match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
-        Err(err) => raise_dumps_exception(Cow::Borrowed(&err)),
+        Err(err) => raise_dumps_exception_dynamic(&err),
     }
 }
 
@@ -325,9 +351,9 @@ pub unsafe extern "C" fn dumps(
 
     let num_args = Py_SIZE(args);
     if unlikely!(num_args == 0) {
-        return raise_dumps_exception(Cow::Borrowed(
+        return raise_dumps_exception_fixed(
             "dumps() missing 1 required positional argument: 'obj'",
-        ));
+        );
     }
     if num_args & 2 == 2 {
         default = Some(NonNull::new_unchecked(PyTuple_GET_ITEM(args, 1)));
@@ -340,24 +366,22 @@ pub unsafe extern "C" fn dumps(
         for (arg, val) in crate::ffi::PyDictIter::from_pyobject(kwds) {
             if arg == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
-                    return raise_dumps_exception(Cow::Borrowed(
+                    return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'default'",
-                    ));
+                    );
                 }
                 default = Some(NonNull::new_unchecked(val));
             } else if arg == typeref::OPTION {
                 if unlikely!(num_args & 3 == 3) {
-                    return raise_dumps_exception(Cow::Borrowed(
+                    return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'option'",
-                    ));
+                    );
                 }
                 optsptr = Some(NonNull::new_unchecked(val));
             } else if arg.is_null() {
                 break;
             } else {
-                return raise_dumps_exception(Cow::Borrowed(
-                    "dumps() got an unexpected keyword argument",
-                ));
+                return raise_dumps_exception_fixed("dumps() got an unexpected keyword argument");
             }
         }
     }
@@ -366,17 +390,17 @@ pub unsafe extern "C" fn dumps(
     if let Some(opts) = optsptr {
         if opts.as_ptr() == typeref::NONE {
         } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
-            return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+            return raise_dumps_exception_fixed("Invalid opts");
         } else {
             optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
             if !(0..=opt::MAX_OPT).contains(&optsbits) {
-                return raise_dumps_exception(Cow::Borrowed("Invalid opts"));
+                return raise_dumps_exception_fixed("Invalid opts");
             }
         }
     }
 
     match crate::serialize::serialize(obj, default, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
-        Err(err) => raise_dumps_exception(Cow::Owned(err)),
+        Err(err) => raise_dumps_exception_dynamic(&err),
     }
 }

@@ -92,11 +92,94 @@ class TestJsonDecodeError:
             "colno": 6,
         }
 
-        with pytest.raises(json.decoder.JSONDecodeError) as orjson_exc_info:
+        with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:
             orjson.loads(data)
 
-        assert self._get_error_infos(orjson_exc_info) == {
+        assert self._get_error_infos(json_exc_info) == {
             "pos": 6,
             "lineno": 1,
             "colno": 7,
         }
+
+
+class Custom:
+    pass
+
+
+class CustomException(Exception):
+    pass
+
+
+def default_typeerror(obj):
+    raise TypeError
+
+
+def default_notimplementederror(obj):
+    raise NotImplementedError
+
+
+def default_systemerror(obj):
+    raise SystemError
+
+
+def default_importerror(obj):
+    import doesnotexist
+
+    assert doesnotexist
+
+
+CUSTOM_ERROR_MESSAGE = "zxc"
+
+
+def default_customerror(obj):
+    raise CustomException(CUSTOM_ERROR_MESSAGE)
+
+
+class TestJsonEncodeError:
+    def test_dumps_arg(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps()  # type: ignore
+        assert exc_info.type == orjson.JSONEncodeError
+        assert (
+            str(exc_info.value)
+            == "dumps() missing 1 required positional argument: 'obj'"
+        )
+        assert exc_info.value.__cause__ is None
+
+    def test_dumps_chain_none(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(Custom())
+        assert exc_info.type == orjson.JSONEncodeError
+        assert str(exc_info.value) == "Type is not JSON serializable: Custom"
+        assert exc_info.value.__cause__ is None
+
+    def test_dumps_chain_u64(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps([18446744073709551615, Custom()])
+        assert exc_info.type == orjson.JSONEncodeError
+        assert exc_info.value.__cause__ is None
+
+    def test_dumps_chain_default_typeerror(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(Custom(), default=default_typeerror)
+        assert exc_info.type == orjson.JSONEncodeError
+        assert isinstance(exc_info.value.__cause__, TypeError)
+
+    def test_dumps_chain_default_systemerror(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(Custom(), default=default_systemerror)
+        assert exc_info.type == orjson.JSONEncodeError
+        assert isinstance(exc_info.value.__cause__, SystemError)
+
+    def test_dumps_chain_default_importerror(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(Custom(), default=default_importerror)
+        assert exc_info.type == orjson.JSONEncodeError
+        assert isinstance(exc_info.value.__cause__, ImportError)
+
+    def test_dumps_chain_default_customerror(self):
+        with pytest.raises(orjson.JSONEncodeError) as exc_info:
+            orjson.dumps(Custom(), default=default_customerror)
+        assert exc_info.type == orjson.JSONEncodeError
+        assert isinstance(exc_info.value.__cause__, CustomException)
+        assert str(exc_info.value.__cause__) == CUSTOM_ERROR_MESSAGE

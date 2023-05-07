@@ -174,6 +174,9 @@ unsupported.
 `JSONEncodeError` is a subclass of `TypeError`. This is for compatibility
 with the standard library.
 
+If the failure was caused by an exception in `default` then
+`JSONEncodeError` chains the original exception as `__cause__`.
+
 #### default
 
 To serialize a subclass or arbitrary types, specify `default` as a
