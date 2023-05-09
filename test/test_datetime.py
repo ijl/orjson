@@ -580,11 +580,11 @@ class TestDatetime:
         datetime.datetime OPT_DATETIME_MILLISECONDS
         """
         assert (
-                orjson.dumps(
-                    [datetime.datetime(2000, 1, 1, 2, 3, 4, 123456)],
-                    option=orjson.OPT_DATETIME_MILLISECONDS,
-                )
-                == b'["2000-01-01T02:03:04.123"]'
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123456)],
+                option=orjson.OPT_DATETIME_MILLISECONDS,
+            )
+            == b'["2000-01-01T02:03:04.123"]'
         )
 
     def test_datetime_milliseconds_zero(self):
@@ -592,11 +592,11 @@ class TestDatetime:
         datetime.datetime OPT_DATETIME_MILLISECONDS
         """
         assert (
-                orjson.dumps(
-                    [datetime.datetime(2000, 1, 1, 2, 3, 4, 456)],
-                    option=orjson.OPT_DATETIME_MILLISECONDS,
-                )
-                == b'["2000-01-01T02:03:04"]'
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 456)],
+                option=orjson.OPT_DATETIME_MILLISECONDS,
+            )
+            == b'["2000-01-01T02:03:04"]'
         )
 
     def test_datetime_milliseconds_omit_microseconds(self):
@@ -604,12 +604,11 @@ class TestDatetime:
         datetime.datetime OPT_DATETIME_MILLISECONDS
         """
         assert (
-                orjson.dumps(
-                    [datetime.datetime(2000, 1, 1, 2, 3, 4, 123456)],
-                    option=orjson.OPT_OMIT_MICROSECONDS
-                    | orjson.OPT_DATETIME_MILLISECONDS,
-                )
-                == b'["2000-01-01T02:03:04.123"]'
+            orjson.dumps(
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123456)],
+                option=orjson.OPT_OMIT_MICROSECONDS | orjson.OPT_DATETIME_MILLISECONDS,
+            )
+            == b'["2000-01-01T02:03:04.123"]'
         )
 
     def test_datetime_omit_microseconds_naive(self):

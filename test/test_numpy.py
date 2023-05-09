@@ -623,7 +623,7 @@ class TestNumpy:
             == b'{"a":true,"b":false}'
         )
 
-    def  test_numpy_datetime(self):
+    def test_numpy_datetime(self):
         assert (
             orjson.dumps(
                 {
