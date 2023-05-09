@@ -572,6 +572,28 @@ b'"1970-01-01T00:00:00+00:00"'
 b'"1970-01-01T00:00:00Z"'
 ```
 
+##### OPT_DATETIME_MILLISECONDS
+
+Serialize a `datetime.datetime` with millisecond precision.
+
+The combinations of `OPT_DATETIME_MILLISECONDS` and `OPT_OMIT_MICROSECONDS` are as follows:
+
+- neither is set -> 0.123456 (microsecond precision)
+- `OPT_DATETIME_MILLISECONDS` is set -> 0.123 (millisecond precision)
+- `OPT_OMIT_MICROSECONDS` is set -> 0
+- both are set: 0.123 (millisecond precision)
+
+```python
+>>> import orjson, datetime
+>>> orjson.dumps(datetime.datetime(1970, 1, 1, 0, 0, 0, 123456))
+b'"1970-01-01T00:00:00.123456+00:00"'
+>>> orjson.dumps(
+        datetime.datetime(1970, 1, 1, 0, 0, 0, 123456),
+        option=orjson.OPT_DATETIME_MILLISECONDS
+    )
+b'"1970-01-01T00:00:00.123+00:00"'
+```
+
 ### Deserialize
 
 ```python
