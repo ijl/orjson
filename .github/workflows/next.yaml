@@ -12,7 +12,6 @@ jobs:
       CFLAGS: "-O2 -fno-plt"
       LDFLAGS: "-O2 -Wl,--as-needed"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      ORJSON_ENABLE_WRITEEXT: "1"
       CARGO_PROFILE_RELEASE_DEBUG: "2"
       CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: "true"
       CARGO_PROFILE_RELEASE_LTO: "false"

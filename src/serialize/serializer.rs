@@ -20,10 +20,6 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
-#[cfg(not(feature = "writeext"))]
-use serde_json::{to_writer, to_writer_pretty};
-
-#[cfg(feature = "writeext")]
 use crate::serialize::json::{to_writer, to_writer_pretty};
 
 pub const RECURSION_LIMIT: u8 = 255;

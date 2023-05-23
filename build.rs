@@ -9,9 +9,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
-    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_WRITEEXT");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
-    println!("cargo:rerun-if-env-changed=ORJSON_ENABLE_WRITEEXT");
 
     let py_cfg = pyo3_build_config::get();
     py_cfg.emit_pyo3_cfgs();
@@ -30,14 +28,6 @@ fn main() {
 
     if let Some(true) = version_check::supports_feature("trusted_len") {
         println!("cargo:rustc-cfg=feature=\"trusted_len\"");
-    }
-
-    if env::var("ORJSON_DISABLE_WRITEEXT").is_ok() {
-    } else if env::var("ORJSON_ENABLE_WRITEEXT").is_ok()
-        || env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos"
-        || env::var("CARGO_CFG_TARGET_ENV").unwrap() == "gnu"
-    {
-        println!("cargo:rustc-cfg=feature=\"writeext\"");
     }
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {

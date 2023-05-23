@@ -31,7 +31,6 @@ steps:
     CFLAGS_x86_64_apple_darwin: "-O2 -fno-plt -flto=thin -march=x86-64-v2 -mtune=generic"
     CFLAGS_aarch64_apple_darwin: "-O2 -fno-plt -flto=thin -mcpu=apple-m1 -mtune=generic"
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-    ORJSON_ENABLE_WRITEEXT: "1"
   displayName: build universal2
 
 - bash: pip install target/wheels/orjson*universal2.whl
