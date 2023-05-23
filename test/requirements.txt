@@ -1,4 +1,5 @@
 arrow
+faker
 numpy;(platform_machine=="x86_64" or (platform_machine=="aarch64" and sys_platform == "linux")) and python_version>"3.7" and python_version<"3.12"
 pendulum;sys_platform=="linux" and platform_machine=="x86_64" and python_version<"3.12"
 psutil;(sys_platform=="linux" or sys_platform == "macos") and platform_machine=="x86_64"
