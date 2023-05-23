@@ -10,7 +10,7 @@ steps:
     rustup target add aarch64-apple-darwin
     rustup default $(toolchain)
 
-- bash: pip install --upgrade pip --pre "maturin==1.0.0-beta.9" wheel
+- bash: pip install --upgrade pip pip "maturin>=1,<2" wheel
   displayName: build dependencies
 - bash: pip install -r test/requirements.txt -r integration/requirements.txt
   displayName: test dependencies

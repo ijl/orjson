@@ -23,7 +23,7 @@ jobs:
       options: --user 0
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-05-07 --profile minimal -y
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
     - uses: actions/checkout@v3
 
     - name: build
