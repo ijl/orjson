@@ -1180,6 +1180,10 @@ it is tested on amd64.
 
 There are no runtime dependencies other than libc.
 
+The source distribution on PyPI contains all dependencies' source and can be
+built without network access. The file can be downloaded from
+`https://files.pythonhosted.org/packages/source/o/orjson/orjson-${version}.tar.gz`.
+
 orjson's tests are included in the source distribution on PyPI. The
 requirements to run the tests are specified in `test/requirements.txt`. The
 tests should be run as part of the build. It can be run with
