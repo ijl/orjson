@@ -31,7 +31,7 @@
  *============================================================================*/
 
 /*
- Define as 1 to disable JSON reader if you don't need to parse JSON.
+ Define as 1 to disable JSON reader if JSON parsing is not required.
  
  This will disable these functions at compile-time:
     - yyjson_read_opts()
@@ -46,7 +46,7 @@
 #endif
 
 /*
- Define as 1 to disable JSON writer if you don't need to serialize JSON.
+ Define as 1 to disable JSON writer if JSON serialization is not required.
  
  This will disable these functions at compile-time:
     - yyjson_write()
@@ -463,16 +463,16 @@ extern "C" {
 #define YYJSON_VERSION_MAJOR  0
 
 /** The minor version of yyjson. */
-#define YYJSON_VERSION_MINOR  6
+#define YYJSON_VERSION_MINOR  7
 
 /** The patch version of yyjson. */
 #define YYJSON_VERSION_PATCH  0
 
 /** The version of yyjson in hex: `(major << 16) | (minor << 8) | (patch)`. */
-#define YYJSON_VERSION_HEX    0x000600
+#define YYJSON_VERSION_HEX    0x000700
 
 /** The version string of yyjson. */
-#define YYJSON_VERSION_STRING "0.6.0"
+#define YYJSON_VERSION_STRING "0.7.0"
 
 /** The version of yyjson in hex, same as `YYJSON_VERSION_HEX`. */
 yyjson_api uint32_t yyjson_version(void);
@@ -542,13 +542,17 @@ typedef struct yyjson_alc {
 /**
  A pool allocator uses fixed length pre-allocated memory.
  
- This allocator may used to avoid malloc/realloc calls. The pre-allocated memory
- should be held by the caller. The maximum amount of memory required to read a
- JSON can be calculated using the `yyjson_read_max_memory_usage()` function, but
- the amount of memory required to write a JSON cannot be directly calculated.
+ This allocator may be used to avoid malloc/realloc calls. The pre-allocated 
+ memory should be held by the caller. The maximum amount of memory required to
+ read a JSON can be calculated using the `yyjson_read_max_memory_usage()`
+ function, but the amount of memory required to write a JSON cannot be directly 
+ calculated.
  
- This is not a general-purpose allocator, and should only be used to read or
- write single JSON document.
+ This is not a general-purpose allocator. If used to read multiple JSON 
+ documents and only some of them are released, it may cause memory
+ fragmentation, leading to performance degradation and memory waste. Therefore, 
+ it is recommended to use this allocator only for reading or writing a single 
+ JSON document.
  
  @param alc The allocator to be initialized.
     If this parameter is NULL, the function will fail and return false.
@@ -622,7 +626,7 @@ typedef uint32_t yyjson_read_flag;
     - Read negative integer as int64_t.
     - Read floating-point number as double with round-to-nearest mode.
     - Read integer which cannot fit in uint64_t or int64_t as double.
-    - Report error if real number is infinity.
+    - Report error if double number is infinity.
     - Report error if string contains invalid UTF-8 character or BOM.
     - Report error on trailing commas, comments, inf and nan literals. */
 static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
@@ -651,7 +655,7 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
     such as 1e999, NaN, inf, -Infinity (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
-/** Read number as raw string (value with `YYJSON_TYPE_RAW` type),
+/** Read all numbers as raw strings (value with `YYJSON_TYPE_RAW` type),
     inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
 static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
 
@@ -664,6 +668,12 @@ static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
     option is used, you need to handle these strings carefully to avoid security
     risks. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
+
+/** Read big numbers as raw strings. These big numbers include integers that
+    cannot be represented by `int64_t` and `uint64_t`, and floating-point
+    numbers that cannot be represented by finite `double`.
+    The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
+static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
 
 
