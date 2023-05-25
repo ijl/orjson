@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 3.8.14 - 2023-05-25
+
+### Changed
+
+- PyPI `manylinux` wheels are compiled for `x86-64` instead of `x86-64-v2`.
+
 ## 3.8.13 - 2023-05-23
 
 ### Changed
