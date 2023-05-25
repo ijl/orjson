@@ -6,6 +6,7 @@ black
 isort
 maturin
 mypy
+ruff
 types-python-dateutil
 types-pytz
 types-simplejson

@@ -805,10 +805,12 @@ JSONEncodeError: Integer exceeds 53-bit range
 
 ### numpy
 
-orjson natively serializes `numpy.ndarray` and individual `numpy.float64`,
-`numpy.float32`, `numpy.int64`, `numpy.int32`, `numpy.int16`, `numpy.int8`, `numpy.uint64`,
-`numpy.uint32`, `numpy.uint16`, `numpy.uint8`, `numpy.uintp`, or `numpy.intp`, and
-`numpy.datetime64` instances.
+orjson natively serializes `numpy.ndarray` and individual
+`numpy.float64`, `numpy.float32`,
+`numpy.int64`, `numpy.int32`, `numpy.int16`, `numpy.int8`,
+`numpy.uint64`, `numpy.uint32`, `numpy.uint16`, `numpy.uint8`,
+`numpy.uintp`, `numpy.intp`, `numpy.datetime64`, and `numpy.bool`
+instances.
 
 orjson is faster than all compared libraries at serializing
 numpy instances. Serializing numpy data requires specifying
@@ -1199,6 +1201,10 @@ is tested for amd64 on macOS and cross-compiles for aarch64. For Windows
 it is tested on amd64.
 
 There are no runtime dependencies other than libc.
+
+The source distribution on PyPI contains all dependencies' source and can be
+built without network access. The file can be downloaded from
+`https://files.pythonhosted.org/packages/source/o/orjson/orjson-${version}.tar.gz`.
 
 orjson's tests are included in the source distribution on PyPI. The
 requirements to run the tests are specified in `test/requirements.txt`. The

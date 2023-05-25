@@ -5,7 +5,7 @@
 /.pytest_cache
 /.venv*
 /build
-/include/vendor
+/include/cargo
 /perf.*
 /target
 /vendor

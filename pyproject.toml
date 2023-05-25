@@ -23,19 +23,36 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+[project.urls]
+Changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
+
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=0.13,<2"]
+requires = ["maturin>=1,<2"]
 
 [tool.maturin]
 python-source = "pysrc"
 include = [
+    { format = "sdist", path = ".cargo/*" },
     { format = "sdist", path = "build.rs" },
     { format = "sdist", path = "Cargo.lock" },
     { format = "sdist", path = "include/**/*" },
 ]
 
+
 [tool.black]
 line-length = 88
 target-version = ["py37"]
 include = ".pyi?$"
+
+[tool.ruff]
+line-length = 88
+target-version = "py37"
+
+ignore = [
+    "E501", # line too long
+    "F601", # Dictionary key literal ... repeated
+]
+
+[tool.mypy]
+python_version = "3.7"

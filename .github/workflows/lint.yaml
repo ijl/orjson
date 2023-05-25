@@ -8,7 +8,7 @@ jobs:
       with:
         python-version: '3.11'
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
-    - run: pip install -U autoflake isort black mypy types-python-dateutil types-pytz types-simplejson types-ujson
+    - run: pip install -U autoflake isort black ruff mypy types-python-dateutil types-pytz types-simplejson types-ujson
 
     - uses: actions/checkout@v3
 

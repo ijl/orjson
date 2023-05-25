@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.8.13 - 2023-05-23
+
+### Changed
+
+- Source distribution contains all source code required for an offline build.
+- PyPI macOS wheels use a `MACOSX_DEPLOYMENT_TARGET` of 10.15 instead of 11.
+- Build uses maturin v1.
+
+
 ## 3.8.12 - 2023-05-07
 
 ### Changed

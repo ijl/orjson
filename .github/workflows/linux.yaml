@@ -14,10 +14,20 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
+
+    - run: maturin build
+    - run: cargo fetch
+    - run: mkdir .cargo
+    - run: cp ci/sdist.toml .cargo/config.toml
+    - run: cargo vendor include/cargo --versioned-dirs
+
     - run: maturin sdist --out=dist
 
     - run: python3 -m pip install --user dist/orjson*.tar.gz
+      env:
+        CARGO_NET_OFFLINE: "true"
+
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
     - run: pytest -s -rxX -v test
@@ -53,7 +63,6 @@ jobs:
       LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
       RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C target-cpu=x86-64-v2 -Z tune-cpu=generic"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      ORJSON_ENABLE_WRITEEXT: "1"
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64:latest
       options: --user 0
@@ -69,7 +78,7 @@ jobs:
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
 
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
     - run: |
         maturin build --release --strip \
           --out=dist \
@@ -130,7 +139,6 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        maturin-version: v1.0.0-beta.7
         rust-toolchain: nightly-2023-05-07
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
@@ -218,9 +226,7 @@ jobs:
         LDFLAGS: "${{ matrix.target.cflags }} -flto -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
         CARGO_FEATURE_YYJSON: "1"
-        ORJSON_ENABLE_WRITEEXT: "1"
       with:
-        maturin-version: v1.0.0-beta.7
         target: ${{ matrix.target.target }}
         rust-toolchain: nightly-2023-05-07
         rustup-components: rust-src
@@ -258,6 +264,10 @@ jobs:
 
   pypi:
     name: PyPI
+    permissions:
+      # trusted publisher
+      id-token: write
+      contents: write
     runs-on: ubuntu-22.04
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_1, sdist ]
@@ -268,7 +278,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - run: pip install --pre "maturin==1.0.0-beta.9"
+      - run: pip install pip "maturin>=1,<2"
       - run: ls -1 .
       - name: deploy wheel
         run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl

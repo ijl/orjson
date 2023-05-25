@@ -17,6 +17,7 @@
  * Header Files
  *============================================================================*/
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <limits.h>
@@ -778,6 +779,28 @@ yyjson_api yyjson_doc *yyjson_read_file(const char *path,
                                         yyjson_read_err *err);
 
 /**
+ Read JSON from a file pointer.
+ 
+ @param fp The file pointer.
+    The data will be read from the current position of the FILE to the end.
+    If this fp is NULL or invalid, the function will fail and return NULL.
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param alc The memory allocator used by JSON reader.
+    Pass NULL to use the libc's default allocator.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return A new JSON document, or NULL if an error occurs.
+    When it's no longer needed, it should be freed with `yyjson_doc_free()`.
+ 
+ @warning On 32-bit operating system, files larger than 2GB may fail to read.
+ */
+yyjson_api yyjson_doc *yyjson_read_fp(FILE *fp,
+                                      yyjson_read_flag flg,
+                                      const yyjson_alc *alc,
+                                      yyjson_read_err *err);
+
+/**
  Read a JSON string.
  
  This function is thread-safe.
@@ -868,7 +891,7 @@ yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len,
     The value will hold either UINT or SINT or REAL number;
  @param flg The JSON read options.
     Multiple options can be combined with `|` operator. 0 means no options.
-    Suppors `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_ALLOW_INF_AND_NAN`.
+    Supports `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_ALLOW_INF_AND_NAN`.
  @param alc The memory allocator used for long number.
     It is only used when the built-in floating point reader is disabled.
     Pass NULL to use the libc's default allocator.
@@ -895,7 +918,7 @@ yyjson_api const char *yyjson_read_number(const char *dat,
     The value will hold either UINT or SINT or REAL number;
  @param flg The JSON read options.
     Multiple options can be combined with `|` operator. 0 means no options.
-    Suppors `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_ALLOW_INF_AND_NAN`.
+    Supports `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_ALLOW_INF_AND_NAN`.
  @param alc The memory allocator used for long number.
     It is only used when the built-in floating point reader is disabled.
     Pass NULL to use the libc's default allocator.
@@ -1052,6 +1075,30 @@ yyjson_api bool yyjson_write_file(const char *path,
                                   yyjson_write_err *err);
 
 /**
+ Write a document to file pointer with options.
+ 
+ @param fp The file pointer.
+    The data will be written to the current position of the file.
+    If this fp is NULL or invalid, the function will fail and return false.
+ @param doc The JSON document.
+    If this doc is NULL or has no root, the function will fail and return false.
+ @param flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param alc The memory allocator used by JSON writer.
+    Pass NULL to use the libc's default allocator.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return true if successful, false if an error occurs.
+ 
+ @warning On 32-bit operating system, files larger than 2GB may fail to write.
+ */
+yyjson_api bool yyjson_write_fp(FILE *fp,
+                                const yyjson_doc *doc,
+                                yyjson_write_flag flg,
+                                const yyjson_alc *alc,
+                                yyjson_write_err *err);
+
+/**
  Write a document to JSON string.
  
  This function is thread-safe.
@@ -1129,6 +1176,30 @@ yyjson_api bool yyjson_mut_write_file(const char *path,
                                       yyjson_write_flag flg,
                                       const yyjson_alc *alc,
                                       yyjson_write_err *err);
+
+/**
+ Write a document to file pointer with options.
+ 
+ @param fp The file pointer.
+    The data will be written to the current position of the file.
+    If this fp is NULL or invalid, the function will fail and return false.
+ @param doc The mutable JSON document.
+    If this doc is NULL or has no root, the function will fail and return false.
+ @param flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param alc The memory allocator used by JSON writer.
+    Pass NULL to use the libc's default allocator.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return true if successful, false if an error occurs.
+ 
+ @warning On 32-bit operating system, files larger than 2GB may fail to write.
+ */
+yyjson_api bool yyjson_mut_write_fp(FILE *fp,
+                                    const yyjson_mut_doc *doc,
+                                    yyjson_write_flag flg,
+                                    const yyjson_alc *alc,
+                                    yyjson_write_err *err);
 
 /**
  Write a document to JSON string.
@@ -1213,6 +1284,30 @@ yyjson_api bool yyjson_val_write_file(const char *path,
                                       yyjson_write_err *err);
 
 /**
+ Write a value to file pointer with options.
+ 
+ @param fp The file pointer.
+    The data will be written to the current position of the file.
+    If this path is NULL or invalid, the function will fail and return false.
+ @param val The JSON root value.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param alc The memory allocator used by JSON writer.
+    Pass NULL to use the libc's default allocator.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return true if successful, false if an error occurs.
+ 
+ @warning On 32-bit operating system, files larger than 2GB may fail to write.
+ */
+yyjson_api bool yyjson_val_write_fp(FILE *fp,
+                                    const yyjson_val *val,
+                                    yyjson_write_flag flg,
+                                    const yyjson_alc *alc,
+                                    yyjson_write_err *err);
+
+/**
  Write a value to JSON string.
  
  This function is thread-safe.
@@ -1288,6 +1383,30 @@ yyjson_api bool yyjson_mut_val_write_file(const char *path,
                                           yyjson_write_flag flg,
                                           const yyjson_alc *alc,
                                           yyjson_write_err *err);
+
+/**
+ Write a value to JSON file with options.
+ 
+ @param fp The file pointer.
+    The data will be written to the current position of the file.
+    If this path is NULL or invalid, the function will fail and return false.
+ @param val The mutable JSON root value.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param alc The memory allocator used by JSON writer.
+    Pass NULL to use the libc's default allocator.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return true if successful, false if an error occurs.
+ 
+ @warning On 32-bit operating system, files larger than 2GB may fail to write.
+ */
+yyjson_api bool yyjson_mut_val_write_fp(FILE *fp,
+                                        const yyjson_mut_val *val,
+                                        yyjson_write_flag flg,
+                                        const yyjson_alc *alc,
+                                        yyjson_write_err *err);
 
 /**
  Write a value to JSON string.
@@ -4419,12 +4538,6 @@ yyjson_api_inline void unsafe_yyjson_set_type(void *val, yyjson_type type,
     ((yyjson_val *)val)->tag = new_tag;
 }
 
-yyjson_api_inline void unsafe_yyjson_set_tag(void *val, uint8_t tag) {
-    uint64_t new_tag = ((yyjson_val *)val)->tag;
-    new_tag = (new_tag & (~(uint64_t)YYJSON_TAG_MASK)) | (uint64_t)tag;
-    ((yyjson_val *)val)->tag = new_tag;
-}
-
 yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
     uint64_t tag = ((yyjson_val *)val)->tag & YYJSON_TAG_MASK;
     tag |= (uint64_t)len << YYJSON_TAG_BIT;
@@ -4434,12 +4547,6 @@ yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
 yyjson_api_inline void unsafe_yyjson_inc_len(void *val) {
     uint64_t tag = ((yyjson_val *)val)->tag;
     tag += (uint64_t)(1 << YYJSON_TAG_BIT);
-    ((yyjson_val *)val)->tag = tag;
-}
-
-yyjson_api_inline void unsafe_yyjson_dec_len(void *val) {
-    uint64_t tag = ((yyjson_val *)val)->tag;
-    tag -= (uint64_t)(1 << YYJSON_TAG_BIT);
     ((yyjson_val *)val)->tag = tag;
 }
 
@@ -7385,7 +7492,7 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
     yyjson_val *root, const char *ptr, bool *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_bool(val)) {
-        *value = unsafe_yyjson_get_bool (val);
+        *value = unsafe_yyjson_get_bool(val);
         return true;
     } else {
         return false;

@@ -11,7 +11,7 @@ steps:
     rustup default $(toolchain)
     echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
   displayName: rustup
-- script: python.exe -m pip install --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
+- script: python.exe -m pip install --upgrade pip "maturin>=1,<2" wheel
   displayName: build dependencies
 - script: python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
   displayName: test dependencies

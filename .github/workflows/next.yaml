@@ -12,7 +12,6 @@ jobs:
       CFLAGS: "-O2 -fno-plt"
       LDFLAGS: "-O2 -Wl,--as-needed"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      ORJSON_ENABLE_WRITEEXT: "1"
       CARGO_PROFILE_RELEASE_DEBUG: "2"
       CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: "true"
       CARGO_PROFILE_RELEASE_LTO: "false"
@@ -23,7 +22,7 @@ jobs:
       options: --user 0
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-05-07 --profile minimal -y
-    - run: python3 -m pip install --user --upgrade --pre pip "maturin==1.0.0-beta.9" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
     - uses: actions/checkout@v3
 
     - name: build
