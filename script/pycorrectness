@@ -43,12 +43,6 @@ JSONCHECKER = {
 RESULTS = collections.defaultdict(dict)
 
 
-def read_fixture(filename, subdir=None):
-    if not filename in BYTES_CACHE:
-        BYTES_CACHE[filename] = read_fixture_bytes(filename, subdir)
-    return BYTES_CACHE[filename]
-
-
 def test_passed(library, fixture):
     passed = []
     try:
@@ -98,7 +92,7 @@ def should_fail(filename):
         or filename.startswith("i_string")
         or filename.startswith("i_object")
         or filename.startswith("fail")
-    ) and not filename in PASS_WHITELIST
+    ) and filename not in PASS_WHITELIST
 
 
 for libname in LIBRARIES:

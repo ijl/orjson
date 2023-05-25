@@ -2,13 +2,11 @@
 
 import sys
 import traceback
-
 from concurrent.futures import ThreadPoolExecutor
 from operator import itemgetter
 from threading import get_ident
 
 import orjson
-
 
 DATA = sorted(
     [
@@ -39,7 +37,6 @@ def test_func(n):
     try:
         assert sorted(orjson.loads(orjson.dumps(DATA)), key=itemgetter("id")) == DATA
     except Exception:
-        STATUS = 1
         traceback.print_exc()
         print("thread %s: %s dumps, loads ERROR" % (get_ident(), n))
 

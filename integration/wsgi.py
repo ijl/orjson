@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import os
 import lzma
+import os
 
 from flask import Flask
+
 import orjson
 
 app = Flask(__name__)

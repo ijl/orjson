@@ -102,6 +102,14 @@ class TestType:
     def test_str_escape_8(self):
         assert orjson.dumps('aaaaaaaab"') == b'"aaaaaaaab\\""'
 
+    def test_str_emoji(self):
+        ref = "®️"
+        assert orjson.loads(orjson.dumps(ref)) == ref
+
+    def test_str_emoji_escape(self):
+        ref = '/"®️/"'
+        assert orjson.loads(orjson.dumps(ref)) == ref
+
     def test_very_long_list(self):
         orjson.dumps([[]] * 1024 * 16)
 

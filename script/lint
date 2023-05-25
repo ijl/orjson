@@ -3,9 +3,11 @@
 set -eou pipefail
 
 to_lint="./bench/*.py ./pysrc/orjson/__init__.pyi ./test/*.py script/pydataclass script/pymem
-script/pysort script/pynumpy script/pynonstr script/pycorrectness script/graph integration/init"
+script/pysort script/pynumpy script/pynonstr script/pycorrectness script/graph integration/init
+integration/wsgi.py integration/typestubs.py integration/thread"
 
 autoflake --in-place --recursive --remove-all-unused-imports --ignore-init-module-imports .
 isort ${to_lint}
+ruff ${to_lint} --fix
 black ${to_lint}
 mypy --ignore-missing-imports --check-untyped-defs ./bench/*.py ./pysrc/orjson/__init__.pyi ./test/*.py

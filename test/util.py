@@ -27,12 +27,12 @@ def read_fixture_bytes(filename, subdir=None):
 
 
 def read_fixture_str(filename, subdir=None):
-    if not filename in STR_CACHE:
+    if filename not in STR_CACHE:
         STR_CACHE[filename] = read_fixture_bytes(filename, subdir).decode("utf-8")
     return STR_CACHE[filename]
 
 
 def read_fixture_obj(filename):
-    if not filename in OBJ_CACHE:
+    if filename not in OBJ_CACHE:
         OBJ_CACHE[filename] = orjson.loads(read_fixture_str(filename))
     return OBJ_CACHE[filename]

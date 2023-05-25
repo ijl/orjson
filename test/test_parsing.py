@@ -11,18 +11,18 @@ class TestJSONTestSuiteParsing:
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
         data = read_fixture_bytes(filename, "parsing")
         with pytest.raises(exc):
-            res = orjson.loads(data)
+            orjson.loads(data)
         with pytest.raises(exc):
-            res = orjson.loads(bytearray(data))
+            orjson.loads(bytearray(data))
         with pytest.raises(exc):
-            res = orjson.loads(memoryview(data))
+            orjson.loads(memoryview(data))
         try:
             decoded = data.decode("utf-8")
         except UnicodeDecodeError:
             pass
         else:
             with pytest.raises(exc):
-                res = orjson.loads(decoded)
+                orjson.loads(decoded)
 
     def _run_pass_json(self, filename, match=""):
         data = read_fixture_bytes(filename, "parsing")

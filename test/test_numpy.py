@@ -355,7 +355,7 @@ class TestNumpy:
 
     def test_numpy_array_fortran(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
-        assert array.flags["F_CONTIGUOUS"] == True
+        assert array.flags["F_CONTIGUOUS"] is True
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert orjson.dumps(
@@ -364,7 +364,7 @@ class TestNumpy:
 
     def test_numpy_array_non_contiguous_message(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
-        assert array.flags["F_CONTIGUOUS"] == True
+        assert array.flags["F_CONTIGUOUS"] is True
         try:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
             assert False

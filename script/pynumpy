@@ -59,11 +59,25 @@ LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
 
 ITERATIONS = 10
 
-orjson_dumps = lambda: orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+
+def orjson_dumps():
+    return orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
+
+
 ujson_dumps = None
-rapidjson_dumps = lambda: rapidjson.dumps(array, default=default).encode("utf-8")
-simplejson_dumps = lambda: simplejson.dumps(array, default=default).encode("utf-8")
-json_dumps = lambda: json.dumps(array, default=default).encode("utf-8")
+
+
+def rapidjson_dumps():
+    return rapidjson.dumps(array, default=default).encode("utf-8")
+
+
+def simplejson_dumps():
+    return simplejson.dumps(array, default=default).encode("utf-8")
+
+
+def json_dumps():
+    return json.dumps(array, default=default).encode("utf-8")
+
 
 output_in_mib = len(orjson_dumps()) / 1024 / 1024
 
