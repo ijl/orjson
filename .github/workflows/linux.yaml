@@ -59,9 +59,9 @@ jobs:
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       CC: "clang"
-      CFLAGS: "-O2 -fno-plt -flto=thin -march=x86-64-v2 -mtune=generic"
+      CFLAGS: "-O2 -fno-plt -flto=thin"
       LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
-      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C target-cpu=x86-64-v2 -Z tune-cpu=generic"
+      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64:latest
