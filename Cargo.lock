@@ -154,7 +154,7 @@ checksum = "9670a07f94779e00908f3e686eab508878ebb390ba6e604d3a284c00e8d0487b"
 
 [[package]]
 name = "orjson"
-version = "3.8.14"
+version = "3.9.0"
 dependencies = [
  "ahash",
  "arrayvec",
