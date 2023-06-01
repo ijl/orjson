@@ -6,6 +6,7 @@ use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
 use crate::serialize::float::*;
+use crate::serialize::fragment::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
 use crate::serialize::numpy::*;
@@ -68,6 +69,7 @@ pub enum ObType {
     NumpyArray,
     Enum,
     StrSubclass,
+    Fragment,
     Unknown,
 }
 
@@ -126,6 +128,8 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::Tuple
         } else if ob_type == UUID_TYPE {
             ObType::Uuid
+        } else if ob_type == FRAGMENT_TYPE {
+            ObType::Fragment
         } else if is_subclass_by_type!(ob_type, ENUM_TYPE) {
             ObType::Enum
         } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
@@ -255,6 +259,7 @@ impl Serialize for PyObjectSerializer {
             )
             .serialize(serializer),
             ObType::NumpyScalar => NumpyScalar::new(self.ptr, self.opts).serialize(serializer),
+            ObType::Fragment => FragmentSerializer::new(self.ptr).serialize(serializer),
             ObType::Unknown => DefaultSerializer::new(
                 self.ptr,
                 self.opts,

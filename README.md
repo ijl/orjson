@@ -53,6 +53,7 @@ available in the repository.
     4. [Serialize](https://github.com/ijl/orjson#serialize)
         1. [default](https://github.com/ijl/orjson#default)
         2. [option](https://github.com/ijl/orjson#option)
+        3. [Fragment](https://github.com/ijl/orjson#fragment)
     5. [Deserialize](https://github.com/ijl/orjson#deserialize)
 2. [Types](https://github.com/ijl/orjson#types)
     1. [dataclass](https://github.com/ijl/orjson#dataclass)
@@ -137,10 +138,10 @@ def dumps(
 `dumps()` serializes Python objects to JSON.
 
 It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`,
+`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`, `None`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
-`None` instances. It supports arbitrary types through `default`. It
+`orjson.Fragment` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
 of `tuple` to avoid serializing `namedtuple` objects as arrays. To avoid
@@ -571,6 +572,30 @@ b'"1970-01-01T00:00:00+00:00"'
     )
 b'"1970-01-01T00:00:00Z"'
 ```
+
+#### Fragment
+
+`orjson.Fragment` includes already-serialized JSON in a document. This is an
+efficient way include JSON blobs from a cache, JSONB field, or separately
+serialized object without first deserializing to Python objects via `loads()`.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"key": "zxc", "data": orjson.Fragment(b'{"a": "b", "c": 1}')})
+b'{"key":"zxc","data":{"a": "b", "c": 1}}'
+```
+
+It does no reformatting: `orjson.OPT_INDENT_2` will not affect a
+compact blob nor will a pretty-printed JSON blob be rewritten as compact.
+
+The input must be `bytes` or `str` and given as a positional argument.
+
+This raises `orjson.JSONEncodeError` if a `str` is given and the input is
+not valid UTF-8. It otherwise does no validation and it is possible to
+write invalid JSON. This does not escape characters. The implementation is
+tested to not crash if given invalid strings or invalid JSON.
+
+This is similar to `RawJSON` in rapidjson.
 
 ### Deserialize
 

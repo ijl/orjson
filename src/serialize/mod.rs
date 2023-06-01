@@ -8,6 +8,7 @@ mod default;
 mod dict;
 mod error;
 mod float;
+mod fragment;
 mod int;
 mod json;
 mod list;

@@ -6,6 +6,7 @@ from .orjson import __version__
 __all__ = (
     "__version__",
     "dumps",
+    "Fragment",
     "JSONDecodeError",
     "JSONEncodeError",
     "loads",

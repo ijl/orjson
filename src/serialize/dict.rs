@@ -319,6 +319,7 @@ impl DictNonStrKey {
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
+            | ObType::Fragment
             | ObType::Unknown => Err(SerializeError::DictKeyInvalidType),
         }
     }

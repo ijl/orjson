@@ -128,6 +128,8 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         add!(mptr, "loads\0", func);
     }
 
+    add!(mptr, "Fragment\0", typeref::FRAGMENT_TYPE as *mut PyObject);
+
     opt!(mptr, "OPT_APPEND_NEWLINE\0", opt::APPEND_NEWLINE);
     opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
     opt!(mptr, "OPT_NAIVE_UTC\0", opt::NAIVE_UTC);

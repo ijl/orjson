@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::orjson_fragmenttype_new;
 use ahash::RandomState;
 use once_cell::race::OnceBox;
 use pyo3_ffi::*;
@@ -48,6 +49,7 @@ pub static mut TUPLE_TYPE: *mut PyTypeObject = null_mut();
 pub static mut UUID_TYPE: *mut PyTypeObject = null_mut();
 pub static mut ENUM_TYPE: *mut PyTypeObject = null_mut();
 pub static mut FIELD_TYPE: *mut PyTypeObject = null_mut();
+pub static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();
 
 pub static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
 
@@ -125,6 +127,7 @@ pub fn init_typerefs() {
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
         HASH_BUILDER.get_or_init(ahash_init);
+        FRAGMENT_TYPE = orjson_fragmenttype_new();
         PyDateTime_IMPORT();
         NONE = Py_None();
         TRUE = Py_True();

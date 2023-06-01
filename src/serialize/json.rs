@@ -170,8 +170,10 @@ where
         format_escaped_str(&mut self.writer, &mut self.formatter, value).map_err(Error::io)
     }
 
-    fn serialize_bytes(self, _value: &[u8]) -> Result<()> {
-        unreachable!();
+    fn serialize_bytes(self, value: &[u8]) -> Result<()> {
+        self.writer.reserve(value.len());
+        unsafe { self.writer.write_reserved_fragment(value).unwrap() };
+        Ok(())
     }
 
     #[inline]

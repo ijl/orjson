@@ -298,3 +298,19 @@ class TestMemory:
             assert not val.empty
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
+
+    @pytest.mark.skipif(
+        psutil is None, reason="psutil install broken on win, python3.9, Azure"
+    )
+    def test_memory_dumps_fragment(self):
+        """
+        dumps() Fragment memory leak
+        """
+        proc = psutil.Process()
+        gc.collect()
+        orjson.dumps(orjson.Fragment(str(0)))
+        mem = proc.memory_info().rss
+        for i in range(10000):
+            orjson.dumps(orjson.Fragment(str(i)))
+        gc.collect()
+        assert proc.memory_info().rss <= mem + MAX_INCREASE

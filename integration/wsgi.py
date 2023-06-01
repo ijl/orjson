@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import lzma
-import os
+from datetime import datetime
+from uuid import uuid4
 
 from flask import Flask
 
@@ -9,15 +9,21 @@ import orjson
 
 app = Flask(__name__)
 
-filename = os.path.join(os.path.dirname(__file__), "..", "data", "twitter.json.xz")
-
-with lzma.open(filename, "r") as fileh:
-    DATA = orjson.loads(fileh.read())
+NOW = datetime.utcnow()
 
 
 @app.route("/")
 def root():
-    data = orjson.dumps(DATA)
+    data = {
+        "uuid": uuid4(),
+        "updated_at": NOW,
+        "data": [1, 2.2, None, True, False, orjson.Fragment(b"{}")],
+    }
+    payload = orjson.dumps(
+        data, option=orjson.OPT_NAIVE_UTC | orjson.OPT_OMIT_MICROSECONDS
+    )
     return app.response_class(
-        response=data, status=200, mimetype="application/json; charset=utf-8"
+        response=payload,
+        status=200,
+        mimetype="application/json; charset=utf-8",
     )
