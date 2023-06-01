@@ -17,6 +17,7 @@ impl StrSerializer {
 }
 
 impl Serialize for StrSerializer {
+    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

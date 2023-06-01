@@ -40,6 +40,7 @@ impl NumpySerializer {
 impl Serialize for NumpySerializer {
     #[cold]
     #[inline(never)]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -75,6 +76,7 @@ macro_rules! slice {
     };
 }
 
+#[cfg_attr(feature = "optimize", optimize(size))]
 pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
@@ -96,6 +98,7 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     }
 }
 
+#[cfg_attr(feature = "optimize", optimize(size))]
 pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
@@ -232,6 +235,7 @@ impl NumpyArray {
         }
     }
 
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn child_from_parent(&self, position: Vec<isize>, num_children: usize) -> Self {
         let mut arr = NumpyArray {
             array: self.array,
@@ -246,6 +250,7 @@ impl NumpyArray {
         arr
     }
 
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn build(&mut self) {
         if self.depth < self.dimensions() - 1 {
             for i in 0..=self.shape()[self.depth] - 1 {
@@ -885,6 +890,7 @@ pub struct NumpyInt16 {
 }
 
 impl Serialize for NumpyInt16 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -901,6 +907,7 @@ pub struct NumpyInt32 {
 }
 
 impl Serialize for NumpyInt32 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -917,6 +924,7 @@ pub struct NumpyInt64 {
 }
 
 impl Serialize for NumpyInt64 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -933,6 +941,7 @@ pub struct NumpyUint8 {
 }
 
 impl Serialize for NumpyUint8 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -949,6 +958,7 @@ pub struct NumpyUint16 {
 }
 
 impl Serialize for NumpyUint16 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -965,6 +975,7 @@ pub struct NumpyUint32 {
 }
 
 impl Serialize for NumpyUint32 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -981,6 +992,7 @@ pub struct NumpyUint64 {
 }
 
 impl Serialize for NumpyUint64 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -997,6 +1009,7 @@ pub struct NumpyFloat32 {
 }
 
 impl Serialize for NumpyFloat32 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1013,6 +1026,7 @@ pub struct NumpyFloat64 {
 }
 
 impl Serialize for NumpyFloat64 {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1029,6 +1043,7 @@ pub struct NumpyBool {
 }
 
 impl Serialize for NumpyBool {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1115,6 +1130,7 @@ impl NumpyDatetimeUnit {
     /// object rather than using the `descr` field of the `__array_struct__`
     /// because that field isn't populated for datetime64 arrays; see
     /// https://github.com/numpy/numpy/issues/5350.
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn from_pyobject(ptr: *mut PyObject) -> Self {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
@@ -1150,6 +1166,7 @@ impl NumpyDatetimeUnit {
     /// Return a `NumpyDatetime64Repr` for a value in array with this unit.
     ///
     /// Returns an `Err(NumpyDateTimeError)` if the value is invalid for this unit.
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn datetime(&self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
         match self {
             Self::Years => Ok(NaiveDate::from_ymd_opt(
@@ -1289,6 +1306,7 @@ impl DateTimeLike for NumpyDatetime64Repr {
 }
 
 impl Serialize for NumpyDatetime64Repr {
+    #[cfg_attr(feature = "optimize", optimize(size))]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

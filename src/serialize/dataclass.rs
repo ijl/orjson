@@ -11,6 +11,67 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 
 use std::ptr::NonNull;
 
+pub struct DataclassGenericSerializer {
+    ptr: *mut pyo3_ffi::PyObject,
+    opts: Opt,
+    default_calls: u8,
+    recursion: u8,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
+}
+
+impl DataclassGenericSerializer {
+    pub fn new(
+        ptr: *mut pyo3_ffi::PyObject,
+        opts: Opt,
+        default_calls: u8,
+        recursion: u8,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
+    ) -> Self {
+        DataclassGenericSerializer {
+            ptr: ptr,
+            opts: opts,
+            default_calls: default_calls,
+            recursion: recursion + 1,
+            default: default,
+        }
+    }
+}
+
+impl Serialize for DataclassGenericSerializer {
+    #[inline(never)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if unlikely!(self.recursion == RECURSION_LIMIT) {
+            err!(SerializeError::RecursionLimit)
+        }
+        let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
+        let ob_type = ob_type!(self.ptr);
+        if unlikely!(dict.is_null() || pydict_contains!(ob_type, SLOTS_STR)) {
+            ffi!(PyErr_Clear());
+            DataclassFallbackSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer)
+        } else {
+            ffi!(Py_DECREF(dict));
+            DataclassFastSerializer::new(
+                dict,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer)
+        }
+    }
+}
+
 pub struct DataclassFastSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
@@ -31,14 +92,13 @@ impl DataclassFastSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion + 1,
+            recursion: recursion,
             default: default,
         }
     }
 }
 
 impl Serialize for DataclassFastSerializer {
-    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -94,14 +154,13 @@ impl DataclassFallbackSerializer {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion + 1,
+            recursion: recursion,
             default: default,
         }
     }
 }
 
 impl Serialize for DataclassFallbackSerializer {
-    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

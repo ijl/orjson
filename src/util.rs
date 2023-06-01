@@ -118,3 +118,23 @@ macro_rules! call_method {
         }
     };
 }
+
+#[cfg(Py_3_10)]
+macro_rules! pydict_contains {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe {
+            pyo3_ffi::_PyDict_Contains_KnownHash(
+                (*$obj1).tp_dict,
+                $obj2,
+                (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
+            ) == 1
+        }
+    };
+}
+
+#[cfg(not(Py_3_10))]
+macro_rules! pydict_contains {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe { pyo3_ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
+    };
+}

@@ -2,6 +2,7 @@
 
 use crate::ffi::PyListIter;
 use crate::opt::*;
+use crate::serialize::error::*;
 use crate::serialize::serializer::*;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
@@ -38,6 +39,9 @@ impl Serialize for ListSerializer {
     where
         S: Serializer,
     {
+        if unlikely!(self.recursion == RECURSION_LIMIT) {
+            err!(SerializeError::RecursionLimit)
+        }
         if ffi!(Py_SIZE(self.ptr)) == 0 {
             serializer.serialize_seq(Some(0)).unwrap().end()
         } else {

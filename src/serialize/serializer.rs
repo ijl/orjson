@@ -5,7 +5,6 @@ use crate::serialize::dataclass::*;
 use crate::serialize::datetime::*;
 use crate::serialize::default::*;
 use crate::serialize::dict::*;
-use crate::serialize::error::*;
 use crate::serialize::float::*;
 use crate::serialize::int::*;
 use crate::serialize::list::*;
@@ -16,7 +15,7 @@ use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
-use serde::ser::{Serialize, SerializeMap, Serializer};
+use serde::ser::{Serialize, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
 
@@ -51,7 +50,6 @@ pub fn serialize(
 }
 
 #[repr(u32)]
-#[derive(Copy, Clone)]
 pub enum ObType {
     Str,
     Int,
@@ -147,7 +145,7 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
         {
             ObType::Dict
         } else if opt_disabled!(opts, PASSTHROUGH_DATACLASS)
-            && ffi!(PyDict_Contains((*ob_type).tp_dict, DATACLASS_FIELDS_STR)) == 1
+            && pydict_contains!(ob_type, DATACLASS_FIELDS_STR)
         {
             ObType::Dataclass
         } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_scalar(ob_type) {
@@ -208,54 +206,22 @@ impl Serialize for PyObjectSerializer {
             ObType::Date => Date::new(self.ptr).serialize(serializer),
             ObType::Time => Time::new(self.ptr, self.opts).serialize(serializer),
             ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
-            ObType::Dict => {
-                if unlikely!(self.recursion == RECURSION_LIMIT) {
-                    err!(SerializeError::RecursionLimit)
-                }
-                if ffi!(Py_SIZE(self.ptr)) == 0 {
-                    serializer.serialize_map(Some(0)).unwrap().end()
-                } else if opt_disabled!(self.opts, SORT_OR_NON_STR_KEYS) {
-                    Dict::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                } else if opt_enabled!(self.opts, NON_STR_KEYS) {
-                    DictNonStrKey::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                } else {
-                    DictSortedKey::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                }
-            }
-            ObType::List => {
-                if unlikely!(self.recursion == RECURSION_LIMIT) {
-                    err!(SerializeError::RecursionLimit)
-                }
-                ListSerializer::new(
-                    self.ptr,
-                    self.opts,
-                    self.default_calls,
-                    self.recursion,
-                    self.default,
-                )
-                .serialize(serializer)
-            }
+            ObType::Dict => DictGenericSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
+            ObType::List => ListSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
             ObType::Tuple => TupleSerializer::new(
                 self.ptr,
                 self.opts,
@@ -264,36 +230,14 @@ impl Serialize for PyObjectSerializer {
                 self.default,
             )
             .serialize(serializer),
-            ObType::Dataclass => {
-                if unlikely!(self.recursion == RECURSION_LIMIT) {
-                    err!(SerializeError::RecursionLimit)
-                }
-                let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
-                let ob_type = ob_type!(self.ptr);
-                if unlikely!(
-                    dict.is_null() || ffi!(PyDict_Contains((*ob_type).tp_dict, SLOTS_STR)) == 1
-                ) {
-                    ffi!(PyErr_Clear());
-                    DataclassFallbackSerializer::new(
-                        self.ptr,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                } else {
-                    ffi!(Py_DECREF(dict));
-                    DataclassFastSerializer::new(
-                        dict,
-                        self.opts,
-                        self.default_calls,
-                        self.recursion,
-                        self.default,
-                    )
-                    .serialize(serializer)
-                }
-            }
+            ObType::Dataclass => DataclassGenericSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer),
             ObType::Enum => EnumSerializer::new(
                 self.ptr,
                 self.opts,

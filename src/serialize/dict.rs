@@ -15,7 +15,7 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
 use std::ptr::NonNull;
 
-pub struct Dict {
+pub struct DictGenericSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
     default_calls: u8,
@@ -23,6 +23,73 @@ pub struct Dict {
     default: Option<NonNull<pyo3_ffi::PyObject>>,
 }
 
+impl DictGenericSerializer {
+    pub fn new(
+        ptr: *mut pyo3_ffi::PyObject,
+        opts: Opt,
+        default_calls: u8,
+        recursion: u8,
+        default: Option<NonNull<pyo3_ffi::PyObject>>,
+    ) -> Self {
+        DictGenericSerializer {
+            ptr: ptr,
+            opts: opts,
+            default_calls: default_calls,
+            recursion: recursion + 1,
+            default: default,
+        }
+    }
+}
+
+impl Serialize for DictGenericSerializer {
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if unlikely!(self.recursion == RECURSION_LIMIT) {
+            err!(SerializeError::RecursionLimit)
+        }
+        if unlikely!(ffi!(Py_SIZE(self.ptr)) == 0) {
+            serializer.serialize_map(Some(0)).unwrap().end()
+        } else if opt_disabled!(self.opts, SORT_OR_NON_STR_KEYS) {
+            Dict::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer)
+        } else if opt_enabled!(self.opts, NON_STR_KEYS) {
+            DictNonStrKey::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer)
+        } else {
+            DictSortedKey::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer)
+        }
+    }
+}
+
+pub struct Dict {
+    ptr: *mut pyo3_ffi::PyObject,
+    opts: Opt,
+    default_calls: u8,
+    recursion: u8,
+    default: Option<NonNull<pyo3_ffi::PyObject>>,
+}
 impl Dict {
     pub fn new(
         ptr: *mut pyo3_ffi::PyObject,
@@ -35,14 +102,13 @@ impl Dict {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion + 1,
+            recursion: recursion,
             default: default,
         }
     }
 }
-
 impl Serialize for Dict {
-    #[inline(never)]
+    #[inline(always)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -90,7 +156,7 @@ impl DictSortedKey {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion + 1,
+            recursion: recursion,
             default: default,
         }
     }
@@ -154,7 +220,7 @@ impl DictNonStrKey {
             ptr: ptr,
             opts: opts,
             default_calls: default_calls,
-            recursion: recursion + 1,
+            recursion: recursion,
             default: default,
         }
     }
