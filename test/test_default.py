@@ -274,4 +274,4 @@ class TestType:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
-        assert sys.getrefcount(ref) == 2 # one for ref, one for default
+        assert sys.getrefcount(ref) == 2  # one for ref, one for default
