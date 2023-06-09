@@ -259,6 +259,10 @@ fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
 
         if !cause_tp.is_null() {
             PyException_SetCause(val, cause_val);
+            Py_DECREF(cause_tp);
+        }
+        if !cause_traceback.is_null() {
+            Py_DECREF(cause_traceback);
         }
 
         PyErr_Restore(tp, val, traceback);

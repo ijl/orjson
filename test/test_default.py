@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import sys
 import uuid
 
 import pytest
@@ -260,3 +261,17 @@ class TestType:
 
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
+
+    def test_reference_cleanup_default(self):
+        """
+        references to encoded objects are cleaned up
+        """
+        ref = Custom()
+
+        def default(obj):
+            raise TypeError
+
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(ref, default=default)
+
+        assert sys.getrefcount(ref) == 2  # one for ref, one for default
