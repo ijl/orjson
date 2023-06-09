@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 3.9.1 - 2023-06-09
+
+### Fixed
+
+- Fix memory leak on chained tracebacks of exceptions raised in `default`. This
+was introduced in 3.8.12.
+
+
 ## 3.9.0 - 2023-06-01
 
 ### Added
