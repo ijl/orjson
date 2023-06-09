@@ -2,6 +2,9 @@ name: stale
 on:
   schedule:
     - cron: '0 8 * * *'
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   stale:
