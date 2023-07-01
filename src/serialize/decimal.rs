@@ -3,7 +3,7 @@
 use std::hint::black_box;
 use serde::ser::{Serialize, Serializer};
 use pyo3::prelude::*;
-use rust_decimal::Decimal;
+use pyo3::rust_decimal::Decimal;
 use criterion::{black_box};
 
 #[repr(transparent)]
@@ -23,7 +23,7 @@ impl Serialize for DecimalSerializer {
     where
         S: Serializer,
     {
-        let d:Decimal=black_box(Self.ptr).extract();
-        serializer.serialize_(d)
+        serializer.serialize_str(ffi!(PyObject_Str(self.ptr)))
     }
 }
+
