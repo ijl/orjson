@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "urjson-decimal"
+name = "orjson-decimal"
 version = "0.1.0"
 description = "orjson with decimal support"
 authors = [
@@ -13,12 +13,36 @@ faker = "^18.11.2"
 numpy = "^1.25.0"
 pendulum = "^2.1.2"
 psutil = "^5.9.5"
-pytest = "^7.4.0"
 pytz = "^2023.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+autoflake = "^2.2.0"
+black = "^23.3.0"
+isort = "^5.12.0"
+maturin = "^1.1.0"
+mypy = "^1.4.1"
+ruff = "^0.0.275"
+types-python-dateutil = "^2.8.19.13"
+types-pytz = "^2023.3.0.0"
+types-simplejson = "^3.19.0.1"
+types-ujson = "^5.8.0.0"
+flask = "^2.3.2"
+gunicorn = "^20.1.0"
+httpx = "^0.24.1"
+memory-profiler = "^0.61.0"
+pytest-benchmark = "^4.0.0"
+pytest-random-order = "^1.1.0"
+python-rapidjson = "^1.10"
+simplejson = "^3.19.1"
+tabulate = "^0.9.0"
+ujson = "^5.8.0"
+
 
 
 
 [project]
+name = "orjson"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.7"
 classifiers = [

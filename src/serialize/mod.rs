@@ -19,5 +19,6 @@ mod str;
 mod tuple;
 mod uuid;
 mod writer;
+mod decimal;
 
 pub use serializer::serialize;
