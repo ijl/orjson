@@ -1,5 +1,17 @@
+[tool.poetry]
+name = "urjson-decimal"
+version = "0.1.0"
+description = "orjson with decimal support"
+authors = [
+    "Reynaldo Gil <gilcu2@gmail.com>",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.7.0, <4.0.0"
+
+
+
 [project]
-name = "orjson"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.7"
 classifiers = [
