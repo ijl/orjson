@@ -7,7 +7,14 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.7.0, <4.0.0"
+python = ">=3.9.0, <4.0.0"
+arrow = "^1.2.3"
+faker = "^18.11.2"
+numpy = "^1.25.0"
+pendulum = "^2.1.2"
+psutil = "^5.9.5"
+pytest = "^7.4.0"
+pytz = "^2023.3"
 
 
 
