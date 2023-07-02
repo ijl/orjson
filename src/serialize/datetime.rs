@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-
+use chrono::{TimeZone, Utc};
+use pyo3_ffi::PyDateTimeAPI;
 use crate::opt::*;
 use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::error::*;
@@ -154,6 +155,7 @@ impl DateTimeLike for DateTime {
     pydatetime_get!(minute, PyDateTime_DATE_GET_MINUTE, u8);
     pydatetime_get!(second, PyDateTime_DATE_GET_SECOND, u8);
     pydatetime_get!(microsecond, PyDateTime_DATE_GET_MICROSECOND, u32);
+    pydatetime_get!(timestamp, PyDateTime_GET_DAY, i64);
 
     fn millisecond(&self) -> u32 {
         self.microsecond() / 1_000
@@ -240,10 +242,20 @@ impl Serialize for DateTime {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::new();
-        if self.write_buf(&mut buf, self.opts).is_err() {
-            err!(SerializeError::DatetimeLibraryUnsupported)
+        if opt_enabled!(self.opts, TIMESTAMP_FORMAT) {
+            serializer.serialize_i64(
+                Utc.ymd(
+                    self.year(), self.month() as u32, self.day() as u32
+                ).and_hms(
+                    self.hour() as u32, self.minute() as u32, self.second() as u32
+                ).timestamp(),
+            )
+        } else {
+            let mut buf = DateTimeBuffer::new();
+            if self.write_buf(&mut buf, self.opts).is_err() {
+                err!(SerializeError::DatetimeLibraryUnsupported)
+            }
+            serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
         }
-        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

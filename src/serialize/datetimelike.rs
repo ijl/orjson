@@ -86,6 +86,9 @@ pub trait DateTimeLike {
     /// Is the object time-zone aware?
     fn has_tz(&self) -> bool;
 
+    /// should return datetime as timestamp or not
+    fn timestamp(&self) -> i64;
+
     //// python3.8 or below implementation of offset()
     fn slow_offset(&self) -> Result<Offset, DateTimeError>;
 

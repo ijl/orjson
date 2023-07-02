@@ -104,7 +104,7 @@ class TestApi:
         dumps() option out of range high
         """
         with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps(True, option=1 << 12)
+            orjson.dumps(True, option=1 << 13)
 
     def test_opts_multiple(self):
         """
@@ -218,3 +218,15 @@ class TestApi:
         """
         # would raise ValueError: invalid literal for int() with base 10: b'1596728892'
         int(orjson.dumps(1596728892))
+
+    def test_timestamp(self):
+        """
+        dumps() datetime to timestamp
+        """
+        assert (
+            orjson.dumps(
+                [1, datetime.datetime(2000, 1, 1, 2, 3, 4)],
+                option=orjson.OPT_TIMESTAMP_FORMAT,
+            )
+            == b'[1,946692184]'
+        )

@@ -1283,6 +1283,7 @@ impl DateTimeLike for NumpyDatetime64Repr {
     forward_inner!(minute, u8);
     forward_inner!(second, u8);
     forward_inner!(nanosecond, u32);
+    forward_inner!(timestamp, i64);
 
     fn millisecond(&self) -> u32 {
         self.nanosecond() / 1_000_000
