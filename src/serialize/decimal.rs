@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::hint::black_box;
 use serde::ser::{Serialize, Serializer};
-use pyo3::prelude::*;
-use pyo3::rust_decimal::Decimal;
-use criterion::{black_box};
+use crate::str::*;
 
 #[repr(transparent)]
 pub struct DecimalSerializer {
@@ -23,7 +20,8 @@ impl Serialize for DecimalSerializer {
     where
         S: Serializer,
     {
-        serializer.serialize_str(ffi!(PyObject_Str(self.ptr)))
+        let uni = unicode_to_str(ffi!(PyObject_Str(self.ptr)));
+        serializer.serialize_str(uni.unwrap())
     }
 }
 

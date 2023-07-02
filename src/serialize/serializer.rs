@@ -14,6 +14,7 @@ use crate::serialize::pyenum::EnumSerializer;
 use crate::serialize::str::*;
 use crate::serialize::tuple::*;
 use crate::serialize::uuid::*;
+use crate::serialize::decimal::*;
 use crate::serialize::writer::*;
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
@@ -64,6 +65,7 @@ pub enum ObType {
     Time,
     Tuple,
     Uuid,
+    Decimal,
     Dataclass,
     NumpyScalar,
     NumpyArray,
@@ -128,6 +130,8 @@ pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> O
             ObType::Tuple
         } else if ob_type == UUID_TYPE {
             ObType::Uuid
+         } else if ob_type == DECIMAL_TYPE {
+            ObType::Decimal
         } else if ob_type == FRAGMENT_TYPE {
             ObType::Fragment
         } else if is_subclass_by_type!(ob_type, ENUM_TYPE) {
@@ -210,6 +214,7 @@ impl Serialize for PyObjectSerializer {
             ObType::Date => Date::new(self.ptr).serialize(serializer),
             ObType::Time => Time::new(self.ptr, self.opts).serialize(serializer),
             ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
+            ObType::Decimal => DecimalSerializer::new(self.ptr).serialize(serializer),
             ObType::Dict => DictGenericSerializer::new(
                 self.ptr,
                 self.opts,

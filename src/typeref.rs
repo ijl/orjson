@@ -47,6 +47,7 @@ pub static mut DATE_TYPE: *mut PyTypeObject = null_mut();
 pub static mut TIME_TYPE: *mut PyTypeObject = null_mut();
 pub static mut TUPLE_TYPE: *mut PyTypeObject = null_mut();
 pub static mut UUID_TYPE: *mut PyTypeObject = null_mut();
+pub static mut DECIMAL_TYPE: *mut PyTypeObject = null_mut();
 pub static mut ENUM_TYPE: *mut PyTypeObject = null_mut();
 pub static mut FIELD_TYPE: *mut PyTypeObject = null_mut();
 pub static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();

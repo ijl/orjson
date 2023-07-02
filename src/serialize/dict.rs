@@ -291,6 +291,9 @@ impl DictNonStrKey {
                 let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
                 Ok(CompactString::from(key_as_str))
             }
+            ObType::Decimal => {
+                Ok(CompactString::from(unicode_to_str(ffi!(PyObject_Str(key))).unwrap()))
+            }
             ObType::Enum => {
                 let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
                 ffi!(Py_DECREF(value));
