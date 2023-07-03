@@ -290,12 +290,10 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
 unsafe fn look_up_decimal_type() -> *mut PyTypeObject {
     let decimal_mod = PyImport_ImportModule("decimal\0".as_ptr() as *const c_char);
     let decimal_mod_dict = PyObject_GenericGetDict(decimal_mod, null_mut());
-    let decimal = PyMapping_GetItemString(decimal_mod_dict, "Decimal\0".as_ptr() as *const c_char);
-    let ptr = (*decimal).ob_type;
-    Py_DECREF(decimal);
+    let ptr = PyMapping_GetItemString(decimal_mod_dict,
+                                      "Decimal\0".as_ptr() as *const c_char) as *mut PyTypeObject;
     Py_DECREF(decimal_mod_dict);
     Py_DECREF(decimal_mod);
-    println!("Decimal type: {ptr:?}");
     ptr
 }
 

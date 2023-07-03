@@ -21,6 +21,7 @@ impl Serialize for DecimalSerializer {
         S: Serializer,
     {
         let uni = unicode_to_str(ffi!(PyObject_Str(self.ptr)));
+        println!("uni: {uni}");
         serializer.serialize_str(uni.unwrap())
     }
 }
