@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use serde::ser::{Serialize, Serializer};
+use core::{str::FromStr};
 use crate::str::*;
 
 #[repr(transparent)]
@@ -21,8 +22,13 @@ impl Serialize for DecimalSerializer {
         S: Serializer,
     {
         let uni = unicode_to_str(ffi!(PyObject_Str(self.ptr)));
-        println!("uni: {uni}");
-        serializer.serialize_str(uni.unwrap())
+        println!("uni: {uni:?}");
+        let json_number_result =serde_json::Number::from_str(uni.unwrap());
+        // let json_number=json_number_result.unwrap();
+        // println!("json_number: {json_number:?}");
+        json_number_result
+            .map_err(serde::ser::Error::custom)?
+            .serialize(serializer)
     }
 }
 
