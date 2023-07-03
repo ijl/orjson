@@ -20,7 +20,7 @@ pytest = "^7.4.0"
 autoflake = "^2.2.0"
 black = "^23.3.0"
 isort = "^5.12.0"
-maturin = "^1.1.0"
+maturin = { version = "^1.1.0", extras = ["patchelf"] }
 mypy = "^1.4.1"
 ruff = "^0.0.275"
 types-python-dateutil = "^2.8.19.13"

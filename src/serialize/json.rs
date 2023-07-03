@@ -1334,6 +1334,7 @@ where
     W: io::Write + WriteExt,
     T: ?Sized + Serialize,
 {
+    println!("to_writer pass");
     let mut ser = Serializer::new(writer);
     value.serialize(&mut ser)
 }

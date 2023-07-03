@@ -158,6 +158,7 @@ pub fn init_typerefs() {
         DATE_TYPE = look_up_date_type();
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
+        DECIMAL_TYPE = look_up_decimal_type();
         ENUM_TYPE = look_up_enum_type();
         FIELD_TYPE = look_up_field_type();
 
@@ -281,6 +282,20 @@ unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
     Py_DECREF(uuid);
     Py_DECREF(uuid_mod_dict);
     Py_DECREF(uuid_mod);
+    ptr
+}
+
+#[cold]
+#[cfg_attr(feature = "optimize", optimize(size))]
+unsafe fn look_up_decimal_type() -> *mut PyTypeObject {
+    let decimal_mod = PyImport_ImportModule("decimal\0".as_ptr() as *const c_char);
+    let decimal_mod_dict = PyObject_GenericGetDict(decimal_mod, null_mut());
+    let decimal = PyMapping_GetItemString(decimal_mod_dict, "Decimal\0".as_ptr() as *const c_char);
+    let ptr = (*decimal).ob_type;
+    Py_DECREF(decimal);
+    Py_DECREF(decimal_mod_dict);
+    Py_DECREF(decimal_mod);
+    println!("Decimal type: {ptr:?}");
     ptr
 }
 

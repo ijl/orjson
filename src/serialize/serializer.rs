@@ -30,6 +30,7 @@ pub fn serialize(
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
+    println!("serialize pass");
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, opts, 0, 0, default);
     let res = if opt_disabled!(opts, INDENT_2) {
@@ -76,8 +77,10 @@ pub enum ObType {
 }
 
 pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
+    println!("pyobject_to_obtype pass");
     unsafe {
         let ob_type = ob_type!(obj);
+        println!("ob_type: {ob_type:?}");
         if ob_type == STR_TYPE {
             ObType::Str
         } else if ob_type == INT_TYPE {
@@ -120,8 +123,10 @@ macro_rules! is_subclass_by_type {
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
 pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
+    println!("pyobject_to_obtype_unlikely pass");
     unsafe {
         let ob_type = ob_type!(obj);
+        println!("ob_type: {ob_type:?}");
         if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Date
         } else if ob_type == TIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
@@ -197,6 +202,7 @@ impl Serialize for PyObjectSerializer {
     where
         S: Serializer,
     {
+        print!("PyObjectSerializer.serialize pass");
         match pyobject_to_obtype(self.ptr, self.opts) {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
