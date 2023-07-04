@@ -19,6 +19,7 @@ impl Serialize for FloatSerializer {
     where
         S: Serializer,
     {
+
         serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
     }
 }

@@ -167,6 +167,7 @@ where
 
     #[inline]
     fn serialize_str(self, value: &str) -> Result<()> {
+        println!("serialize_str {value}");
         format_escaped_str(&mut self.writer, &mut self.formatter, value).map_err(Error::io)
     }
 
