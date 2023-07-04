@@ -12,6 +12,7 @@ use std::ptr::NonNull;
 pub fn deserialize_json(
     data: &'static str,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+    println!("json::deserialize_json pass");
     let mut deserializer = serde_json::Deserializer::from_str(data);
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {

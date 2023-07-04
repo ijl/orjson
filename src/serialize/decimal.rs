@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use serde::ser::{Serialize, Serializer};
-use core::{str::FromStr};
-use std::fmt::format;
 use crate::str::*;
 
 #[repr(transparent)]

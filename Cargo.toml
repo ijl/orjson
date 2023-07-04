@@ -50,11 +50,11 @@ compact_str = { version = "0.7", default_features = false, features = ["serde"] 
 encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
 itoap = { version = "1", features = ["std", "simd"] }
-once_cell = "1.18.0"
+once_cell = { version = "1", default_features = false, features = ["race"] }
 pyo3-ffi = { version = "0.19", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
-serde = { version = "1", default_features = false  }
-serde_json = { version = "1", default_features = false, features = ["std", "float_roundtrip", "arbitrary_precision"] }
+serde = { version = "1", default_features = false }
+serde_json = { version = "1", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std", "aarch64_neon"] }
 smallvec = { version = "^1.10", default_features = false, features = ["union", "write"] }
 

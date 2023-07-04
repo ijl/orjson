@@ -60,6 +60,7 @@ fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
 pub fn deserialize_yyjson(
     data: &'static str,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+    println!("yyjson::deserialize_json pass");
     unsafe {
         let allocator = if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
             YYJSON_ALLOC.get_or_init(yyjson_init) as *const yyjson_alc
