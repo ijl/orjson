@@ -2,6 +2,7 @@
 
 use serde::ser::{Serialize, Serializer};
 use core::{str::FromStr};
+use std::fmt::format;
 use crate::str::*;
 
 #[repr(transparent)]
@@ -21,8 +22,9 @@ impl Serialize for DecimalSerializer {
     where
         S: Serializer,
     {
-        let uni = unicode_to_str(ffi!(PyObject_Str(self.ptr)));
-        serializer.serialize_bytes(uni.unwrap().as_bytes())
+        let decimal_str = unicode_to_str(ffi!(PyObject_Str(self.ptr))).unwrap();
+        let with_0=format!("{decimal_str}0");
+        serializer.serialize_bytes(with_0.as_bytes())
     }
 }
 

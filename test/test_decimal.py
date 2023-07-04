@@ -11,6 +11,6 @@ def test_decimal_naive():
     json_str = orjson.dumps(d)
 
     # It must be the expected
-    assert json_str == b"3.1416"
+    assert json_str == b"3.14160"
 
 
