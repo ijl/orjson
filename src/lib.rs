@@ -280,6 +280,7 @@ fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
         PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
 
         if !cause_tp.is_null() {
+            PyErr_NormalizeException(&mut cause_tp, &mut cause_val, &mut cause_traceback);
             PyException_SetCause(val, cause_val);
             Py_DECREF(cause_tp);
         }
