@@ -46,11 +46,21 @@ impl Serialize for DefaultSerializer {
                 if unlikely!(self.default_calls == RECURSION_LIMIT) {
                     err!(SerializeError::DefaultRecursionLimit)
                 }
+                #[cfg(not(Py_3_10))]
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
                     self.ptr,
                     std::ptr::null_mut() as *mut pyo3_ffi::PyObject
                 ));
+                #[cfg(Py_3_10)]
+                let default_obj = unsafe {
+                    pyo3_ffi::PyObject_Vectorcall(
+                        callable.as_ptr(),
+                        std::ptr::addr_of!(self.ptr),
+                        pyo3_ffi::PyVectorcall_NARGS(1) as usize,
+                        std::ptr::null_mut() as *mut pyo3_ffi::PyObject,
+                    )
+                };
                 if unlikely!(default_obj.is_null()) {
                     err!(SerializeError::UnsupportedType(nonnull!(self.ptr)))
                 } else {
