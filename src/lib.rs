@@ -246,6 +246,7 @@ fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
         let mut cause_val: *mut PyObject = null_mut();
         let mut cause_traceback: *mut PyObject = null_mut();
         PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
+        PyErr_NormalizeException(&mut cause_tp, &mut cause_val, &mut cause_traceback);
 
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
