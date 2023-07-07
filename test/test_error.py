@@ -186,6 +186,6 @@ class TestJsonEncodeError:
 
     def test_dumps_normalize_exception(self):
         with pytest.raises(orjson.JSONEncodeError) as exc_info:
-            orjson.dumps(10 ** 60)
+            orjson.dumps(10**60)
         assert exc_info.type == orjson.JSONEncodeError
         assert isinstance(exc_info.value.__cause__, OverflowError)
