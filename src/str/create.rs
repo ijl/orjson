@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::str::check::is_four_byte;
+
 use crate::typeref::EMPTY_UNICODE;
 use pyo3_ffi::*;
-use std::os::raw::c_char;
 
 enum PyUnicodeKind {
     Ascii,
@@ -29,44 +29,63 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
         ffi!(Py_INCREF(EMPTY_UNICODE));
         unsafe { EMPTY_UNICODE }
     } else {
-        let num_chars = bytecount::num_chars(buf.as_bytes()) as isize;
-        match find_str_kind(buf, num_chars as usize) {
-            PyUnicodeKind::Ascii => unsafe {
-                let ptr = ffi!(PyUnicode_New(num_chars, 127));
-                let data_ptr = ptr.cast::<PyASCIIObject>().offset(1) as *mut u8;
-                std::ptr::copy_nonoverlapping(buf.as_ptr(), data_ptr, num_chars as usize);
-                std::ptr::write(data_ptr.offset(num_chars), 0);
-                ptr
-            },
-            PyUnicodeKind::OneByte => unsafe {
-                PyUnicode_DecodeUTF8(
-                    buf.as_bytes().as_ptr() as *const c_char,
-                    buf.as_bytes().len() as isize,
-                    "ignore\0".as_ptr() as *const c_char,
-                )
-            },
-            PyUnicodeKind::TwoByte => unsafe {
-                let ptr = ffi!(PyUnicode_New(num_chars, 65535));
-                (*ptr.cast::<PyASCIIObject>()).length = num_chars;
-                let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u16;
-                for each in buf.chars() {
-                    std::ptr::write(data_ptr, each as u16);
-                    data_ptr = data_ptr.offset(1);
-                }
-                std::ptr::write(data_ptr, 0);
-                ptr
-            },
-            PyUnicodeKind::FourByte => unsafe {
-                let ptr = ffi!(PyUnicode_New(num_chars, 1114111));
-                (*ptr.cast::<PyASCIIObject>()).length = num_chars;
-                let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u32;
-                for each in buf.chars() {
-                    std::ptr::write(data_ptr, each as u32);
-                    data_ptr = data_ptr.offset(1);
-                }
-                std::ptr::write(data_ptr, 0);
-                ptr
-            },
+        let num_chars = bytecount::num_chars(buf.as_bytes());
+        match find_str_kind(buf, num_chars) {
+            PyUnicodeKind::Ascii => pyunicode_ascii(buf),
+            PyUnicodeKind::OneByte => pyunicode_onebyte(buf, num_chars),
+            PyUnicodeKind::TwoByte => pyunicode_twobyte(buf, num_chars),
+            PyUnicodeKind::FourByte => pyunicode_fourbyte(buf, num_chars),
         }
+    }
+}
+
+pub fn pyunicode_ascii(buf: &str) -> *mut pyo3_ffi::PyObject {
+    unsafe {
+        let ptr = ffi!(PyUnicode_New(buf.len() as isize, 127));
+        let data_ptr = ptr.cast::<PyASCIIObject>().offset(1) as *mut u8;
+        core::ptr::copy_nonoverlapping(buf.as_ptr(), data_ptr, buf.len());
+        core::ptr::write(data_ptr.add(buf.len()), 0);
+        ptr
+    }
+}
+
+#[cold]
+#[inline(never)]
+pub fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+    unsafe {
+        let ptr = ffi!(PyUnicode_New(num_chars as isize, 255));
+        let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u8;
+        for each in buf.chars().fuse() {
+            std::ptr::write(data_ptr, each as u8);
+            data_ptr = data_ptr.offset(1);
+        }
+        core::ptr::write(data_ptr, 0);
+        ptr
+    }
+}
+
+pub fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+    unsafe {
+        let ptr = ffi!(PyUnicode_New(num_chars as isize, 65535));
+        let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u16;
+        for each in buf.chars().fuse() {
+            std::ptr::write(data_ptr, each as u16);
+            data_ptr = data_ptr.offset(1);
+        }
+        core::ptr::write(data_ptr, 0);
+        ptr
+    }
+}
+
+pub fn pyunicode_fourbyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+    unsafe {
+        let ptr = ffi!(PyUnicode_New(num_chars as isize, 1114111));
+        let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1) as *mut u32;
+        for each in buf.chars().fuse() {
+            std::ptr::write(data_ptr, each as u32);
+            data_ptr = data_ptr.offset(1);
+        }
+        core::ptr::write(data_ptr, 0);
+        ptr
     }
 }
