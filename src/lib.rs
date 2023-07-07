@@ -206,8 +206,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
             PyUnicode_FromStringAndSize(as_str.as_ptr() as *const c_char, as_str.len() as isize)
         },
         None => {
-            ffi!(Py_INCREF(crate::typeref::EMPTY_UNICODE));
-            unsafe { crate::typeref::EMPTY_UNICODE }
+            use_immortal!(crate::typeref::EMPTY_UNICODE)
         }
     };
     unsafe {

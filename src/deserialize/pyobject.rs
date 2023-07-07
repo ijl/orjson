@@ -42,14 +42,12 @@ pub fn parse_bool(val: bool) -> NonNull<pyo3_ffi::PyObject> {
 
 #[inline(always)]
 pub fn parse_true() -> NonNull<pyo3_ffi::PyObject> {
-    ffi!(Py_INCREF(TRUE));
-    nonnull!(TRUE)
+    nonnull!(use_immortal!(TRUE))
 }
 
 #[inline(always)]
 pub fn parse_false() -> NonNull<pyo3_ffi::PyObject> {
-    ffi!(Py_INCREF(FALSE));
-    nonnull!(FALSE)
+    nonnull!(use_immortal!(FALSE))
 }
 #[inline(always)]
 pub fn parse_i64(val: i64) -> NonNull<pyo3_ffi::PyObject> {
@@ -68,6 +66,5 @@ pub fn parse_f64(val: f64) -> NonNull<pyo3_ffi::PyObject> {
 
 #[inline(always)]
 pub fn parse_none() -> NonNull<pyo3_ffi::PyObject> {
-    ffi!(Py_INCREF(NONE));
-    nonnull!(NONE)
+    nonnull!(use_immortal!(NONE))
 }

@@ -16,8 +16,7 @@ pub fn deserialize(
         } else if buffer == b"{}" {
             return Ok(nonnull!(ffi!(PyDict_New())));
         } else if buffer == b"\"\"" {
-            ffi!(Py_INCREF(EMPTY_UNICODE));
-            unsafe { return Ok(nonnull!(EMPTY_UNICODE)) }
+            unsafe { return Ok(nonnull!(use_immortal!(EMPTY_UNICODE))) }
         }
     }
 
