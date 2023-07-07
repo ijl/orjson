@@ -68,8 +68,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-05-31 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-05-31-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-06-30 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-06-30-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v3
 
     - name: build-std
@@ -139,7 +139,7 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2023-05-31
+        rust-toolchain: nightly-2023-06-30
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
@@ -196,7 +196,7 @@ jobs:
           {
             arch: 'armv7',
             target: 'armv7-unknown-linux-gnueabihf',
-            cflags: '-Os',
+            cflags: '-Os -fstrict-aliasing',
           },
           {
             arch: 'ppc64le',
@@ -228,7 +228,7 @@ jobs:
         CARGO_FEATURE_YYJSON: "1"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-05-31
+        rust-toolchain: nightly-2023-06-30
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist -i python${{ matrix.python.version }}

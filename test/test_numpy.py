@@ -375,7 +375,7 @@ class TestNumpy:
             )
 
     def test_numpy_array_unsupported_dtype(self):
-        array = numpy.array([[1, 2], [3, 4]], numpy.float16)
+        array = numpy.array([[1, 2], [3, 4]], numpy.float16)  # type: ignore
         with pytest.raises(orjson.JSONEncodeError) as cm:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert "unsupported datatype in numpy array" in str(cm)
@@ -708,7 +708,7 @@ class TestNumpy:
             orjson.dumps([numpy.datetime64("NaT")], option=orjson.OPT_SERIALIZE_NUMPY)
 
     def test_numpy_repeated(self):
-        data = numpy.array([[[1, 2], [3, 4], [5, 6], [7, 8]]], numpy.int64)
+        data = numpy.array([[[1, 2], [3, 4], [5, 6], [7, 8]]], numpy.int64)  # type: ignore
         for _ in range(0, 3):
             assert (
                 orjson.dumps(

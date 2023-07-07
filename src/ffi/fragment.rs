@@ -129,6 +129,8 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
         tp_descr_set: None,
         tp_dictoffset: 0,
         tp_alloc: None,
+        #[cfg(Py_3_12)]
+        tp_watched: 0,
     });
     let ob_ptr = Box::into_raw(ob);
     PyType_Ready(ob_ptr);

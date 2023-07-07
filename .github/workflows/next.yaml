@@ -21,7 +21,7 @@ jobs:
       image: registry.hub.docker.com/library/python:3.12-rc-bullseye
       options: --user 0
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-05-31 --profile minimal -y
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-06-30 --profile minimal -y
     - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
     - uses: actions/checkout@v3
 
