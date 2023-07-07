@@ -119,6 +119,12 @@ macro_rules! call_method {
     };
 }
 
+macro_rules! str_hash {
+    ($op:expr) => {
+        unsafe { (*$op.cast::<pyo3_ffi::PyASCIIObject>()).hash }
+    };
+}
+
 #[cfg(Py_3_10)]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {

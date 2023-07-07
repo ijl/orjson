@@ -5,12 +5,11 @@ use crate::str::*;
 use crate::typeref::*;
 use std::ptr::NonNull;
 
-pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_hash_t) {
+pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
     let pykey: *mut pyo3_ffi::PyObject;
-    let pyhash: pyo3_ffi::Py_hash_t;
     if unlikely!(key_str.len() > 64) {
         pykey = unicode_from_str(key_str);
-        pyhash = hash_str(pykey);
+        hash_str(pykey);
     } else {
         let hash = cache_hash(key_str.as_bytes());
         let map = unsafe {
@@ -27,9 +26,8 @@ pub fn get_unicode_key(key_str: &str) -> (*mut pyo3_ffi::PyObject, pyo3_ffi::Py_
             },
         );
         pykey = entry.get();
-        pyhash = unsafe { (*pykey.cast::<pyo3_ffi::PyASCIIObject>()).hash }
     }
-    (pykey, pyhash)
+    pykey
 }
 
 #[allow(dead_code)]

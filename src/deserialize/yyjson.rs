@@ -155,13 +155,16 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         let mut key = unsafe_yyjson_get_first(elem);
         let dict = ffi!(_PyDict_NewPresized(len as isize));
         for _ in 0..=len - 1 {
+            let val = key.add(1);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
-            let (pykey, pyhash) = get_unicode_key(key_str);
-            let pyval = parse_node(key.add(1)).as_ptr();
-            let _ = ffi!(_PyDict_SetItem_KnownHash(dict, pykey, pyval, pyhash));
+            let pykey = get_unicode_key(key_str);
+            let pyval = parse_node(val).as_ptr();
+            key = unsafe_yyjson_get_next(val);
+            let _ = unsafe {
+                pyo3_ffi::_PyDict_SetItem_KnownHash(dict, pykey, pyval, str_hash!(pykey))
+            };
             py_decref_without_destroy!(pykey);
             py_decref_without_destroy!(pyval);
-            key = unsafe_yyjson_get_next(key.add(1));
         }
         nonnull!(dict)
     }
