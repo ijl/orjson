@@ -239,6 +239,29 @@ fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
 #[cold]
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
+#[cfg(Py_3_12)]
+fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
+    unsafe {
+        let cause_exc: *mut PyObject = PyErr_GetRaisedException();
+
+        let err_msg =
+            PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
+        PyErr_SetObject(typeref::JsonEncodeError, err_msg);
+        Py_DECREF(err_msg);
+
+        if !cause_exc.is_null() {
+            let exc: *mut PyObject = PyErr_GetRaisedException();
+            PyException_SetCause(exc, cause_exc);
+            PyErr_SetRaisedException(exc);
+        }
+    };
+    null_mut()
+}
+
+#[cold]
+#[inline(never)]
+#[cfg_attr(feature = "optimize", optimize(size))]
+#[cfg(not(Py_3_12))]
 fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
     unsafe {
         let mut cause_tp: *mut PyObject = null_mut();
