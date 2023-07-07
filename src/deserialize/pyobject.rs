@@ -10,6 +10,8 @@ pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
     if unlikely!(key_str.len() > 64) {
         pykey = unicode_from_str(key_str);
         hash_str(pykey);
+    } else if unlikely!(key_str.is_empty()) {
+        pykey = use_immortal!(EMPTY_UNICODE);
     } else {
         let hash = cache_hash(key_str.as_bytes());
         let map = unsafe {

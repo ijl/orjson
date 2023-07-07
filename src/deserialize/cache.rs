@@ -42,6 +42,11 @@ pub type KeyMap =
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 pub fn cache_hash(key: &[u8]) -> u64 {
+    #[cfg(feature = "intrinsics")]
+    unsafe {
+        std::intrinsics::assume(key.len() > 0);
+        std::intrinsics::assume(key.len() <= 64);
+    }
     let mut hasher = unsafe { HASH_BUILDER.get().unwrap().build_hasher() };
     hasher.write(key);
     hasher.finish()
