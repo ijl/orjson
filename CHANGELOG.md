@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 3.9.2 - 2023-07-07
+
+### Fixed
+
+- Fix the `__cause__` exception on `orjson.JSONEncodeError` possibly being
+denormalized, i.e., of type `str` instead of `Exception`.
+
+
 ## 3.9.1 - 2023-06-09
 
 ### Fixed
