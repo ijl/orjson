@@ -275,3 +275,15 @@ class TestType:
             orjson.dumps(ref, default=default)
 
         assert sys.getrefcount(ref) == 2  # one for ref, one for default
+
+    def test_default_set(self):
+        """
+        dumps() default function with set
+        """
+
+        def default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            raise TypeError
+
+        assert orjson.dumps({1, 2}, default=default) == b"[1,2]"
