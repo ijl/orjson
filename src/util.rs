@@ -125,7 +125,20 @@ macro_rules! str_hash {
     };
 }
 
-#[cfg(Py_3_10)]
+#[cfg(Py_3_12)]
+macro_rules! pydict_contains {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe {
+            pyo3_ffi::_PyDict_Contains_KnownHash(
+                pyo3_ffi::PyType_GetDict($obj1),
+                $obj2,
+                (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
+            ) == 1
+        }
+    };
+}
+
+#[cfg(all(Py_3_10, not(Py_3_12)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
