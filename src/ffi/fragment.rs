@@ -71,6 +71,9 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
     let ob = Box::new(PyTypeObject {
         ob_base: PyVarObject {
             ob_base: PyObject {
+                #[cfg(Py_3_12)]
+                ob_refcnt: pyo3_ffi::PyObjectObRefcnt { ob_refcnt: 0 },
+                #[cfg(not(Py_3_12))]
                 ob_refcnt: 0,
                 ob_type: std::ptr::addr_of_mut!(PyType_Type),
             },

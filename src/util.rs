@@ -56,6 +56,16 @@ macro_rules! str_from_slice {
     };
 }
 
+#[cfg(Py_3_12)]
+macro_rules! py_decref_without_destroy {
+    ($op:expr) => {
+        unsafe {
+            (*$op).ob_refcnt.ob_refcnt -= 1;
+        }
+    };
+}
+
+#[cfg(not(Py_3_12))]
 macro_rules! py_decref_without_destroy {
     ($op:expr) => {
         unsafe {
