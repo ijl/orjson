@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+import sys
+import os
+
+os.sched_setaffinity(os.getpid(), {0, 1})
+
+from orjson import dumps, OPT_SERIALIZE_NUMPY
+
+class Custom:
+    pass
+
+
+def default(_):
+    return None
+
+n = int(sys.argv[1]) if len(sys.argv) >= 2 else 10000
+
+obj = [[Custom()] * 1000] * 10
+for _ in range(n):
+    dumps(obj, default, OPT_SERIALIZE_NUMPY)

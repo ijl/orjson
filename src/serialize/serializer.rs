@@ -93,7 +93,7 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
         } else if ob_type == DATETIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
             ObType::Datetime
         } else {
-            pyobject_to_obtype_unlikely(obj, opts)
+            pyobject_to_obtype_unlikely(ob_type, opts)
         }
     }
 }
@@ -114,51 +114,57 @@ macro_rules! is_subclass_by_type {
     };
 }
 
-#[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
+pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: Opt) -> ObType {
     unsafe {
-        let ob_type = ob_type!(obj);
-        if ob_type == DATE_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
-            ObType::Date
-        } else if ob_type == TIME_TYPE && opt_disabled!(opts, PASSTHROUGH_DATETIME) {
-            ObType::Time
+        if ob_type == UUID_TYPE {
+            return ObType::Uuid;
         } else if ob_type == TUPLE_TYPE {
-            ObType::Tuple
-        } else if ob_type == UUID_TYPE {
-            ObType::Uuid
+            return ObType::Tuple;
         } else if ob_type == FRAGMENT_TYPE {
-            ObType::Fragment
-        } else if is_subclass_by_type!(ob_type, ENUM_TYPE) {
-            ObType::Enum
-        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
-            && is_subclass_by_flag!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
-        {
-            ObType::StrSubclass
-        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
-            && is_subclass_by_flag!(ob_type, Py_TPFLAGS_LONG_SUBCLASS)
-        {
-            ObType::Int
-        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
-            && is_subclass_by_flag!(ob_type, Py_TPFLAGS_LIST_SUBCLASS)
-        {
-            ObType::List
-        } else if opt_disabled!(opts, PASSTHROUGH_SUBCLASS)
-            && is_subclass_by_flag!(ob_type, Py_TPFLAGS_DICT_SUBCLASS)
-        {
-            ObType::Dict
-        } else if opt_disabled!(opts, PASSTHROUGH_DATACLASS)
+            return ObType::Fragment;
+        }
+
+        if opt_disabled!(opts, PASSTHROUGH_DATETIME) {
+            if ob_type == DATE_TYPE {
+                return ObType::Date;
+            } else if ob_type == TIME_TYPE {
+                return ObType::Time;
+            }
+        }
+
+        if opt_disabled!(opts, PASSTHROUGH_SUBCLASS) {
+            if is_subclass_by_flag!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS) {
+                return ObType::StrSubclass;
+            } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_LONG_SUBCLASS) {
+                return ObType::Int;
+            } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_LIST_SUBCLASS) {
+                return ObType::List;
+            } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_DICT_SUBCLASS) {
+                return ObType::Dict;
+            }
+        }
+
+        if is_subclass_by_type!(ob_type, ENUM_TYPE) {
+            return ObType::Enum;
+        }
+
+        if opt_disabled!(opts, PASSTHROUGH_DATACLASS)
             && pydict_contains!(ob_type, DATACLASS_FIELDS_STR)
         {
-            ObType::Dataclass
-        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_scalar(ob_type) {
-            ObType::NumpyScalar
-        } else if opt_enabled!(opts, SERIALIZE_NUMPY) && is_numpy_array(ob_type) {
-            ObType::NumpyArray
-        } else {
-            ObType::Unknown
+            return ObType::Dataclass;
         }
+
+        if unlikely!(opt_enabled!(opts, SERIALIZE_NUMPY)) {
+            if is_numpy_scalar(ob_type) {
+                return ObType::NumpyScalar;
+            } else if is_numpy_array(ob_type) {
+                return ObType::NumpyArray;
+            }
+        }
+
+        ObType::Unknown
     }
 }
 
