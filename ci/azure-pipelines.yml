@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2023-06-30
+  toolchain: nightly-2023-07-30
 
 jobs:
 

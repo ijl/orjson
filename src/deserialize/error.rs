@@ -61,7 +61,7 @@ impl<'a> DeserializeError<'a> {
     /// Return position of the error in the deserialized data
     #[cold]
     #[cfg(not(feature = "yyjson"))]
-    #[cfg_attr(feature = "unstable-simd", optimize(size))]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn pos(&self) -> i64 {
         if self.line == 0 || self.data.is_none() {
             return 1;

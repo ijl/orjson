@@ -38,6 +38,11 @@ unstable-simd = [
     "encoding_rs/simd-accel",
 ]
 
+no-panic = [
+    "itoa/no-panic",
+    "ryu/no-panic",
+]
+
 # Build yyjson as a backend and panic if it fails. The default is to attempt
 # to build and on failure fall back to another backend.
 yyjson = []
@@ -54,16 +59,16 @@ encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
 itoap = { version = "1", features = ["std", "simd"] }
 once_cell = { version = "1", default_features = false, features = ["race"] }
-pyo3-ffi = { version = "^0.19.1", default_features = false, features = ["extension-module"]}
+pyo3-ffi = { version = "^0.19.2", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }
 serde_json = { version = "1", default_features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default_features = false, features = ["std", "aarch64_neon"] }
-smallvec = { version = "^1.10", default_features = false, features = ["union", "write"] }
+smallvec = { version = "^1.11", default_features = false, features = ["union", "write"] }
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "^0.19.1" }
+pyo3-build-config = { version = "^0.19.2" }
 version_check = { version = "0.9" }
 
 [profile.release]
