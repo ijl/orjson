@@ -2,34 +2,27 @@
 
 set -eou pipefail
 
-yyjson_version="09ccaa449e01879e23f68d8be165e78e65334443"
+yyjson_version="5e3b26d2659287d31e2f8e10f95f95feb7e5ab3a"
 
 curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
 curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"
 
 sed -i 's/yyjson_api_inline void yyjson_doc_free/yyjson_api void yyjson_doc_free/g' include/yyjson/yyjson.h
 
-sed -i 's/has_flag(ALLOW_TRAILING_COMMAS)/false/g' include/yyjson/yyjson.c
-sed -i 's/has_flag(ALLOW_COMMENTS)/false/g' include/yyjson/yyjson.c
-sed -i 's/has_flag(STOP_WHEN_DONE)/false/g' include/yyjson/yyjson.c
-sed -i 's/has_flag(INSITU)/false/g' include/yyjson/yyjson.c
-
 sed -i 's/(flg & (YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_BIGNUM_AS_RAW)) != 0/false/g' include/yyjson/yyjson.c
-sed -i 's/(flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0/false/g' include/yyjson/yyjson.c
-sed -i 's/(flg & YYJSON_READ_ALLOW_INF_AND_NAN)/(false)/g' include/yyjson/yyjson.c
-sed -i 's/(flg & YYJSON_READ_ALLOW_INVALID_UNICODE) \!= 0/false/g' include/yyjson/yyjson.c
-
-sed -i 's/(flg & YYJSON_READ_BIGNUM_AS_RAW)/(false)/g' include/yyjson/yyjson.c
-
-sed -i 's/unlikely(pre)/false/g' include/yyjson/yyjson.c
 sed -i 's/if (pre)/if (false)/g' include/yyjson/yyjson.c
-sed -i 's/unlikely(pre && !(false))/false/g' include/yyjson/yyjson.c
 
 sed -i 's/!false/true/g' include/yyjson/yyjson.c
 sed -i 's/ && true//g' include/yyjson/yyjson.c
 sed -i 's/true && //g' include/yyjson/yyjson.c
 sed -i 's/unlikely(false)/false/g' include/yyjson/yyjson.c
 
+sed -i 's/YYJSON_TYPE_STR | YYJSON_SUBTYPE_NOESC/YYJSON_TYPE_STR/g' include/yyjson/yyjson.c
+
 sed -i 's/unlikely(pos == src)/false/g' include/yyjson/yyjson.c
 
-$(cd include/yyjson; git apply skip-utf8.patch)
+sed -i 's/    yyjson_read_err dummy_err;//g' include/yyjson/yyjson.c
+sed -i 's/    if (!err) err = &dummy_err;//g' include/yyjson/yyjson.c
+sed -i 's/likely(!alc_ptr)/!alc_ptr/g' include/yyjson/yyjson.c
+
+sed -i 's/unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))/false/g' include/yyjson/yyjson.c

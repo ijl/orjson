@@ -88,27 +88,16 @@ pub fn ahash_init() -> Box<ahash::RandomState> {
 pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
 
 #[cfg(feature = "yyjson")]
-pub static mut YYJSON_ALLOC: OnceBox<crate::yyjson::yyjson_alc> = OnceBox::new();
+pub static mut YYJSON_ALLOC: OnceBox<[u8; YYJSON_BUFFER_SIZE]> = OnceBox::new();
 
 #[cfg(feature = "yyjson")]
-pub fn yyjson_init() -> Box<crate::yyjson::yyjson_alc> {
+pub fn yyjson_init() -> Box<[u8; YYJSON_BUFFER_SIZE]> {
     unsafe {
         let buffer = std::alloc::alloc(std::alloc::Layout::from_size_align_unchecked(
             YYJSON_BUFFER_SIZE,
             64,
-        ));
-        let mut alloc = crate::yyjson::yyjson_alc {
-            malloc: None,
-            realloc: None,
-            free: None,
-            ctx: null_mut(),
-        };
-        crate::yyjson::yyjson_alc_pool_init(
-            &mut alloc,
-            buffer as *mut std::os::raw::c_void,
-            YYJSON_BUFFER_SIZE,
-        );
-        Box::new(alloc)
+        )) as *mut [u8; YYJSON_BUFFER_SIZE];
+        Box::new(*buffer)
     }
 }
 

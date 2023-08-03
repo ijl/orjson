@@ -9,13 +9,9 @@ use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut, NonNull};
 
-const YYJSON_TYPE_MASK: u8 = 0x07;
-const YYJSON_SUBTYPE_MASK: u8 = 0x18;
 const YYJSON_TAG_BIT: u8 = 8;
 
 const YYJSON_VAL_SIZE: usize = std::mem::size_of::<yyjson_val>();
-
-const TYPE_AND_SUBTYPE_MASK: u8 = YYJSON_TYPE_MASK | YYJSON_SUBTYPE_MASK;
 
 const TAG_ARRAY: u8 = 0b00000110;
 const TAG_DOUBLE: u8 = 0b00010100;
@@ -60,33 +56,59 @@ fn unsafe_yyjson_get_next(val: *mut yyjson_val) -> *mut yyjson_val {
 pub fn deserialize_yyjson(
     data: &'static str,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+    let mut err = yyjson_read_err {
+        code: YYJSON_READ_SUCCESS,
+        msg: null(),
+        pos: 0,
+    };
+    let doc = if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
+        read_doc_with_buffer(data, &mut err)
+    } else {
+        read_doc_default(data, &mut err)
+    };
+    if unlikely!(doc.is_null()) {
+        let msg: Cow<str> = unsafe { std::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
+        Err(DeserializeError::from_yyjson(msg, err.pos as i64, data))
+    } else {
+        let root = yyjson_doc_get_root(doc);
+        let ret = parse_node(root);
+        unsafe { yyjson_doc_free(doc) };
+        Ok(ret)
+    }
+}
+
+fn read_doc_default(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjson_doc {
     unsafe {
-        let allocator = if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
-            YYJSON_ALLOC.get_or_init(yyjson_init) as *const yyjson_alc
-        } else {
-            null_mut()
-        };
-        let mut err = yyjson_read_err {
-            code: YYJSON_READ_SUCCESS,
-            msg: null(),
-            pos: 0,
-        };
-        let doc: *mut yyjson_doc = yyjson_read_opts(
+        yyjson_read_opts(
             data.as_ptr() as *mut c_char,
             data.len(),
             YYJSON_READ_NOFLAG,
-            allocator,
-            &mut err,
+            null_mut(),
+            err,
+        )
+    }
+}
+
+fn read_doc_with_buffer(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjson_doc {
+    unsafe {
+        let mut allocator = crate::yyjson::yyjson_alc {
+            malloc: None,
+            realloc: None,
+            free: None,
+            ctx: null_mut(),
+        };
+        crate::yyjson::yyjson_alc_pool_init(
+            &mut allocator,
+            YYJSON_ALLOC.get_or_init(yyjson_init).as_ptr() as *mut std::os::raw::c_void,
+            YYJSON_BUFFER_SIZE,
         );
-        if unlikely!(doc.is_null()) {
-            let msg: Cow<str> = std::ffi::CStr::from_ptr(err.msg).to_string_lossy();
-            Err(DeserializeError::from_yyjson(msg, err.pos as i64, data))
-        } else {
-            let root = yyjson_doc_get_root(doc);
-            let ret = parse_node(root);
-            yyjson_doc_free(doc);
-            Ok(ret)
-        }
+        yyjson_read_opts(
+            data.as_ptr() as *mut c_char,
+            data.len(),
+            YYJSON_READ_NOFLAG,
+            std::ptr::addr_of!(allocator),
+            err,
+        )
     }
 }
 
@@ -104,7 +126,7 @@ enum ElementType {
 
 impl ElementType {
     fn from_tag(elem: *mut yyjson_val) -> Self {
-        match unsafe { (*elem).tag as u8 & TYPE_AND_SUBTYPE_MASK } {
+        match unsafe { (*elem).tag as u8 } {
             TAG_STRING => Self::String,
             TAG_UINT64 => Self::Uint64,
             TAG_INT64 => Self::Int64,
