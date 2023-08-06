@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.9.3 - 2023-08-06
+
+### Fixed
+
+- Fix compatibility with CPython 3.12.
+
+### Changed
+
+- Support i686/x86 32-bit Python installs on Windows.
 
 ## 3.9.2 - 2023-07-07
 
