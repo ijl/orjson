@@ -50,6 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.12', abi: 'cp312-cp312' },
           { version: '3.11', abi: 'cp311-cp311' },
           { version: '3.10', abi: 'cp310-cp310' },
           { version: '3.9', abi: 'cp39-cp39' },
@@ -108,6 +109,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.12' },
           { version: '3.11' },
           { version: '3.10' },
           { version: '3.9' },
