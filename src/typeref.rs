@@ -129,7 +129,6 @@ pub fn init_typerefs() {
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
-        HASH_BUILDER.get_or_init(ahash_init);
         FRAGMENT_TYPE = orjson_fragmenttype_new();
         PyDateTime_IMPORT();
         NONE = Py_None();
@@ -188,6 +187,9 @@ pub fn init_typerefs() {
         JsonEncodeError = pyo3_ffi::PyExc_TypeError;
         Py_INCREF(JsonEncodeError);
         JsonDecodeError = look_up_json_exc();
+
+        // after all type lookups
+        HASH_BUILDER.get_or_init(ahash_init);
     });
 }
 
