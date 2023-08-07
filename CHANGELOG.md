@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.9.4 - 2023-08-07
+
+### Fixed
+
+- Fix hash builder using default values.
+- Fix non-release builds of orjson copying large deserialization buffer
+from stack to heap. This was introduced in 3.9.3.
+
 ## 3.9.3 - 2023-08-06
 
 ### Fixed
