@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 3.9.5 - 2023-08-16
+
+### Fixed
+
+- Remove futex from module import and initialization path.
+
+
 ## 3.9.4 - 2023-08-07
 
 ### Fixed
@@ -7,6 +15,7 @@
 - Fix hash builder using default values.
 - Fix non-release builds of orjson copying large deserialization buffer
 from stack to heap. This was introduced in 3.9.3.
+
 
 ## 3.9.3 - 2023-08-06
 
@@ -17,6 +26,7 @@ from stack to heap. This was introduced in 3.9.3.
 ### Changed
 
 - Support i686/x86 32-bit Python installs on Windows.
+
 
 ## 3.9.2 - 2023-07-07
 
