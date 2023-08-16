@@ -1,19 +1,7 @@
 variables:
-  toolchain: nightly-2023-07-30
+  toolchain: nightly-2023-06-30
 
 jobs:
-
-- job: linux_debug
-  pool:
-    vmImage: ubuntu-22.04
-  container: quay.io/pypa/manylinux_2_28_x86_64:latest
-  variables:
-    interpreter: python3.10
-    compatibility: off
-    path: /home/vsts_azpcontainer/.local/bin:/home/vsts_azpcontainer/.cargo/bin:/opt/python/cp310-cp310/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-  steps:
-  - checkout: self
-  - template: ./azure-debug.yml
 
 - job: macos_python312_univeral2
   pool:
@@ -24,7 +12,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-beta.4'
+      versionSpec: '3.12.0-rc.1'
       addToPath: true
       allowUnstable: true
   - checkout: self
@@ -105,13 +93,13 @@ jobs:
   pool:
     vmImage: windows-2022
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-beta.4\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-rc.1\x64\python.exe
     rustup: https://win.rustup.rs/x86_64
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-beta.4'
+      versionSpec: '3.12.0-rc.1'
       addToPath: true
       allowUnstable: true
       architecture: 'x64'
@@ -202,13 +190,13 @@ jobs:
   pool:
     vmImage: windows-2022
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-beta.4\x86\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-rc.1\x86\python.exe
     rustup: https://win.rustup.rs/x86
     target: i686-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-beta.4'
+      versionSpec: '3.12.0-rc.1'
       addToPath: true
       allowUnstable: true
       architecture: 'x86'

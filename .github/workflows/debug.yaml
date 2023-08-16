@@ -1,0 +1,48 @@
+name: debug
+on: push
+jobs:
+
+  debug:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [
+          { version: "1.60" }, # MSRV
+          { version: "nightly-2023-06-30" },
+        ]
+        python: [
+          { version: '3.11', abi: 'cp311-cp311' },
+          { version: '3.7', abi: 'cp37-cp37m' },
+        ]
+    env:
+      CC: "gcc"
+      CFLAGS: "-O2 -fno-plt"
+      LDFLAGS: "-Wl,--as-needed"
+      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+    steps:
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.rust.version }} --profile minimal -y
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '${{ matrix.python.version }}'
+    - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
+
+    - uses: actions/checkout@v3
+
+    - name: build
+      run: |
+        PATH="$HOME/.cargo/bin:$PATH" maturin build --release \
+          --out=dist \
+          --profile=dev \
+          --features=yyjson \
+          --interpreter python${{ matrix.python.version }} \
+          --target=x86_64-unknown-linux-gnu
+
+    - run: python -m pip install --user dist/orjson*.whl
+    - run: python -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+
+    - run: pytest -s -rxX -v test
+    - run: ./integration/run thread
+    - run: ./integration/run http
+    - run: ./integration/run init

@@ -4,4 +4,3 @@
 
 perf record -g --delay 250 ./bench/run_func "$@"
 perf report --percent-limit 0.1
-rm -f perf.data*

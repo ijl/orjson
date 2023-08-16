@@ -71,6 +71,15 @@ cc = { version = "1" }
 pyo3-build-config = { version = "^0.19.2" }
 version_check = { version = "0.9" }
 
+[profile.dev]
+codegen-units = 1
+debug = 2
+debug-assertions = true
+incremental = false
+lto = "off"
+opt-level = 3
+overflow-checks = true
+
 [profile.release]
 codegen-units = 1
 debug = false

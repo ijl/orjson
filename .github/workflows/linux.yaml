@@ -69,8 +69,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-07-30 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-07-30-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-06-30 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-06-30-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v3
 
     - name: build-std
@@ -141,7 +141,7 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2023-07-30
+        rust-toolchain: nightly-2023-06-30
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
@@ -183,6 +183,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.12', abi: 'cp312-cp312' },
           { version: '3.11', abi: 'cp311-cp311' },
           { version: '3.10', abi: 'cp310-cp310' },
           { version: '3.9', abi: 'cp39-cp39' },
@@ -229,7 +230,7 @@ jobs:
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-07-30
+        rust-toolchain: nightly-2023-06-30
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}

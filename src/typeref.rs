@@ -77,6 +77,10 @@ pub static mut HASH_BUILDER: OnceBox<ahash::RandomState> = OnceBox::new();
 
 pub fn ahash_init() -> Box<ahash::RandomState> {
     unsafe {
+        debug_assert!(!VALUE_STR.is_null());
+        debug_assert!(!DICT_TYPE.is_null());
+        debug_assert!(!STR_TYPE.is_null());
+        debug_assert!(!BYTES_TYPE.is_null());
         Box::new(RandomState::with_seeds(
             VALUE_STR as u64,
             DICT_TYPE as u64,

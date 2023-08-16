@@ -4,6 +4,9 @@
 import sys
 import lzma
 import os
+import gc
+
+gc.disable()
 
 os.sched_setaffinity(os.getpid(), {0, 1})
 

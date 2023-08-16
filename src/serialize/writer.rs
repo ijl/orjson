@@ -26,12 +26,16 @@ impl BytesWriter {
         }
     }
 
+    pub fn bytes_ptr(&mut self) -> NonNull<PyObject> {
+        unsafe { NonNull::new_unchecked(self.bytes as *mut PyObject) }
+    }
+
     pub fn finish(&mut self) -> NonNull<PyObject> {
         unsafe {
             std::ptr::write(self.buffer_ptr(), 0);
             (*self.bytes.cast::<PyVarObject>()).ob_size = self.len as Py_ssize_t;
             self.resize(self.len);
-            NonNull::new_unchecked(self.bytes as *mut PyObject)
+            self.bytes_ptr()
         }
     }
 
