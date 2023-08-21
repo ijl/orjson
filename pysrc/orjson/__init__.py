@@ -3,9 +3,12 @@
 from .orjson import *
 from .orjson import __version__
 
+ENCODING = 'utf-8'
+
 __all__ = (
     "__version__",
     "dumps",
+    "ENCODING",
     "Fragment",
     "JSONDecodeError",
     "JSONEncodeError",
