@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::{pylong_is_unsigned, pylong_is_zero};
 use crate::serialize::error::*;
 use serde::ser::{Serialize, Serializer};
 
@@ -20,51 +21,25 @@ impl IntSerializer {
 }
 
 impl Serialize for IntSerializer {
-    #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let val = ffi!(PyLong_AsLongLong(self.ptr));
-        if val == -1 {
-            if unlikely!(!ffi!(PyErr_Occurred()).is_null()) {
-                UIntSerializer::new(self.ptr).serialize(serializer)
+        if pylong_is_zero(self.ptr) {
+            serializer.serialize_u64(0)
+        } else if pylong_is_unsigned(self.ptr) {
+            let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
+            if unlikely!(val == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                err!(SerializeError::Integer64Bits)
             } else {
-                serializer.serialize_i64(val)
+                serializer.serialize_u64(val)
             }
         } else {
-            serializer.serialize_i64(val)
-        }
-    }
-}
-
-#[repr(transparent)]
-pub struct UIntSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
-}
-
-impl UIntSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
-        UIntSerializer { ptr: ptr }
-    }
-}
-
-impl Serialize for UIntSerializer {
-    #[inline(never)]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ffi!(PyErr_Clear());
-        let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
-        if unlikely!(val == u64::MAX) {
-            if ffi!(PyErr_Occurred()).is_null() {
-                serializer.serialize_u64(val)
-            } else {
+            let val = ffi!(PyLong_AsLongLong(self.ptr));
+            if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
                 err!(SerializeError::Integer64Bits)
             }
-        } else {
-            serializer.serialize_u64(val)
+            serializer.serialize_i64(val)
         }
     }
 }
