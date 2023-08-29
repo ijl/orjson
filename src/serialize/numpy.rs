@@ -215,7 +215,10 @@ impl NumpyArray {
                 return Err(PyArrayError::UnsupportedDataType);
             }
             match ItemType::find(array, ptr) {
-                None => Err(PyArrayError::UnsupportedDataType),
+                None => {
+                    ffi!(Py_DECREF(capsule));
+                    Err(PyArrayError::UnsupportedDataType)
+                }
                 Some(kind) => {
                     let mut pyarray = NumpyArray {
                         array: array,

@@ -7,6 +7,11 @@ import pytest
 
 import orjson
 
+try:
+    import numpy
+except ImportError:
+    numpy = None  # type: ignore
+
 
 class Custom:
     def __init__(self):
@@ -275,6 +280,15 @@ class TestType:
             orjson.dumps(ref, default=default)
 
         assert sys.getrefcount(ref) == 2  # one for ref, one for default
+
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_default_numpy(self):
+        ref = numpy.array([""] * 100)
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(
+            ref, option=orjson.OPT_SERIALIZE_NUMPY, default=lambda val: val.tolist()
+        )
+        assert sys.getrefcount(ref) == refcount
 
     def test_default_set(self):
         """
