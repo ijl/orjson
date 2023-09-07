@@ -1,6 +1,18 @@
 # Changelog
 
 
+## 3.9.6 - 2023-09-07
+
+### Fixed
+
+- Fix numpy reference leak on unsupported array dtype.
+- Fix numpy.datetime64 reference handling.
+
+
+### Changd
+
+- Minor performance improvements.
+
 ## 3.9.5 - 2023-08-16
 
 ### Fixed
