@@ -175,7 +175,10 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             return nonnull!(ffi!(PyDict_New()));
         }
         let mut key = unsafe_yyjson_get_first(elem);
+        #[cfg(not(Py_3_13))]
         let dict = ffi!(_PyDict_NewPresized(len as isize));
+        #[cfg(Py_3_13)]
+        let dict = ffi!(PyDict_New());
         for _ in 0..=len - 1 {
             let val = key.add(1);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));

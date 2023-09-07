@@ -22,6 +22,21 @@ impl PyDictIter {
 impl Iterator for PyDictIter {
     type Item = (NonNull<pyo3_ffi::PyObject>, NonNull<pyo3_ffi::PyObject>);
 
+    #[cfg(Py_3_13)]
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        unsafe {
+            if pyo3_ffi::PyDict_Next(self.dict_ptr, &mut self.pos, &mut key, &mut value) == 1 {
+                Some((nonnull!(key), nonnull!(value)))
+            } else {
+                None
+            }
+        }
+    }
+
+    #[cfg(not(Py_3_13))]
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let mut key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();

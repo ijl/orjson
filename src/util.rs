@@ -139,7 +139,14 @@ macro_rules! str_hash {
     };
 }
 
-#[cfg(Py_3_12)]
+#[cfg(Py_3_13)]
+macro_rules! pydict_contains {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe { pyo3_ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
+    };
+}
+
+#[cfg(all(Py_3_12, not(Py_3_13)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
