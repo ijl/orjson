@@ -1137,9 +1137,7 @@ impl NumpyDatetimeUnit {
     fn from_pyobject(ptr: *mut PyObject) -> Self {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
-        ffi!(Py_DECREF(dtype));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
-        ffi!(Py_DECREF(descr));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
         let uni = crate::str::unicode_to_str(descr_str).unwrap();
         if uni.len() < 5 {
@@ -1147,7 +1145,7 @@ impl NumpyDatetimeUnit {
         }
         // unit descriptions are found at
         // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
-        match &uni[4..uni.len() - 1] {
+        let ret = match &uni[4..uni.len() - 1] {
             "Y" => Self::Years,
             "M" => Self::Months,
             "W" => Self::Weeks,
@@ -1163,7 +1161,10 @@ impl NumpyDatetimeUnit {
             "as" => Self::Attoseconds,
             "generic" => Self::Generic,
             _ => unreachable!(),
-        }
+        };
+        ffi!(Py_DECREF(dtype));
+        ffi!(Py_DECREF(descr));
+        ret
     }
 
     /// Return a `NumpyDatetime64Repr` for a value in array with this unit.
