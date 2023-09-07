@@ -109,10 +109,10 @@ impl Serialize for DataclassFastSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
+            if unlikely!(unsafe { ob_type!(key.as_ptr()) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key);
+            let data = unicode_to_str(key.as_ptr());
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
@@ -121,7 +121,7 @@ impl Serialize for DataclassFastSerializer {
                 continue;
             }
             let pyvalue = PyObjectSerializer::new(
-                value,
+                value.as_ptr(),
                 self.opts,
                 self.default_calls,
                 self.recursion,
@@ -173,12 +173,12 @@ impl Serialize for DataclassFallbackSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
         for (attr, field) in PyDictIter::from_pyobject(fields) {
-            let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
+            let field_type = ffi!(PyObject_GetAttr(field.as_ptr(), FIELD_TYPE_STR));
             ffi!(Py_DECREF(field_type));
             if unsafe { field_type as *mut pyo3_ffi::PyTypeObject != FIELD_TYPE } {
                 continue;
             }
-            let data = unicode_to_str(attr);
+            let data = unicode_to_str(attr.as_ptr());
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr);
             }
@@ -187,7 +187,7 @@ impl Serialize for DataclassFallbackSerializer {
                 continue;
             }
 
-            let value = ffi!(PyObject_GetAttr(self.ptr, attr));
+            let value = ffi!(PyObject_GetAttr(self.ptr, attr.as_ptr()));
             ffi!(Py_DECREF(value));
             let pyvalue = PyObjectSerializer::new(
                 value,

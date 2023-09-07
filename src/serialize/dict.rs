@@ -115,15 +115,15 @@ impl Serialize for Dict {
     {
         let mut map = serializer.serialize_map(None).unwrap();
         for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
+            if unlikely!(unsafe { ob_type!(key.as_ptr()) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let key_as_str = unicode_to_str(key);
+            let key_as_str = unicode_to_str(key.as_ptr());
             if unlikely!(key_as_str.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
             let pyvalue = PyObjectSerializer::new(
-                value,
+                value.as_ptr(),
                 self.opts,
                 self.default_calls,
                 self.recursion,
@@ -172,14 +172,14 @@ impl Serialize for DictSortedKey {
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
+            if unlikely!(unsafe { ob_type!(key.as_ptr()) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key);
+            let data = unicode_to_str(key.as_ptr());
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
-            items.push((data.unwrap(), value));
+            items.push((data.unwrap(), value.as_ptr()));
         }
 
         items.sort_unstable_by(|a, b| a.0.cmp(b.0));
@@ -336,15 +336,15 @@ impl Serialize for DictNonStrKey {
             SmallVec::with_capacity(len);
         let opts = self.opts & NOT_PASSTHROUGH;
         for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if is_type!(ob_type!(key), STR_TYPE) {
-                let uni = unicode_to_str(key);
+            if is_type!(ob_type!(key.as_ptr()), STR_TYPE) {
+                let uni = unicode_to_str(key.as_ptr());
                 if unlikely!(uni.is_none()) {
                     err!(SerializeError::InvalidStr)
                 }
-                items.push((CompactString::from(uni.unwrap()), value));
+                items.push((CompactString::from(uni.unwrap()), value.as_ptr()));
             } else {
-                match Self::pyobject_to_string(key, opts) {
-                    Ok(key_as_str) => items.push((key_as_str, value)),
+                match Self::pyobject_to_string(key.as_ptr(), opts) {
+                    Ok(key_as_str) => items.push((key_as_str, value.as_ptr())),
                     Err(err) => err!(err),
                 }
             }

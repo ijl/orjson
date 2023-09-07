@@ -393,21 +393,21 @@ pub unsafe extern "C" fn dumps(
 
     if !kwds.is_null() {
         for (arg, val) in crate::ffi::PyDictIter::from_pyobject(kwds) {
-            if arg == typeref::DEFAULT {
+            if arg.as_ptr() == typeref::DEFAULT {
                 if unlikely!(num_args & 2 == 2) {
                     return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'default'",
                     );
                 }
-                default = Some(NonNull::new_unchecked(val));
-            } else if arg == typeref::OPTION {
+                default = Some(val);
+            } else if arg.as_ptr() == typeref::OPTION {
                 if unlikely!(num_args & 3 == 3) {
                     return raise_dumps_exception_fixed(
                         "dumps() got multiple values for argument: 'option'",
                     );
                 }
-                optsptr = Some(NonNull::new_unchecked(val));
-            } else if arg.is_null() {
+                optsptr = Some(val);
+            } else if arg.as_ptr().is_null() {
                 break;
             } else {
                 return raise_dumps_exception_fixed("dumps() got an unexpected keyword argument");

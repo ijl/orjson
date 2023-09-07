@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use std::ptr::NonNull;
+
 pub struct PyDictIter {
     dict_ptr: *mut pyo3_ffi::PyObject,
     pos: isize,
@@ -18,7 +20,7 @@ impl PyDictIter {
 }
 
 impl Iterator for PyDictIter {
-    type Item = (*mut pyo3_ffi::PyObject, *mut pyo3_ffi::PyObject);
+    type Item = (NonNull<pyo3_ffi::PyObject>, NonNull<pyo3_ffi::PyObject>);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -33,7 +35,7 @@ impl Iterator for PyDictIter {
                 std::ptr::null_mut(),
             ) == 1
             {
-                Some((key, value))
+                Some((nonnull!(key), nonnull!(value)))
             } else {
                 None
             }
