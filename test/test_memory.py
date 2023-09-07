@@ -69,9 +69,7 @@ class Unsupported:
 
 
 class TestMemory:
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_loads(self):
         """
         loads() memory leak
@@ -87,9 +85,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_loads_memoryview(self):
         """
         loads() memory leak using memoryview
@@ -106,9 +102,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_dumps(self):
         """
         dumps() memory leak
@@ -126,9 +120,7 @@ class TestMemory:
         assert proc.memory_info().rss <= mem + MAX_INCREASE
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_loads_exc(self):
         """
         loads() memory leak exception without a GC pause
@@ -147,9 +139,7 @@ class TestMemory:
         assert proc.memory_info().rss <= mem + MAX_INCREASE
         gc.enable()
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_dumps_exc(self):
         """
         dumps() memory leak exception without a GC pause
@@ -169,9 +159,7 @@ class TestMemory:
         assert proc.memory_info().rss <= mem + MAX_INCREASE
         gc.enable()
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_dumps_default(self):
         """
         dumps() default memory leak
@@ -196,9 +184,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_dumps_dataclass(self):
         """
         dumps() dataclass memory leak
@@ -217,7 +203,7 @@ class TestMemory:
 
     @pytest.mark.skipif(
         psutil is None or pytz is None,
-        reason="psutil install broken on win, python3.9, Azure",
+        reason="psutil not installed",
     )
     def test_memory_dumps_pytz_tzinfo(self):
         """
@@ -236,9 +222,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_loads_keys(self):
         """
         loads() memory leak with number of keys causing cache eviction
@@ -257,9 +241,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_memory_dumps_numpy(self):
         """
@@ -278,9 +260,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     @pytest.mark.skipif(pandas is None, reason="pandas is not installed")
     def test_memory_dumps_pandas(self):
         """
@@ -299,9 +279,7 @@ class TestMemory:
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
-    @pytest.mark.skipif(
-        psutil is None, reason="psutil install broken on win, python3.9, Azure"
-    )
+    @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_dumps_fragment(self):
         """
         dumps() Fragment memory leak

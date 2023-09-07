@@ -37,6 +37,8 @@ steps:
   displayName: install universal2
 
 - bash: pytest -s -rxX -v test
+  env:
+    PYTHONMALLOC: "debug"
   displayName: pytest
 - bash: ./integration/run thread
   displayName: thread

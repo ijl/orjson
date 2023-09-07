@@ -29,6 +29,8 @@ pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
         );
         pykey = entry.get();
     }
+    debug_assert!(ffi!(Py_REFCNT(pykey)) >= 1);
+    debug_assert!(unsafe { (*pykey.cast::<pyo3_ffi::PyASCIIObject>()).hash != -1 });
     pykey
 }
 

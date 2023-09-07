@@ -39,14 +39,16 @@ impl Serialize for EnumSerializer {
         S: Serializer,
     {
         let value = ffi!(PyObject_GetAttr(self.ptr, VALUE_STR));
-        ffi!(Py_DECREF(value));
-        PyObjectSerializer::new(
+        debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
+        let ret = PyObjectSerializer::new(
             value,
             self.opts,
             self.default_calls,
             self.recursion,
             self.default,
         )
-        .serialize(serializer)
+        .serialize(serializer);
+        ffi!(Py_DECREF(value));
+        ret
     }
 }

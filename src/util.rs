@@ -57,18 +57,22 @@ macro_rules! str_from_slice {
 }
 
 #[cfg(Py_3_12)]
-macro_rules! py_decref_without_destroy {
+macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
-            (*$op).ob_refcnt.ob_refcnt -= 1;
+            if crate::ffi::_Py_IsImmortal($op) == 0 {
+                debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
+                (*$op).ob_refcnt.ob_refcnt -= 1;
+            }
         }
     };
 }
 
 #[cfg(not(Py_3_12))]
-macro_rules! py_decref_without_destroy {
+macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
+            debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
             (*$op).ob_refcnt -= 1;
         }
     };

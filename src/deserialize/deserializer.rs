@@ -8,6 +8,7 @@ use std::ptr::NonNull;
 pub fn deserialize(
     ptr: *mut pyo3_ffi::PyObject,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+    debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
     let buffer = read_input_to_buf(ptr)?;
 
     if unlikely!(buffer.len() == 2) {

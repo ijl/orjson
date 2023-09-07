@@ -208,8 +208,7 @@ fn _init_typerefs_impl() -> bool {
 unsafe fn look_up_json_exc() -> *mut PyObject {
     let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
     let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char)
-        as *mut PyObject;
+    let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char);
     let res = pyo3_ffi::PyErr_NewException(
         "orjson.JSONDecodeError\0".as_ptr() as *const c_char,
         ptr,

@@ -136,8 +136,8 @@ impl<'de> Visitor<'de> for JsonValue {
                     str_hash!(pykey),
                 )
             };
-            py_decref_without_destroy!(pykey);
-            py_decref_without_destroy!(pyval.as_ptr());
+            reverse_pydict_incref!(pykey);
+            reverse_pydict_incref!(pyval.as_ptr());
         }
         Ok(nonnull!(dict_ptr))
     }

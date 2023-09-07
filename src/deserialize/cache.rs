@@ -22,9 +22,9 @@ impl CachedKey {
             ptr: ptr as *mut c_void,
         }
     }
-
     pub fn get(&mut self) -> *mut pyo3_ffi::PyObject {
         let ptr = self.ptr as *mut pyo3_ffi::PyObject;
+        debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
         ffi!(Py_INCREF(ptr));
         ptr
     }

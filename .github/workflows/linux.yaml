@@ -31,6 +31,9 @@ jobs:
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
     - run: pytest -s -rxX -v test
+      env:
+        PYTHONMALLOC: "debug"
+
     - run: ./integration/run thread
     - run: ./integration/run http
     - run: ./integration/run init
@@ -69,8 +72,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-06-30 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-06-30-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-08-30 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-08-30-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v3
 
     - name: build-std
@@ -91,6 +94,9 @@ jobs:
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
 
     - run: pytest -s -rxX -v test
+      env:
+        PYTHONMALLOC: "debug"
+
     - run: ./integration/run thread
     - run: ./integration/run http
     - run: ./integration/run init
@@ -141,7 +147,7 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2023-06-30
+        rust-toolchain: nightly-2023-08-30
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
@@ -230,7 +236,7 @@ jobs:
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-06-30
+        rust-toolchain: nightly-2023-08-30
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}

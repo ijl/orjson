@@ -293,8 +293,10 @@ impl DictNonStrKey {
             }
             ObType::Enum => {
                 let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
+                debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
+                let ret = Self::pyobject_to_string(value, opts);
                 ffi!(Py_DECREF(value));
-                Self::pyobject_to_string(value, opts)
+                ret
             }
             ObType::Str => {
                 // because of ObType::Enum

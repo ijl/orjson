@@ -48,7 +48,7 @@ impl Serialize for DataclassGenericSerializer {
         }
         let dict = ffi!(PyObject_GetAttr(self.ptr, DICT_STR));
         let ob_type = ob_type!(self.ptr);
-        if unlikely!(dict.is_null() || pydict_contains!(ob_type, SLOTS_STR)) {
+        if unlikely!(dict.is_null()) {
             ffi!(PyErr_Clear());
             DataclassFallbackSerializer::new(
                 self.ptr,
@@ -58,16 +58,28 @@ impl Serialize for DataclassGenericSerializer {
                 self.default,
             )
             .serialize(serializer)
-        } else {
+        } else if pydict_contains!(ob_type, SLOTS_STR) {
+            let ret = DataclassFallbackSerializer::new(
+                self.ptr,
+                self.opts,
+                self.default_calls,
+                self.recursion,
+                self.default,
+            )
+            .serialize(serializer);
             ffi!(Py_DECREF(dict));
-            DataclassFastSerializer::new(
+            ret
+        } else {
+            let ret = DataclassFastSerializer::new(
                 dict,
                 self.opts,
                 self.default_calls,
                 self.recursion,
                 self.default,
             )
-            .serialize(serializer)
+            .serialize(serializer);
+            ffi!(Py_DECREF(dict));
+            ret
         }
     }
 }
@@ -166,6 +178,7 @@ impl Serialize for DataclassFallbackSerializer {
         S: Serializer,
     {
         let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
+        debug_assert!(ffi!(Py_REFCNT(fields)) >= 2);
         ffi!(Py_DECREF(fields));
         let len = ffi!(Py_SIZE(fields)) as usize;
         if unlikely!(len == 0) {
@@ -174,6 +187,7 @@ impl Serialize for DataclassFallbackSerializer {
         let mut map = serializer.serialize_map(None).unwrap();
         for (attr, field) in PyDictIter::from_pyobject(fields) {
             let field_type = ffi!(PyObject_GetAttr(field.as_ptr(), FIELD_TYPE_STR));
+            debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);
             ffi!(Py_DECREF(field_type));
             if unsafe { field_type as *mut pyo3_ffi::PyTypeObject != FIELD_TYPE } {
                 continue;
@@ -188,6 +202,7 @@ impl Serialize for DataclassFallbackSerializer {
             }
 
             let value = ffi!(PyObject_GetAttr(self.ptr, attr.as_ptr()));
+            debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
             ffi!(Py_DECREF(value));
             let pyvalue = PyObjectSerializer::new(
                 value,

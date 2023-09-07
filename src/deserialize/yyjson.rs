@@ -185,8 +185,8 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             let _ = unsafe {
                 pyo3_ffi::_PyDict_SetItem_KnownHash(dict, pykey, pyval, str_hash!(pykey))
             };
-            py_decref_without_destroy!(pykey);
-            py_decref_without_destroy!(pyval);
+            reverse_pydict_incref!(pykey);
+            reverse_pydict_incref!(pyval);
         }
         nonnull!(dict)
     }

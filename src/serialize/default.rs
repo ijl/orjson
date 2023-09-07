@@ -58,7 +58,7 @@ impl Serialize for DefaultSerializer {
                         callable.as_ptr(),
                         std::ptr::addr_of!(self.ptr),
                         pyo3_ffi::PyVectorcall_NARGS(1) as usize,
-                        std::ptr::null_mut() as *mut pyo3_ffi::PyObject,
+                        std::ptr::null_mut(),
                     )
                 };
                 if unlikely!(default_obj.is_null()) {

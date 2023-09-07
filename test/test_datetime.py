@@ -208,7 +208,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04-04:00"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_pendulum_utc(self):
         """
         datetime.datetime UTC
@@ -252,7 +252,7 @@ class TestDatetime:
             == b'["2018-01-01T02:03:04+08:00"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_pendulum_positive(self):
         """
         datetime.datetime positive UTC
@@ -291,7 +291,7 @@ class TestDatetime:
             == b'["2018-06-01T02:03:04-04:00"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_pendulum_negative_dst(self):
         """
         datetime.datetime negative UTC DST
@@ -360,7 +360,7 @@ class TestDatetime:
             == b'["2018-12-01T02:03:04-05:00"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_pendulum_negative_non_dst(self):
         """
         datetime.datetime negative UTC non-DST
@@ -429,7 +429,7 @@ class TestDatetime:
             == b'["2018-12-01T02:03:04+10:30"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_pendulum_partial_hour(self):
         """
         datetime.datetime UTC offset partial hour
@@ -452,7 +452,7 @@ class TestDatetime:
             == b'["2018-12-01T02:03:04+10:30"]'
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_partial_second_pendulum_supported(self):
         """
         datetime.datetime UTC offset round seconds
@@ -663,7 +663,7 @@ class TestDatetime:
             in AMSTERDAM_1937_DATETIMES_WITH_Z
         )
 
-    @pytest.mark.skipif(pendulum is None, reason="pendulum install broken on win")
+    @pytest.mark.skipif(pendulum is None, reason="pendulum not installed")
     def test_datetime_roundtrip(self):
         """
         datetime.datetime parsed by pendulum

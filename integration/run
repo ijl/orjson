@@ -6,6 +6,8 @@ _dir="$(dirname "${BASH_SOURCE[0]}")"
 
 to_run="${@:-thread http init}"
 
+export PYTHONMALLOC="debug"
+
 if [[ $to_run == *"thread"* ]]; then
 	"${_dir}"/thread
 fi

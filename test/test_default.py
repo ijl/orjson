@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import datetime
 import sys
 import uuid
 
@@ -264,10 +265,24 @@ class TestType:
         def default(obj):
             return obj
 
+        refcount = sys.getrefcount(ref)
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
+        assert sys.getrefcount(ref) == refcount
 
-    def test_reference_cleanup_default(self):
+    def test_reference_cleanup_default_custom_pass(self):
+        ref = Custom()
+
+        def default(obj):
+            if isinstance(ref, Custom):
+                return str(ref)
+            raise TypeError
+
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(ref, default=default)
+        assert sys.getrefcount(ref) == refcount
+
+    def test_reference_cleanup_default_custom_error(self):
         """
         references to encoded objects are cleaned up
         """
@@ -276,10 +291,31 @@ class TestType:
         def default(obj):
             raise TypeError
 
+        refcount = sys.getrefcount(ref)
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
+        assert sys.getrefcount(ref) == refcount
 
-        assert sys.getrefcount(ref) == 2  # one for ref, one for default
+    def test_reference_cleanup_default_subclass(self):
+        ref = datetime.datetime(1970, 1, 1, 0, 0, 0)
+
+        def default(obj):
+            if isinstance(ref, datetime.datetime):
+                return repr(ref)
+            raise TypeError
+
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(ref, option=orjson.OPT_PASSTHROUGH_DATETIME, default=default)
+        assert sys.getrefcount(ref) == refcount
+
+    def test_reference_cleanup_default_subclass_lambda(self):
+        ref = uuid.uuid4()
+
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(
+            ref, option=orjson.OPT_PASSTHROUGH_DATETIME, default=lambda val: str(val)
+        )
+        assert sys.getrefcount(ref) == refcount
 
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_default_numpy(self):
