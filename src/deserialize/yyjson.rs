@@ -91,22 +91,11 @@ fn read_doc_default(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjso
 
 fn read_doc_with_buffer(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjson_doc {
     unsafe {
-        let mut allocator = crate::yyjson::yyjson_alc {
-            malloc: None,
-            realloc: None,
-            free: None,
-            ctx: null_mut(),
-        };
-        crate::yyjson::yyjson_alc_pool_init(
-            &mut allocator,
-            YYJSON_ALLOC.get_or_init(yyjson_init).as_ptr() as *mut std::os::raw::c_void,
-            YYJSON_BUFFER_SIZE,
-        );
         yyjson_read_opts(
             data.as_ptr() as *mut c_char,
             data.len(),
             YYJSON_READ_NOFLAG,
-            std::ptr::addr_of!(allocator),
+            &YYJSON_ALLOC.get_or_init(yyjson_init).alloc,
             err,
         )
     }

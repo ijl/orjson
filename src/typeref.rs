@@ -6,7 +6,7 @@ use once_cell::race::{OnceBool, OnceBox};
 use pyo3_ffi::*;
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_void};
 use std::ptr::{null_mut, NonNull};
 
 pub struct NumpyTypes {
@@ -94,28 +94,41 @@ pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
 
 #[cfg(feature = "yyjson")]
 #[repr(align(64))]
-pub struct YYJSONBuffer(UnsafeCell<MaybeUninit<[u8; YYJSON_BUFFER_SIZE]>>);
+struct YYJSONBuffer(UnsafeCell<MaybeUninit<[u8; YYJSON_BUFFER_SIZE]>>);
 
 #[cfg(feature = "yyjson")]
-impl YYJSONBuffer {
-    pub(crate) fn as_ptr(&self) -> *mut u8 {
-        self.0.get().cast::<u8>()
-    }
+pub struct YYJSONAlloc {
+    pub alloc: crate::yyjson::yyjson_alc,
+    _buffer: Box<YYJSONBuffer>,
 }
 
 #[cfg(feature = "yyjson")]
-pub static mut YYJSON_ALLOC: OnceBox<YYJSONBuffer> = OnceBox::new();
+pub static mut YYJSON_ALLOC: OnceBox<YYJSONAlloc> = OnceBox::new();
 
 #[cfg(feature = "yyjson")]
-pub fn yyjson_init() -> Box<YYJSONBuffer> {
+pub fn yyjson_init() -> Box<YYJSONAlloc> {
     // Using unsafe to ensure allocation happens on the heap without going through the stack
     // so we don't stack overflow in debug mode. Once rust-lang/rust#63291 is stable (Box::new_uninit)
     // we can use that instead.
     let layout = std::alloc::Layout::new::<YYJSONBuffer>();
+    let buffer = unsafe { Box::from_raw(std::alloc::alloc(layout).cast::<YYJSONBuffer>()) };
+    let mut alloc = crate::yyjson::yyjson_alc {
+        malloc: None,
+        realloc: None,
+        free: None,
+        ctx: null_mut(),
+    };
     unsafe {
-        let buffer = std::alloc::alloc(layout);
-        Box::from_raw(buffer.cast::<YYJSONBuffer>())
+        crate::yyjson::yyjson_alc_pool_init(
+            &mut alloc,
+            buffer.0.get().cast::<c_void>(),
+            YYJSON_BUFFER_SIZE,
+        );
     }
+    Box::new(YYJSONAlloc {
+        alloc,
+        _buffer: buffer,
+    })
 }
 
 #[allow(non_upper_case_globals)]
