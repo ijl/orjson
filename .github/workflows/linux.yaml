@@ -58,7 +58,6 @@ jobs:
           { version: '3.10', abi: 'cp310-cp310' },
           { version: '3.9', abi: 'cp39-cp39' },
           { version: '3.8', abi: 'cp38-cp38' },
-          { version: '3.7', abi: 'cp37-cp37m' },
         ]
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -120,7 +119,6 @@ jobs:
           { version: '3.10' },
           { version: '3.9' },
           { version: '3.8' },
-          { version: '3.7' },
         ]
         platform:
           - target: aarch64-unknown-linux-musl
@@ -194,7 +192,6 @@ jobs:
           { version: '3.10', abi: 'cp310-cp310' },
           { version: '3.9', abi: 'cp39-cp39' },
           { version: '3.8', abi: 'cp38-cp38' },
-          { version: '3.7', abi: 'cp37-cp37m' },
         ]
         target: [
           {

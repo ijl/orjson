@@ -13,7 +13,7 @@ jobs:
         ]
         python: [
           { version: '3.11', abi: 'cp311-cp311' },
-          { version: '3.7', abi: 'cp37-cp37m' },
+          { version: '3.8', abi: 'cp38-cp38' },
         ]
     env:
       CC: "gcc"

@@ -78,30 +78,14 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         let dumps_doc =
             "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
 
-        let wrapped_dumps: PyMethodDef;
-
-        #[cfg(Py_3_8)]
-        {
-            wrapped_dumps = PyMethodDef {
-                ml_name: "dumps\0".as_ptr() as *const c_char,
-                ml_meth: PyMethodDefPointer {
-                    _PyCFunctionFastWithKeywords: dumps,
-                },
-                ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
-                ml_doc: dumps_doc.as_ptr() as *const c_char,
-            };
-        }
-        #[cfg(not(Py_3_8))]
-        {
-            wrapped_dumps = PyMethodDef {
-                ml_name: "dumps\0".as_ptr() as *const c_char,
-                ml_meth: PyMethodDefPointer {
-                    PyCFunctionWithKeywords: dumps,
-                },
-                ml_flags: METH_VARARGS | METH_KEYWORDS,
-                ml_doc: dumps_doc.as_ptr() as *const c_char,
-            };
-        }
+        let wrapped_dumps = PyMethodDef {
+            ml_name: "dumps\0".as_ptr() as *const c_char,
+            ml_meth: PyMethodDefPointer {
+                _PyCFunctionFastWithKeywords: dumps,
+            },
+            ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
+            ml_doc: dumps_doc.as_ptr() as *const c_char,
+        };
 
         let func = PyCFunction_NewEx(
             Box::into_raw(Box::new(wrapped_dumps)),
@@ -305,7 +289,6 @@ pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut
     }
 }
 
-#[cfg(Py_3_8)]
 #[no_mangle]
 pub unsafe extern "C" fn dumps(
     _self: *mut PyObject,
@@ -365,74 +348,6 @@ pub unsafe extern "C" fn dumps(
     }
 
     match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
-        Ok(val) => val.as_ptr(),
-        Err(err) => raise_dumps_exception_dynamic(&err),
-    }
-}
-
-#[cfg(not(Py_3_8))]
-#[no_mangle]
-pub unsafe extern "C" fn dumps(
-    _self: *mut PyObject,
-    args: *mut PyObject,
-    kwds: *mut PyObject,
-) -> *mut PyObject {
-    let mut default: Option<NonNull<PyObject>> = None;
-    let mut optsptr: Option<NonNull<PyObject>> = None;
-
-    let obj = PyTuple_GET_ITEM(args, 0);
-
-    let num_args = Py_SIZE(args);
-    if unlikely!(num_args == 0) {
-        return raise_dumps_exception_fixed(
-            "dumps() missing 1 required positional argument: 'obj'",
-        );
-    }
-    if num_args & 2 == 2 {
-        default = Some(NonNull::new_unchecked(PyTuple_GET_ITEM(args, 1)));
-    }
-    if num_args & 3 == 3 {
-        optsptr = Some(NonNull::new_unchecked(PyTuple_GET_ITEM(args, 2)));
-    }
-
-    if !kwds.is_null() {
-        for (arg, val) in crate::ffi::PyDictIter::from_pyobject(kwds) {
-            if arg.as_ptr() == typeref::DEFAULT {
-                if unlikely!(num_args & 2 == 2) {
-                    return raise_dumps_exception_fixed(
-                        "dumps() got multiple values for argument: 'default'",
-                    );
-                }
-                default = Some(val);
-            } else if arg.as_ptr() == typeref::OPTION {
-                if unlikely!(num_args & 3 == 3) {
-                    return raise_dumps_exception_fixed(
-                        "dumps() got multiple values for argument: 'option'",
-                    );
-                }
-                optsptr = Some(val);
-            } else if arg.as_ptr().is_null() {
-                break;
-            } else {
-                return raise_dumps_exception_fixed("dumps() got an unexpected keyword argument");
-            }
-        }
-    }
-
-    let mut optsbits: i32 = 0;
-    if let Some(opts) = optsptr {
-        if opts.as_ptr() == typeref::NONE {
-        } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
-            return raise_dumps_exception_fixed("Invalid opts");
-        } else {
-            optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-            if !(0..=opt::MAX_OPT).contains(&optsbits) {
-                return raise_dumps_exception_fixed("Invalid opts");
-            }
-        }
-    }
-
-    match crate::serialize::serialize(obj, default, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
         Err(err) => raise_dumps_exception_dynamic(&err),
     }
