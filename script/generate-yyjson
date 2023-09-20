@@ -22,4 +22,4 @@ bindgen \
     --allowlist-type=yyjson_val \
     --allowlist-var=YYJSON_READ_NOFLAG \
     --allowlist-var=YYJSON_READ_SUCCESS \
-    > "${_repo}/src/yyjson.rs"
+    > "${_repo}/src/ffi/yyjson.rs"

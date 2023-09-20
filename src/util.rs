@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+pub const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
+
 macro_rules! is_type {
     ($obj_ptr:expr, $type_ptr:expr) => {
         unsafe { $obj_ptr == $type_ptr }
@@ -9,6 +11,30 @@ macro_rules! is_type {
 macro_rules! ob_type {
     ($obj:expr) => {
         unsafe { (*$obj).ob_type }
+    };
+}
+
+macro_rules! is_class_by_type {
+    ($ob_type:expr, $type_ptr:ident) => {
+        unsafe { $ob_type == $type_ptr }
+    };
+}
+
+macro_rules! is_subclass_by_flag {
+    ($ob_type:expr, $flag:ident) => {
+        unsafe { (((*$ob_type).tp_flags & pyo3_ffi::$flag) != 0) }
+    };
+}
+
+macro_rules! is_subclass_by_type {
+    ($ob_type:expr, $type:ident) => {
+        unsafe {
+            (*($ob_type as *mut pyo3_ffi::PyTypeObject))
+                .ob_base
+                .ob_base
+                .ob_type
+                == $type
+        }
     };
 }
 

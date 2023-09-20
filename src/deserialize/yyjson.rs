@@ -2,9 +2,9 @@
 
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
+use crate::ffi::yyjson::*;
 use crate::str::*;
 use crate::typeref::*;
-use crate::yyjson::*;
 use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut, NonNull};

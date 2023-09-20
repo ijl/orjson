@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::DeserializeError;
-use crate::error::INVALID_STR;
 use crate::ffi::*;
 use crate::str::*;
 use crate::typeref::*;
+use crate::util::INVALID_STR;
 use std::borrow::Cow;
 use std::os::raw::c_char;
 

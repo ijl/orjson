@@ -389,31 +389,12 @@ where
     type Ok = ();
     type Error = Error;
 
-    #[inline(always)]
-    fn serialize_entry<K, V>(&mut self, key: &K, value: &V) -> Result<()>
+    fn serialize_entry<K, V>(&mut self, _key: &K, _value: &V) -> Result<()>
     where
         K: ?Sized + Serialize,
         V: ?Sized + Serialize,
     {
-        self.ser
-            .formatter
-            .begin_object_key(&mut self.ser.writer, self.state == State::First)
-            .map_err(Error::io)?;
-        key.serialize(MapKeySerializer { ser: self.ser })?;
-
-        self.ser
-            .formatter
-            .end_object_key(&mut self.ser.writer)
-            .map_err(Error::io)?;
-        self.ser
-            .formatter
-            .begin_object_value(&mut self.ser.writer)
-            .map_err(Error::io)?;
-        value.serialize(&mut *self.ser)?;
-        self.ser
-            .formatter
-            .end_object_value(&mut self.ser.writer)
-            .map_err(Error::io)
+        unreachable!()
     }
 
     #[inline]

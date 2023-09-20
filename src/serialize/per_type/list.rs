@@ -3,7 +3,7 @@
 use crate::ffi::PyListIter;
 use crate::opt::*;
 use crate::serialize::error::*;
-use crate::serialize::serializer::*;
+use crate::serialize::serializer::{PyObjectSerializer, RECURSION_LIMIT};
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;

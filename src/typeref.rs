@@ -98,7 +98,7 @@ struct YYJSONBuffer(UnsafeCell<MaybeUninit<[u8; YYJSON_BUFFER_SIZE]>>);
 
 #[cfg(feature = "yyjson")]
 pub struct YYJSONAlloc {
-    pub alloc: crate::yyjson::yyjson_alc,
+    pub alloc: crate::ffi::yyjson::yyjson_alc,
     _buffer: Box<YYJSONBuffer>,
 }
 
@@ -112,14 +112,14 @@ pub fn yyjson_init() -> Box<YYJSONAlloc> {
     // we can use that instead.
     let layout = std::alloc::Layout::new::<YYJSONBuffer>();
     let buffer = unsafe { Box::from_raw(std::alloc::alloc(layout).cast::<YYJSONBuffer>()) };
-    let mut alloc = crate::yyjson::yyjson_alc {
+    let mut alloc = crate::ffi::yyjson::yyjson_alc {
         malloc: None,
         realloc: None,
         free: None,
         ctx: null_mut(),
     };
     unsafe {
-        crate::yyjson::yyjson_alc_pool_init(
+        crate::ffi::yyjson::yyjson_alc_pool_init(
             &mut alloc,
             buffer.0.get().cast::<c_void>(),
             YYJSON_BUFFER_SIZE,

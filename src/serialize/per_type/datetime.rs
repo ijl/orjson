@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 use crate::serialize::error::*;
+use crate::serialize::per_type::datetimelike::{
+    DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
+};
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 

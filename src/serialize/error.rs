@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::error::INVALID_STR;
 use std::ffi::CStr;
 use std::ptr::NonNull;
 
@@ -33,7 +32,7 @@ impl std::fmt::Display for SerializeError {
             }
             SerializeError::Integer53Bits => write!(f, "Integer exceeds 53-bit range"),
             SerializeError::Integer64Bits => write!(f, "Integer exceeds 64-bit range"),
-            SerializeError::InvalidStr => write!(f, "{}", INVALID_STR),
+            SerializeError::InvalidStr => write!(f, "{}", crate::util::INVALID_STR),
             SerializeError::InvalidFragment => write!(f, "orjson.Fragment's content is not of type bytes or str"),
             SerializeError::KeyMustBeStr => write!(f, "Dict key must be str"),
             SerializeError::RecursionLimit => write!(f, "Recursion limit reached"),

@@ -19,15 +19,11 @@
 mod util;
 
 mod deserialize;
-mod error;
 mod ffi;
 mod opt;
 mod serialize;
 mod str;
 mod typeref;
-
-#[cfg(feature = "yyjson")]
-mod yyjson;
 
 use pyo3_ffi::*;
 use std::os::raw::c_char;

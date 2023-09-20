@@ -2,12 +2,12 @@
 
 use crate::ffi::PyDictIter;
 use crate::opt::*;
-use crate::serialize::datetime::*;
-use crate::serialize::datetimelike::*;
 use crate::serialize::error::*;
-use crate::serialize::serializer::pyobject_to_obtype;
-use crate::serialize::serializer::*;
-use crate::serialize::uuid::*;
+use crate::serialize::per_type::datetimelike::{DateTimeBuffer, DateTimeLike};
+use crate::serialize::per_type::*;
+use crate::serialize::serializer::{
+    pyobject_to_obtype, ObType, PyObjectSerializer, RECURSION_LIMIT,
+};
 use crate::str::*;
 use crate::typeref::*;
 use compact_str::CompactString;

@@ -8,6 +8,8 @@ mod fragment;
 mod immortal;
 mod list;
 mod long;
+#[cfg(feature = "yyjson")]
+pub mod yyjson;
 
 pub use buffer::*;
 pub use bytes::*;

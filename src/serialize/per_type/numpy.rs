@@ -1,7 +1,10 @@
 use crate::opt::*;
-use crate::serialize::datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
-use crate::serialize::default::*;
+
 use crate::serialize::error::*;
+use crate::serialize::per_type::datetimelike::{
+    DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
+};
+use crate::serialize::per_type::*;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use pyo3_ffi::*;
