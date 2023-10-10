@@ -8,8 +8,8 @@ jobs:
       fail-fast: false
       matrix:
         rust: [
-          { version: "1.60" }, # MSRV
-          { version: "nightly-2023-08-30" },
+          { version: "1.65" }, # MSRV
+          { version: "nightly-2023-10-10" },
         ]
         python: [
           { version: '3.11', abi: 'cp311-cp311' },
@@ -28,7 +28,7 @@ jobs:
         python-version: '${{ matrix.python.version }}'
     - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: build
       run: |

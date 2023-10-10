@@ -15,6 +15,24 @@ class TestCircular:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
 
+    def test_circular_dict_sort_keys(self):
+        """
+        dumps() circular reference dict OPT_SORT_KEYS
+        """
+        obj = {}  # type: ignore
+        obj["obj"] = obj
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(obj, option=orjson.OPT_SORT_KEYS)
+
+    def test_circular_dict_non_str_keys(self):
+        """
+        dumps() circular reference dict OPT_NON_STR_KEYS
+        """
+        obj = {}  # type: ignore
+        obj["obj"] = obj
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS)
+
     def test_circular_list(self):
         """
         dumps() circular reference list
@@ -32,3 +50,21 @@ class TestCircular:
         obj["list"] = [{"obj": obj}]
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj)
+
+    def test_circular_nested_sort_keys(self):
+        """
+        dumps() circular reference nested dict, list OPT_SORT_KEYS
+        """
+        obj = {}  # type: ignore
+        obj["list"] = [{"obj": obj}]
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(obj, option=orjson.OPT_SORT_KEYS)
+
+    def test_circular_nested_non_str_keys(self):
+        """
+        dumps() circular reference nested dict, list OPT_NON_STR_KEYS
+        """
+        obj = {}  # type: ignore
+        obj["list"] = [{"obj": obj}]
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS)

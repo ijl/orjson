@@ -5,7 +5,7 @@ authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
-rust-version = "1.60"
+rust-version = "1.65"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
@@ -50,9 +50,9 @@ yyjson = []
 [dependencies]
 ahash = { version = "0.8", default_features = false }
 arrayvec = { version = "0.7", default_features = false, features = ["std", "serde"] }
-associative-cache = { version = "1", default_features = false }
+associative-cache = { version = "2", default_features = false }
 beef = { version = "0.5", default_features = false, features = ["impl_serde"] }
-bytecount = { version = "^0.6.3", default_features = false, features = ["runtime-dispatch-simd"] }
+bytecount = { version = "^0.6.4", default_features = false, features = ["runtime-dispatch-simd"] }
 chrono = { version = "^0.4.24", default_features = false }
 compact_str = { version = "0.7", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }

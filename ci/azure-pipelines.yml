@@ -1,5 +1,5 @@
 variables:
-  toolchain: nightly-2023-08-30
+  toolchain: nightly-2023-10-10
 
 jobs:
 
@@ -12,7 +12,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-rc.1'
+      versionSpec: '3.12.0'
       addToPath: true
       allowUnstable: true
   - checkout: self
@@ -79,13 +79,13 @@ jobs:
   pool:
     vmImage: windows-2022
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-rc.1\x64\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.12.0\x64\python.exe
     rustup: https://win.rustup.rs/x86_64
     target: x86_64-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-rc.1'
+      versionSpec: '3.12.0'
       addToPath: true
       allowUnstable: true
       architecture: 'x64'
@@ -160,13 +160,13 @@ jobs:
   pool:
     vmImage: windows-2022
   variables:
-    interpreter: C:\hostedtoolcache\windows\Python\3.12.0-rc.1\x86\python.exe
+    interpreter: C:\hostedtoolcache\windows\Python\3.12.0\x86\python.exe
     rustup: https://win.rustup.rs/x86
     target: i686-pc-windows-msvc
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.12.0-rc.1'
+      versionSpec: '3.12.0'
       addToPath: true
       allowUnstable: true
       architecture: 'x86'

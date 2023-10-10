@@ -1183,7 +1183,7 @@ Probably not.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.60
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.65
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
@@ -1195,7 +1195,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2023-08-30` and stable 1.60. It
+The project's own CI tests against `nightly-2023-10-10` and stable 1.65. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

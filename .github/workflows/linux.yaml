@@ -7,12 +7,12 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      RUST_TOOLCHAIN: "1.60" # MSRV
+      RUST_TOOLCHAIN: "1.65" # MSRV
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $RUST_TOOLCHAIN -y
     - run: rustup default $RUST_TOOLCHAIN
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
@@ -71,12 +71,11 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-08-30 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-08-30-x86_64-unknown-linux-gnu
-    - uses: actions/checkout@v3
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-10-10 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2023-10-10-x86_64-unknown-linux-gnu
+    - uses: actions/checkout@v4
 
     - name: build-std
-      if: matrix.target.arch != 'aarch64'
       run: |
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -128,10 +127,9 @@ jobs:
             arch: x86_64
             platform: linux/amd64
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: build-std
-      if: matrix.target.arch != 'aarch64'
       run: |
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -145,7 +143,7 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2023-08-30
+        rust-toolchain: nightly-2023-10-10
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
@@ -153,7 +151,7 @@ jobs:
 
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
-      uses: docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@v3
       with:
         image: tonistiigi/binfmt:qemu-v7.0.0
         platforms: ${{ matrix.platform.platform }}
@@ -216,10 +214,9 @@ jobs:
           },
         ]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: build-std
-      if: matrix.target.arch != 'aarch64'
       run: |
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -233,7 +230,7 @@ jobs:
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-08-30
+        rust-toolchain: nightly-2023-10-10
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}
