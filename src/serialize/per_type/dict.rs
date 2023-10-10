@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::PyDictIter;
 use crate::opt::*;
 use crate::serialize::error::*;
 use crate::serialize::per_type::datetimelike::{DateTimeBuffer, DateTimeLike};
@@ -114,16 +113,38 @@ impl Serialize for Dict {
         S: Serializer,
     {
         let mut map = serializer.serialize_map(None).unwrap();
-        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if unlikely!(unsafe { ob_type!(key.as_ptr()) != STR_TYPE }) {
+
+        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+
+        let mut pos = 0;
+
+        ffi!(PyDict_Next(
+            self.ptr,
+            &mut pos,
+            &mut next_key,
+            &mut next_value
+        ));
+        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+            let key = next_key;
+            let value = next_value;
+
+            ffi!(PyDict_Next(
+                self.ptr,
+                &mut pos,
+                &mut next_key,
+                &mut next_value
+            ));
+
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let key_as_str = unicode_to_str(key.as_ptr());
+            let key_as_str = unicode_to_str(key);
             if unlikely!(key_as_str.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
             let pyvalue = PyObjectSerializer::new(
-                value.as_ptr(),
+                value,
                 self.opts,
                 self.default_calls,
                 self.recursion,
@@ -171,15 +192,37 @@ impl Serialize for DictSortedKey {
         let len = ffi!(Py_SIZE(self.ptr)) as usize;
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
-        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if unlikely!(unsafe { ob_type!(key.as_ptr()) != STR_TYPE }) {
+
+        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+
+        let mut pos = 0;
+
+        ffi!(PyDict_Next(
+            self.ptr,
+            &mut pos,
+            &mut next_key,
+            &mut next_value
+        ));
+        for _ in 0..=len as usize - 1 {
+            let key = next_key;
+            let value = next_value;
+
+            ffi!(PyDict_Next(
+                self.ptr,
+                &mut pos,
+                &mut next_key,
+                &mut next_value
+            ));
+
+            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key.as_ptr());
+            let data = unicode_to_str(key);
             if unlikely!(data.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
-            items.push((data.unwrap(), value.as_ptr()));
+            items.push((data.unwrap(), value));
         }
 
         items.sort_unstable_by(|a, b| a.0.cmp(b.0));
@@ -337,16 +380,38 @@ impl Serialize for DictNonStrKey {
         let mut items: SmallVec<[(CompactString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         let opts = self.opts & NOT_PASSTHROUGH;
-        for (key, value) in PyDictIter::from_pyobject(self.ptr) {
-            if is_type!(ob_type!(key.as_ptr()), STR_TYPE) {
-                let uni = unicode_to_str(key.as_ptr());
+
+        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+
+        let mut pos = 0;
+
+        ffi!(PyDict_Next(
+            self.ptr,
+            &mut pos,
+            &mut next_key,
+            &mut next_value
+        ));
+        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+            let key = next_key;
+            let value = next_value;
+
+            ffi!(PyDict_Next(
+                self.ptr,
+                &mut pos,
+                &mut next_key,
+                &mut next_value
+            ));
+
+            if is_type!(ob_type!(key), STR_TYPE) {
+                let uni = unicode_to_str(key);
                 if unlikely!(uni.is_none()) {
                     err!(SerializeError::InvalidStr)
                 }
-                items.push((CompactString::from(uni.unwrap()), value.as_ptr()));
+                items.push((CompactString::from(uni.unwrap()), value));
             } else {
-                match Self::pyobject_to_string(key.as_ptr(), opts) {
-                    Ok(key_as_str) => items.push((key_as_str, value.as_ptr())),
+                match Self::pyobject_to_string(key, opts) {
+                    Ok(key_as_str) => items.push((key_as_str, value)),
                     Err(err) => err!(err),
                 }
             }

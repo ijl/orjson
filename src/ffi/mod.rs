@@ -2,7 +2,6 @@
 
 mod buffer;
 mod bytes;
-mod dict;
 mod fragment;
 #[cfg(Py_3_12)]
 mod immortal;
@@ -13,7 +12,6 @@ pub mod yyjson;
 
 pub use buffer::*;
 pub use bytes::*;
-pub use dict::*;
 pub use fragment::{orjson_fragmenttype_new, Fragment};
 #[cfg(Py_3_12)]
 pub use immortal::_Py_IsImmortal;
