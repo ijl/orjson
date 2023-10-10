@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 3.9.8 - 2023-10-10
+
+### Changed
+
+- Improve performance.
+- Drop support for Python 3.7.
+
+
 ## 3.9.7 - 2023-09-08
 
 ### Fixed
@@ -20,6 +28,7 @@ buffer. This was introduced in 3.9.3.
 ### Changed
 
 - Minor performance improvements.
+
 
 ## 3.9.5 - 2023-08-16
 
