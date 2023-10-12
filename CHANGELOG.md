@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.9 - 2023-10-12
+
+### Changed
+
+- `orjson` module metadata explicitly marks subinterpreters as not supported.
+
 
 ## 3.9.8 - 2023-10-10
 
