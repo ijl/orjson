@@ -143,15 +143,25 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     0
 }
 
+#[cfg(not(Py_3_12))]
+const PYMODULEDEF_LEN: usize = 2;
+#[cfg(Py_3_12)]
+const PYMODULEDEF_LEN: usize = 3;
+
 #[allow(non_snake_case)]
 #[no_mangle]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
-    let mod_slots: Box<[PyModuleDef_Slot; 2]> = Box::new([
+    let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
         PyModuleDef_Slot {
             slot: Py_mod_exec,
             value: orjson_init_exec as *mut c_void,
+        },
+        #[cfg(Py_3_12)]
+        PyModuleDef_Slot {
+            slot: Py_mod_multiple_interpreters,
+            value: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
         },
         PyModuleDef_Slot {
             slot: 0,
