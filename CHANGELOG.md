@@ -1,5 +1,13 @@
 # Changelog
 
+
+## 3.9.10 - 2023-10-26
+
+### Fixed
+
+- Fix debug assert failure on 3.12 `--profile=dev` build.
+
+
 ## 3.9.9 - 2023-10-12
 
 ### Changed
