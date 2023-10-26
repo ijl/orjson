@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::str::check::is_four_byte;
+use crate::str::is_four_byte;
 
 use crate::typeref::EMPTY_UNICODE;
 use pyo3_ffi::*;

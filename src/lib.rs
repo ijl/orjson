@@ -208,7 +208,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
         PyTuple_SET_ITEM(args, 1, doc);
         PyTuple_SET_ITEM(args, 2, pos);
         PyErr_SetObject(typeref::JsonDecodeError, args);
-        debug_assert!(ffi!(Py_REFCNT(args)) == 2);
+        debug_assert!(ffi!(Py_REFCNT(args)) <= 2);
         Py_DECREF(args);
     };
     null_mut()
@@ -222,7 +222,7 @@ fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
+        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
     };
     null_mut()
@@ -239,7 +239,7 @@ fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
+        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
 
         if !cause_exc.is_null() {

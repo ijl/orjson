@@ -12,6 +12,7 @@ jobs:
           { version: "nightly-2023-10-10" },
         ]
         python: [
+          { version: '3.12', abi: 'cp312-cp312' },
           { version: '3.11', abi: 'cp311-cp311' },
           { version: '3.8', abi: 'cp38-cp38' },
         ]
