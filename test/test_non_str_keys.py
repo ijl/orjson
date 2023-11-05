@@ -244,13 +244,6 @@ class TestNonStrKeyTests:
             orjson.dumps({"1": True}, option=orjson.OPT_NON_STR_KEYS) == b'{"1":true}'
         )
 
-    def test_dict_keys_type(self):
-        class Obj:
-            a: str
-
-        val = Obj()
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps({val: True}, option=orjson.OPT_NON_STR_KEYS)
 
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_dict_keys_array(self):
@@ -290,11 +283,8 @@ class TestNonStrKeyTests:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS)
 
-    def test_dict_keys_unknown(self):
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps({frozenset(): True}, option=orjson.OPT_NON_STR_KEYS)
 
-    def test_dict_keys_no_str_call(self):
+    def test_dict_keys_str_call(self):
         class Obj:
             a: str
 
@@ -302,5 +292,7 @@ class TestNonStrKeyTests:
                 return "Obj"
 
         val = Obj()
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps({val: True}, option=orjson.OPT_NON_STR_KEYS)
+        assert (
+            orjson.dumps({val: True}, option=orjson.OPT_NON_STR_KEYS) == b'{"Obj":true}'
+        )
+

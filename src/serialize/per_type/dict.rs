@@ -358,14 +358,24 @@ impl DictNonStrKey {
                     Ok(CompactString::from(uni.unwrap()))
                 }
             }
+            ObType::Unknown => {
+                let key_str_obj = ffi!(PyObject_Str(key));
+                debug_assert!(ffi!(Py_REFCNT(key_str_obj)) >= 2);
+                if unlikely!(key_str_obj.is_null()) {
+                    Err(SerializeError::DictKeyInvalidType)
+                } else {
+                    let ret = Self::pyobject_to_string(key_str_obj, opts);
+                    ffi!(Py_DECREF(key_str_obj));
+                    ret
+                }
+            }
             ObType::Tuple
             | ObType::NumpyScalar
             | ObType::NumpyArray
             | ObType::Dict
             | ObType::List
             | ObType::Dataclass
-            | ObType::Fragment
-            | ObType::Unknown => Err(SerializeError::DictKeyInvalidType),
+            | ObType::Fragment => Err(SerializeError::DictKeyInvalidType),
         }
     }
 }
