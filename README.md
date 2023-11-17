@@ -553,8 +553,8 @@ simplejson, and ujson.
 
 ##### OPT_STRICT_INTEGER
 
-Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
-the Python standard library. For more, see [int](https://github.com/ijl/orjson#int).
+Enforce 53-bit limit on integers. The limit is otherwise 64 bits.
+For more, see [int](https://github.com/ijl/orjson#int).
 
 ##### OPT_UTC_Z
 
@@ -796,6 +796,8 @@ is widely compatible, but there are implementations
 that only support 53-bits for integers, e.g.,
 web browsers. For those implementations, `dumps()` can be configured to
 raise a `JSONEncodeError` on values exceeding the 53-bit range.
+Note that Python's standard library and some other implementations support
+integers of unlimited size.
 
 ```python
 >>> import orjson
