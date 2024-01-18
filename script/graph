@@ -5,6 +5,9 @@ import collections
 import io
 import os
 
+import pandas as pd
+import seaborn
+from matplotlib import pyplot
 from tabulate import tabulate
 
 import orjson
@@ -37,6 +40,10 @@ def tab(obj):
         "Operations per second",
         "Relative (latency)",
     )
+
+    seaborn.set_style("darkgrid")
+
+    barplot_data = []
     for group, val in sorted(obj.items(), reverse=True):
         buf.write("\n" + "#### " + group + "\n\n")
         table = []
@@ -46,17 +53,82 @@ def tab(obj):
                 [
                     lib,
                     val[lib]["median"] if correct else None,
-                    str(int(val[lib]["ops"])) if correct else None,
+                    int(val[lib]["ops"]) if correct else None,
                     0,
                 ]
             )
-        baseline = table[0][1]
+            barplot_data.append(
+                {
+                    "operation": "deserialization"
+                    if "deserialization" in group
+                    else "serialization",
+                    "group": group.strip("serialization")
+                    .strip("deserialization")
+                    .strip(),
+                    "library": lib,
+                    "latency": val[lib]["median"],
+                    "operations": int(val[lib]["ops"]) if correct else None,
+                }
+            )
+
+        orjson_baseline = table[0][1]
         for each in table:
             each[3] = (
-                "%.1f" % (each[1] / baseline) if isinstance(each[1], float) else None
+                "%.1f" % (each[1] / orjson_baseline)
+                if isinstance(each[1], float)
+                else None
             )
-            each[1] = "%.2f" % each[1] if isinstance(each[1], float) else None
+            each[1] = "%.1f" % each[1] if isinstance(each[1], float) else None
+
         buf.write(tabulate(table, headers, tablefmt="github") + "\n")
+
+    for operation in ("deserialization", "serialization"):
+        per_op_data = list(
+            (each for each in barplot_data if each["operation"] == operation)
+        )
+        if not per_op_data:
+            continue
+
+        json_baseline = {}
+        for each in per_op_data:
+            if each["group"] == "witter.json":
+                each["group"] = "twitter.json"
+            if each["library"] == "json":
+                json_baseline[each["group"]] = each["operations"]
+
+        for each in per_op_data:
+            each["relative"] = each["operations"] / json_baseline[each["group"]]
+
+        p = pd.DataFrame.from_dict(per_op_data)
+        p.groupby("group")
+
+        graph = seaborn.barplot(
+            p,
+            x="group",
+            y="relative",
+            orient="x",
+            hue="library",
+            errorbar="sd",
+            legend="brief",
+        )
+        graph.set_xlabel("Document")
+        graph.set_ylabel("Operations/second relative to stdlib json")
+
+        pyplot.title(operation)
+
+        # ensure Y range
+        clamp = 10 if operation == "serialization" else 5
+        ylabels = set((min(v, clamp) for v in pyplot.gca().get_yticks()))
+        pyplot.gca().set_yticks(list({1.0, 1.5}.union(ylabels)))
+
+        # print Y as percent
+        pyplot.gca().set_yticklabels([f"{x:.0%}" for x in pyplot.gca().get_yticks()])
+
+        # reference for stdlib
+        pyplot.axhline(y=1, color="#999", linestyle="dashed")
+
+        pyplot.savefig(fname=f"doc/{operation}", dpi=300)
+        pyplot.close()
 
     print(buf.getvalue())
 

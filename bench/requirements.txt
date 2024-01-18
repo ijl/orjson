@@ -1,7 +1,9 @@
 memory-profiler
+pandas
 pytest-benchmark
 pytest-random-order
 python-rapidjson
+seaborn
 simplejson
 tabulate
 ujson
