@@ -16,7 +16,7 @@ impl UUID {
     pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
         UUID { ptr: ptr }
     }
-    #[cfg_attr(feature = "optimize", optimize(size))]
+
     pub fn write_buf(&self, buf: &mut UUIDBuffer) {
         let value: u128;
         {
@@ -52,6 +52,7 @@ impl UUID {
     }
 }
 impl Serialize for UUID {
+    #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

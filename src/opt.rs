@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-pub type Opt = u16;
+pub type Opt = u32;
 
 pub const INDENT_2: Opt = 1;
 pub const NAIVE_UTC: Opt = 1 << 1;

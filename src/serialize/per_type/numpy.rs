@@ -1,10 +1,10 @@
 use crate::opt::*;
 
 use crate::serialize::error::SerializeError;
-use crate::serialize::per_type::datetimelike::{
-    DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
+use crate::serialize::per_type::{
+    DateTimeBuffer, DateTimeError, DateTimeLike, DefaultSerializer, Offset,
 };
-use crate::serialize::per_type::*;
+use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use pyo3_ffi::*;
@@ -12,35 +12,19 @@ use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::convert::TryInto;
 use std::fmt;
 use std::os::raw::{c_char, c_int, c_void};
-use std::ptr::NonNull;
 
-pub struct NumpySerializer {
-    ptr: *mut pyo3_ffi::PyObject,
-    opts: Opt,
-    default_calls: u8,
-    recursion: u8,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+#[repr(transparent)]
+pub struct NumpySerializer<'a> {
+    previous: &'a PyObjectSerializer,
 }
 
-impl NumpySerializer {
-    pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
-        opts: Opt,
-        default_calls: u8,
-        recursion: u8,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
-    ) -> Self {
-        NumpySerializer {
-            ptr: ptr,
-            opts: opts,
-            default_calls: default_calls,
-            recursion: recursion,
-            default: default,
-        }
+impl<'a> NumpySerializer<'a> {
+    pub fn new(previous: &'a PyObjectSerializer) -> Self {
+        Self { previous: previous }
     }
 }
 
-impl Serialize for NumpySerializer {
+impl<'a> Serialize for NumpySerializer<'a> {
     #[cold]
     #[inline(never)]
     #[cfg_attr(feature = "optimize", optimize(size))]
@@ -48,20 +32,13 @@ impl Serialize for NumpySerializer {
     where
         S: Serializer,
     {
-        match NumpyArray::new(self.ptr, self.opts) {
+        match NumpyArray::new(self.previous.ptr, self.previous.state.opts()) {
             Ok(val) => val.serialize(serializer),
             Err(PyArrayError::Malformed) => err!(SerializeError::NumpyMalformed),
             Err(PyArrayError::NotContiguous) | Err(PyArrayError::UnsupportedDataType)
-                if self.default.is_some() =>
+                if self.previous.default.is_some() =>
             {
-                DefaultSerializer::new(
-                    self.ptr,
-                    self.opts,
-                    self.default_calls,
-                    self.recursion,
-                    self.default,
-                )
-                .serialize(serializer)
+                DefaultSerializer::new(self.previous).serialize(serializer)
             }
             Err(PyArrayError::NotContiguous) => {
                 err!(SerializeError::NumpyNotCContiguous)

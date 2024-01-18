@@ -20,6 +20,7 @@ mod uuid;
 
 pub use dataclass::DataclassGenericSerializer;
 pub use datetime::{Date, DateTime, Time};
+pub use datetimelike::{DateTimeBuffer, DateTimeError, DateTimeLike, Offset};
 pub use default::DefaultSerializer;
 pub use dict::DictGenericSerializer;
 pub use float::FloatSerializer;
