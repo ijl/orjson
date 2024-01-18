@@ -5,8 +5,8 @@ use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, Int53Serializer,
-    IntSerializer, ListSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
-    StrSubclassSerializer, Time, TupleSerializer, UUID,
+    IntSerializer, ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer,
+    StrSerializer, StrSubclassSerializer, Time, ZeroListSerializer, UUID,
 };
 use crate::serialize::state::SerializerState;
 use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
@@ -86,10 +86,20 @@ impl Serialize for PyObjectSerializer {
                 DictGenericSerializer::new(self.ptr, self.state, self.default).serialize(serializer)
             }
             ObType::List => {
-                ListSerializer::new(self.ptr, self.state, self.default).serialize(serializer)
+                if ffi!(Py_SIZE(self.ptr)) == 0 {
+                    ZeroListSerializer::new().serialize(serializer)
+                } else {
+                    ListTupleSerializer::from_list(self.ptr, self.state, self.default)
+                        .serialize(serializer)
+                }
             }
             ObType::Tuple => {
-                TupleSerializer::new(self.ptr, self.state, self.default).serialize(serializer)
+                if ffi!(Py_SIZE(self.ptr)) == 0 {
+                    ZeroListSerializer::new().serialize(serializer)
+                } else {
+                    ListTupleSerializer::from_tuple(self.ptr, self.state, self.default)
+                        .serialize(serializer)
+                }
             }
             ObType::Dataclass => DataclassGenericSerializer::new(self).serialize(serializer),
             ObType::Enum => EnumSerializer::new(self).serialize(serializer),

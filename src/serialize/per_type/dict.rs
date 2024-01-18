@@ -3,15 +3,39 @@
 use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
-use crate::serialize::per_type::{Date, DateTime, DateTimeBuffer, DateTimeLike, Time, UUID};
+use crate::serialize::per_type::{
+    BoolSerializer, Date, DateTime, DateTimeBuffer, DateTimeLike, FloatSerializer, Int53Serializer,
+    IntSerializer, ListTupleSerializer, NoneSerializer, StrSerializer, Time, ZeroListSerializer,
+    UUID,
+};
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
-use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
+use crate::typeref::{
+    BOOL_TYPE, DATETIME_TYPE, DICT_TYPE, FLOAT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE,
+    TRUE, VALUE_STR,
+};
 use compact_str::CompactString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
 use std::ptr::NonNull;
+
+pub struct ZeroDictSerializer;
+
+impl ZeroDictSerializer {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Serialize for ZeroDictSerializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(b"{}")
+    }
+}
 
 pub struct DictGenericSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -42,8 +66,8 @@ impl Serialize for DictGenericSerializer {
         if unlikely!(self.state.recursion_limit()) {
             err!(SerializeError::RecursionLimit)
         }
-        if unlikely!(ffi!(Py_SIZE(self.ptr)) == 0) {
-            serializer.serialize_map(Some(0)).unwrap().end()
+        if ffi!(Py_SIZE(self.ptr)) == 0 {
+            ZeroDictSerializer::new().serialize(serializer)
         } else if opt_disabled!(self.state.opts(), SORT_OR_NON_STR_KEYS) {
             Dict::new(self.ptr, self.state, self.default).serialize(serializer)
         } else if opt_enabled!(self.state.opts(), NON_STR_KEYS) {
@@ -73,11 +97,12 @@ impl Dict {
     }
 }
 impl Serialize for Dict {
-    #[inline(always)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
+        debug_assert!(ffi!(Py_SIZE(self.ptr)) > 0);
+
         let mut map = serializer.serialize_map(None).unwrap();
 
         let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
@@ -92,17 +117,58 @@ impl Serialize for Dict {
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
-                err!(SerializeError::KeyMustBeStr)
+            // key
+            {
+                let key_ob_type = ob_type!(key);
+                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                    err!(SerializeError::KeyMustBeStr)
+                }
+                let key_as_str = unicode_to_str(key);
+                if unlikely!(key_as_str.is_none()) {
+                    err!(SerializeError::InvalidStr)
+                }
+                map.serialize_key(key_as_str.unwrap()).unwrap();
             }
-            let key_as_str = unicode_to_str(key);
-            if unlikely!(key_as_str.is_none()) {
-                err!(SerializeError::InvalidStr)
+
+            // value
+            {
+                let value_ob_type = ob_type!(value);
+                if is_class_by_type!(value_ob_type, STR_TYPE) {
+                    map.serialize_value(&StrSerializer::new(value))?;
+                } else if is_class_by_type!(value_ob_type, INT_TYPE) {
+                    if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
+                        map.serialize_value(&Int53Serializer::new(value))?;
+                    } else {
+                        map.serialize_value(&IntSerializer::new(value))?;
+                    }
+                } else if is_class_by_type!(value_ob_type, BOOL_TYPE) {
+                    map.serialize_value(&BoolSerializer::new(value))?;
+                } else if is_class_by_type!(value_ob_type, NONE_TYPE) {
+                    map.serialize_value(&NoneSerializer::new())?;
+                } else if is_class_by_type!(value_ob_type, FLOAT_TYPE) {
+                    map.serialize_value(&FloatSerializer::new(value))?;
+                } else if is_class_by_type!(value_ob_type, DICT_TYPE) {
+                    let pyvalue = DictGenericSerializer::new(value, self.state, self.default);
+                    map.serialize_value(&pyvalue)?;
+                } else if is_class_by_type!(value_ob_type, LIST_TYPE) {
+                    if ffi!(Py_SIZE(value)) == 0 {
+                        map.serialize_value(&ZeroListSerializer::new())?;
+                    } else {
+                        let pyvalue =
+                            ListTupleSerializer::from_list(value, self.state, self.default);
+                        map.serialize_value(&pyvalue)?;
+                    }
+                } else if is_class_by_type!(value_ob_type, DATETIME_TYPE)
+                    && opt_disabled!(self.state.opts(), PASSTHROUGH_DATETIME)
+                {
+                    map.serialize_value(&DateTime::new(value, self.state.opts()))?;
+                } else {
+                    let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
+                    map.serialize_value(&pyvalue)?;
+                }
             }
-            let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
-            map.serialize_key(key_as_str.unwrap()).unwrap();
-            map.serialize_value(&pyvalue)?;
         }
+
         map.end()
     }
 }
@@ -134,6 +200,7 @@ impl Serialize for DictSortedKey {
         S: Serializer,
     {
         let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        debug_assert!(len > 0);
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
 
@@ -298,6 +365,7 @@ impl Serialize for DictNonStrKey {
         S: Serializer,
     {
         let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        debug_assert!(len > 0);
         let mut items: SmallVec<[(CompactString, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
 
@@ -309,7 +377,7 @@ impl Serialize for DictNonStrKey {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+        for _ in 0..=len - 1 {
             let key = next_key;
             let value = next_value;
 

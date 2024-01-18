@@ -49,6 +49,11 @@ class TestIndentedOutput:
             == b'{\n  "1": 1,\n  "a": "1970-01-01T00:00:00+00:00",\n  "b": true\n}'
         )
 
+    def test_empty(self):
+        obj = [{}, [[[]]], {"key": []}]
+        ref = b'[\n  {},\n  [\n    [\n      []\n    ]\n  ],\n  {\n    "key": []\n  }\n]'
+        assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == ref
+
     def test_twitter_pretty(self):
         """
         twitter.json pretty

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::serialize::error::SerializeError;
+use crate::serialize::per_type::dict::ZeroDictSerializer;
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::unicode_to_str;
@@ -86,9 +87,9 @@ impl Serialize for DataclassFastSerializer {
     where
         S: Serializer,
     {
-        let len = ffi!(Py_SIZE(self.ptr));
+        let len = ffi!(Py_SIZE(self.ptr)) as usize;
         if unlikely!(len == 0) {
-            return serializer.serialize_map(Some(0)).unwrap().end();
+            return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
         let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
@@ -152,7 +153,7 @@ impl Serialize for DataclassFallbackSerializer {
         ffi!(Py_DECREF(fields));
         let len = ffi!(Py_SIZE(fields)) as usize;
         if unlikely!(len == 0) {
-            return serializer.serialize_map(Some(0)).unwrap().end();
+            return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
 

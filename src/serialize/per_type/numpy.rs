@@ -2,7 +2,7 @@ use crate::opt::*;
 
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::{
-    DateTimeBuffer, DateTimeError, DateTimeLike, DefaultSerializer, Offset,
+    DateTimeBuffer, DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
@@ -296,7 +296,7 @@ impl Serialize for NumpyArray {
         S: Serializer,
     {
         if unlikely!(!(self.depth >= self.dimensions() || self.shape()[self.depth] != 0)) {
-            serializer.serialize_seq(Some(0)).unwrap().end()
+            ZeroListSerializer::new().serialize(serializer)
         } else if !self.children.is_empty() {
             let mut seq = serializer.serialize_seq(None).unwrap();
             for child in &self.children {
