@@ -1,7 +1,18 @@
 # Changelog
 
 
-# 3.9.11 - 2024-01-18
+## 3.9.12 - 2024-01-18
+
+### Changed
+
+- Update benchmarks in README.
+
+### Fixed
+
+- Minimal `musllinux_1_1` build due to sporadic CI failure.
+
+
+## 3.9.11 - 2024-01-18
 
 ### Changed
 
