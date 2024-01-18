@@ -45,7 +45,7 @@ no-panic = [
 yyjson = []
 
 [dependencies]
-ahash = { version = "=0.8.6", default_features = false }
+ahash = { version = "=0.8.6", default_features = false, features = ["compile-time-rng"] }
 arrayvec = { version = "0.7", default_features = false, features = ["std", "serde"] }
 associative-cache = { version = "2", default_features = false }
 beef = { version = "0.5", default_features = false, features = ["impl_serde"] }

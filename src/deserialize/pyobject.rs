@@ -2,32 +2,37 @@
 
 use crate::deserialize::cache::*;
 use crate::str::{hash_str, unicode_from_str};
-use crate::typeref::{EMPTY_UNICODE, FALSE, NONE, TRUE};
+use crate::typeref::{FALSE, NONE, TRUE};
 use std::ptr::NonNull;
 
 pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
-    let pykey: *mut pyo3_ffi::PyObject;
-    if unlikely!(key_str.len() > 64) {
-        pykey = unicode_from_str(key_str);
-        hash_str(pykey);
-    } else if unlikely!(key_str.is_empty()) {
-        pykey = use_immortal!(EMPTY_UNICODE);
+    let pykey = if unlikely!(key_str.len() > 64) {
+        create_str_impl(key_str)
     } else {
-        let hash = cache_hash(key_str.as_bytes());
-        let map = unsafe { KEY_MAP.get_mut().unwrap_or_else(|| unreachable!()) };
-        let entry = map.entry(&hash).or_insert_with(
-            || hash,
-            || {
-                let pyob = unicode_from_str(key_str);
-                hash_str(pyob);
-                CachedKey::new(pyob)
-            },
-        );
-        pykey = entry.get();
-    }
+        get_unicode_key_impl(key_str)
+    };
     debug_assert!(ffi!(Py_REFCNT(pykey)) >= 1);
     debug_assert!(unsafe { (*pykey.cast::<pyo3_ffi::PyASCIIObject>()).hash != -1 });
     pykey
+}
+
+fn get_unicode_key_impl(key_str: &str) -> *mut pyo3_ffi::PyObject {
+    let hash = cache_hash(key_str.as_bytes());
+    let map = unsafe { KEY_MAP.get_mut().unwrap_or_else(|| unreachable!()) };
+    let entry = map.entry(&hash).or_insert_with(
+        || hash,
+        || {
+            let pyob = create_str_impl(key_str);
+            CachedKey::new(pyob)
+        },
+    );
+    entry.get()
+}
+
+fn create_str_impl(key_str: &str) -> *mut pyo3_ffi::PyObject {
+    let pyob = unicode_from_str(key_str);
+    hash_str(pyob);
+    pyob
 }
 
 #[allow(dead_code)]

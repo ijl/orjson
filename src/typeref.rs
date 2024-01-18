@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::orjson_fragmenttype_new;
-use ahash::RandomState;
 use once_cell::race::{OnceBool, OnceBox};
 use pyo3_ffi::*;
 #[cfg(feature = "yyjson")]
@@ -75,23 +74,6 @@ pub static mut DTYPE_STR: *mut PyObject = null_mut();
 pub static mut DESCR_STR: *mut PyObject = null_mut();
 pub static mut VALUE_STR: *mut PyObject = null_mut();
 pub static mut INT_ATTR_STR: *mut PyObject = null_mut();
-
-pub static mut HASH_BUILDER: OnceBox<ahash::RandomState> = OnceBox::new();
-
-pub fn ahash_init() -> Box<ahash::RandomState> {
-    unsafe {
-        debug_assert!(!VALUE_STR.is_null());
-        debug_assert!(!DICT_TYPE.is_null());
-        debug_assert!(!STR_TYPE.is_null());
-        debug_assert!(!BYTES_TYPE.is_null());
-        Box::new(RandomState::with_seeds(
-            VALUE_STR as u64,
-            DICT_TYPE as u64,
-            STR_TYPE as u64,
-            BYTES_TYPE as u64,
-        ))
-    }
-}
 
 #[cfg(feature = "yyjson")]
 pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
@@ -214,9 +196,6 @@ fn _init_typerefs_impl() -> bool {
         JsonEncodeError = pyo3_ffi::PyExc_TypeError;
         Py_INCREF(JsonEncodeError);
         JsonDecodeError = look_up_json_exc();
-
-        // after all type lookups
-        HASH_BUILDER.get_or_init(ahash_init);
     };
     true
 }

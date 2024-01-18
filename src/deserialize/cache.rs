@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::typeref::HASH_BUILDER;
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
 use once_cell::unsync::OnceCell;
-use std::hash::BuildHasher;
 use std::hash::Hasher;
 use std::os::raw::c_void;
 
@@ -42,12 +40,13 @@ pub type KeyMap =
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 pub fn cache_hash(key: &[u8]) -> u64 {
+    // try to omit code for >64 path in ahash
+    debug_assert!(key.len() <= 64);
     #[cfg(feature = "intrinsics")]
     unsafe {
-        std::intrinsics::assume(!key.is_empty());
         std::intrinsics::assume(key.len() <= 64);
-    }
-    let mut hasher = unsafe { HASH_BUILDER.get().unwrap().build_hasher() };
+    };
+    let mut hasher = ahash::AHasher::default();
     hasher.write(key);
     hasher.finish()
 }
