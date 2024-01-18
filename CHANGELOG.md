@@ -1,6 +1,14 @@
 # Changelog
 
 
+# 3.9.11 - 2024-01-18
+
+### Changed
+
+- Improve performance of serializing. `str` is significantly faster. Documents
+using `dict`, `list`, and `tuple` are somewhat faster.
+
+
 ## 3.9.10 - 2023-10-26
 
 ### Fixed
