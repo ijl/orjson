@@ -4,14 +4,13 @@
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "strict_provenance", feature(strict_provenance))]
 #![cfg_attr(feature = "strict_provenance", warn(fuzzy_provenance_casts))]
-#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
+#![allow(unknown_lints)] // internal_features
+#![allow(internal_features)] // core_intrinsics
 #![allow(unused_unsafe)]
 #![allow(non_camel_case_types)]
-#![allow(clippy::explicit_auto_deref)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::uninlined_format_args)] // MSRV 1.66
-#![allow(clippy::unnecessary_unwrap)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
 
@@ -26,9 +25,7 @@ mod str;
 mod typeref;
 
 use pyo3_ffi::*;
-use std::os::raw::c_char;
-use std::os::raw::c_int;
-use std::os::raw::c_void;
+use std::os::raw::{c_char, c_int, c_void};
 
 #[allow(unused_imports)]
 use std::ptr::{null, null_mut, NonNull};
@@ -232,7 +229,7 @@ fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[cfg(Py_3_12)]
-fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
+fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
     unsafe {
         let cause_exc: *mut PyObject = PyErr_GetRaisedException();
 
@@ -255,7 +252,7 @@ fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[cfg(not(Py_3_12))]
-fn raise_dumps_exception_dynamic(err: &String) -> *mut PyObject {
+fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
     unsafe {
         let mut cause_tp: *mut PyObject = null_mut();
         let mut cause_val: *mut PyObject = null_mut();
@@ -355,6 +352,6 @@ pub unsafe extern "C" fn dumps(
 
     match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
-        Err(err) => raise_dumps_exception_dynamic(&err),
+        Err(err) => raise_dumps_exception_dynamic(err.as_str()),
     }
 }

@@ -3,8 +3,8 @@
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
 use crate::ffi::yyjson::*;
-use crate::str::*;
-use crate::typeref::*;
+use crate::str::unicode_from_str;
+use crate::typeref::{yyjson_init, YYJSON_ALLOC, YYJSON_BUFFER_SIZE};
 use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut, NonNull};
@@ -125,7 +125,7 @@ impl ElementType {
             TAG_FALSE => Self::False,
             TAG_ARRAY => Self::Array,
             TAG_OBJECT => Self::Object,
-            _ => unsafe { std::hint::unreachable_unchecked() },
+            _ => unreachable!(),
         }
     }
 }
@@ -164,10 +164,7 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             return nonnull!(ffi!(PyDict_New()));
         }
         let mut key = unsafe_yyjson_get_first(elem);
-        #[cfg(not(Py_3_13))]
         let dict = ffi!(_PyDict_NewPresized(len as isize));
-        #[cfg(Py_3_13)]
-        let dict = ffi!(PyDict_New());
         for _ in 0..=len - 1 {
             let val = key.add(1);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));

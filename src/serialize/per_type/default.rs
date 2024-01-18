@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::error::*;
-use crate::serialize::serializer::*;
+use crate::serialize::error::SerializeError;
+use crate::serialize::serializer::{PyObjectSerializer, RECURSION_LIMIT};
 
 use serde::ser::{Serialize, Serializer};
 

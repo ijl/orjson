@@ -2,8 +2,8 @@
 
 use crate::deserialize::DeserializeError;
 use crate::ffi::*;
-use crate::str::*;
-use crate::typeref::*;
+use crate::str::unicode_to_str;
+use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
 use crate::util::INVALID_STR;
 use std::borrow::Cow;
 use std::os::raw::c_char;

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::error::*;
+use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{DateTimeBuffer, DateTimeLike};
 use crate::serialize::per_type::*;
 use crate::serialize::serializer::{
     pyobject_to_obtype, ObType, PyObjectSerializer, RECURSION_LIMIT,
 };
-use crate::str::*;
+use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
 use crate::typeref::*;
 use compact_str::CompactString;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -119,22 +119,12 @@ impl Serialize for Dict {
 
         let mut pos = 0;
 
-        ffi!(PyDict_Next(
-            self.ptr,
-            &mut pos,
-            &mut next_key,
-            &mut next_value
-        ));
+        pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
         for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
             let key = next_key;
             let value = next_value;
 
-            ffi!(PyDict_Next(
-                self.ptr,
-                &mut pos,
-                &mut next_key,
-                &mut next_value
-            ));
+            pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
@@ -198,22 +188,12 @@ impl Serialize for DictSortedKey {
 
         let mut pos = 0;
 
-        ffi!(PyDict_Next(
-            self.ptr,
-            &mut pos,
-            &mut next_key,
-            &mut next_value
-        ));
+        pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
         for _ in 0..=len as usize - 1 {
             let key = next_key;
             let value = next_value;
 
-            ffi!(PyDict_Next(
-                self.ptr,
-                &mut pos,
-                &mut next_key,
-                &mut next_value
-            ));
+            pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
@@ -268,13 +248,12 @@ impl DictNonStrKey {
         }
     }
 
-    #[cfg_attr(feature = "optimize", optimize(size))]
     fn pyobject_to_string(
         key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,
     ) -> Result<CompactString, SerializeError> {
         match pyobject_to_obtype(key, opts) {
-            ObType::None => Ok(CompactString::from("null")),
+            ObType::None => Ok(CompactString::new_inline("null")),
             ObType::Bool => {
                 let key_as_str = if unsafe { key == TRUE } {
                     "true"
@@ -299,7 +278,7 @@ impl DictNonStrKey {
             ObType::Float => {
                 let val = ffi!(PyFloat_AS_DOUBLE(key));
                 if !val.is_finite() {
-                    Ok(CompactString::from("null"))
+                    Ok(CompactString::new_inline("null"))
                 } else {
                     Ok(CompactString::from(ryu::Buffer::new().format_finite(val)))
                 }
@@ -386,22 +365,12 @@ impl Serialize for DictNonStrKey {
 
         let mut pos = 0;
 
-        ffi!(PyDict_Next(
-            self.ptr,
-            &mut pos,
-            &mut next_key,
-            &mut next_value
-        ));
+        pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
         for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
             let key = next_key;
             let value = next_value;
 
-            ffi!(PyDict_Next(
-                self.ptr,
-                &mut pos,
-                &mut next_key,
-                &mut next_value
-            ));
+            pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             if is_type!(ob_type!(key), STR_TYPE) {
                 let uni = unicode_to_str(key);

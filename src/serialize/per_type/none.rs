@@ -5,8 +5,8 @@ use serde::ser::{Serialize, Serializer};
 pub struct NoneSerializer;
 
 impl NoneSerializer {
-    pub fn new() -> Self {
-        NoneSerializer {}
+    pub const fn new() -> Self {
+        Self {}
     }
 }
 

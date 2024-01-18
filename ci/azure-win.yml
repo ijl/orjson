@@ -19,7 +19,7 @@ steps:
   displayName: build dependencies
 - script: python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
   displayName: test dependencies
-- script: maturin.exe build --release --features=no-panic,yyjson --strip --interpreter $(interpreter) --target $(target)
+- script: maturin.exe build --release --features=encoding_rs/simd-accel,no-panic,yyjson --strip --interpreter $(interpreter) --target $(target)
   displayName: build
 - script: python.exe -m pip install orjson --no-index --find-links=D:\a\1\s\target\wheels
   displayName: install

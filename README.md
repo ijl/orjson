@@ -985,9 +985,9 @@ library handles a combined 342 JSON fixtures from the
 | Library    |   Invalid JSON documents not rejected |   Valid JSON documents not deserialized |
 |------------|---------------------------------------|-----------------------------------------|
 | orjson     |                                     0 |                                       0 |
-| ujson      |                                    38 |                                       0 |
+| ujson      |                                    31 |                                       0 |
 | rapidjson  |                                     6 |                                       0 |
-| simplejson |                                    13 |                                       0 |
+| simplejson |                                    10 |                                       0 |
 | json       |                                    17 |                                       0 |
 
 This shows that all libraries deserialize valid JSON but only orjson
@@ -1192,7 +1192,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2023-10-10` and stable 1.65. It
+The project's own CI tests against `nightly-2024-01-17` and stable 1.65. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
@@ -1213,5 +1213,5 @@ tests should be run as part of the build. It can be run with
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2023, licensed
-under both the Apache 2 and MIT licenses.
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2024, available
+to you under either the Apache 2 license or MIT license at your choice.

@@ -11,8 +11,9 @@ fn main() {
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
 
-    let py_cfg = pyo3_build_config::get();
-    py_cfg.emit_pyo3_cfgs();
+    for cfg in pyo3_build_config::get().build_script_outputs() {
+        println!("{cfg}");
+    }
 
     if let Some(true) = version_check::supports_feature("core_intrinsics") {
         println!("cargo:rustc-cfg=feature=\"intrinsics\"");
@@ -24,10 +25,6 @@ fn main() {
 
     if let Some(true) = version_check::supports_feature("strict_provenance") {
         println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
-    }
-
-    if let Some(true) = version_check::supports_feature("trusted_len") {
-        println!("cargo:rustc-cfg=feature=\"trusted_len\"");
     }
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {

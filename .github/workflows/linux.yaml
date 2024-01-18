@@ -62,17 +62,17 @@ jobs:
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       CC: "clang"
-      CFLAGS: "-O2 -fno-plt -flto=thin"
-      LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
-      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld"
+      CFLAGS: "-O2 -fstrict-aliasing -emit-llvm -flto=full"
+      LDFLAGS: "-O2 -fstrict-aliasing -emit-llvm -flto=full -fuse-ld=lld -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
+      RUSTFLAGS: "-C linker=clang -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64:latest
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2023-10-10 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2023-10-10-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-01-17 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2024-01-17-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v4
 
     - name: build-std
@@ -84,7 +84,7 @@ jobs:
     - run: |
         maturin build --release --strip \
           --out=dist \
-          --features=no-panic,yyjson \
+          --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
@@ -138,22 +138,22 @@ jobs:
       uses: PyO3/maturin-action@v1
       env:
         CC: "gcc"
-        CFLAGS: "-O2 -fno-plt"
+        CFLAGS: "-O2"
         LDFLAGS: "-O2 -flto -Wl,--as-needed"
-        RUSTFLAGS: "-C target-feature=-crt-static"
+        RUSTFLAGS: "-C target-feature=-crt-static -Z mir-opt-level=4"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2023-10-10
+        rust-toolchain: nightly-2024-01-17
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_1
-        args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out=dist --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson -i python${{ matrix.python.version }}
 
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
       uses: docker/setup-qemu-action@v3
       with:
-        image: tonistiigi/binfmt:qemu-v7.0.0
+        image: tonistiigi/binfmt:qemu-v8.1.4
         platforms: ${{ matrix.platform.platform }}
 
     - name: Test
@@ -194,28 +194,35 @@ jobs:
         target: [
           {
             arch: 'aarch64',
+            cflags: '-O2 -flto',
+            features: 'encoding_rs/simd-accel,no-panic,unstable-simd,yyjson',
+            rustflags: '-Z mir-opt-level=4 -D warnings',
             target: 'aarch64-unknown-linux-gnu',
-            cflags: '-O2',
           },
           {
             arch: 'armv7',
+            cflags: '-Os -flto -fstrict-aliasing',
+            features: 'no-panic,yyjson', # no SIMD
+            rustflags: '-C opt-level=s -Z mir-opt-level=4 -D warnings',
             target: 'armv7-unknown-linux-gnueabihf',
-            cflags: '-Os -fstrict-aliasing',
           },
           {
             arch: 'ppc64le',
+            cflags: '-O2 -flto',
+            features: 'no-panic,unstable-simd,yyjson',
+            rustflags: '-Z mir-opt-level=4 -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
-            cflags: '-O2',
           },
           {
             arch: 's390x',
+            cflags: '-O2 -flto -march=z10',
+            features: 'no-panic,unstable-simd,yyjson',
+            rustflags: '-Z mir-opt-level=4 -C target-cpu=z10 -D warnings',
             target: 's390x-unknown-linux-gnu',
-            cflags: '-O2 -march=z10',
           },
         ]
     steps:
     - uses: actions/checkout@v4
-
     - name: build-std
       run: |
         mkdir .cargo
@@ -226,14 +233,15 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
         CFLAGS: "${{ matrix.target.cflags }}"
-        LDFLAGS: "${{ matrix.target.cflags }} -flto -Wl,--as-needed"
+        LDFLAGS: "${{ matrix.target.cflags }} -Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+        RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2023-10-10
+        rust-toolchain: nightly-2024-01-17
         rustup-components: rust-src
         manylinux: auto
-        args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
 
     - uses: uraimo/run-on-arch-action@v2
       name: Test
@@ -277,7 +285,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: wheels
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install pip "maturin>=1,<2"

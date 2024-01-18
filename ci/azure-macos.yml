@@ -23,13 +23,14 @@ steps:
     PATH=$HOME/.cargo/bin:$PATH \
     MACOSX_DEPLOYMENT_TARGET=$(macosx_deployment_target) \
     PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-    maturin build --release --strip --features=no-panic,yyjson --interpreter $(interpreter) --target=universal2-apple-darwin
+    maturin build --release --strip --features=encoding_rs/simd-accel,no-panic,yyjson --interpreter $(interpreter) --target=universal2-apple-darwin
   env:
     CC: "clang"
-    LDFLAGS: "-O2 -flto=thin -fuse-ld=lld -Wl,--as-needed"
-    CFLAGS: "-O2 -fno-plt -flto=thin"
-    CFLAGS_x86_64_apple_darwin: "-O2 -fno-plt -flto=thin -march=x86-64-v2 -mtune=generic"
-    CFLAGS_aarch64_apple_darwin: "-O2 -fno-plt -flto=thin -mcpu=apple-m1 -mtune=generic"
+    CFLAGS: "-O2 -fstrict-aliasing -flto=full"
+    LDFLAGS: "-O2 -fstrict-aliasing -flto=full -Wl,--as-needed"
+    CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
+    CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
+    RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   displayName: build universal2
 

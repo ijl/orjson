@@ -46,14 +46,14 @@ def tab(obj):
                 [
                     lib,
                     val[lib]["median"] if correct else None,
-                    "%.1f" % val[lib]["ops"] if correct else None,
+                    str(int(val[lib]["ops"])) if correct else None,
                     0,
                 ]
             )
         baseline = table[0][1]
         for each in table:
             each[3] = (
-                "%.2f" % (each[1] / baseline) if isinstance(each[1], float) else None
+                "%.1f" % (each[1] / baseline) if isinstance(each[1], float) else None
             )
             each[1] = "%.2f" % each[1] if isinstance(each[1], float) else None
         buf.write(tabulate(table, headers, tablefmt="github") + "\n")

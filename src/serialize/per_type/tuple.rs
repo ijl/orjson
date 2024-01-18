@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::*;
-use crate::serialize::serializer::*;
+use crate::opt::Opt;
+use crate::serialize::serializer::PyObjectSerializer;
 
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use std::ptr::NonNull;

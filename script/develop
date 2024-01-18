@@ -3,9 +3,9 @@
 rm -f target/wheels/*
 
 export CC="clang"
-export CFLAGS="-O2 -fno-plt -flto=thin"
-export LDFLAGS="${CFLAGS} -fuse-ld=lld -Wl,--as-needed"
-export RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=lld"
+export CFLAGS="-O2 -fstrict-aliasing -emit-llvm -flto=full"
+export LDFLAGS="${CFLAGS} -fuse-ld=lld -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
+export RUSTFLAGS="-C linker=clang -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination"
 
 maturin build "$@"
 

@@ -2,13 +2,11 @@
 
 use crate::opt::*;
 use crate::serialize::per_type::*;
-use crate::serialize::writer::*;
+use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
 use crate::typeref::*;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
 use std::ptr::NonNull;
-
-use crate::serialize::json::{to_writer, to_writer_pretty};
 
 pub const RECURSION_LIMIT: u8 = 255;
 

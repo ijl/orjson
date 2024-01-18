@@ -39,20 +39,21 @@ include = [
     { format = "sdist", path = "include/**/*" },
 ]
 
-
-[tool.black]
-line-length = 88
-target-version = ["py38"]
-include = ".pyi?$"
-
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+
+select = [
+    "I",
+]
 
 ignore = [
     "E501", # line too long
     "F601", # Dictionary key literal ... repeated
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["orjson"]
 
 [tool.mypy]
 python_version = "3.8"

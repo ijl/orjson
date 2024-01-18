@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::error::*;
+use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{
     DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
 };
-use crate::typeref::*;
+#[cfg(Py_3_9)]
+use crate::typeref::ZONEINFO_TYPE;
+use crate::typeref::{CONVERT_METHOD_STR, DST_STR, NORMALIZE_METHOD_STR, UTCOFFSET_METHOD_STR};
 use serde::ser::{Serialize, Serializer};
 
 macro_rules! write_double_digit {

@@ -1,6 +1,6 @@
 use crate::opt::*;
 
-use crate::serialize::error::*;
+use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{
     DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
 };
@@ -79,7 +79,7 @@ macro_rules! slice {
     };
 }
 
-#[cfg_attr(feature = "optimize", optimize(size))]
+#[cold]
 pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
@@ -101,7 +101,7 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     }
 }
 
-#[cfg_attr(feature = "optimize", optimize(size))]
+#[cold]
 pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
@@ -395,7 +395,7 @@ impl<'a> NumpyF64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyF64Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -414,6 +414,7 @@ pub struct DataTypeF64 {
 }
 
 impl Serialize for DataTypeF64 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -434,7 +435,7 @@ impl<'a> NumpyF32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyF32Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -453,6 +454,7 @@ struct DataTypeF32 {
 }
 
 impl Serialize for DataTypeF32 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -473,7 +475,7 @@ impl<'a> NumpyU64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU64Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -492,6 +494,7 @@ pub struct DataTypeU64 {
 }
 
 impl Serialize for DataTypeU64 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -512,7 +515,7 @@ impl<'a> NumpyU32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU32Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -531,6 +534,7 @@ pub struct DataTypeU32 {
 }
 
 impl Serialize for DataTypeU32 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -551,7 +555,7 @@ impl<'a> NumpyU16Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU16Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -570,6 +574,7 @@ pub struct DataTypeU16 {
 }
 
 impl Serialize for DataTypeU16 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -590,7 +595,7 @@ impl<'a> NumpyI64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI64Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -609,6 +614,7 @@ pub struct DataTypeI64 {
 }
 
 impl Serialize for DataTypeI64 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -629,7 +635,7 @@ impl<'a> NumpyI32Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI32Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -648,6 +654,7 @@ pub struct DataTypeI32 {
 }
 
 impl Serialize for DataTypeI32 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -668,7 +675,7 @@ impl<'a> NumpyI16Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI16Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -687,6 +694,7 @@ pub struct DataTypeI16 {
 }
 
 impl Serialize for DataTypeI16 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -707,7 +715,7 @@ impl<'a> NumpyI8Array<'a> {
 }
 
 impl<'a> Serialize for NumpyI8Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -726,6 +734,7 @@ pub struct DataTypeI8 {
 }
 
 impl Serialize for DataTypeI8 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -746,7 +755,7 @@ impl<'a> NumpyU8Array<'a> {
 }
 
 impl<'a> Serialize for NumpyU8Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -765,6 +774,7 @@ pub struct DataTypeU8 {
 }
 
 impl Serialize for DataTypeU8 {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -785,7 +795,7 @@ impl<'a> NumpyBoolArray<'a> {
 }
 
 impl<'a> Serialize for NumpyBoolArray<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -804,6 +814,7 @@ pub struct DataTypeBool {
 }
 
 impl Serialize for DataTypeBool {
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -879,7 +890,7 @@ pub struct NumpyInt8 {
 }
 
 impl Serialize for NumpyInt8 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -896,7 +907,7 @@ pub struct NumpyInt16 {
 }
 
 impl Serialize for NumpyInt16 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -913,7 +924,7 @@ pub struct NumpyInt32 {
 }
 
 impl Serialize for NumpyInt32 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -930,7 +941,7 @@ pub struct NumpyInt64 {
 }
 
 impl Serialize for NumpyInt64 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -947,7 +958,7 @@ pub struct NumpyUint8 {
 }
 
 impl Serialize for NumpyUint8 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -964,7 +975,7 @@ pub struct NumpyUint16 {
 }
 
 impl Serialize for NumpyUint16 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -981,7 +992,7 @@ pub struct NumpyUint32 {
 }
 
 impl Serialize for NumpyUint32 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -998,7 +1009,7 @@ pub struct NumpyUint64 {
 }
 
 impl Serialize for NumpyUint64 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1015,7 +1026,7 @@ pub struct NumpyFloat32 {
 }
 
 impl Serialize for NumpyFloat32 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1032,7 +1043,7 @@ pub struct NumpyFloat64 {
 }
 
 impl Serialize for NumpyFloat64 {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1049,7 +1060,7 @@ pub struct NumpyBool {
 }
 
 impl Serialize for NumpyBool {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1083,7 +1094,6 @@ pub enum NumpyDatetimeUnit {
 
 impl fmt::Display for NumpyDatetimeUnit {
     #[cold]
-    #[cfg_attr(feature = "optimize", optimize(size))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let unit = match self {
             Self::NaT => "NaT",
@@ -1114,7 +1124,6 @@ enum NumpyDateTimeError {
 
 impl NumpyDateTimeError {
     #[cold]
-    #[cfg_attr(feature = "optimize", optimize(size))]
     fn into_serde_err<T: ser::Error>(self) -> T {
         let err = match self {
             Self::UnsupportedUnit(unit) => format!("unsupported numpy.datetime64 unit: {}", unit),
@@ -1136,6 +1145,7 @@ impl NumpyDatetimeUnit {
     /// object rather than using the `descr` field of the `__array_struct__`
     /// because that field isn't populated for datetime64 arrays; see
     /// https://github.com/numpy/numpy/issues/5350.
+    #[cold]
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn from_pyobject(ptr: *mut PyObject) -> Self {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
@@ -1173,6 +1183,7 @@ impl NumpyDatetimeUnit {
     /// Return a `NumpyDatetime64Repr` for a value in array with this unit.
     ///
     /// Returns an `Err(NumpyDateTimeError)` if the value is invalid for this unit.
+    #[cold]
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn datetime(&self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
         match self {
@@ -1245,7 +1256,7 @@ impl<'a> NumpyDatetime64Array<'a> {
 }
 
 impl<'a> Serialize for NumpyDatetime64Array<'a> {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1313,7 +1324,7 @@ impl DateTimeLike for NumpyDatetime64Repr {
 }
 
 impl Serialize for NumpyDatetime64Repr {
-    #[cfg_attr(feature = "optimize", optimize(size))]
+    #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

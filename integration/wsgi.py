@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from flask import Flask
@@ -9,7 +9,7 @@ import orjson
 
 app = Flask(__name__)
 
-NOW = datetime.utcnow()
+NOW = datetime.now(timezone.utc)
 
 
 @app.route("/")

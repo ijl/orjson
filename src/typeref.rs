@@ -4,9 +4,13 @@ use crate::ffi::orjson_fragmenttype_new;
 use ahash::RandomState;
 use once_cell::race::{OnceBool, OnceBox};
 use pyo3_ffi::*;
+#[cfg(feature = "yyjson")]
 use std::cell::UnsafeCell;
+#[cfg(feature = "yyjson")]
 use std::mem::MaybeUninit;
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
+#[cfg(feature = "yyjson")]
+use std::os::raw::c_void;
 use std::ptr::{null_mut, NonNull};
 
 pub struct NumpyTypes {
@@ -148,6 +152,7 @@ pub fn init_typerefs() {
 #[cfg_attr(feature = "optimize", optimize(size))]
 fn _init_typerefs_impl() -> bool {
     unsafe {
+        debug_assert!(crate::opt::MAX_OPT < u16::MAX as i32);
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
@@ -236,11 +241,9 @@ unsafe fn look_up_json_exc() -> *mut PyObject {
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-unsafe fn look_up_numpy_type(numpy_module: *mut PyObject, np_type: &str) -> *mut PyTypeObject {
-    let mod_dict = PyObject_GenericGetDict(numpy_module, null_mut());
-    let ptr = PyMapping_GetItemString(mod_dict, np_type.as_ptr() as *const c_char);
+unsafe fn look_up_numpy_type(numpy_module_dict: *mut PyObject, np_type: &str) -> *mut PyTypeObject {
+    let ptr = PyMapping_GetItemString(numpy_module_dict, np_type.as_ptr() as *const c_char);
     Py_XDECREF(ptr);
-    Py_XDECREF(mod_dict);
     ptr as *mut PyTypeObject
 }
 
@@ -253,21 +256,23 @@ pub fn load_numpy_types() -> Box<Option<NonNull<NumpyTypes>>> {
             PyErr_Clear();
             return Box::new(None);
         }
+        let numpy_module_dict = PyObject_GenericGetDict(numpy, null_mut());
         let types = Box::new(NumpyTypes {
-            array: look_up_numpy_type(numpy, "ndarray\0"),
-            float32: look_up_numpy_type(numpy, "float32\0"),
-            float64: look_up_numpy_type(numpy, "float64\0"),
-            int8: look_up_numpy_type(numpy, "int8\0"),
-            int16: look_up_numpy_type(numpy, "int16\0"),
-            int32: look_up_numpy_type(numpy, "int32\0"),
-            int64: look_up_numpy_type(numpy, "int64\0"),
-            uint16: look_up_numpy_type(numpy, "uint16\0"),
-            uint32: look_up_numpy_type(numpy, "uint32\0"),
-            uint64: look_up_numpy_type(numpy, "uint64\0"),
-            uint8: look_up_numpy_type(numpy, "uint8\0"),
-            bool_: look_up_numpy_type(numpy, "bool_\0"),
-            datetime64: look_up_numpy_type(numpy, "datetime64\0"),
+            array: look_up_numpy_type(numpy_module_dict, "ndarray\0"),
+            float32: look_up_numpy_type(numpy_module_dict, "float32\0"),
+            float64: look_up_numpy_type(numpy_module_dict, "float64\0"),
+            int8: look_up_numpy_type(numpy_module_dict, "int8\0"),
+            int16: look_up_numpy_type(numpy_module_dict, "int16\0"),
+            int32: look_up_numpy_type(numpy_module_dict, "int32\0"),
+            int64: look_up_numpy_type(numpy_module_dict, "int64\0"),
+            uint16: look_up_numpy_type(numpy_module_dict, "uint16\0"),
+            uint32: look_up_numpy_type(numpy_module_dict, "uint32\0"),
+            uint64: look_up_numpy_type(numpy_module_dict, "uint64\0"),
+            uint8: look_up_numpy_type(numpy_module_dict, "uint8\0"),
+            bool_: look_up_numpy_type(numpy_module_dict, "bool_\0"),
+            datetime64: look_up_numpy_type(numpy_module_dict, "datetime64\0"),
         });
+        Py_XDECREF(numpy_module_dict);
         Py_XDECREF(numpy);
         Box::new(Some(nonnull!(Box::<NumpyTypes>::into_raw(types))))
     }

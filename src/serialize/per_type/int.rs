@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::{pylong_is_unsigned, pylong_is_zero};
-use crate::serialize::error::*;
+use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
 
 // https://tools.ietf.org/html/rfc7159#section-6

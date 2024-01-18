@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
-use crate::serialize::error::*;
-use crate::serialize::serializer::*;
-use crate::str::*;
+use crate::serialize::error::SerializeError;
+use crate::serialize::serializer::{PyObjectSerializer, RECURSION_LIMIT};
+use crate::str::unicode_to_str;
 use crate::typeref::*;
 
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -124,22 +124,12 @@ impl Serialize for DataclassFastSerializer {
 
         let mut pos = 0;
 
-        ffi!(PyDict_Next(
-            self.ptr,
-            &mut pos,
-            &mut next_key,
-            &mut next_value
-        ));
+        pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
         for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
             let key = next_key;
             let value = next_value;
 
-            ffi!(PyDict_Next(
-                self.ptr,
-                &mut pos,
-                &mut next_key,
-                &mut next_value
-            ));
+            pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
                 err!(SerializeError::KeyMustBeStr)
@@ -211,22 +201,12 @@ impl Serialize for DataclassFallbackSerializer {
 
         let mut pos = 0;
 
-        ffi!(PyDict_Next(
-            fields,
-            &mut pos,
-            &mut next_key,
-            &mut next_value
-        ));
+        pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
         for _ in 0..=ffi!(Py_SIZE(fields)) as usize - 1 {
             let attr = next_key;
             let field = next_value;
 
-            ffi!(PyDict_Next(
-                fields,
-                &mut pos,
-                &mut next_key,
-                &mut next_value
-            ));
+            pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
 
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);

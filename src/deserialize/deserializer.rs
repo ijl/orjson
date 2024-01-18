@@ -2,7 +2,7 @@
 
 use crate::deserialize::utf8::read_input_to_buf;
 use crate::deserialize::DeserializeError;
-use crate::typeref::*;
+use crate::typeref::EMPTY_UNICODE;
 use std::ptr::NonNull;
 
 pub fn deserialize(

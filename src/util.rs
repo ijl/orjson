@@ -221,3 +221,15 @@ macro_rules! use_immortal {
         }
     };
 }
+
+macro_rules! pydict_next {
+    ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
+        unsafe { pyo3_ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, std::ptr::null_mut()) }
+    };
+}
+
+macro_rules! reserve_minimum {
+    ($writer:expr) => {
+        $writer.reserve(64);
+    };
+}

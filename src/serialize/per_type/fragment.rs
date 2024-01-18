@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::{Fragment, PyBytes_AS_STRING, PyBytes_GET_SIZE};
-use crate::serialize::error::*;
+use crate::serialize::error::SerializeError;
 use crate::str::unicode_to_str;
 use crate::typeref::{BYTES_TYPE, STR_TYPE};
 
