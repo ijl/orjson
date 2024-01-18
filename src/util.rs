@@ -70,6 +70,22 @@ macro_rules! unlikely {
     };
 }
 
+#[allow(unused_macros)]
+#[cfg(feature = "intrinsics")]
+macro_rules! likely {
+    ($exp:expr) => {
+        std::intrinsics::likely($exp)
+    };
+}
+
+#[allow(unused_macros)]
+#[cfg(not(feature = "intrinsics"))]
+macro_rules! likely {
+    ($exp:expr) => {
+        $exp
+    };
+}
+
 macro_rules! nonnull {
     ($exp:expr) => {
         unsafe { std::ptr::NonNull::new_unchecked($exp) }

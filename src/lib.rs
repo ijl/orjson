@@ -4,6 +4,7 @@
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "strict_provenance", feature(strict_provenance))]
 #![cfg_attr(feature = "strict_provenance", warn(fuzzy_provenance_casts))]
+#![cfg_attr(feature = "unstable-simd", feature(portable_simd))]
 #![allow(unknown_lints)] // internal_features
 #![allow(internal_features)] // core_intrinsics
 #![allow(unused_unsafe)]

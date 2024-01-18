@@ -23,7 +23,7 @@ steps:
     PATH=$HOME/.cargo/bin:$PATH \
     MACOSX_DEPLOYMENT_TARGET=$(macosx_deployment_target) \
     PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-    maturin build --release --strip --features=encoding_rs/simd-accel,no-panic,yyjson --interpreter $(interpreter) --target=universal2-apple-darwin
+    maturin build --release --strip --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson --interpreter $(interpreter) --target=universal2-apple-darwin
   env:
     CC: "clang"
     CFLAGS: "-O2 -fstrict-aliasing -flto=full"

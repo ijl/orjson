@@ -75,32 +75,104 @@ class TestType:
         assert orjson.loads(orjson.dumps(ref)) == ref
         assert orjson.loads(orjson.dumps(ref, option=orjson.OPT_INDENT_2)) == ref
 
-    def test_str_escape_0(self):
+    def test_str_escape_quote_0(self):
         assert orjson.dumps('"aaaaaaabb') == b'"\\"aaaaaaabb"'
 
-    def test_str_escape_1(self):
+    def test_str_escape_quote_1(self):
         assert orjson.dumps('a"aaaaaabb') == b'"a\\"aaaaaabb"'
 
-    def test_str_escape_2(self):
+    def test_str_escape_quote_2(self):
         assert orjson.dumps('aa"aaaaabb') == b'"aa\\"aaaaabb"'
 
-    def test_str_escape_3(self):
+    def test_str_escape_quote_3(self):
         assert orjson.dumps('aaa"aaaabb') == b'"aaa\\"aaaabb"'
 
-    def test_str_escape_4(self):
+    def test_str_escape_quote_4(self):
         assert orjson.dumps('aaaa"aaabb') == b'"aaaa\\"aaabb"'
 
-    def test_str_escape_5(self):
+    def test_str_escape_quote_5(self):
         assert orjson.dumps('aaaaa"aabb') == b'"aaaaa\\"aabb"'
 
-    def test_str_escape_6(self):
+    def test_str_escape_quote_6(self):
         assert orjson.dumps('aaaaaa"abb') == b'"aaaaaa\\"abb"'
 
-    def test_str_escape_7(self):
+    def test_str_escape_quote_7(self):
         assert orjson.dumps('aaaaaaa"bb') == b'"aaaaaaa\\"bb"'
 
-    def test_str_escape_8(self):
+    def test_str_escape_quote_8(self):
         assert orjson.dumps('aaaaaaaab"') == b'"aaaaaaaab\\""'
+
+    def test_str_escape_quote_multi(self):
+        assert (
+            orjson.dumps('aa"aaaaabbbbbbbbbbbbbbbbbbbb"bb')
+            == b'"aa\\"aaaaabbbbbbbbbbbbbbbbbbbb\\"bb"'
+        )
+
+    def test_str_escape_backslash_0(self):
+        assert orjson.dumps("\\aaaaaaabb") == b'"\\\\aaaaaaabb"'
+
+    def test_str_escape_backslash_1(self):
+        assert orjson.dumps("a\\aaaaaabb") == b'"a\\\\aaaaaabb"'
+
+    def test_str_escape_backslash_2(self):
+        assert orjson.dumps("aa\\aaaaabb") == b'"aa\\\\aaaaabb"'
+
+    def test_str_escape_backslash_3(self):
+        assert orjson.dumps("aaa\\aaaabb") == b'"aaa\\\\aaaabb"'
+
+    def test_str_escape_backslash_4(self):
+        assert orjson.dumps("aaaa\\aaabb") == b'"aaaa\\\\aaabb"'
+
+    def test_str_escape_backslash_5(self):
+        assert orjson.dumps("aaaaa\\aabb") == b'"aaaaa\\\\aabb"'
+
+    def test_str_escape_backslash_6(self):
+        assert orjson.dumps("aaaaaa\\abb") == b'"aaaaaa\\\\abb"'
+
+    def test_str_escape_backslash_7(self):
+        assert orjson.dumps("aaaaaaa\\bb") == b'"aaaaaaa\\\\bb"'
+
+    def test_str_escape_backslash_8(self):
+        assert orjson.dumps("aaaaaaaab\\") == b'"aaaaaaaab\\\\"'
+
+    def test_str_escape_backslash_multi(self):
+        assert (
+            orjson.dumps("aa\\aaaaabbbbbbbbbbbbbbbbbbbb\\bb")
+            == b'"aa\\\\aaaaabbbbbbbbbbbbbbbbbbbb\\\\bb"'
+        )
+
+    def test_str_escape_x32_0(self):
+        assert orjson.dumps("\taaaaaaabb") == b'"\\taaaaaaabb"'
+
+    def test_str_escape_x32_1(self):
+        assert orjson.dumps("a\taaaaaabb") == b'"a\\taaaaaabb"'
+
+    def test_str_escape_x32_2(self):
+        assert orjson.dumps("aa\taaaaabb") == b'"aa\\taaaaabb"'
+
+    def test_str_escape_x32_3(self):
+        assert orjson.dumps("aaa\taaaabb") == b'"aaa\\taaaabb"'
+
+    def test_str_escape_x32_4(self):
+        assert orjson.dumps("aaaa\taaabb") == b'"aaaa\\taaabb"'
+
+    def test_str_escape_x32_5(self):
+        assert orjson.dumps("aaaaa\taabb") == b'"aaaaa\\taabb"'
+
+    def test_str_escape_x32_6(self):
+        assert orjson.dumps("aaaaaa\tabb") == b'"aaaaaa\\tabb"'
+
+    def test_str_escape_x32_7(self):
+        assert orjson.dumps("aaaaaaa\tbb") == b'"aaaaaaa\\tbb"'
+
+    def test_str_escape_x32_8(self):
+        assert orjson.dumps("aaaaaaaab\t") == b'"aaaaaaaab\\t"'
+
+    def test_str_escape_x32_multi(self):
+        assert (
+            orjson.dumps("aa\taaaaabbbbbbbbbbbbbbbbbbbb\tbb")
+            == b'"aa\\taaaaabbbbbbbbbbbbbbbbbbbb\\tbb"'
+        )
 
     def test_str_emoji(self):
         ref = "®️"
