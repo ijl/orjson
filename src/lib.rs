@@ -25,11 +25,11 @@ mod serialize;
 mod str;
 mod typeref;
 
+use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::*;
-use std::os::raw::{c_char, c_int, c_void};
 
 #[allow(unused_imports)]
-use std::ptr::{null, null_mut, NonNull};
+use core::ptr::{null, null_mut, NonNull};
 
 #[cfg(Py_3_10)]
 macro_rules! add {

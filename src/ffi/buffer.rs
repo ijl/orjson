@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use core::ffi::c_int;
 use pyo3_ffi::*;
-use std::os::raw::c_int;
 
 #[repr(C)]
 pub struct _PyManagedBufferObject {

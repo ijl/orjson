@@ -5,13 +5,13 @@ use crate::deserialize::DeserializeError;
 use crate::ffi::yyjson::*;
 use crate::str::unicode_from_str;
 use crate::typeref::{yyjson_init, YYJSON_ALLOC, YYJSON_BUFFER_SIZE};
+use core::ffi::c_char;
+use core::ptr::{null, null_mut, NonNull};
 use std::borrow::Cow;
-use std::os::raw::c_char;
-use std::ptr::{null, null_mut, NonNull};
 
 const YYJSON_TAG_BIT: u8 = 8;
 
-const YYJSON_VAL_SIZE: usize = std::mem::size_of::<yyjson_val>();
+const YYJSON_VAL_SIZE: usize = core::mem::size_of::<yyjson_val>();
 
 const TAG_ARRAY: u8 = 0b00000110;
 const TAG_DOUBLE: u8 = 0b00010100;
@@ -67,7 +67,7 @@ pub fn deserialize_yyjson(
         read_doc_default(data, &mut err)
     };
     if unlikely!(doc.is_null()) {
-        let msg: Cow<str> = unsafe { std::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
+        let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         Err(DeserializeError::from_yyjson(msg, err.pos as i64, data))
     } else {
         let root = yyjson_doc_get_root(doc);

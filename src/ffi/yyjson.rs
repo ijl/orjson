@@ -1,27 +1,27 @@
 #[repr(C)]
 pub struct yyjson_alc {
-    pub malloc: ::std::option::Option<
+    pub malloc: ::core::option::Option<
         unsafe extern "C" fn(
-            ctx: *mut ::std::os::raw::c_void,
+            ctx: *mut ::core::ffi::c_void,
             size: usize,
-        ) -> *mut ::std::os::raw::c_void,
+        ) -> *mut ::core::ffi::c_void,
     >,
-    pub realloc: ::std::option::Option<
+    pub realloc: ::core::option::Option<
         unsafe extern "C" fn(
-            ctx: *mut ::std::os::raw::c_void,
-            ptr: *mut ::std::os::raw::c_void,
+            ctx: *mut ::core::ffi::c_void,
+            ptr: *mut ::core::ffi::c_void,
             size: usize,
-        ) -> *mut ::std::os::raw::c_void,
+        ) -> *mut ::core::ffi::c_void,
     >,
-    pub free: ::std::option::Option<
-        unsafe extern "C" fn(ctx: *mut ::std::os::raw::c_void, ptr: *mut ::std::os::raw::c_void),
+    pub free: ::core::option::Option<
+        unsafe extern "C" fn(ctx: *mut ::core::ffi::c_void, ptr: *mut ::core::ffi::c_void),
     >,
-    pub ctx: *mut ::std::os::raw::c_void,
+    pub ctx: *mut ::core::ffi::c_void,
 }
 extern "C" {
     pub fn yyjson_alc_pool_init(
         alc: *mut yyjson_alc,
-        buf: *mut ::std::os::raw::c_void,
+        buf: *mut ::core::ffi::c_void,
         size: usize,
     ) -> bool;
 }
@@ -32,12 +32,12 @@ pub const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
 #[repr(C)]
 pub struct yyjson_read_err {
     pub code: yyjson_read_code,
-    pub msg: *const ::std::os::raw::c_char,
+    pub msg: *const ::core::ffi::c_char,
     pub pos: usize,
 }
 extern "C" {
     pub fn yyjson_read_opts(
-        dat: *mut ::std::os::raw::c_char,
+        dat: *mut ::core::ffi::c_char,
         len: usize,
         flg: yyjson_read_flag,
         alc: *const yyjson_alc,
@@ -52,8 +52,8 @@ pub union yyjson_val_uni {
     pub u64_: u64,
     pub i64_: i64,
     pub f64_: f64,
-    pub str_: *const ::std::os::raw::c_char,
-    pub ptr: *mut ::std::os::raw::c_void,
+    pub str_: *const ::core::ffi::c_char,
+    pub ptr: *mut ::core::ffi::c_void,
     pub ofs: usize,
 }
 #[repr(C)]
@@ -67,5 +67,5 @@ pub struct yyjson_doc {
     pub alc: yyjson_alc,
     pub dat_read: usize,
     pub val_read: usize,
-    pub str_pool: *mut ::std::os::raw::c_char,
+    pub str_pool: *mut ::core::ffi::c_char,
 }

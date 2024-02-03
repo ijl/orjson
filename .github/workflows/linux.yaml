@@ -71,8 +71,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-01-17 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2024-01-17-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-02-03 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2024-02-03-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v4
 
     - name: build-std
@@ -107,7 +107,7 @@ jobs:
         path: dist
         retention-days: 1
 
-  musllinux_1_1:
+  musllinux_1_2:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -140,14 +140,14 @@ jobs:
         CC: "gcc"
         CFLAGS: "-O2"
         LDFLAGS: "-O2 -flto -Wl,--as-needed"
-        RUSTFLAGS: "-C target-feature=-crt-static"
+        RUSTFLAGS: "-C target-feature=-crt-static -Z mir-opt-level=4"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2024-01-17
+        rust-toolchain: nightly-2024-02-03
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
-        manylinux: musllinux_1_1
-        args: --release --strip --out=dist --features=no-panic,yyjson -i python${{ matrix.python.version }}
+        manylinux: musllinux_1_2
+        args: --release --strip --out=dist --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson -i python${{ matrix.python.version }}
 
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
@@ -159,10 +159,11 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: quay.io/pypa/musllinux_1_1_${{ matrix.platform.arch }}:latest
+        image: quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:latest
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
+          sed -i '/^psutil/d' test/requirements.txt # missing 3.11, 3.12 wheels
           sed -i '/^numpy/d' test/requirements.txt
 
           python${{ matrix.python.version }} -m venv venv
@@ -238,7 +239,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-01-17
+        rust-toolchain: nightly-2024-02-03
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -280,7 +281,7 @@ jobs:
       contents: write
     runs-on: ubuntu-22.04
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_1, sdist ]
+    needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_2, sdist ]
     steps:
       - uses: actions/download-artifact@v3
         with:

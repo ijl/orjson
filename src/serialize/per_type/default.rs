@@ -32,15 +32,15 @@ impl<'a> Serialize for DefaultSerializer<'a> {
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
                     self.previous.ptr,
-                    std::ptr::null_mut() as *mut pyo3_ffi::PyObject
+                    core::ptr::null_mut() as *mut pyo3_ffi::PyObject
                 ));
                 #[cfg(Py_3_10)]
                 let default_obj = unsafe {
                     pyo3_ffi::PyObject_Vectorcall(
                         callable.as_ptr(),
-                        std::ptr::addr_of!(self.previous.ptr),
+                        core::ptr::addr_of!(self.previous.ptr),
                         pyo3_ffi::PyVectorcall_NARGS(1) as usize,
-                        std::ptr::null_mut(),
+                        core::ptr::null_mut(),
                     )
                 };
                 if unlikely!(default_obj.is_null()) {

@@ -14,13 +14,13 @@ keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
-    "data/*",
+    "data",
     "include",
     "LICENSE-APACHE",
     "LICENSE-MIT",
     "pyproject.toml",
     "README.md",
-    "src/*",
+    "src",
     "test/*.py",
     "test/requirements.txt",
 ]

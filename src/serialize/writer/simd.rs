@@ -2,7 +2,7 @@
 // Copyright 2023-2024 liuq19, ijl
 // adapted from sonic-rs' src/util/string.rs
 
-use std::simd::cmp::{SimdPartialEq, SimdPartialOrd};
+use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 
 macro_rules! impl_escape_unchecked {
     ($src:expr, $dst:expr, $nb:expr, $omask:expr, $cn:expr) => {
@@ -54,7 +54,7 @@ macro_rules! impl_escape_unchecked {
                     _ => unreachable!(),
                 }
             };
-            std::ptr::copy_nonoverlapping(replacement.0.as_ptr(), $dst, 8);
+            core::ptr::copy_nonoverlapping(replacement.0.as_ptr(), $dst, 8);
             $dst = $dst.add(replacement.1 as usize);
             $src = $src.add(1);
             if likely!(mask & (1 << (STRIDE - 1)) != 1) {
@@ -79,8 +79,8 @@ macro_rules! impl_format_simd {
             dptr = dptr.add(1);
 
             while nb >= STRIDE {
-                let v = StrVector::from_slice(std::slice::from_raw_parts(sptr, STRIDE));
-                v.copy_to_slice(std::slice::from_raw_parts_mut(dptr, STRIDE));
+                let v = StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE));
+                v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
                 let mask =
                     (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask() as u32;
 
@@ -95,8 +95,8 @@ macro_rules! impl_format_simd {
             }
 
             while nb > 0 {
-                let v = StrVector::from_slice(std::slice::from_raw_parts(sptr, STRIDE));
-                v.copy_to_slice(std::slice::from_raw_parts_mut(dptr, STRIDE));
+                let v = StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE));
+                v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
                 let mask = (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask()
                     as u32
                     & (STRIDE_SATURATION >> (STRIDE - nb));
@@ -125,7 +125,7 @@ pub unsafe fn format_escaped_str_impl_128(
 ) -> usize {
     const STRIDE: usize = 16;
     const STRIDE_SATURATION: u32 = u16::MAX as u32;
-    type StrVector = std::simd::u8x16;
+    type StrVector = core::simd::u8x16;
 
     impl_format_simd!(odptr, value_ptr, value_len);
 }

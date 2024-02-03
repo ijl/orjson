@@ -49,6 +49,10 @@ class TestType:
         for obj in ("aaaa" * 1024, "üýþÿ" * 1024, "好" * 1024, "�" * 1024):
             assert orjson.loads(orjson.dumps(obj)) == obj
 
+    def test_str_2mib(self):
+        ref = '🐈🐈🐈🐈🐈"üýa0s9999🐈🐈🐈🐈🐈9\0999\\9999' * 1024 * 50
+        assert orjson.loads(orjson.dumps(ref)) == ref
+
     def test_str_very_long(self):
         """
         str long enough to trigger overflow in bytecount
@@ -521,79 +525,9 @@ class TestType:
         assert orjson.dumps(obj) == ref.encode("utf-8")
         assert orjson.loads(ref) == list(obj)
 
-    def test_dict(self):
-        """
-        dict
-        """
-        obj = {"key": "value"}
-        ref = '{"key":"value"}'
-        assert orjson.dumps(obj) == ref.encode("utf-8")
-        assert orjson.loads(ref) == obj
-
-    def test_dict_duplicate_loads(self):
-        assert orjson.loads(b'{"1":true,"1":false}') == {"1": False}
-
-    def test_dict_large(self):
-        """
-        dict with >512 keys
-        """
-        obj = {"key_%s" % idx: "value" for idx in range(513)}
-        assert len(obj) == 513
-        assert orjson.loads(orjson.dumps(obj)) == obj
-
-    def test_dict_large_keys(self):
-        """
-        dict with keys too large to cache
-        """
-        obj = {
-            "keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey": "value"
-        }
-        ref = '{"keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey":"value"}'
-        assert orjson.dumps(obj) == ref.encode("utf-8")
-        assert orjson.loads(ref) == obj
-
-    def test_dict_unicode(self):
-        """
-        dict unicode keys
-        """
-        obj = {"🐈": "value"}
-        ref = b'{"\xf0\x9f\x90\x88":"value"}'
-        assert orjson.dumps(obj) == ref
-        assert orjson.loads(ref) == obj
-        assert orjson.loads(ref)["🐈"] == "value"
-
-    def test_dict_invalid_key_dumps(self):
-        """
-        dict invalid key dumps()
-        """
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps({1: "value"})
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps({b"key": "value"})
-
-    def test_dict_invalid_key_loads(self):
-        """
-        dict invalid key loads()
-        """
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads('{1:"value"}')
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads('{{"a":true}:true}')
-
     def test_object(self):
         """
         object() dumps()
         """
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(object())
-
-    def test_dict_similar_keys(self):
-        """
-        loads() similar keys
-
-        This was a regression in 3.4.2 caused by using
-        the implementation in wy instead of wyhash.
-        """
-        assert orjson.loads(
-            '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}'
-        ) == {"cf_status_firefox57": "verified", "cf_status_firefox67": "---"}

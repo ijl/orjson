@@ -11,7 +11,7 @@ use crate::typeref::{
 
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
-use std::ptr::NonNull;
+use core::ptr::NonNull;
 
 #[repr(transparent)]
 pub struct DataclassGenericSerializer<'a> {
@@ -92,8 +92,8 @@ impl Serialize for DataclassFastSerializer {
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
-        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
         let mut pos = 0;
 
@@ -157,8 +157,8 @@ impl Serialize for DataclassFallbackSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
 
-        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
         let mut pos = 0;
 

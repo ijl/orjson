@@ -10,9 +10,9 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::state::SerializerState;
 use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
+use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
-use std::ptr::NonNull;
 
 pub fn serialize(
     ptr: *mut pyo3_ffi::PyObject,

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use core::ffi::{c_char, c_ulong};
+use core::ptr::null_mut;
 use pyo3_ffi::*;
-use std::os::raw::{c_char, c_ulong};
-use std::ptr::null_mut;
 
 // https://docs.python.org/3/c-api/typeobj.html#typedef-examples
 
@@ -75,12 +75,12 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
                 ob_refcnt: pyo3_ffi::PyObjectObRefcnt { ob_refcnt: 0 },
                 #[cfg(not(Py_3_12))]
                 ob_refcnt: 0,
-                ob_type: std::ptr::addr_of_mut!(PyType_Type),
+                ob_type: core::ptr::addr_of_mut!(PyType_Type),
             },
             ob_size: 0,
         },
         tp_name: "orjson.Fragment\0".as_ptr() as *const c_char,
-        tp_basicsize: std::mem::size_of::<Fragment>() as isize,
+        tp_basicsize: core::mem::size_of::<Fragment>() as isize,
         tp_itemsize: 0,
         tp_dealloc: Some(orjson_fragment_dealloc),
         tp_init: None,
@@ -114,7 +114,7 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
         tp_getattro: None,
         tp_setattro: None,
         tp_as_buffer: null_mut(),
-        tp_doc: std::ptr::null_mut(),
+        tp_doc: core::ptr::null_mut(),
         tp_traverse: None,
         tp_clear: None,
         tp_richcompare: None,

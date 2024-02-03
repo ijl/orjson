@@ -59,7 +59,7 @@ macro_rules! opt_disabled {
 #[cfg(feature = "intrinsics")]
 macro_rules! unlikely {
     ($exp:expr) => {
-        std::intrinsics::unlikely($exp)
+        core::intrinsics::unlikely($exp)
     };
 }
 
@@ -74,7 +74,7 @@ macro_rules! unlikely {
 #[cfg(feature = "intrinsics")]
 macro_rules! likely {
     ($exp:expr) => {
-        std::intrinsics::likely($exp)
+        core::intrinsics::likely($exp)
     };
 }
 
@@ -88,13 +88,13 @@ macro_rules! likely {
 
 macro_rules! nonnull {
     ($exp:expr) => {
-        unsafe { std::ptr::NonNull::new_unchecked($exp) }
+        unsafe { core::ptr::NonNull::new_unchecked($exp) }
     };
 }
 
 macro_rules! str_from_slice {
     ($ptr:expr, $size:expr) => {
-        unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts($ptr, $size as usize)) }
+        unsafe { std::str::from_utf8_unchecked(core::slice::from_raw_parts($ptr, $size as usize)) }
     };
 }
 
@@ -159,7 +159,7 @@ macro_rules! call_method {
             pyo3_ffi::PyObject_CallMethodObjArgs(
                 $obj1,
                 $obj2,
-                std::ptr::null_mut() as *mut pyo3_ffi::PyObject,
+                core::ptr::null_mut() as *mut pyo3_ffi::PyObject,
             )
         }
     };
@@ -169,7 +169,7 @@ macro_rules! call_method {
                 $obj1,
                 $obj2,
                 $obj3,
-                std::ptr::null_mut() as *mut pyo3_ffi::PyObject,
+                core::ptr::null_mut() as *mut pyo3_ffi::PyObject,
             )
         }
     };
@@ -241,7 +241,7 @@ macro_rules! use_immortal {
 #[cfg(not(Py_3_13))]
 macro_rules! pydict_next {
     ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { pyo3_ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, std::ptr::null_mut()) }
+        unsafe { pyo3_ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, core::ptr::null_mut()) }
     };
 }
 

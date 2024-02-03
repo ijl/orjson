@@ -10,7 +10,7 @@ jobs:
         profile: [
           { rust: "1.65", features: "" },
           { rust: "1.65", features: "--features=yyjson" },
-          { rust: "nightly-2024-01-17", features: "--features=yyjson,unstable-simd" },
+          { rust: "nightly-2024-02-03", features: "--features=yyjson,unstable-simd" },
         ]
         python: [
           { version: '3.13' },

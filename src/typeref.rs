@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::orjson_fragmenttype_new;
+use core::ffi::c_char;
+#[cfg(feature = "yyjson")]
+use core::ffi::c_void;
+#[cfg(feature = "yyjson")]
+use core::mem::MaybeUninit;
+use core::ptr::{null_mut, NonNull};
 use once_cell::race::{OnceBool, OnceBox};
 use pyo3_ffi::*;
 #[cfg(feature = "yyjson")]
 use std::cell::UnsafeCell;
-#[cfg(feature = "yyjson")]
-use std::mem::MaybeUninit;
-use std::os::raw::c_char;
-#[cfg(feature = "yyjson")]
-use std::os::raw::c_void;
-use std::ptr::{null_mut, NonNull};
 
 pub struct NumpyTypes {
     pub array: *mut PyTypeObject,

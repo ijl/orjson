@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use core::ffi::c_char;
 use pyo3_ffi::{PyBytesObject, PyObject, PyVarObject, Py_ssize_t};
-use std::os::raw::c_char;
 
 #[allow(non_snake_case)]
 #[inline(always)]

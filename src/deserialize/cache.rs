@@ -2,9 +2,9 @@
 
 use associative_cache::replacement::RoundRobinReplacement;
 use associative_cache::*;
+use core::ffi::c_void;
 use once_cell::unsync::OnceCell;
 use std::hash::Hasher;
-use std::os::raw::c_void;
 
 #[repr(transparent)]
 pub struct CachedKey {
@@ -44,7 +44,7 @@ pub fn cache_hash(key: &[u8]) -> u64 {
     debug_assert!(key.len() <= 64);
     #[cfg(feature = "intrinsics")]
     unsafe {
-        std::intrinsics::assume(key.len() <= 64);
+        core::intrinsics::assume(key.len() <= 64);
     };
     let mut hasher = ahash::AHasher::default();
     hasher.write(key);

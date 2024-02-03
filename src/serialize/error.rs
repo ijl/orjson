@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use std::ffi::CStr;
-use std::ptr::NonNull;
+use core::ffi::CStr;
+use core::ptr::NonNull;
 
 pub enum SerializeError {
     DatetimeLibraryUnsupported,

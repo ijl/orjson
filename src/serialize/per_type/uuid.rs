@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::typeref::INT_ATTR_STR;
+use core::ffi::c_uchar;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
-use std::os::raw::c_uchar;
 
 pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 

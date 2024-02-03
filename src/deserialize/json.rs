@@ -3,11 +3,11 @@
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
 use crate::str::unicode_from_str;
+use core::ptr::NonNull;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
-use std::ptr::NonNull;
 
 pub fn deserialize_json(
     data: &'static str,

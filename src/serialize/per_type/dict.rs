@@ -16,9 +16,9 @@ use crate::typeref::{
     TRUE, VALUE_STR,
 };
 use compact_str::CompactString;
+use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
-use std::ptr::NonNull;
 
 pub struct ZeroDictSerializer;
 
@@ -105,8 +105,8 @@ impl Serialize for Dict {
 
         let mut map = serializer.serialize_map(None).unwrap();
 
-        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
         let mut pos = 0;
 
@@ -204,8 +204,8 @@ impl Serialize for DictSortedKey {
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
 
-        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
         let mut pos = 0;
 
@@ -371,8 +371,8 @@ impl Serialize for DictNonStrKey {
 
         let opts = self.state.opts() & NOT_PASSTHROUGH;
 
-        let mut next_key: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = std::ptr::null_mut();
+        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
         let mut pos = 0;
 

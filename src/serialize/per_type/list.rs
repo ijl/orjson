@@ -10,8 +10,8 @@ use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::typeref::*;
 
+use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
-use std::ptr::NonNull;
 
 pub struct ZeroListSerializer;
 

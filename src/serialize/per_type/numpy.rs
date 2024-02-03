@@ -7,11 +7,11 @@ use crate::serialize::per_type::{
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
+use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::*;
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::convert::TryInto;
 use std::fmt;
-use std::os::raw::{c_char, c_int, c_void};
 
 #[repr(transparent)]
 pub struct NumpySerializer<'a> {
@@ -52,7 +52,7 @@ impl<'a> Serialize for NumpySerializer<'a> {
 
 macro_rules! slice {
     ($ptr:expr, $size:expr) => {
-        unsafe { std::slice::from_raw_parts($ptr, $size) }
+        unsafe { core::slice::from_raw_parts($ptr, $size) }
     };
 }
 

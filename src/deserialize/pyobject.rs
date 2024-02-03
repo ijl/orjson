@@ -3,7 +3,7 @@
 use crate::deserialize::cache::*;
 use crate::str::{hash_str, unicode_from_str};
 use crate::typeref::{FALSE, NONE, TRUE};
-use std::ptr::NonNull;
+use core::ptr::NonNull;
 
 pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
     let pykey = if unlikely!(key_str.len() > 64) {

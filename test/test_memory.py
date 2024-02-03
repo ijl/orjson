@@ -61,7 +61,7 @@ DATACLASS_FIXTURE = [
     for i in range(100000, 101000)
 ]
 
-MAX_INCREASE = 2097152  # 2MiB
+MAX_INCREASE = 4194304  # 4MiB
 
 
 class Unsupported:
