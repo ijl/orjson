@@ -565,64 +565,7 @@ where
     }
 }
 
-#[cfg(all(
-    feature = "unstable-simd",
-    target_arch = "x86_64",
-    target_feature = "avx2"
-))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
-where
-    W: ?Sized + io::Write + WriteExt,
-{
-    unsafe {
-        let num_reserved_bytes = value.len() * 8 + 32 + 3;
-        writer.reserve(num_reserved_bytes);
-
-        let written = crate::serialize::writer::simd::format_escaped_str_impl_256(
-            writer.as_mut_buffer_ptr(),
-            value.as_bytes().as_ptr(),
-            value.len(),
-        );
-        writer.set_written(written);
-    }
-    Ok(())
-}
-
-#[cfg(all(
-    feature = "unstable-simd",
-    target_arch = "x86_64",
-    not(target_feature = "avx2")
-))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
-where
-    W: ?Sized + io::Write + WriteExt,
-{
-    unsafe {
-        let num_reserved_bytes = value.len() * 8 + 32 + 3;
-        writer.reserve(num_reserved_bytes);
-
-        if std::is_x86_feature_detected!("avx2") {
-            let written = crate::serialize::writer::simd::format_escaped_str_impl_256(
-                writer.as_mut_buffer_ptr(),
-                value.as_bytes().as_ptr(),
-                value.len(),
-            );
-            writer.set_written(written);
-        } else {
-            let written = crate::serialize::writer::simd::format_escaped_str_impl_128(
-                writer.as_mut_buffer_ptr(),
-                value.as_bytes().as_ptr(),
-                value.len(),
-            );
-            writer.set_written(written);
-        }
-    }
-    Ok(())
-}
-
-#[cfg(all(feature = "unstable-simd", not(target_arch = "x86_64")))]
+#[cfg(feature = "unstable-simd")]
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
 where

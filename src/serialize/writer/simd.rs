@@ -118,8 +118,6 @@ macro_rules! impl_format_simd {
 }
 
 #[inline(never)]
-#[cfg(not(target_feature = "avx2"))]
-#[cfg_attr(target_arch = "x86_64", cold)]
 pub unsafe fn format_escaped_str_impl_128(
     odptr: *mut u8,
     value_ptr: *const u8,
@@ -128,22 +126,6 @@ pub unsafe fn format_escaped_str_impl_128(
     const STRIDE: usize = 16;
     const STRIDE_SATURATION: u32 = u16::MAX as u32;
     type StrVector = std::simd::u8x16;
-
-    impl_format_simd!(odptr, value_ptr, value_len);
-}
-
-#[cfg(target_arch = "x86_64")]
-#[inline(never)]
-#[cfg_attr(not(target_feature = "avx2"), target_feature(enable = "avx2"))]
-#[cfg_attr(not(target_feature = "avx2"), target_feature(enable = "bmi2"))]
-pub unsafe fn format_escaped_str_impl_256(
-    odptr: *mut u8,
-    value_ptr: *const u8,
-    value_len: usize,
-) -> usize {
-    const STRIDE: usize = 32;
-    const STRIDE_SATURATION: u32 = u32::MAX;
-    type StrVector = std::simd::u8x32;
 
     impl_format_simd!(odptr, value_ptr, value_len);
 }
