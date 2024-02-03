@@ -1,6 +1,18 @@
 # Changelog
 
 
+## 3.9.13 - 2024-02-03
+
+### Fixed
+
+- Serialization `str` escape uses only 128-bit SIMD.
+- Fix compatibility with CPython 3.13 alpha 3.
+
+### Changed
+
+- Publish `musllinux_1_2` instead of `musllinux_1_1` wheels.
+- Serialization uses small integer optimization in CPython 3.12 or later.
+
 ## 3.9.12 - 2024-01-18
 
 ### Changed
