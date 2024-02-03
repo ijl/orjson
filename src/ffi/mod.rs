@@ -10,4 +10,4 @@ pub mod yyjson;
 pub use buffer::*;
 pub use bytes::*;
 pub use fragment::{orjson_fragmenttype_new, Fragment};
-pub use long::{pylong_is_unsigned, pylong_is_zero};
+pub use long::{pylong_is_unsigned, pylong_is_zero, pylong_value_signed, pylong_value_unsigned};

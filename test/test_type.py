@@ -329,6 +329,15 @@ class TestType:
         assert orjson.dumps(obj) == ref.encode("utf-8")
         assert orjson.loads(ref) == obj
 
+    def test_int(self):
+        """
+        int compact and non-compact
+        """
+        obj = [-5000, -1000, -10, -5, -2, -1, 0, 1, 2, 5, 10, 1000, 50000]
+        ref = b"[-5000,-1000,-10,-5,-2,-1,0,1,2,5,10,1000,50000]"
+        assert orjson.dumps(obj) == ref
+        assert orjson.loads(ref) == obj
+
     def test_null_array(self):
         """
         null array

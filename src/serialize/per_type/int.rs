@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::{pylong_is_unsigned, pylong_is_zero};
+use crate::ffi::{pylong_is_unsigned, pylong_is_zero, pylong_value_signed, pylong_value_unsigned};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
 
@@ -28,14 +28,14 @@ impl Serialize for IntSerializer {
         if pylong_is_zero(self.ptr) {
             serializer.serialize_u64(0)
         } else if pylong_is_unsigned(self.ptr) {
-            let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
+            let val = pylong_value_unsigned(self.ptr);
             if unlikely!(val == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
                 err!(SerializeError::Integer64Bits)
             } else {
                 serializer.serialize_u64(val)
             }
         } else {
-            let val = ffi!(PyLong_AsLongLong(self.ptr));
+            let val = pylong_value_signed(self.ptr);
             if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
                 err!(SerializeError::Integer64Bits)
             }
@@ -62,7 +62,7 @@ impl Serialize for Int53Serializer {
     where
         S: Serializer,
     {
-        let val = ffi!(PyLong_AsLongLong(self.ptr));
+        let val = pylong_value_signed(self.ptr);
         if unlikely!(val == -1) {
             if ffi!(PyErr_Occurred()).is_null() {
                 serializer.serialize_i64(val)
