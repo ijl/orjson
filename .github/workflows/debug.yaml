@@ -13,8 +13,9 @@ jobs:
           { rust: "nightly-2024-01-17", features: "--features=yyjson,unstable-simd" },
         ]
         python: [
-          { version: '3.12', abi: 'cp312-cp312' },
-          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.13' },
+          { version: '3.12' },
+          { version: '3.8' },
         ]
     env:
       CC: "gcc"
@@ -26,7 +27,9 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: '${{ matrix.python.version }}'
+
     - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
     - uses: actions/checkout@v4
@@ -43,9 +46,15 @@ jobs:
     - run: python -m pip install --user -r test/requirements.txt -r integration/requirements.txt
 
     - run: pytest -s -rxX -v test
+      timeout-minutes: 4
       env:
         PYTHONMALLOC: "debug"
 
     - run: ./integration/run thread
+      timeout-minutes: 2
+
     - run: ./integration/run http
+      timeout-minutes: 2
+
     - run: ./integration/run init
+      timeout-minutes: 2
