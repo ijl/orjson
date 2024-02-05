@@ -95,7 +95,8 @@ macro_rules! impl_format_simd {
             }
 
             while nb > 0 {
-                let v = StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE));
+                let mut v = StrVector::default();
+                v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
                 v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
                 let mask = (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask()
                     as u32
