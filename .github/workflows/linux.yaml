@@ -217,7 +217,8 @@ jobs:
           {
             arch: 's390x',
             cflags: '-O2 -flto -march=z10',
-            features: 'no-panic,unstable-simd,yyjson',
+            # no unstable-simd as rotate_elements_left() causes exit 125 in at least QEMU
+            features: 'no-panic,yyjson',
             rustflags: '-Z mir-opt-level=4 -C target-cpu=z10 -D warnings',
             target: 's390x-unknown-linux-gnu',
           },

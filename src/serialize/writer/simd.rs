@@ -64,14 +64,14 @@ macro_rules! impl_format_simd {
                 }
             }
 
+            let mut v = if unlikely!(is_cross_page!(sptr)) {
+                let mut v = StrVector::default();
+                v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
+                v
+            } else {
+                StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE))
+            };
             while nb > 0 {
-                let v = if unlikely!(is_cross_page!(sptr)) {
-                    let mut v = StrVector::default();
-                    v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
-                    v
-                } else {
-                    StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE))
-                };
                 v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
                 let mut mask = (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask()
                     as u32
@@ -82,7 +82,13 @@ macro_rules! impl_format_simd {
                     break;
                 } else {
                     let cn = mask.trailing_zeros() as usize;
+                    let nb_start = nb;
                     impl_escape_unchecked!(sptr, dptr, nb, mask, cn);
+                    let mut consumed = nb_start - nb;
+                    while consumed != 0 {
+                        v = v.rotate_elements_left::<1>();
+                        consumed -= 1;
+                    }
                 }
             }
 
