@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 3.9.14 - 2024-02-14
+
+### Fixed
+
+- Fix crash serializing `str` introduced in 3.9.11.
+
+### Changed
+
+- Build now depends on Rust 1.72 or later.
+
+
 ## 3.9.13 - 2024-02-03
 
 ### Fixed
@@ -12,6 +23,7 @@
 
 - Publish `musllinux_1_2` instead of `musllinux_1_1` wheels.
 - Serialization uses small integer optimization in CPython 3.12 or later.
+
 
 ## 3.9.12 - 2024-01-18
 
