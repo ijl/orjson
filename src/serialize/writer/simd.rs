@@ -2,7 +2,6 @@
 // Copyright 2023-2024 liuq19, ijl
 // adapted from sonic-rs' src/util/string.rs
 
-use crate::typeref::PAGE_SIZE;
 use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 
 macro_rules! impl_escape_unchecked {
@@ -64,13 +63,8 @@ macro_rules! impl_format_simd {
                 }
             }
 
-            let mut v = if unlikely!(is_cross_page!(sptr)) {
-                let mut v = StrVector::default();
-                v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
-                v
-            } else {
-                StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE))
-            };
+            let mut v = StrVector::default();
+            v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
             while nb > 0 {
                 v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
                 let mut mask = (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask()
@@ -97,12 +91,6 @@ macro_rules! impl_format_simd {
         }
 
         return dptr as usize - dstart as usize;
-    };
-}
-
-macro_rules! is_cross_page {
-    ($src:expr) => {
-        unsafe { (($src as usize & (PAGE_SIZE - 1)) + STRIDE) > PAGE_SIZE }
     };
 }
 
