@@ -56,6 +56,7 @@ encoding_rs = { version = "0.8", default_features = false }
 itoa = { version = "1", default_features = false }
 itoap = { version = "1", features = ["std", "simd"] }
 once_cell = { version = "1", default_features = false, features = ["race"] }
+page_size = { version = "0.6" }
 pyo3-ffi = { version = "^0.20.2", default_features = false, features = ["extension-module"]}
 ryu = { version = "1", default_features = false }
 serde = { version = "1", default_features = false }

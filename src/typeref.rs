@@ -75,6 +75,9 @@ pub static mut DESCR_STR: *mut PyObject = null_mut();
 pub static mut VALUE_STR: *mut PyObject = null_mut();
 pub static mut INT_ATTR_STR: *mut PyObject = null_mut();
 
+#[cfg(feature = "unstable-simd")]
+pub static mut PAGE_SIZE: usize = 0;
+
 #[cfg(feature = "yyjson")]
 pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
 
@@ -135,6 +138,11 @@ pub fn init_typerefs() {
 fn _init_typerefs_impl() -> bool {
     unsafe {
         debug_assert!(crate::opt::MAX_OPT < u16::MAX as i32);
+
+        #[cfg(feature = "unstable-simd")]
+        {
+            PAGE_SIZE = page_size::get();
+        }
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
