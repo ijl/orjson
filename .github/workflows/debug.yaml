@@ -8,9 +8,9 @@ jobs:
       fail-fast: false
       matrix:
         profile: [
-          { rust: "1.65", features: "" },
-          { rust: "1.65", features: "--features=yyjson" },
-          { rust: "nightly-2024-02-03", features: "--features=yyjson,unstable-simd" },
+          { rust: "1.72", features: "" },
+          { rust: "1.72", features: "--features=yyjson" },
+          { rust: "nightly-2024-02-13", features: "--features=yyjson,unstable-simd" },
         ]
         python: [
           { version: '3.13' },

@@ -1184,7 +1184,7 @@ No. `bytes` is the correct type for a serialized blob.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.65
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.72
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
@@ -1196,7 +1196,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2024-02-03` and stable 1.65. It
+The project's own CI tests against `nightly-2024-02-13` and stable 1.65. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

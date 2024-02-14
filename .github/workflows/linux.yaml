@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      RUST_TOOLCHAIN: "1.65" # MSRV
+      RUST_TOOLCHAIN: "1.72" # MSRV
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $RUST_TOOLCHAIN -y
     - run: rustup default $RUST_TOOLCHAIN
@@ -71,8 +71,8 @@ jobs:
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-02-03 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2024-02-03-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-02-13 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2024-02-13-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v4
 
     - name: build-std
@@ -84,7 +84,7 @@ jobs:
     - run: |
         maturin build --release --strip \
           --out=dist \
-          --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson \
+          --features=no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
@@ -143,11 +143,11 @@ jobs:
         RUSTFLAGS: "-C target-feature=-crt-static -Z mir-opt-level=4"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       with:
-        rust-toolchain: nightly-2024-02-03
+        rust-toolchain: nightly-2024-02-13
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
-        args: --release --strip --out=dist --features=encoding_rs/simd-accel,no-panic,unstable-simd,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out=dist --features=no-panic,unstable-simd,yyjson -i python${{ matrix.python.version }}
 
     - name: Set up QEMU
       if: matrix.platform.arch != 'x86_64'
@@ -196,7 +196,7 @@ jobs:
           {
             arch: 'aarch64',
             cflags: '-O2 -flto',
-            features: 'encoding_rs/simd-accel,no-panic,unstable-simd,yyjson',
+            features: 'no-panic,unstable-simd,yyjson',
             rustflags: '-Z mir-opt-level=4 -D warnings',
             target: 'aarch64-unknown-linux-gnu',
           },
@@ -239,7 +239,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-02-03
+        rust-toolchain: nightly-2024-02-13
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}

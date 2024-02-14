@@ -161,10 +161,6 @@ impl DateTimeLike for DateTime {
     pydatetime_get!(second, PyDateTime_DATE_GET_SECOND, u8);
     pydatetime_get!(microsecond, PyDateTime_DATE_GET_MICROSECOND, u32);
 
-    fn millisecond(&self) -> u32 {
-        self.microsecond() / 1_000
-    }
-
     fn nanosecond(&self) -> u32 {
         self.microsecond() * 1_000
     }

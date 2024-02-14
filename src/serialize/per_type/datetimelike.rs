@@ -76,8 +76,6 @@ pub trait DateTimeLike {
     fn minute(&self) -> u8;
     /// Returns the second component of the datetime.
     fn second(&self) -> u8;
-    /// Returns the number of milliseconds since the whole non-leap second.
-    fn millisecond(&self) -> u32;
     /// Returns the number of microseconds since the whole non-leap second.
     fn microsecond(&self) -> u32;
     /// Returns the number of nanoseconds since the whole non-leap second.
