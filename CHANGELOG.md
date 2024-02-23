@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 3.9.15 - 2024-02-23
+
+### Fixed
+
+- Implement recursion limit of 1024 on `orjson.loads()`.
+- Use byte-exact read on `str` formatting SIMD path to avoid crash.
+
+
 ## 3.9.14 - 2024-02-14
 
 ### Fixed
