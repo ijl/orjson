@@ -572,7 +572,7 @@ where
     W: ?Sized + io::Write + WriteExt,
 {
     unsafe {
-        let num_reserved_bytes = value.len() * 8 + 32 + 3;
+        let num_reserved_bytes = value.len() * 8 + 32;
         writer.reserve(num_reserved_bytes);
 
         let written = crate::serialize::writer::simd::format_escaped_str_impl_128(

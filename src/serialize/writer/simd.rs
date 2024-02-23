@@ -2,19 +2,25 @@
 // Copyright 2023-2024 liuq19, ijl
 // adapted from sonic-rs' src/util/string.rs
 
-use crate::typeref::PAGE_SIZE;
 use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 
 macro_rules! impl_escape_unchecked {
-    ($src:expr, $dst:expr, $nb:expr, $omask:expr, $cn:expr) => {
+    ($src:expr, $dst:expr, $nb:expr, $omask:expr, $cn:expr, $v:expr, $rotate:expr) => {
         $nb -= $cn;
+        if $rotate == true {
+            for _ in 0..$cn {
+                $v = $v.rotate_elements_left::<1>();
+            }
+        }
         $dst = $dst.add($cn);
         $src = $src.add($cn);
         $omask >>= $cn;
         loop {
             $nb -= 1;
+            if $rotate == true {
+                $v = $v.rotate_elements_left::<1>();
+            }
             $omask = $omask >> 1;
-
             if *($src) == b'"' {
                 core::ptr::copy_nonoverlapping(b"\\\"".as_ptr(), $dst, 2);
                 $dst = $dst.add(2);
@@ -48,46 +54,48 @@ macro_rules! impl_format_simd {
             *dptr = b'"';
             dptr = dptr.add(1);
 
-            while nb >= STRIDE {
-                let v = StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE));
-                v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
-                let mut mask =
-                    (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask() as u32;
+            {
+                const ROTATE: bool = false;
+                while nb >= STRIDE {
+                    let mut v = StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE));
+                    let mut mask =
+                        (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask() as u32;
+                    v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
 
-                if likely!(mask == 0) {
-                    nb -= STRIDE;
-                    dptr = dptr.add(STRIDE);
-                    sptr = sptr.add(STRIDE);
-                } else {
-                    let cn = mask.trailing_zeros() as usize;
-                    impl_escape_unchecked!(sptr, dptr, nb, mask, cn);
+                    if likely!(mask == 0) {
+                        nb -= STRIDE;
+                        dptr = dptr.add(STRIDE);
+                        sptr = sptr.add(STRIDE);
+                    } else {
+                        let cn = mask.trailing_zeros() as usize;
+                        impl_escape_unchecked!(sptr, dptr, nb, mask, cn, v, ROTATE);
+                    }
                 }
             }
 
-            let mut v = if unlikely!(is_cross_page!(sptr)) {
+            {
+                const ROTATE: bool = true;
                 let mut v = StrVector::default();
-                v.as_mut_array()[..nb].copy_from_slice(core::slice::from_raw_parts(sptr, nb));
-                v
-            } else {
-                StrVector::from_slice(core::slice::from_raw_parts(sptr, STRIDE))
-            };
-            while nb > 0 {
-                v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
+                {
+                    let vec_ptr = v.as_mut_array().as_mut_ptr();
+                    for idx in 0..nb {
+                        core::ptr::write(vec_ptr.add(idx), *sptr.add(idx));
+                    }
+                }
+
                 let mut mask = (v.simd_eq(blash) | v.simd_eq(quote) | v.simd_lt(x20)).to_bitmask()
                     as u32
                     & (STRIDE_SATURATION >> (32 - STRIDE - nb));
 
-                if likely!(mask == 0) {
-                    dptr = dptr.add(nb);
-                    break;
-                } else {
-                    let cn = mask.trailing_zeros() as usize;
-                    let nb_start = nb;
-                    impl_escape_unchecked!(sptr, dptr, nb, mask, cn);
-                    let mut consumed = nb_start - nb;
-                    while consumed != 0 {
-                        v = v.rotate_elements_left::<1>();
-                        consumed -= 1;
+                while nb > 0 {
+                    v.copy_to_slice(core::slice::from_raw_parts_mut(dptr, STRIDE));
+
+                    if likely!(mask == 0) {
+                        dptr = dptr.add(nb);
+                        break;
+                    } else {
+                        let cn = mask.trailing_zeros() as usize;
+                        impl_escape_unchecked!(sptr, dptr, nb, mask, cn, v, ROTATE);
                     }
                 }
             }
@@ -97,12 +105,6 @@ macro_rules! impl_format_simd {
         }
 
         return dptr as usize - dstart as usize;
-    };
-}
-
-macro_rules! is_cross_page {
-    ($src:expr) => {
-        unsafe { (($src as usize & (PAGE_SIZE - 1)) + STRIDE) > PAGE_SIZE }
     };
 }
 
