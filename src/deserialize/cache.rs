@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use associative_cache::replacement::RoundRobinReplacement;
-use associative_cache::*;
+use associative_cache::{AssociativeCache, Capacity1024, HashDirectMapped, RoundRobinReplacement};
 use core::ffi::c_void;
 use once_cell::unsync::OnceCell;
 use std::hash::Hasher;

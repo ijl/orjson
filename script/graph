@@ -89,6 +89,8 @@ def tab(obj):
         if not per_op_data:
             continue
 
+        clamp = 10 if operation == "serialization" else 5
+
         json_baseline = {}
         for each in per_op_data:
             if each["group"] == "witter.json":
@@ -97,7 +99,9 @@ def tab(obj):
                 json_baseline[each["group"]] = each["operations"]
 
         for each in per_op_data:
-            each["relative"] = each["operations"] / json_baseline[each["group"]]
+            each["relative"] = min(
+                each["operations"] / json_baseline[each["group"]], clamp
+            )
 
         p = pd.DataFrame.from_dict(per_op_data)
         p.groupby("group")
@@ -117,7 +121,6 @@ def tab(obj):
         pyplot.title(operation)
 
         # ensure Y range
-        clamp = 10 if operation == "serialization" else 5
         ylabels = set((min(v, clamp) for v in pyplot.gca().get_yticks()))
         pyplot.gca().set_yticks(list({1.0, 1.5}.union(ylabels)))
 

@@ -10,7 +10,6 @@ use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::*;
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
-use std::convert::TryInto;
 use std::fmt;
 
 #[repr(transparent)]

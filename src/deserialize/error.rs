@@ -51,9 +51,10 @@ impl<'a> DeserializeError<'a> {
     /// Return position of the error in the deserialized data
     #[cold]
     #[cfg(feature = "yyjson")]
+    #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn pos(&self) -> i64 {
         match self.data {
-            Some(as_str) => bytecount::num_chars(&as_str.as_bytes()[0..self.pos as usize]) as i64,
+            Some(as_str) => as_str[0..self.pos as usize].chars().count() as i64,
             None => 0,
         }
     }

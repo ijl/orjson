@@ -2,10 +2,13 @@
 
 rm -f target/wheels/*
 
-export CC="clang"
-export CFLAGS="-O2 -fstrict-aliasing -emit-llvm -flto=full"
-export LDFLAGS="${CFLAGS} -fuse-ld=lld -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
-export RUSTFLAGS="-C linker=clang -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination"
+export CC="${CC:-clang}"
+export LD="${LD:-lld}"
+
+echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
+export CFLAGS="-Os -fstrict-aliasing -emit-llvm -flto=full"
+export LDFLAGS="${CFLAGS} -fuse-ld=${LD} -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
+export RUSTFLAGS="-C linker=${CC} -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=${LD} -Z mir-opt-level=4 -Z virtual-function-elimination"
 
 maturin build "$@"
 
