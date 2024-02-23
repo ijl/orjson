@@ -625,6 +625,9 @@ It raises `JSONDecodeError` if given an invalid type or invalid
 JSON. This includes if the input contains `NaN`, `Infinity`, or `-Infinity`,
 which the standard library allows, but is not valid JSON.
 
+It raises `JSONDecodeError` if a combination of array or object recurses
+1024 levels deep.
+
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
 

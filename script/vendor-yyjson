@@ -2,7 +2,7 @@
 
 set -eou pipefail
 
-yyjson_version="5e3b26d2659287d31e2f8e10f95f95feb7e5ab3a"
+yyjson_version="0eca326fe57aeeb866e6f04c9ef9ea9f8343157e"
 
 curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
 curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"
@@ -26,3 +26,5 @@ sed -i 's/    if (!err) err = &dummy_err;//g' include/yyjson/yyjson.c
 sed -i 's/likely(!alc_ptr)/!alc_ptr/g' include/yyjson/yyjson.c
 
 sed -i 's/unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))/false/g' include/yyjson/yyjson.c
+
+git apply include/yyjson-recursion-limit.patch

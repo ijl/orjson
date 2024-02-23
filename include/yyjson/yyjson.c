@@ -307,6 +307,9 @@ uint32_t yyjson_version(void) {
 #define YYJSON_MUT_DOC_VAL_POOL_INIT_SIZE   (0x10 * sizeof(yyjson_mut_val))
 #define YYJSON_MUT_DOC_VAL_POOL_MAX_SIZE    (0x1000000 * sizeof(yyjson_mut_val))
 
+/* The minimum size of the dynamic allocator's chunk. */
+#define YYJSON_ALC_DYN_MIN_SIZE             0x1000
+
 /* Default value for compile-time options. */
 #ifndef YYJSON_DISABLE_READER
 #define YYJSON_DISABLE_READER 0
@@ -326,8 +329,9 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #define YYJSON_DISABLE_UTF8_VALIDATION 0
 #endif
-
-
+#ifndef YYJSON_READER_CONTAINER_RECURSION_LIMIT
+#define YYJSON_READER_CONTAINER_RECURSION_LIMIT 1024
+#endif
 
 /*==============================================================================
  * Macros
@@ -966,6 +970,15 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
     NULL
 };
 
+
+
+/*==============================================================================
+ * Null Memory Allocator
+ *
+ * This allocator is just a placeholder to ensure that the internal
+ * malloc/realloc/free function pointers are not null.
+ *============================================================================*/
+
 static void *null_malloc(void *ctx, usize size) {
     return NULL;
 }
@@ -989,29 +1002,37 @@ static const yyjson_alc YYJSON_NULL_ALC = {
 
 /*==============================================================================
  * Pool Memory Allocator
- * This is a simple memory allocator that uses linked list memory chunk.
- * The following code will be executed only when the library user creates
- * this allocator manually.
+ *
+ * This allocator is initialized with a fixed-size buffer.
+ * The buffer is split into multiple memory chunks for memory allocation.
  *============================================================================*/
 
-/** chunk header */
+/** memory chunk header */
 typedef struct pool_chunk {
-    usize size; /* chunk memory size (include chunk header) */
-    struct pool_chunk *next;
+    usize size; /* chunk memory size, include chunk header */
+    struct pool_chunk *next; /* linked list, nullable */
+    /* char mem[]; flexible array member */
 } pool_chunk;
 
-/** ctx header */
+/** allocator ctx header */
 typedef struct pool_ctx {
-    usize size; /* total memory size (include ctx header) */
-    pool_chunk *free_list;
+    usize size; /* total memory size, include ctx header */
+    pool_chunk *free_list; /* linked list, nullable */
+    /* pool_chunk chunks[]; flexible array member */
 } pool_ctx;
 
+/** align up the input size to chunk size */
+static_inline void pool_size_align(usize *size) {
+    *size = size_align_up(*size, sizeof(pool_chunk)) + sizeof(pool_chunk);
+}
+
 static void *pool_malloc(void *ctx_ptr, usize size) {
+    /* assert(size != 0) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *next, *prev = NULL, *cur = ctx->free_list;
     
-    if (unlikely(size == 0 || size >= ctx->size)) return NULL;
-    size = size_align_up(size, sizeof(pool_chunk)) + sizeof(pool_chunk);
+    if (unlikely(size >= ctx->size)) return NULL;
+    pool_size_align(&size);
     
     while (cur) {
         if (cur->size < size) {
@@ -1038,6 +1059,7 @@ static void *pool_malloc(void *ctx_ptr, usize size) {
 }
 
 static void pool_free(void *ctx_ptr, void *ptr) {
+    /* assert(ptr != NULL) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1;
     pool_chunk *prev = NULL, *next = ctx->free_list;
@@ -1064,25 +1086,15 @@ static void pool_free(void *ctx_ptr, void *ptr) {
 
 static void *pool_realloc(void *ctx_ptr, void *ptr,
                           usize old_size, usize size) {
+    /* assert(ptr != NULL && size != 0 && old_size < size) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1, *prev, *next, *tmp;
-    usize free_size;
-    void *new_ptr;
     
-    if (unlikely(size == 0 || size >= ctx->size)) return NULL;
-    size = size_align_up(size, sizeof(pool_chunk)) + sizeof(pool_chunk);
-    
-    /* reduce size */
-    if (unlikely(size <= cur->size)) {
-        free_size = cur->size - size;
-        if (free_size >= sizeof(pool_chunk) * 2) {
-            tmp = (pool_chunk *)(void *)((u8 *)cur + cur->size - free_size);
-            tmp->size = free_size;
-            pool_free(ctx_ptr, (void *)(tmp + 1));
-            cur->size -= free_size;
-        }
-        return ptr;
-    }
+    /* check size */
+    if (unlikely(size >= ctx->size)) return NULL;
+    pool_size_align(&old_size);
+    pool_size_align(&size);
+    if (unlikely(old_size == size)) return ptr;
     
     /* find next and prev chunk */
     prev = NULL;
@@ -1092,10 +1104,9 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
         next = next->next;
     }
     
-    /* merge to higher chunk if they are contiguous */
-    if ((u8 *)cur + cur->size == (u8 *)next &&
-        cur->size + next->size >= size) {
-        free_size = cur->size + next->size - size;
+    if ((u8 *)cur + cur->size == (u8 *)next && cur->size + next->size >= size) {
+        /* merge to higher chunk if they are contiguous */
+        usize free_size = cur->size + next->size - size;
         if (free_size > sizeof(pool_chunk) * 2) {
             tmp = (pool_chunk *)(void *)((u8 *)cur + size);
             if (prev) prev->next = tmp;
@@ -1109,15 +1120,15 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
             cur->size += next->size;
         }
         return ptr;
+    } else {
+        /* fallback to malloc and memcpy */
+        void *new_ptr = pool_malloc(ctx_ptr, size - sizeof(pool_chunk));
+        if (new_ptr) {
+            memcpy(new_ptr, ptr, cur->size - sizeof(pool_chunk));
+            pool_free(ctx_ptr, ptr);
+        }
+        return new_ptr;
     }
-    
-    /* fallback to malloc and memcpy */
-    new_ptr = pool_malloc(ctx_ptr, size - sizeof(pool_chunk));
-    if (new_ptr) {
-        memcpy(new_ptr, ptr, cur->size - sizeof(pool_chunk));
-        pool_free(ctx_ptr, ptr);
-    }
-    return new_ptr;
 }
 
 bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
@@ -1143,6 +1154,161 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
     alc->free = pool_free;
     alc->ctx = (void *)ctx;
     return true;
+}
+
+
+
+/*==============================================================================
+ * Dynamic Memory Allocator
+ *
+ * This allocator allocates memory on demand and does not immediately release
+ * unused memory. Instead, it places the unused memory into a freelist for
+ * potential reuse in the future. It is only when the entire allocator is
+ * destroyed that all previously allocated memory is released at once.
+ *============================================================================*/
+
+/** memory chunk header */
+typedef struct dyn_chunk {
+    usize size; /* chunk size, include header */
+    struct dyn_chunk *next;
+    /* char mem[]; flexible array member */
+} dyn_chunk;
+
+/** allocator ctx header */
+typedef struct {
+    dyn_chunk free_list; /* dummy header, sorted from small to large */
+    dyn_chunk used_list; /* dummy header */
+} dyn_ctx;
+
+/** align up the input size to chunk size */
+static_inline bool dyn_size_align(usize *size) {
+    usize alc_size = *size + sizeof(dyn_chunk);
+    alc_size = size_align_up(alc_size, YYJSON_ALC_DYN_MIN_SIZE);
+    if (unlikely(alc_size < *size)) return false; /* overflow */
+    *size = alc_size;
+    return true;
+}
+
+/** remove a chunk from list (the chunk must already be in the list) */
+static_inline void dyn_chunk_list_remove(dyn_chunk *list, dyn_chunk *chunk) {
+    dyn_chunk *prev = list, *cur;
+    for (cur = prev->next; cur; cur = cur->next) {
+        if (cur == chunk) {
+            prev->next = cur->next;
+            cur->next = NULL;
+            return;
+        }
+        prev = cur;
+    }
+}
+
+/** add a chunk to list header (the chunk must not be in the list) */
+static_inline void dyn_chunk_list_add(dyn_chunk *list, dyn_chunk *chunk) {
+    chunk->next = list->next;
+    list->next = chunk;
+}
+
+static void *dyn_malloc(void *ctx_ptr, usize size) {
+    /* assert(size != 0) */
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *chunk, *prev, *next;
+    if (unlikely(!dyn_size_align(&size))) return NULL;
+    
+    /* freelist is empty, create new chunk */
+    if (!ctx->free_list.next) {
+        chunk = (dyn_chunk *)def.malloc(def.ctx, size);
+        if (unlikely(!chunk)) return NULL;
+        chunk->size = size;
+        chunk->next = NULL;
+        dyn_chunk_list_add(&ctx->used_list, chunk);
+        return (void *)(chunk + 1);
+    }
+    
+    /* find a large enough chunk, or resize the largest chunk */
+    prev = &ctx->free_list;
+    while (true) {
+        chunk = prev->next;
+        if (chunk->size >= size) { /* enough size, reuse this chunk */
+            prev->next = chunk->next;
+            dyn_chunk_list_add(&ctx->used_list, chunk);
+            return (void *)(chunk + 1);
+        }
+        if (!chunk->next) { /* resize the largest chunk */
+            chunk = (dyn_chunk *)def.realloc(def.ctx, chunk, chunk->size, size);
+            if (unlikely(!chunk)) return NULL;
+            prev->next = NULL;
+            chunk->size = size;
+            dyn_chunk_list_add(&ctx->used_list, chunk);
+            return (void *)(chunk + 1);
+        }
+        prev = chunk;
+    }
+}
+
+static void *dyn_realloc(void *ctx_ptr, void *ptr,
+                          usize old_size, usize size) {
+    /* assert(ptr != NULL && size != 0 && old_size < size) */
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *prev, *next, *new_chunk;
+    dyn_chunk *chunk = (dyn_chunk *)ptr - 1;
+    if (unlikely(!dyn_size_align(&size))) return NULL;
+    if (chunk->size >= size) return ptr;
+    
+    dyn_chunk_list_remove(&ctx->used_list, chunk);
+    new_chunk = (dyn_chunk *)def.realloc(def.ctx, chunk, chunk->size, size);
+    if (likely(new_chunk)) {
+        new_chunk->size = size;
+        chunk = new_chunk;
+    }
+    dyn_chunk_list_add(&ctx->used_list, chunk);
+    return new_chunk ? (void *)(new_chunk + 1) : NULL;
+}
+
+static void dyn_free(void *ctx_ptr, void *ptr) {
+    /* assert(ptr != NULL) */
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *chunk = (dyn_chunk *)ptr - 1, *prev;
+    
+    dyn_chunk_list_remove(&ctx->used_list, chunk);
+    for (prev = &ctx->free_list; prev; prev = prev->next) {
+        if (!prev->next || prev->next->size >= chunk->size) {
+            chunk->next = prev->next;
+            prev->next = chunk;
+            break;
+        }
+    }
+}
+
+yyjson_alc *yyjson_alc_dyn_new(void) {
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    usize hdr_len = sizeof(yyjson_alc) + sizeof(dyn_ctx);
+    yyjson_alc *alc = (yyjson_alc *)def.malloc(def.ctx, hdr_len);
+    dyn_ctx *ctx = (dyn_ctx *)(void *)(alc + 1);
+    if (unlikely(!alc)) return NULL;
+    alc->malloc = dyn_malloc;
+    alc->realloc = dyn_realloc;
+    alc->free = dyn_free;
+    alc->ctx = alc + 1;
+    memset(ctx, 0, sizeof(*ctx));
+    return alc;
+}
+
+void yyjson_alc_dyn_free(yyjson_alc *alc) {
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)(void *)(alc + 1);
+    dyn_chunk *chunk, *next;
+    if (unlikely(!alc)) return;
+    for (chunk = ctx->free_list.next; chunk; chunk = next) {
+        next = chunk->next;
+        def.free(def.ctx, chunk);
+    }
+    for (chunk = ctx->used_list.next; chunk; chunk = next) {
+        next = chunk->next;
+        def.free(def.ctx, chunk);
+    }
+    def.free(def.ctx, alc);
 }
 
 
@@ -1242,6 +1408,7 @@ bool yyjson_mut_doc_set_val_pool_size(yyjson_mut_doc *doc, size_t count) {
 void yyjson_mut_doc_free(yyjson_mut_doc *doc) {
     if (doc) {
         yyjson_alc alc = doc->alc;
+        memset(&doc->alc, 0, sizeof(alc));
         unsafe_yyjson_str_pool_release(&doc->str_pool, &alc);
         unsafe_yyjson_val_pool_release(&doc->val_pool, &alc);
         alc.free(alc.ctx, doc);
@@ -1305,7 +1472,6 @@ yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
      We copy them to another contiguous memory as mutable values,
      then reconnect the mutable values with the original relationship.
      */
-    
     usize i_vals_len;
     yyjson_mut_val *m_vals, *m_val;
     yyjson_val *i_val, *i_end;
@@ -1375,7 +1541,6 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
      second to last item, which needs to be linked to the last item to close the
      circle.
      */
-    
     yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
     if (unlikely(!m_val)) return NULL;
     m_val->tag = m_vals->tag;
@@ -1540,12 +1705,13 @@ static_inline bool unsafe_yyjson_num_equals(void *lhs, void *rhs) {
     yyjson_val_uni *runi = &((yyjson_val *)rhs)->uni;
     yyjson_subtype lt = unsafe_yyjson_get_subtype(lhs);
     yyjson_subtype rt = unsafe_yyjson_get_subtype(rhs);
-    if (lt == rt)
-        return luni->u64 == runi->u64;
-    if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT)
+    if (lt == rt) return luni->u64 == runi->u64;
+    if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT) {
         return luni->i64 >= 0 && luni->u64 == runi->u64;
-    if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT)
+    }
+    if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT) {
         return runi->i64 >= 0 && luni->u64 == runi->u64;
+    }
     return false;
 }
 
@@ -1571,8 +1737,8 @@ bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
                 while (len-- > 0) {
                     rhs = yyjson_obj_iter_getn(&iter, lhs->uni.str,
                                                unsafe_yyjson_get_len(lhs));
-                    if (!rhs || !unsafe_yyjson_equals(lhs + 1, rhs))
-                        return false;
+                    if (!rhs) return false;
+                    if (!unsafe_yyjson_equals(lhs + 1, rhs)) return false;
                     lhs = unsafe_yyjson_get_next(lhs + 1);
                 }
             }
@@ -1626,8 +1792,8 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
                 while (len-- > 0) {
                     rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
                                                    unsafe_yyjson_get_len(lhs));
-                    if (!rhs || !unsafe_yyjson_mut_equals(lhs->next, rhs))
-                        return false;
+                    if (!rhs) return false;
+                    if (!unsafe_yyjson_mut_equals(lhs->next, rhs)) return false;
                     lhs = lhs->next->next;
                 }
             }
@@ -2506,6 +2672,7 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
     builder = yyjson_mut_obj(doc);
     if (unlikely(!builder)) return NULL;
     
+    memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_is_obj(orig)) {
         orig = &local_orig;
         orig->tag = builder->tag;
@@ -2557,6 +2724,7 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
     builder = yyjson_mut_obj(doc);
     if (unlikely(!builder)) return NULL;
     
+    memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_mut_is_obj(orig)) {
         orig = &local_orig;
         orig->tag = builder->tag;
@@ -3318,8 +3486,6 @@ static_inline void pow10_table_get_exp(i32 exp10, i32 *exp2) {
 
 
 
-#if !YYJSON_DISABLE_READER
-
 /*==============================================================================
  * JSON Character Matcher
  *============================================================================*/
@@ -3512,6 +3678,8 @@ static_inline bool digi_is_digit_or_fp(u8 d) {
 }
 
 
+
+#if !YYJSON_DISABLE_READER
 
 /*==============================================================================
  * Hex Character Reader
@@ -5631,6 +5799,8 @@ fail_character:
     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
 fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
+fail_recursion:
+    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
     
 #undef return_err
 }
@@ -5687,7 +5857,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     yyjson_val *ctn_parent; /* parent of current container */
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
-    
+
+    u32 container_depth = 0; /* limit on number of open array and map */
     bool raw; /* read number as raw */
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
@@ -5722,6 +5893,11 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     }
     
 arr_begin:
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
+        goto fail_recursion;
+    }
+
     /* save current container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -5821,6 +5997,8 @@ arr_val_end:
     goto fail_character;
     
 arr_end:
+    container_depth--;
+
     /* get parent container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     
@@ -5839,6 +6017,11 @@ arr_end:
     }
     
 obj_begin:
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
+        goto fail_recursion;
+    }
+
     /* push container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -5967,6 +6150,8 @@ obj_val_end:
     goto fail_character;
     
 obj_end:
+    container_depth--;
+
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -6018,6 +6203,8 @@ fail_character:
     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
 fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
+fail_recursion:
+    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
     
 #undef val_incr
 #undef return_err
@@ -6075,7 +6262,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     yyjson_val *ctn_parent; /* parent of current container */
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
-    
+
+    u32 container_depth = 0; /* limit on number of open array and map */
     bool raw; /* read number as raw */
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
@@ -6112,6 +6300,11 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     }
     
 arr_begin:
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
+        goto fail_recursion;
+    }
+
     /* save current container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -6228,6 +6421,8 @@ arr_val_end:
     goto fail_character;
     
 arr_end:
+    container_depth--;
+
     /* get parent container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     
@@ -6247,6 +6442,11 @@ arr_end:
     }
     
 obj_begin:
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
+        goto fail_recursion;
+    }
+
     /* push container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -6395,6 +6595,8 @@ obj_val_end:
     goto fail_character;
     
 obj_end:
+    container_depth--;
+
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -6447,6 +6649,8 @@ fail_character:
     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
 fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
+fail_recursion:
+    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
     
 #undef val_incr
 #undef return_err
@@ -8143,13 +8347,15 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
     bool cpy = (enc_table == enc_table_cpy);
     bool esc = has_write_flag(ESCAPE_UNICODE) != 0;
     bool inv = has_write_flag(ALLOW_INVALID_UNICODE) != 0;
+    bool newline = has_write_flag(NEWLINE_AT_END) != 0;
+    const usize end_len = 2; /* '\n' and '\0' */
     
     switch (unsafe_yyjson_get_type(val)) {
         case YYJSON_TYPE_RAW:
             str_len = unsafe_yyjson_get_len(val);
             str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
             check_str_len(str_len);
-            incr_len(str_len + 1);
+            incr_len(str_len + end_len);
             cur = write_raw(cur, str_ptr, str_len);
             break;
             
@@ -8157,7 +8363,7 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             str_len = unsafe_yyjson_get_len(val);
             str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
             check_str_len(str_len);
-            incr_len(str_len * 6 + 4);
+            incr_len(str_len * 6 + 2 + end_len);
             if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
                 cur = write_string_noesc(cur, str_ptr, str_len);
             } else {
@@ -8167,7 +8373,7 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             break;
             
         case YYJSON_TYPE_NUM:
-            incr_len(32);
+            incr_len(32 + end_len);
             cur = write_number(cur, val, flg);
             if (unlikely(!cur)) goto fail_num;
             break;
@@ -8183,13 +8389,13 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             break;
             
         case YYJSON_TYPE_ARR:
-            incr_len(4);
+            incr_len(2 + end_len);
             byte_copy_2(cur, "[]");
             cur += 2;
             break;
             
         case YYJSON_TYPE_OBJ:
-            incr_len(4);
+            incr_len(2 + end_len);
             byte_copy_2(cur, "{}");
             cur += 2;
             break;
@@ -8198,6 +8404,7 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             goto fail_type;
     }
     
+    if (newline) *cur++ = '\n';
     *cur = '\0';
     *dat_len = (usize)(cur - hdr);
     memset(err, 0, sizeof(yyjson_write_err));
@@ -8270,6 +8477,7 @@ static_inline u8 *yyjson_write_minify(const yyjson_val *root,
     bool cpy = (enc_table == enc_table_cpy);
     bool esc = has_write_flag(ESCAPE_UNICODE) != 0;
     bool inv = has_write_flag(ALLOW_INVALID_UNICODE) != 0;
+    bool newline = has_write_flag(NEWLINE_AT_END) != 0;
     
     alc_len = root->uni.ofs / sizeof(yyjson_val);
     alc_len = alc_len * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
@@ -8376,6 +8584,11 @@ ctn_end:
     }
     
 doc_end:
+    if (newline) {
+        incr_len(2);
+        *(cur - 1) = '\n';
+        cur++;
+    }
     *--cur = '\0';
     *dat_len = (usize)(cur - hdr);
     memset(err, 0, sizeof(yyjson_write_err));
@@ -8449,6 +8662,7 @@ static_inline u8 *yyjson_write_pretty(const yyjson_val *root,
     bool esc = has_write_flag(ESCAPE_UNICODE) != 0;
     bool inv = has_write_flag(ALLOW_INVALID_UNICODE) != 0;
     usize spaces = has_write_flag(PRETTY_TWO_SPACES) ? 2 : 4;
+    bool newline = has_write_flag(NEWLINE_AT_END) != 0;
     
     alc_len = root->uni.ofs / sizeof(yyjson_val);
     alc_len = alc_len * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
@@ -8579,6 +8793,10 @@ ctn_end:
     }
     
 doc_end:
+    if (newline) {
+        incr_len(2);
+        *cur++ = '\n';
+    }
     *cur = '\0';
     *dat_len = (usize)(cur - hdr);
     memset(err, 0, sizeof(yyjson_write_err));
@@ -8811,6 +9029,7 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
     bool cpy = (enc_table == enc_table_cpy);
     bool esc = has_write_flag(ESCAPE_UNICODE) != 0;
     bool inv = has_write_flag(ALLOW_INVALID_UNICODE) != 0;
+    bool newline = has_write_flag(NEWLINE_AT_END) != 0;
     
     alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
@@ -8921,6 +9140,11 @@ ctn_end:
     }
     
 doc_end:
+    if (newline) {
+        incr_len(2);
+        *(cur - 1) = '\n';
+        cur++;
+    }
     *--cur = '\0';
     *dat_len = (usize)(cur - hdr);
     err->code = YYJSON_WRITE_SUCCESS;
@@ -8996,6 +9220,7 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
     bool esc = has_write_flag(ESCAPE_UNICODE) != 0;
     bool inv = has_write_flag(ALLOW_INVALID_UNICODE) != 0;
     usize spaces = has_write_flag(PRETTY_TWO_SPACES) ? 2 : 4;
+    bool newline = has_write_flag(NEWLINE_AT_END) != 0;
     
     alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
@@ -9130,6 +9355,10 @@ ctn_end:
     }
     
 doc_end:
+    if (newline) {
+        incr_len(2);
+        *cur++ = '\n';
+    }
     *cur = '\0';
     *dat_len = (usize)(cur - hdr);
     err->code = YYJSON_WRITE_SUCCESS;

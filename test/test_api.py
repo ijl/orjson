@@ -11,6 +11,8 @@ import orjson
 
 SIMPLE_TYPES = (1, 1.0, -1, None, "str", True, False)
 
+LOADS_RECURSION_LIMIT = 1024
+
 
 def default(obj):
     return str(obj)
@@ -50,11 +52,75 @@ class TestApi:
         for val in (1, 3.14, [], {}, None):
             pytest.raises(orjson.JSONDecodeError, orjson.loads, val)
 
-    def test_loads_recursion(self):
+    def test_loads_recursion_partial(self):
         """
-        loads() recursion limit
+        loads() recursion limit partial
         """
         pytest.raises(orjson.JSONDecodeError, orjson.loads, "[" * (1024 * 1024))
+
+    def test_loads_recursion_valid_limit_array(self):
+        """
+        loads() recursion limit at limit array
+        """
+        n = LOADS_RECURSION_LIMIT + 1
+        value = b"[" * n + b"]" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_limit_object(self):
+        """
+        loads() recursion limit at limit object
+        """
+        n = LOADS_RECURSION_LIMIT
+        value = b'{"key":' * n + b'{"key":true}' + b"}" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_limit_mixed(self):
+        """
+        loads() recursion limit at limit mixed
+        """
+        n = LOADS_RECURSION_LIMIT
+        value = b"[" b'{"key":' * n + b'{"key":true}' + b"}" * n + b"]"
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_excessive_array(self):
+        """
+        loads() recursion limit excessively high value
+        """
+        n = 10000000
+        value = b"[" * n + b"]" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_limit_array_pretty(self):
+        """
+        loads() recursion limit at limit array pretty
+        """
+        n = LOADS_RECURSION_LIMIT + 1
+        value = b"[\n  " * n + b"]" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_limit_object_pretty(self):
+        """
+        loads() recursion limit at limit object pretty
+        """
+        n = LOADS_RECURSION_LIMIT
+        value = b'{\n  "key":' * n + b'{"key":true}' + b"}" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_limit_mixed_pretty(self):
+        """
+        loads() recursion limit at limit mixed pretty
+        """
+        n = LOADS_RECURSION_LIMIT
+        value = b"[\n  " b'{"key":' * n + b'{"key":true}' + b"}" * n + b"]"
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
+
+    def test_loads_recursion_valid_excessive_array_pretty(self):
+        """
+        loads() recursion limit excessively high value pretty
+        """
+        n = 10000000
+        value = b"[\n  " * n + b"]" * n
+        pytest.raises(orjson.JSONDecodeError, orjson.loads, value)
 
     def test_version(self):
         """

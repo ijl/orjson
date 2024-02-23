@@ -1,0 +1,161 @@
+diff --git a/include/yyjson/yyjson.c b/include/yyjson/yyjson.c
+index e76f538..4bac033 100644
+--- a/include/yyjson/yyjson.c
++++ b/include/yyjson/yyjson.c
+@@ -329,8 +329,9 @@ uint32_t yyjson_version(void) {
+ #ifndef YYJSON_DISABLE_UTF8_VALIDATION
+ #define YYJSON_DISABLE_UTF8_VALIDATION 0
+ #endif
+-
+-
++#ifndef YYJSON_READER_CONTAINER_RECURSION_LIMIT
++#define YYJSON_READER_CONTAINER_RECURSION_LIMIT 1024
++#endif
+ 
+ /*==============================================================================
+  * Macros
+@@ -5798,6 +5799,8 @@ fail_character:
+     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
+ fail_garbage:
+     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
++fail_recursion:
++    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
+     
+ #undef return_err
+ }
+@@ -5854,7 +5857,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
+     yyjson_val *ctn_parent; /* parent of current container */
+     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
+     const char *msg; /* error message */
+-    
++
++    u32 container_depth = 0; /* limit on number of open array and map */
+     bool raw; /* read number as raw */
+     bool inv; /* allow invalid unicode */
+     u8 *raw_end; /* raw end for null-terminator */
+@@ -5889,6 +5893,11 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
+     }
+     
+ arr_begin:
++    container_depth++;
++    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
++        goto fail_recursion;
++    }
++
+     /* save current container */
+     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
+                (ctn->tag & YYJSON_TAG_MASK);
+@@ -5988,6 +5997,8 @@ arr_val_end:
+     goto fail_character;
+     
+ arr_end:
++    container_depth--;
++
+     /* get parent container */
+     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
+     
+@@ -6006,6 +6017,11 @@ arr_end:
+     }
+     
+ obj_begin:
++    container_depth++;
++    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
++        goto fail_recursion;
++    }
++
+     /* push container */
+     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
+                (ctn->tag & YYJSON_TAG_MASK);
+@@ -6134,6 +6150,8 @@ obj_val_end:
+     goto fail_character;
+     
+ obj_end:
++    container_depth--;
++
+     /* pop container */
+     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
+     /* point to the next value */
+@@ -6185,6 +6203,8 @@ fail_character:
+     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
+ fail_garbage:
+     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
++fail_recursion:
++    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
+     
+ #undef val_incr
+ #undef return_err
+@@ -6242,7 +6262,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
+     yyjson_val *ctn_parent; /* parent of current container */
+     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
+     const char *msg; /* error message */
+-    
++
++    u32 container_depth = 0; /* limit on number of open array and map */
+     bool raw; /* read number as raw */
+     bool inv; /* allow invalid unicode */
+     u8 *raw_end; /* raw end for null-terminator */
+@@ -6279,6 +6300,11 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
+     }
+     
+ arr_begin:
++    container_depth++;
++    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
++        goto fail_recursion;
++    }
++
+     /* save current container */
+     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
+                (ctn->tag & YYJSON_TAG_MASK);
+@@ -6395,6 +6421,8 @@ arr_val_end:
+     goto fail_character;
+     
+ arr_end:
++    container_depth--;
++
+     /* get parent container */
+     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
+     
+@@ -6414,6 +6442,11 @@ arr_end:
+     }
+     
+ obj_begin:
++    container_depth++;
++    if (unlikely(container_depth >= YYJSON_READER_CONTAINER_RECURSION_LIMIT)) {
++        goto fail_recursion;
++    }
++
+     /* push container */
+     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
+                (ctn->tag & YYJSON_TAG_MASK);
+@@ -6562,6 +6595,8 @@ obj_val_end:
+     goto fail_character;
+     
+ obj_end:
++    container_depth--;
++
+     /* pop container */
+     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
+     /* point to the next value */
+@@ -6614,6 +6649,8 @@ fail_character:
+     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
+ fail_garbage:
+     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
++fail_recursion:
++    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
+     
+ #undef val_incr
+ #undef return_err
+diff --git a/include/yyjson/yyjson.h b/include/yyjson/yyjson.h
+index c393408..bc688e0 100644
+--- a/include/yyjson/yyjson.h
++++ b/include/yyjson/yyjson.h
+@@ -831,6 +831,9 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_OPEN               = 12;
+ /** Failed to read a file. */
+ static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
+ 
++/** Document exceeded YYJSON_READER_CONTAINER_RECURSION_LIMIT.  */
++static const yyjson_read_code YYJSON_READ_ERROR_RECURSION_DEPTH         = 14;
++
+ /** Error information for JSON reader. */
+ typedef struct yyjson_read_err {
+     /** Error code, see `yyjson_read_code` for all possible values. */
