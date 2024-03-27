@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.10.0 - 2024-03-27
+
+### Changed
+
+- Support serializing `numpy.float16` (`numpy.half`).
+- sdist uses metadata 2.3 instead of 2.1.
+- Improve Windows PyPI builds.
+
+
 ## 3.9.15 - 2024-02-23
 
 ### Fixed
