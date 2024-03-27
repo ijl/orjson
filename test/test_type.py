@@ -75,7 +75,7 @@ class TestType:
         """
         worst case format_escaped_str_with_escapes() allocation
         """
-        ref = "\x01\x1F" * 1024 * 16
+        ref = "\x01\x1f" * 1024 * 16
         assert orjson.loads(orjson.dumps(ref)) == ref
         assert orjson.loads(orjson.dumps(ref, option=orjson.OPT_INDENT_2)) == ref
 

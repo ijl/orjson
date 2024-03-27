@@ -10,7 +10,7 @@ jobs:
         profile: [
           { rust: "1.72", features: "" },
           { rust: "1.72", features: "--features=yyjson" },
-          { rust: "nightly-2024-02-13", features: "--features=yyjson,unstable-simd" },
+          { rust: "nightly-2024-03-27", features: "--features=yyjson,unstable-simd" },
         ]
         python: [
           { version: '3.13' },
@@ -19,9 +19,10 @@ jobs:
         ]
     env:
       CC: "gcc"
-      CFLAGS: "-O2"
+      CFLAGS: "-Os -fstrict-aliasing"
       LDFLAGS: "-Wl,--as-needed"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.profile.rust }} --profile minimal -y
 
@@ -54,6 +55,7 @@ jobs:
       timeout-minutes: 2
 
     - run: ./integration/run http
+      if: matrix.python.version != '3.13'  # alpha 5 httpx type issue
       timeout-minutes: 2
 
     - run: ./integration/run init

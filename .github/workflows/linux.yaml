@@ -30,7 +30,7 @@ jobs:
 
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
-    - run: pytest -s -rxX -v test
+    - run: pytest -s -rxX -v -n 4 test
       env:
         PYTHONMALLOC: "debug"
 
@@ -41,7 +41,7 @@ jobs:
 
     - name: Store sdist
       if: "startsWith(github.ref, 'refs/tags/')"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: dist
@@ -62,17 +62,18 @@ jobs:
     env:
       PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       CC: "clang"
-      CFLAGS: "-O2 -fstrict-aliasing -emit-llvm -flto=full"
-      LDFLAGS: "-O2 -fstrict-aliasing -emit-llvm -flto=full -fuse-ld=lld -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
-      RUSTFLAGS: "-C linker=clang -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
+      CFLAGS: "-Os -fstrict-aliasing -flto=full"
+      LDFLAGS: "-fuse-ld=lld -Wl,--as-needed"
+      RUSTFLAGS: "-C linker=clang -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+      UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64:latest
       options: --user 0
     steps:
     - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-02-13 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2024-02-13-x86_64-unknown-linux-gnu
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-03-27 --profile minimal -y
+    - run: rustup component add rust-src --toolchain nightly-2024-03-27-x86_64-unknown-linux-gnu
     - uses: actions/checkout@v4
 
     - name: build-std
@@ -91,7 +92,7 @@ jobs:
     - run: python3 -m pip install --user dist/orjson*.whl
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
 
-    - run: pytest -s -rxX -v test
+    - run: pytest -s -rxX -v -n 4 test
       env:
         PYTHONMALLOC: "debug"
 
@@ -101,7 +102,7 @@ jobs:
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: dist
@@ -138,12 +139,13 @@ jobs:
       uses: PyO3/maturin-action@v1
       env:
         CC: "gcc"
-        CFLAGS: "-O2"
-        LDFLAGS: "-O2 -flto -Wl,--as-needed"
-        RUSTFLAGS: "-C target-feature=-crt-static -Z mir-opt-level=4"
+        CFLAGS: "-Os"
+        LDFLAGS: "-Wl,--as-needed"
+        RUSTFLAGS: "-Z mir-opt-level=4 -D warnings -C target-feature=-crt-static"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+        UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
       with:
-        rust-toolchain: nightly-2024-02-13
+        rust-toolchain: nightly-2024-03-27
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
@@ -174,7 +176,7 @@ jobs:
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: dist
@@ -195,31 +197,31 @@ jobs:
         target: [
           {
             arch: 'aarch64',
-            cflags: '-O2 -flto',
+            cflags: '-Os -flto=full -fstrict-aliasing',
             features: 'no-panic,unstable-simd,yyjson',
-            rustflags: '-Z mir-opt-level=4 -D warnings',
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'aarch64-unknown-linux-gnu',
           },
           {
             arch: 'armv7',
-            cflags: '-Os -flto -fstrict-aliasing',
+            cflags: '-Os -flto=full -fstrict-aliasing',
             features: 'no-panic,yyjson', # no SIMD
-            rustflags: '-C opt-level=s -Z mir-opt-level=4 -D warnings',
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C opt-level=s',
             target: 'armv7-unknown-linux-gnueabihf',
           },
           {
             arch: 'ppc64le',
-            cflags: '-O2 -flto',
+            cflags: '-Os -flto=full -fstrict-aliasing',
             features: 'no-panic,unstable-simd,yyjson',
-            rustflags: '-Z mir-opt-level=4 -D warnings',
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
           },
           {
             arch: 's390x',
-            cflags: '-O2 -flto -march=z10',
+            cflags: '-Os -flto=full -fstrict-aliasing -march=z10',
             # no unstable-simd as rotate_elements_left() causes exit 125 in at least QEMU
             features: 'no-panic,yyjson',
-            rustflags: '-Z mir-opt-level=4 -C target-cpu=z10 -D warnings',
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C target-cpu=z10',
             target: 's390x-unknown-linux-gnu',
           },
         ]
@@ -235,12 +237,13 @@ jobs:
       env:
         PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
         CFLAGS: "${{ matrix.target.cflags }}"
-        LDFLAGS: "${{ matrix.target.cflags }} -Wl,--as-needed"
+        LDFLAGS: "-Wl,--as-needed"
         CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
+        UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-02-13
+        rust-toolchain: nightly-2024-03-27
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -264,11 +267,11 @@ jobs:
           venv/bin/pip install -U pip wheel
           venv/bin/pip install -r test/requirements.txt
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v test
+          venv/bin/python -m pytest -s -rxX -v -n 2 test
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: wheels
         path: dist
@@ -276,15 +279,11 @@ jobs:
 
   pypi:
     name: PyPI
-    permissions:
-      # trusted publisher
-      id-token: write
-      contents: write
     runs-on: ubuntu-22.04
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_2, sdist ]
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: wheels
       - uses: actions/setup-python@v5

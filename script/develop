@@ -2,13 +2,16 @@
 
 rm -f target/wheels/*
 
+export UNSAFE_PYO3_SKIP_VERSION_CHECK=1
+
 export CC="${CC:-clang}"
 export LD="${LD:-lld}"
 
 echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
-export CFLAGS="-Os -fstrict-aliasing -emit-llvm -flto=full"
-export LDFLAGS="${CFLAGS} -fuse-ld=${LD} -Wl,--as-needed -Wl,-plugin-opt=also-emit-llvm"
-export RUSTFLAGS="-C linker=${CC} -C linker-plugin-lto -C lto=fat -C link-arg=-fuse-ld=${LD} -Z mir-opt-level=4 -Z virtual-function-elimination"
+
+export CFLAGS="-Os -fstrict-aliasing -flto=full"
+export LDFLAGS="-fuse-ld=${LD} -Wl,--as-needed"
+export RUSTFLAGS="-C linker=${CC} -C lto=fat -C link-arg=-fuse-ld=${LD} -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=8"
 
 maturin build "$@"
 

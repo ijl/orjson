@@ -128,7 +128,7 @@ class TestUltraJSON:
         assert dec == orjson.loads(enc)
 
     def testEncodeUnicodeBMP(self):
-        s = "\U0001f42e\U0001f42e\U0001F42D\U0001F42D"  # 🐮🐮🐭🐭
+        s = "\U0001f42e\U0001f42e\U0001f42d\U0001f42d"  # 🐮🐮🐭🐭
         orjson.dumps(s)
         json.dumps(s)
 

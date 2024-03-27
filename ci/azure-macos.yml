@@ -26,12 +26,13 @@ steps:
     maturin build --release --strip --features=no-panic,unstable-simd,yyjson --interpreter $(interpreter) --target=universal2-apple-darwin
   env:
     CC: "clang"
-    CFLAGS: "-O2 -fstrict-aliasing -flto=full"
-    LDFLAGS: "-O2 -fstrict-aliasing -flto=full -Wl,--as-needed"
+    CFLAGS: "-Os -fstrict-aliasing -flto=full"
+    LDFLAGS: "-Wl,--as-needed"
     CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
     CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
     RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+    UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   displayName: build universal2
 
 - bash: pip install target/wheels/orjson*universal2.whl
