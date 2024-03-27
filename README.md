@@ -813,7 +813,7 @@ JSONEncodeError: Integer exceeds 53-bit range
 ### numpy
 
 orjson natively serializes `numpy.ndarray` and individual
-`numpy.float64`, `numpy.float32`,
+`numpy.float64`, `numpy.float32`, `numpy.float16` (`numpy.half`),
 `numpy.int64`, `numpy.int32`, `numpy.int16`, `numpy.int8`,
 `numpy.uint64`, `numpy.uint32`, `numpy.uint16`, `numpy.uint8`,
 `numpy.uintp`, `numpy.intp`, `numpy.datetime64`, and `numpy.bool`

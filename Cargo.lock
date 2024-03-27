@@ -142,6 +142,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "half"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5eceaaeec696539ddaf7b333340f1af35a5aa87ae3e4f3ead0532f72affab2e"
+dependencies = [
+ "cfg-if",
+ "crunchy",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -201,6 +211,7 @@ dependencies = [
  "chrono",
  "compact_str",
  "encoding_rs",
+ "half",
  "itoa",
  "itoap",
  "once_cell",

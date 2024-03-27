@@ -16,6 +16,7 @@ pub struct NumpyTypes {
     pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
     pub float32: *mut PyTypeObject,
+    pub float16: *mut PyTypeObject,
     pub int64: *mut PyTypeObject,
     pub int32: *mut PyTypeObject,
     pub int16: *mut PyTypeObject,
@@ -239,6 +240,7 @@ pub fn load_numpy_types() -> Box<Option<NonNull<NumpyTypes>>> {
         let numpy_module_dict = PyObject_GenericGetDict(numpy, null_mut());
         let types = Box::new(NumpyTypes {
             array: look_up_numpy_type(numpy_module_dict, "ndarray\0"),
+            float16: look_up_numpy_type(numpy_module_dict, "half\0"),
             float32: look_up_numpy_type(numpy_module_dict, "float32\0"),
             float64: look_up_numpy_type(numpy_module_dict, "float64\0"),
             int8: look_up_numpy_type(numpy_module_dict, "int8\0"),

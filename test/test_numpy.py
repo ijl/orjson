@@ -12,7 +12,9 @@ except ImportError:
 
 
 def numpy_default(obj):
-    return obj.tolist()
+    if isinstance(obj, numpy.ndarray):
+        return obj.tolist()
+    raise TypeError
 
 
 @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
@@ -112,6 +114,94 @@ class TestNumpy:
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
             == b"[1.0,3.4028235e38]"
+        )
+
+    def test_numpy_array_d1_f16(self):
+        assert (
+            orjson.dumps(
+                numpy.array([-1.0, 0.0009765625, 1.0, 65504.0], numpy.float16),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[-1.0,0.0009765625,1.0,65504.0]"
+        )
+
+    def test_numpy_array_f16_roundtrip(self):
+        ref = [
+            -1.0,
+            -2.0,
+            0.000000059604645,
+            0.000060975552,
+            0.00006103515625,
+            0.0009765625,
+            0.33325195,
+            0.99951172,
+            1.0,
+            1.00097656,
+            65504.0,
+        ]
+        obj = numpy.array(ref, numpy.float16)  # type: ignore
+        serialized = orjson.dumps(
+            obj,
+            option=orjson.OPT_SERIALIZE_NUMPY,
+        )
+        deserialized = numpy.array(orjson.loads(serialized), numpy.float16)  # type: ignore
+        assert numpy.array_equal(obj, deserialized)
+
+    def test_numpy_array_f16_edge(self):
+        assert (
+            orjson.dumps(
+                numpy.array(
+                    [
+                        numpy.inf,
+                        numpy.NINF,
+                        numpy.nan,
+                        numpy.NZERO,
+                        numpy.PZERO,
+                        numpy.pi,
+                    ],
+                    numpy.float16,
+                ),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[null,null,null,-0.0,0.0,3.140625]"
+        )
+
+    def test_numpy_array_f32_edge(self):
+        assert (
+            orjson.dumps(
+                numpy.array(
+                    [
+                        numpy.inf,
+                        numpy.NINF,
+                        numpy.nan,
+                        numpy.NZERO,
+                        numpy.PZERO,
+                        numpy.pi,
+                    ],
+                    numpy.float32,
+                ),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[null,null,null,-0.0,0.0,3.1415927]"
+        )
+
+    def test_numpy_array_f64_edge(self):
+        assert (
+            orjson.dumps(
+                numpy.array(
+                    [
+                        numpy.inf,
+                        numpy.NINF,
+                        numpy.nan,
+                        numpy.NZERO,
+                        numpy.PZERO,
+                        numpy.pi,
+                    ],
+                    numpy.float64,
+                ),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b"[null,null,null,-0.0,0.0,3.141592653589793]"
         )
 
     def test_numpy_array_d1_f64(self):
@@ -375,13 +465,10 @@ class TestNumpy:
             )
 
     def test_numpy_array_unsupported_dtype(self):
-        array = numpy.array([[1, 2], [3, 4]], numpy.float16)  # type: ignore
+        array = numpy.array([[1, 2], [3, 4]], numpy.csingle)  # type: ignore
         with pytest.raises(orjson.JSONEncodeError) as cm:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert "unsupported datatype in numpy array" in str(cm)
-        assert orjson.dumps(
-            array, default=numpy_default, option=orjson.OPT_SERIALIZE_NUMPY
-        ) == orjson.dumps(array.tolist())
 
     def test_numpy_array_d1(self):
         array = numpy.array([1])
@@ -600,6 +687,12 @@ class TestNumpy:
                 numpy.uint64(18446744073709551615), option=orjson.OPT_SERIALIZE_NUMPY
             )
             == b"18446744073709551615"
+        )
+
+    def test_numpy_scalar_float16(self):
+        assert (
+            orjson.dumps(numpy.float16(1.0), option=orjson.OPT_SERIALIZE_NUMPY)
+            == b"1.0"
         )
 
     def test_numpy_scalar_float32(self):

@@ -53,6 +53,7 @@ bytecount = { version = "^0.6.7", default_features = false, features = ["runtime
 chrono = { version = "=0.4.34", default_features = false }
 compact_str = { version = "0.7", default_features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default_features = false }
+half = { version = "2", default_features = false, features = ["std"] }
 itoa = { version = "1", default_features = false }
 itoap = { version = "1", features = ["std", "simd"] }
 once_cell = { version = "1", default_features = false, features = ["race"] }
