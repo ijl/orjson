@@ -43,8 +43,9 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: orjson_sdist
         path: dist
+        overwrite: true
         retention-days: 1
 
   manylinux_2_17_amd64:
@@ -104,8 +105,9 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: orjson_manylinux_2_17_amd64_${{ matrix.python.version }}
         path: dist
+        overwrite: true
         retention-days: 1
 
   musllinux_1_2:
@@ -178,8 +180,9 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: orjson_musllinux_1_2_${{ matrix.platform.arch }}_${{ matrix.python.version }}
         path: dist
+        overwrite: true
         retention-days: 1
 
   manylinux_2_17_non_amd64:
@@ -273,8 +276,9 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: orjson_manylinux_2_17_${{ matrix.target.arch }}_${{ matrix.python.version }}
         path: dist
+        overwrite: true
         retention-days: 1
 
   pypi:
@@ -285,7 +289,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          pattern: orjson_*
+          merge-multiple: true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
