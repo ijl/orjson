@@ -96,17 +96,9 @@ class TestDict:
             '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}'
         ) == {"cf_status_firefox57": "verified", "cf_status_firefox67": "---"}
 
-    def test_dict_pop_replace_first(self):
-        "Test pop and replace a first key in a dict with other keys."
-        data = {"id": "any", "other": "any"}
-        data.pop("id")
-        assert orjson.dumps(data) == b'{"other":"any"}'
-        data["id"] = "new"
-        assert orjson.dumps(data) == b'{"other":"any","id":"new"}'
-
-    def test_dict_pop_replace_last(self):
-        "Test pop and replace a last key in a dict with other keys."
-        data = {"other": "any", "id": "any"}
+    @pytest.mark.parametrize("data", [{"id": "any", "other": "any"}, {"other": "any", "id": "any"}])
+    def test_dict_pop_replace(self, data):
+        "Test pop and replace a first and last key in a dict with other keys."
         data.pop("id")
         assert orjson.dumps(data) == b'{"other":"any"}'
         data["id"] = "new"
@@ -126,35 +118,20 @@ class TestDict:
         data["id"] = "new"
         assert orjson.dumps(data) == b'{"id":"new","static":"msg"}'
 
-    def test_dict_0xff(self):
-        "dk_size <= 0xff"
-        data = {str(idx): idx for idx in range(0, 0xFF)}
+    @pytest.mark.parametrize("end", [0xFF, 0xFFFF])
+    def test_dict_load(self, end):
+        "dk_size <= 0xff and 0xffff"
+        data = {str(idx): idx for idx in range(0, end)}
         data.pop("112")
         data["112"] = 1
         data["113"] = 2
         assert orjson.loads(orjson.dumps(data)) == data
 
-    def test_dict_0xff_repeated(self):
-        "dk_size <= 0xff repeated"
+    @pytest.mark.parametrize("end", [0xFF, 0xFFFF])
+    def test_dict_load_repeated(self, end):
+        "dk_size <= 0xff and 0xffff repeated"
         for _ in range(0, 100):
-            data = {str(idx): idx for idx in range(0, 0xFF)}
-            data.pop("112")
-            data["112"] = 1
-            data["113"] = 2
-            assert orjson.loads(orjson.dumps(data)) == data
-
-    def test_dict_0xffff(self):
-        "dk_size <= 0xffff"
-        data = {str(idx): idx for idx in range(0, 0xFFFF)}
-        data.pop("112")
-        data["112"] = 1
-        data["113"] = 2
-        assert orjson.loads(orjson.dumps(data)) == data
-
-    def test_dict_0xffff_repeated(self):
-        "dk_size <= 0xffff repeated"
-        for _ in range(0, 100):
-            data = {str(idx): idx for idx in range(0, 0xFFFF)}
+            data = {str(idx): idx for idx in range(0, end)}
             data.pop("112")
             data["112"] = 1
             data["113"] = 2

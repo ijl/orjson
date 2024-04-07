@@ -68,11 +68,21 @@ class TestEnum:
             class Subclass(StrEnum):  # type: ignore
                 B = "b"
 
-    def test_arbitrary_enum(self):
-        assert orjson.dumps(UnspecifiedEnum.A) == b'"a"'
-        assert orjson.dumps(UnspecifiedEnum.B) == b"1"
-        assert orjson.dumps(UnspecifiedEnum.C) == b"1.1"
-        assert orjson.dumps(UnspecifiedEnum.D) == b'{"d":1}'
+    @pytest.mark.parametrize("enum_value, expected", [
+        (UnspecifiedEnum.A, b'"a"'),
+        (UnspecifiedEnum.B, b"1"),
+        (UnspecifiedEnum.C, b"1.1"),
+        (UnspecifiedEnum.D, b'{"d":1}'),
+        (IntEnumEnum.ONE, b"1"),
+        (IntFlagEnum.ONE, b"1"),
+        (FlagEnum.ONE, b"1"),
+        (AutoEnum.A, b'"a"'),
+        (FloatEnum.ONE, b"1.1"),
+        (StrEnum.AAA, b'"aaa"'),
+    ])
+    def test_enum_serialization(self, enum_value, expected):
+        assert orjson.dumps(enum_value) == expected
+
 
     def test_custom_enum(self):
         assert orjson.dumps(UnspecifiedEnum.E, default=default) == b'"c"'
@@ -82,27 +92,6 @@ class TestEnum:
             orjson.dumps(UnspecifiedEnum.F, option=orjson.OPT_NAIVE_UTC)
             == b'"1970-01-01T00:00:00+00:00"'
         )
-
-    def test_int_enum(self):
-        assert orjson.dumps(IntEnum.ONE) == b"1"
-
-    def test_intenum_enum(self):
-        assert orjson.dumps(IntEnumEnum.ONE) == b"1"
-
-    def test_intflag_enum(self):
-        assert orjson.dumps(IntFlagEnum.ONE) == b"1"
-
-    def test_flag_enum(self):
-        assert orjson.dumps(FlagEnum.ONE) == b"1"
-
-    def test_auto_enum(self):
-        assert orjson.dumps(AutoEnum.A) == b'"a"'
-
-    def test_float_enum(self):
-        assert orjson.dumps(FloatEnum.ONE) == b"1.1"
-
-    def test_str_enum(self):
-        assert orjson.dumps(StrEnum.AAA) == b'"aaa"'
 
     def test_bool_enum(self):
         with pytest.raises(TypeError):
