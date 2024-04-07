@@ -46,14 +46,10 @@ class TestType:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=NotImplementedError)
 
-        ran = False
-        try:
+        with pytest.raises(Exception) as exc_info:
             orjson.dumps(Custom(), default=NotImplementedError)
-        except Exception as err:
-            assert isinstance(err, orjson.JSONEncodeError)
-            assert str(err) == "default serializer exceeds recursion limit"
-            ran = True
-        assert ran
+        assert isinstance(exc_info.value, orjson.JSONEncodeError)
+        assert str(exc_info.value) == "default serializer exceeds recursion limit"
 
     def test_default_func(self):
         """
@@ -96,14 +92,10 @@ class TestType:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(Custom(), default=default)
 
-        ran = False
-        try:
+        with pytest.raises(Exception) as exc_info:
             orjson.dumps(Custom(), default=default)
-        except Exception as err:
-            assert isinstance(err, orjson.JSONEncodeError)
-            assert str(err) == "Type is not JSON serializable: Custom"
-            ran = True
-        assert ran
+        assert isinstance(exc_info.value, orjson.JSONEncodeError)
+        assert str(exc_info.value) == "Type is not JSON serializable: Custom"
 
     def test_default_exception_type(self):
         """
@@ -189,14 +181,11 @@ class TestType:
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
 
-        ran = False
-        try:
+        with pytest.raises(Exception) as exc_info:
             orjson.dumps(ref, default=default)
-        except Exception as err:
-            assert isinstance(err, orjson.JSONEncodeError)
-            assert str(err) == "Type is not JSON serializable: Custom"
-            ran = True
-        assert ran
+        assert isinstance(exc_info.value, orjson.JSONEncodeError)
+        assert str(exc_info.value) == "Type is not JSON serializable: Custom"
+
 
     def test_default_func_invalid_str(self):
         """
