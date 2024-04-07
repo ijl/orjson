@@ -443,7 +443,7 @@ class TestNumpy:
 
     def test_numpy_array_fortran(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
-        assert array.flags["F_CONTIGUOUS"] is True
+        assert array.flags["F_CONTIGUOUS"]
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert orjson.dumps(
@@ -452,7 +452,7 @@ class TestNumpy:
 
     def test_numpy_array_non_contiguous_message(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
-        assert array.flags["F_CONTIGUOUS"] is True
+        assert array.flags["F_CONTIGUOUS"]
         with pytest.raises(TypeError) as exc:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert str(exc.value) == "numpy array is not C contiguous; use ndarray.tolist() in default"
