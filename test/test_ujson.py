@@ -64,13 +64,12 @@ class TestUltraJSON:
         val = [[[[]]]] * 20  # type: ignore
         output = orjson.dumps(val)
         assert val == orjson.loads(output)
-        assert val == orjson.loads(output)
 
     def test_encodeArrayOfDoubles(self):
         val = [31337.31337, 31337.31337, 31337.31337, 31337.31337] * 10
         output = orjson.dumps(val)
         assert val == orjson.loads(output)
-        assert val == orjson.loads(output)
+
 
     def test_encodeStringConversion2(self):
         val = "A string \\ / \b \f \n \r \t"
@@ -188,13 +187,10 @@ class TestUltraJSON:
         val = [1, 2, 3, 4]
         output = orjson.dumps(val)
         assert val == orjson.loads(output)
-        assert val == orjson.loads(output)
 
     def test_encodeDictConversion(self):
         val = {"k1": 1, "k2": 2, "k3": 3, "k4": 4}
         output = orjson.dumps(val)
-        assert val == orjson.loads(output)
-        assert val == orjson.loads(output)
         assert val == orjson.loads(output)
 
     def test_encodeNoneConversion(self):

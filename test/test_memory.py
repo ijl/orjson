@@ -118,7 +118,6 @@ class TestMemory:
             assert val
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
-        assert proc.memory_info().rss <= mem + MAX_INCREASE
 
     @pytest.mark.skipif(psutil is None, reason="psutil not installed")
     def test_memory_loads_exc(self):
@@ -197,7 +196,6 @@ class TestMemory:
         for _ in range(100):
             val = orjson.dumps(DATACLASS_FIXTURE)
             assert val
-        assert val
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
@@ -218,7 +216,6 @@ class TestMemory:
         for _ in range(50000):
             val = orjson.dumps(pytz.UTC.localize(dt))
             assert val
-        assert val
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
@@ -256,7 +253,6 @@ class TestMemory:
         for _ in range(100):
             val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
             assert val
-        assert val
         gc.collect()
         assert proc.memory_info().rss <= mem + MAX_INCREASE
 
