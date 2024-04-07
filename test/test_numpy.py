@@ -363,7 +363,7 @@ class TestNumpy:
         )
 
     def test_numpy_array_d1_datetime64_picoseconds(self):
-        try:
+        with pytest.raises(TypeError) as exc:
             orjson.dumps(
                 numpy.array(
                     [
@@ -374,9 +374,7 @@ class TestNumpy:
                 ),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            assert False
-        except TypeError as exc:
-            assert str(exc) == "unsupported numpy.datetime64 unit: picoseconds"
+        assert str(exc.value) == "unsupported numpy.datetime64 unit: picoseconds"
 
     def test_numpy_array_d2_i64(self):
         assert (
@@ -455,14 +453,9 @@ class TestNumpy:
     def test_numpy_array_non_contiguous_message(self):
         array = numpy.array([[1, 2], [3, 4]], order="F")
         assert array.flags["F_CONTIGUOUS"] is True
-        try:
+        with pytest.raises(TypeError) as exc:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
-            assert False
-        except TypeError as exc:
-            assert (
-                str(exc)
-                == "numpy array is not C contiguous; use ndarray.tolist() in default"
-            )
+        assert str(exc.value) == "numpy array is not C contiguous; use ndarray.tolist() in default"
 
     def test_numpy_array_unsupported_dtype(self):
         array = numpy.array([[1, 2], [3, 4]], numpy.csingle)  # type: ignore
