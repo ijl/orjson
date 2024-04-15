@@ -1,5 +1,9 @@
-name: linux
+name: artifact
 on: push
+env:
+  RUST_TOOLCHAIN: "nightly-2024-04-15"
+  CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+  UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 jobs:
 
   sdist:
@@ -9,18 +13,22 @@ jobs:
     env:
       RUST_TOOLCHAIN: "1.72" # MSRV
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain $RUST_TOOLCHAIN -y
-    - run: rustup default $RUST_TOOLCHAIN
+    - name: rustup stable
+      run: |
+        curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain "${RUST_TOOLCHAIN}" -y
+        rustup default "${RUST_TOOLCHAIN}"
 
     - uses: actions/checkout@v4
 
     - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
-    - run: maturin build
-    - run: cargo fetch
-    - run: mkdir .cargo
-    - run: cp ci/sdist.toml .cargo/config.toml
-    - run: cargo vendor include/cargo --versioned-dirs
+    - name: Vendor dependencies
+      run: |
+        maturin build
+        cargo fetch
+        mkdir .cargo
+        cp ci/sdist.toml .cargo/config.toml
+        cargo vendor include/cargo --versioned-dirs
 
     - run: maturin sdist --out=dist
 
@@ -61,37 +69,40 @@ jobs:
           { version: '3.8', abi: 'cp38-cp38' },
         ]
     env:
-      PATH: /github/home/.local/bin:/github/home/.cargo/bin:/opt/python/${{ matrix.python.abi }}/bin:/opt/rh/gcc-toolset-12/root/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       CC: "clang"
       CFLAGS: "-Os -fstrict-aliasing -flto=full"
       LDFLAGS: "-fuse-ld=lld -Wl,--as-needed"
-      RUSTFLAGS: "-C linker=clang -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
-      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
+      RUSTFLAGS: "-C linker=clang -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings"
+      PATH: "/__w/orjson/orjson/.venv/bin:/github/home/.cargo/bin:/root/.local/bin:/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     container:
-      image: quay.io/pypa/manylinux_2_28_x86_64:latest
+      image: fedora:41
       options: --user 0
     steps:
-    - run: yum install -y clang lld
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly-2024-03-27 --profile minimal -y
-    - run: rustup component add rust-src --toolchain nightly-2024-03-27-x86_64-unknown-linux-gnu
+
     - uses: actions/checkout@v4
 
-    - name: build-std
+    - name: Build environment
       run: |
+        dnf install -y rustup clang lld python${{ matrix.python.version }}
+
+        rustup-init --default-toolchain "${RUST_TOOLCHAIN}-x86_64-unknown-linux-gnu" --profile minimal --component rust-src -y
+        cargo fetch --target=x86_64-unknown-linux-gnu &
+
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv --python python${{ matrix.python.version }}
+        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
 
-    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
-    - run: |
+    - name: maturin
+      run: |
         maturin build --release --strip \
-          --out=dist \
           --features=no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
-    - run: python3 -m pip install --user dist/orjson*.whl
-    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt
+        uv pip install target/wheels/orjson*.whl
 
     - run: pytest -s -rxX -v -n 4 test
       env:
@@ -106,7 +117,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_amd64_${{ matrix.python.version }}
-        path: dist
+        path: target/wheels
         overwrite: true
         retention-days: 1
 
@@ -143,21 +154,19 @@ jobs:
         CC: "gcc"
         CFLAGS: "-Os"
         LDFLAGS: "-Wl,--as-needed"
-        RUSTFLAGS: "-Z mir-opt-level=4 -D warnings -C target-feature=-crt-static"
-        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-        UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
+        RUSTFLAGS: "-Z mir-opt-level=4 -Z threads=4 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-03-27
+        rust-toolchain: nightly-2024-04-15
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
         args: --release --strip --out=dist --features=no-panic,unstable-simd,yyjson -i python${{ matrix.python.version }}
 
-    - name: Set up QEMU
+    - name: QEMU
       if: matrix.platform.arch != 'x86_64'
       uses: docker/setup-qemu-action@v3
       with:
-        image: tonistiigi/binfmt:qemu-v8.1.4
+        image: tonistiigi/binfmt:qemu-v8.1.5
         platforms: ${{ matrix.platform.platform }}
 
     - name: Test
@@ -174,7 +183,7 @@ jobs:
           venv/bin/pip install -U pip wheel
           venv/bin/pip install -r test/requirements.txt
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v test
+          venv/bin/python -m pytest -s -rxX -v -n 4 test
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
@@ -222,7 +231,6 @@ jobs:
           {
             arch: 's390x',
             cflags: '-Os -flto=full -fstrict-aliasing -march=z10',
-            # no unstable-simd as rotate_elements_left() causes exit 125 in at least QEMU
             features: 'no-panic,yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C target-cpu=z10',
             target: 's390x-unknown-linux-gnu',
@@ -241,12 +249,10 @@ jobs:
         PYO3_CROSS_LIB_DIR: "/opt/python/${{ matrix.python.abi }}"
         CFLAGS: "${{ matrix.target.cflags }}"
         LDFLAGS: "-Wl,--as-needed"
-        CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
-        UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-03-27
+        rust-toolchain: nightly-2024-04-15
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -281,11 +287,159 @@ jobs:
         overwrite: true
         retention-days: 1
 
+  macos_universal2_aarch64:
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.12', macosx_target: "10.15" },
+          { version: '3.11', macosx_target: "10.15" },
+          { version: '3.10', macosx_target: "10.15" },
+        ]
+    env:
+      CC: "clang"
+      CFLAGS: "-Os -fstrict-aliasing -flto=full"
+      LDFLAGS: "-Wl,--as-needed"
+      CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
+      CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
+      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=3 -D warnings"
+      PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "${{ matrix.python.version }}"
+
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: "nightly-2024-04-15"
+        targets: "aarch64-apple-darwin, x86_64-apple-darwin"
+        components: "rust-src"
+
+    - name: Build environment
+      run: |
+        cargo fetch --target aarch64-apple-darwin &
+
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv --python python${{ matrix.python.version }}
+        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
+
+    - name: maturin
+      run: |
+        PATH=$HOME/.cargo/bin:$PATH \
+        MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
+        PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
+        maturin build --release --strip \
+          --features=no-panic,unstable-simd,yyjson \
+          --interpreter python${{ matrix.python.version }} \
+          --target=universal2-apple-darwin
+        uv pip install target/wheels/orjson*.whl
+
+    - run: pytest -s -rxX -v -n 3 test
+      env:
+        PYTHONMALLOC: "debug"
+
+    - run: source .venv/bin/activate && ./integration/run thread
+    - run: source .venv/bin/activate && ./integration/run http
+    - run: source .venv/bin/activate && ./integration/run init
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v4
+      with:
+        name: orjson_universal2_aarch64_${{ matrix.python.version }}
+        path: target/wheels
+        overwrite: true
+        retention-days: 1
+
+  macos_universal2_amd64:
+    runs-on: macos-13
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.9', macosx_target: "10.15" },
+          { version: '3.8', macosx_target: "10.15" },
+        ]
+    env:
+      CC: "clang"
+      CFLAGS: "-Os -fstrict-aliasing -flto=full"
+      LDFLAGS: "-Wl,--as-needed"
+      CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
+      CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
+      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=3 -D warnings"
+      PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "${{ matrix.python.version }}"
+
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: "nightly-2024-04-15"
+        targets: "aarch64-apple-darwin, x86_64-apple-darwin"
+        components: "rust-src"
+
+    - name: Build environment
+      run: |
+        cargo fetch --target aarch64-apple-darwin &
+
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv --python python${{ matrix.python.version }}
+        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
+
+    - name: maturin
+      run: |
+        PATH=$HOME/.cargo/bin:$PATH \
+        MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
+        PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
+        maturin build --release --strip \
+          --features=no-panic,unstable-simd,yyjson \
+          --interpreter python${{ matrix.python.version }} \
+          --target=universal2-apple-darwin
+        uv pip install target/wheels/orjson*.whl
+
+    - run: pytest -s -rxX -v -n 3 test
+      env:
+        PYTHONMALLOC: "debug"
+
+    - run: source .venv/bin/activate && ./integration/run thread
+    - run: source .venv/bin/activate && ./integration/run http
+    - run: source .venv/bin/activate && ./integration/run init
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v4
+      with:
+        name: orjson_universal2_amd64_${{ matrix.python.version }}
+        path: target/wheels
+        overwrite: true
+        retention-days: 1
+
   pypi:
     name: PyPI
     runs-on: ubuntu-22.04
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ manylinux_2_17_amd64, manylinux_2_17_non_amd64, musllinux_1_2, sdist ]
+    needs: [
+      sdist,
+      manylinux_2_17_amd64,
+      musllinux_1_2,
+      manylinux_2_17_non_amd64,
+      macos_universal2_aarch64,
+      macos_universal2_amd64,
+    ]
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -293,7 +447,7 @@ jobs:
           merge-multiple: true
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: pip install pip "maturin>=1,<2"
       - run: ls -1 .
       - name: deploy wheel

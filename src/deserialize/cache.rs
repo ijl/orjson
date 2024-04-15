@@ -40,11 +40,7 @@ pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 pub fn cache_hash(key: &[u8]) -> u64 {
     // try to omit code for >64 path in ahash
-    debug_assert!(key.len() <= 64);
-    #[cfg(feature = "intrinsics")]
-    unsafe {
-        core::intrinsics::assume(key.len() <= 64);
-    };
+    assume!(key.len() <= 64);
     let mut hasher = ahash::AHasher::default();
     hasher.write(key);
     hasher.finish()

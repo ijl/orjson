@@ -98,7 +98,7 @@ impl Serialize for DataclassFastSerializer {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
             let key = next_key;
             let value = next_value;
 
@@ -163,7 +163,7 @@ impl Serialize for DataclassFallbackSerializer {
         let mut pos = 0;
 
         pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=ffi!(Py_SIZE(fields)) as usize - 1 {
+        for _ in 0..ffi!(Py_SIZE(fields)) as usize {
             let attr = next_key;
             let field = next_value;
 

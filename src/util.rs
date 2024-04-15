@@ -257,3 +257,13 @@ macro_rules! reserve_minimum {
         $writer.reserve(64);
     };
 }
+
+macro_rules! assume {
+    ($expr:expr) => {
+        debug_assert!($expr);
+        #[cfg(feature = "intrinsics")]
+        unsafe {
+            core::intrinsics::assume($expr);
+        };
+    };
+}

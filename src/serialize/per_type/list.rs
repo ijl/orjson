@@ -88,7 +88,7 @@ impl Serialize for ListTupleSerializer {
         }
         debug_assert!(self.len >= 1);
         let mut seq = serializer.serialize_seq(None).unwrap();
-        for idx in 0..=self.len - 1 {
+        for idx in 0..self.len {
             let value = unsafe { *((self.data_ptr).add(idx)) };
             let value_ob_type = ob_type!(value);
             if is_class_by_type!(value_ob_type, STR_TYPE) {

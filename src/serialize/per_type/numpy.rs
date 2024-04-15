@@ -238,7 +238,7 @@ impl NumpyArray {
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn build(&mut self) {
         if self.depth < self.dimensions() - 1 {
-            for i in 0..=self.shape()[self.depth] - 1 {
+            for i in 0..self.shape()[self.depth] {
                 let mut position: Vec<isize> = self.position.to_vec();
                 position[self.depth] = i;
                 let num_children: usize = if self.depth < self.dimensions() - 2 {

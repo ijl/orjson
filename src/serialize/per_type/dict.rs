@@ -111,7 +111,7 @@ impl Serialize for Dict {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
             let key = next_key;
             let value = next_value;
 
@@ -210,7 +210,7 @@ impl Serialize for DictSortedKey {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=len as usize - 1 {
+        for _ in 0..len as usize {
             let key = next_key;
             let value = next_value;
 
@@ -377,7 +377,7 @@ impl Serialize for DictNonStrKey {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=len - 1 {
+        for _ in 0..len {
             let key = next_key;
             let value = next_value;
 

@@ -78,7 +78,10 @@ def tab(obj):
                 if isinstance(each[1], float)
                 else None
             )
-            each[1] = "%.1f" % each[1] if isinstance(each[1], float) else None
+            if group.startswith("github"):
+                each[1] = "%.2f" % each[1] if isinstance(each[1], float) else None
+            else:
+                each[1] = "%.1f" % each[1] if isinstance(each[1], float) else None
 
         buf.write(tabulate(table, headers, tablefmt="github") + "\n")
 
