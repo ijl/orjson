@@ -42,6 +42,9 @@ impl<'a> Serialize for NumpySerializer<'a> {
             Err(PyArrayError::NotContiguous) => {
                 err!(SerializeError::NumpyNotCContiguous)
             }
+            Err(PyArrayError::NotNativeEndian) => {
+                err!(SerializeError::NumpyNotNativeEndian)
+            }
             Err(PyArrayError::UnsupportedDataType) => {
                 err!(SerializeError::NumpyUnsupportedDatatype)
             }
@@ -101,6 +104,9 @@ pub struct PyCapsule {
 
 // https://docs.scipy.org/doc/numpy/reference/arrays.interface.html#c.__array_struct__
 
+const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x1;
+const NPY_ARRAY_NOTSWAPPED: c_int = 0x200;
+
 #[repr(C)]
 pub struct PyArrayInterface {
     pub two: c_int,
@@ -154,9 +160,11 @@ impl ItemType {
         }
     }
 }
+
 pub enum PyArrayError {
     Malformed,
     NotContiguous,
+    NotNativeEndian,
     UnsupportedDataType,
 }
 
@@ -187,9 +195,12 @@ impl NumpyArray {
         if unsafe { (*array).two != 2 } {
             ffi!(Py_DECREF(capsule));
             Err(PyArrayError::Malformed)
-        } else if unsafe { (*array).flags } & 0x1 != 0x1 {
+        } else if unsafe { (*array).flags } & NPY_ARRAY_C_CONTIGUOUS != NPY_ARRAY_C_CONTIGUOUS {
             ffi!(Py_DECREF(capsule));
             Err(PyArrayError::NotContiguous)
+        } else if unsafe { (*array).flags } & NPY_ARRAY_NOTSWAPPED != NPY_ARRAY_NOTSWAPPED {
+            ffi!(Py_DECREF(capsule));
+            Err(PyArrayError::NotNativeEndian)
         } else {
             let num_dimensions = unsafe { (*array).nd as usize };
             if num_dimensions == 0 {

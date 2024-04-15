@@ -864,8 +864,12 @@ b'"2021-01-01T00:00:00+00:00"'
 If an array is not a contiguous C array, contains an unsupported datatype,
 or contains a `numpy.datetime64` using an unsupported representation
 (e.g., picoseconds), orjson falls through to `default`. In `default`,
-`obj.tolist()` can be specified. If an array is malformed, which
-is not expected, `orjson.JSONEncodeError` is raised.
+`obj.tolist()` can be specified.
+
+If an array is not in the native endianness, e.g., an array of big-endian values
+on a little-endian system, `orjson.JSONEncodeError`  is raised.
+
+If an array is malformed, `orjson.JSONEncodeError` is raised.
 
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:
