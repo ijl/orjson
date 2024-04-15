@@ -1,6 +1,18 @@
 # Changelog
 
 
+## 3.10.1 - 2024-04-15
+
+### Fixed
+
+- Serializing `numpy.ndarray` with non-native endianness raises
+`orjson.JSONEncodeError`.
+
+### Changed
+
+- Improve performance of serializing.
+
+
 ## 3.10.0 - 2024-03-27
 
 ### Changed

@@ -1208,8 +1208,8 @@ is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
 orjson is tested for amd64, aarch64, arm7, ppc64le, and s390x on Linux. It
-is tested for amd64 on macOS and cross-compiles for aarch64. For Windows
-it is tested on amd64 and i686.
+is tested for either aarch64 or amd64 on macOS and cross-compiles for the other,
+depending on version. For Windows it is tested on amd64 and i686.
 
 There are no runtime dependencies other than libc.
 
