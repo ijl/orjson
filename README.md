@@ -114,7 +114,7 @@ to the standard library. It can be disabled with
 are now serialized by default and cannot be customized in a
 `default` function unless `option=orjson.OPT_PASSTHROUGH_DATACLASS` is
 specified. `uuid.UUID` instances are serialized by default.
-For any type that is now serialized,
+For any type that is not serialized,
 implementations in a `default` function and options enabling them can be
 removed but do not need to be. There was no change in deserialization.
 
