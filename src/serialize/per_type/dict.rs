@@ -97,6 +97,7 @@ impl Dict {
     }
 }
 impl Serialize for Dict {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -111,61 +112,66 @@ impl Serialize for Dict {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=ffi!(Py_SIZE(self.ptr)) as usize - 1 {
+        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
             let key = next_key;
             let value = next_value;
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             // key
-            {
-                let key_ob_type = ob_type!(key);
-                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
-                    err!(SerializeError::KeyMustBeStr)
-                }
-                let key_as_str = unicode_to_str(key);
-                if unlikely!(key_as_str.is_none()) {
-                    err!(SerializeError::InvalidStr)
-                }
-                map.serialize_key(key_as_str.unwrap()).unwrap();
+            let key_ob_type = ob_type!(key);
+            if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                err!(SerializeError::KeyMustBeStr)
+            }
+            let key_as_str = unicode_to_str(key);
+            if unlikely!(key_as_str.is_none()) {
+                err!(SerializeError::InvalidStr)
             }
 
             // value
-            {
-                let value_ob_type = ob_type!(value);
-                if is_class_by_type!(value_ob_type, STR_TYPE) {
-                    map.serialize_value(&StrSerializer::new(value))?;
-                } else if is_class_by_type!(value_ob_type, INT_TYPE) {
-                    if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
-                        map.serialize_value(&Int53Serializer::new(value))?;
-                    } else {
-                        map.serialize_value(&IntSerializer::new(value))?;
-                    }
-                } else if is_class_by_type!(value_ob_type, BOOL_TYPE) {
-                    map.serialize_value(&BoolSerializer::new(value))?;
-                } else if is_class_by_type!(value_ob_type, NONE_TYPE) {
-                    map.serialize_value(&NoneSerializer::new())?;
-                } else if is_class_by_type!(value_ob_type, FLOAT_TYPE) {
-                    map.serialize_value(&FloatSerializer::new(value))?;
-                } else if is_class_by_type!(value_ob_type, DICT_TYPE) {
-                    let pyvalue = DictGenericSerializer::new(value, self.state, self.default);
-                    map.serialize_value(&pyvalue)?;
-                } else if is_class_by_type!(value_ob_type, LIST_TYPE) {
-                    if ffi!(Py_SIZE(value)) == 0 {
-                        map.serialize_value(&ZeroListSerializer::new())?;
-                    } else {
-                        let pyvalue =
-                            ListTupleSerializer::from_list(value, self.state, self.default);
-                        map.serialize_value(&pyvalue)?;
-                    }
-                } else if is_class_by_type!(value_ob_type, DATETIME_TYPE)
-                    && opt_disabled!(self.state.opts(), PASSTHROUGH_DATETIME)
-                {
-                    map.serialize_value(&DateTime::new(value, self.state.opts()))?;
+            let value_ob_type = ob_type!(value);
+            if is_class_by_type!(value_ob_type, STR_TYPE) {
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&StrSerializer::new(value))?;
+            } else if is_class_by_type!(value_ob_type, INT_TYPE) {
+                if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
+                    map.serialize_key(key_as_str.unwrap()).unwrap();
+                    map.serialize_value(&Int53Serializer::new(value))?;
                 } else {
-                    let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
+                    map.serialize_key(key_as_str.unwrap()).unwrap();
+                    map.serialize_value(&IntSerializer::new(value))?;
+                }
+            } else if is_class_by_type!(value_ob_type, BOOL_TYPE) {
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&BoolSerializer::new(value))?;
+            } else if is_class_by_type!(value_ob_type, NONE_TYPE) {
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&NoneSerializer::new())?;
+            } else if is_class_by_type!(value_ob_type, FLOAT_TYPE) {
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&FloatSerializer::new(value))?;
+            } else if is_class_by_type!(value_ob_type, DICT_TYPE) {
+                let pyvalue = DictGenericSerializer::new(value, self.state, self.default);
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&pyvalue)?;
+            } else if is_class_by_type!(value_ob_type, LIST_TYPE) {
+                if ffi!(Py_SIZE(value)) == 0 {
+                    map.serialize_key(key_as_str.unwrap()).unwrap();
+                    map.serialize_value(&ZeroListSerializer::new())?;
+                } else {
+                    let pyvalue = ListTupleSerializer::from_list(value, self.state, self.default);
+                    map.serialize_key(key_as_str.unwrap()).unwrap();
                     map.serialize_value(&pyvalue)?;
                 }
+            } else if is_class_by_type!(value_ob_type, DATETIME_TYPE)
+                && opt_disabled!(self.state.opts(), PASSTHROUGH_DATETIME)
+            {
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&DateTime::new(value, self.state.opts()))?;
+            } else {
+                let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
+                map.serialize_key(key_as_str.unwrap()).unwrap();
+                map.serialize_value(&pyvalue)?;
             }
         }
 
@@ -210,7 +216,7 @@ impl Serialize for DictSortedKey {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=len as usize - 1 {
+        for _ in 0..len as usize {
             let key = next_key;
             let value = next_value;
 
@@ -257,6 +263,7 @@ impl DictNonStrKey {
         }
     }
 
+    #[inline(never)]
     fn pyobject_to_string(
         key: *mut pyo3_ffi::PyObject,
         opts: crate::opt::Opt,
@@ -377,7 +384,7 @@ impl Serialize for DictNonStrKey {
         let mut pos = 0;
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
-        for _ in 0..=len - 1 {
+        for _ in 0..len {
             let key = next_key;
             let value = next_value;
 

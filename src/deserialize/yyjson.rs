@@ -146,7 +146,7 @@ fn parse_yy_array(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
             return nonnull!(list);
         }
         let mut cur = unsafe_yyjson_get_first(elem);
-        for idx in 0..=len - 1 {
+        for idx in 0..len {
             let next = unsafe_yyjson_get_next(cur);
             let val = parse_node(cur).as_ptr();
             ffi!(PyList_SET_ITEM(list, idx as isize, val));
@@ -165,7 +165,7 @@ fn parse_yy_object(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         }
         let mut key = unsafe_yyjson_get_first(elem);
         let dict = ffi!(_PyDict_NewPresized(len as isize));
-        for _ in 0..=len - 1 {
+        for _ in 0..len {
             let val = key.add(1);
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
             let pykey = get_unicode_key(key_str);

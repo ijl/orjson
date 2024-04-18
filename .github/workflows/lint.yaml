@@ -6,7 +6,7 @@ jobs:
     steps:
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: "3.12"
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
     - run: pip install -U autoflake isort black ruff mypy types-python-dateutil types-pytz types-simplejson types-ujson
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
+import sys
+
 import pytest
 
 import orjson
@@ -857,3 +859,12 @@ class TestNumpyEquivalence:
                 [-1.7976931348623157e308, 1.7976931348623157e308], numpy.float64
             )
         )
+
+
+@pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+class NumpyEndianness:
+    def test_numpy_array_dimension_zero(self):
+        wrong_endianness = ">" if sys.byteorder == "little" else "<"
+        array = numpy.array([0, 1, 0.4, 5.7], dtype=f"{wrong_endianness}f8")
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)

@@ -575,7 +575,7 @@ where
         let num_reserved_bytes = value.len() * 8 + 32;
         writer.reserve(num_reserved_bytes);
 
-        let written = crate::serialize::writer::simd::format_escaped_str_impl_128(
+        let written = crate::serialize::writer::escape::format_escaped_str_impl_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -592,7 +592,19 @@ fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
 where
     W: ?Sized + io::Write + WriteExt,
 {
-    crate::serialize::writer::escape::format_escaped_str(writer, value)
+    unsafe {
+        let num_reserved_bytes = value.len() * 8 + 32;
+        writer.reserve(num_reserved_bytes);
+
+        let written = crate::serialize::writer::escape::format_escaped_str_scalar(
+            writer.as_mut_buffer_ptr(),
+            value.as_bytes().as_ptr(),
+            value.len(),
+        );
+
+        writer.set_written(written);
+    }
+    Ok(())
 }
 
 #[inline]

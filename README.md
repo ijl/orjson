@@ -864,8 +864,12 @@ b'"2021-01-01T00:00:00+00:00"'
 If an array is not a contiguous C array, contains an unsupported datatype,
 or contains a `numpy.datetime64` using an unsupported representation
 (e.g., picoseconds), orjson falls through to `default`. In `default`,
-`obj.tolist()` can be specified. If an array is malformed, which
-is not expected, `orjson.JSONEncodeError` is raised.
+`obj.tolist()` can be specified.
+
+If an array is not in the native endianness, e.g., an array of big-endian values
+on a little-endian system, `orjson.JSONEncodeError`  is raised.
+
+If an array is malformed, `orjson.JSONEncodeError` is raised.
 
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:
@@ -1199,13 +1203,13 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2024-03-27` and stable 1.65. It
+The project's own CI tests against `nightly-2024-04-15` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
 orjson is tested for amd64, aarch64, arm7, ppc64le, and s390x on Linux. It
-is tested for amd64 on macOS and cross-compiles for aarch64. For Windows
-it is tested on amd64 and i686.
+is tested for either aarch64 or amd64 on macOS and cross-compiles for the other,
+depending on version. For Windows it is tested on amd64 and i686.
 
 There are no runtime dependencies other than libc.
 

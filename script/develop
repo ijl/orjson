@@ -9,10 +9,10 @@ export LD="${LD:-lld}"
 
 echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 
-export CFLAGS="-Os -fstrict-aliasing -flto=full"
+export CFLAGS="-Os -fstrict-aliasing -fno-plt -flto=full"
 export LDFLAGS="-fuse-ld=${LD} -Wl,--as-needed"
 export RUSTFLAGS="-C linker=${CC} -C lto=fat -C link-arg=-fuse-ld=${LD} -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=8"
 
 maturin build "$@"
 
-pip install --force target/wheels/*.whl
+uv pip install target/wheels/*.whl

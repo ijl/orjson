@@ -17,6 +17,7 @@ pub enum SerializeError {
     DictKeyInvalidType,
     NumpyMalformed,
     NumpyNotCContiguous,
+    NumpyNotNativeEndian,
     NumpyUnsupportedDatatype,
     UnsupportedType(NonNull<pyo3_ffi::PyObject>),
 }
@@ -47,6 +48,10 @@ impl std::fmt::Display for SerializeError {
             SerializeError::NumpyNotCContiguous => write!(
                 f,
                 "numpy array is not C contiguous; use ndarray.tolist() in default"
+            ),
+            SerializeError::NumpyNotNativeEndian => write!(
+                f,
+                "numpy array is not native-endianness"
             ),
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")

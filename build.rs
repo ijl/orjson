@@ -9,6 +9,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
+    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_SIMD");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
 
     for cfg in pyo3_build_config::get().build_script_outputs() {
@@ -25,6 +26,13 @@ fn main() {
 
     if let Some(true) = version_check::supports_feature("strict_provenance") {
         println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
+    }
+
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    if !env::var("ORJSON_DISABLE_SIMD").is_ok() {
+        if let Some(true) = version_check::supports_feature("portable_simd") {
+            println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
+        }
     }
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
