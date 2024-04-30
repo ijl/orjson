@@ -53,6 +53,7 @@ impl BytesWriter {
     pub fn resize(&mut self, len: usize) {
         self.cap = len;
         unsafe {
+            #[allow(clippy::unnecessary_cast)]
             _PyBytes_Resize(
                 core::ptr::addr_of_mut!(self.bytes) as *mut *mut PyBytesObject
                     as *mut *mut PyObject,

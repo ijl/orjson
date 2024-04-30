@@ -263,6 +263,7 @@ impl NumpyArray {
         }
     }
 
+    #[inline(always)]
     fn data(&self) -> *const c_void {
         let offset = self
             .strides()
@@ -390,6 +391,7 @@ impl<'a> NumpyF64Array<'a> {
 
 impl<'a> Serialize for NumpyF64Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -430,6 +432,7 @@ impl<'a> NumpyF32Array<'a> {
 
 impl<'a> Serialize for NumpyF32Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -470,6 +473,7 @@ impl<'a> NumpyF16Array<'a> {
 
 impl<'a> Serialize for NumpyF16Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -512,6 +516,7 @@ impl<'a> NumpyU64Array<'a> {
 
 impl<'a> Serialize for NumpyU64Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -552,6 +557,7 @@ impl<'a> NumpyU32Array<'a> {
 
 impl<'a> Serialize for NumpyU32Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -592,6 +598,7 @@ impl<'a> NumpyU16Array<'a> {
 
 impl<'a> Serialize for NumpyU16Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -615,7 +622,7 @@ impl Serialize for DataTypeU16 {
     where
         S: Serializer,
     {
-        serializer.serialize_u16(self.obj)
+        serializer.serialize_u32(self.obj as u32)
     }
 }
 
@@ -632,6 +639,7 @@ impl<'a> NumpyI64Array<'a> {
 
 impl<'a> Serialize for NumpyI64Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -672,6 +680,7 @@ impl<'a> NumpyI32Array<'a> {
 
 impl<'a> Serialize for NumpyI32Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -712,6 +721,7 @@ impl<'a> NumpyI16Array<'a> {
 
 impl<'a> Serialize for NumpyI16Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -735,7 +745,7 @@ impl Serialize for DataTypeI16 {
     where
         S: Serializer,
     {
-        serializer.serialize_i16(self.obj)
+        serializer.serialize_i32(self.obj as i32)
     }
 }
 
@@ -752,6 +762,7 @@ impl<'a> NumpyI8Array<'a> {
 
 impl<'a> Serialize for NumpyI8Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -775,7 +786,7 @@ impl Serialize for DataTypeI8 {
     where
         S: Serializer,
     {
-        serializer.serialize_i8(self.obj)
+        serializer.serialize_i32(self.obj as i32)
     }
 }
 
@@ -792,6 +803,7 @@ impl<'a> NumpyU8Array<'a> {
 
 impl<'a> Serialize for NumpyU8Array<'a> {
     #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -815,7 +827,7 @@ impl Serialize for DataTypeU8 {
     where
         S: Serializer,
     {
-        serializer.serialize_u8(self.obj)
+        serializer.serialize_u32(self.obj as u32)
     }
 }
 
@@ -933,7 +945,7 @@ impl Serialize for NumpyInt8 {
     where
         S: Serializer,
     {
-        serializer.serialize_i8(self.value)
+        serializer.serialize_i32(self.value as i32)
     }
 }
 
@@ -950,7 +962,7 @@ impl Serialize for NumpyInt16 {
     where
         S: Serializer,
     {
-        serializer.serialize_i16(self.value)
+        serializer.serialize_i32(self.value as i32)
     }
 }
 
@@ -1001,7 +1013,7 @@ impl Serialize for NumpyUint8 {
     where
         S: Serializer,
     {
-        serializer.serialize_u8(self.value)
+        serializer.serialize_u32(self.value as u32)
     }
 }
 
@@ -1018,7 +1030,7 @@ impl Serialize for NumpyUint16 {
     where
         S: Serializer,
     {
-        serializer.serialize_u16(self.value)
+        serializer.serialize_u32(self.value as u32)
     }
 }
 

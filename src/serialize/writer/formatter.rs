@@ -30,30 +30,18 @@ pub trait Formatter {
         unsafe { writer.write_reserved_fragment(s) }
     }
 
-    #[inline]
-    fn write_i8<W>(&mut self, writer: &mut W, value: i8) -> io::Result<()>
+    fn write_i8<W>(&mut self, _writer: &mut W, _value: i8) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
-        }
-        Ok(())
+        unreachable!();
     }
 
-    #[inline]
-    fn write_i16<W>(&mut self, writer: &mut W, value: i16) -> io::Result<()>
+    fn write_i16<W>(&mut self, _writer: &mut W, _value: i16) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
-        }
-        Ok(())
+        unreachable!();
     }
 
     #[inline]
@@ -82,7 +70,6 @@ pub trait Formatter {
         Ok(())
     }
 
-    #[inline]
     fn write_i128<W>(&mut self, _writer: &mut W, _value: i128) -> io::Result<()>
     where
         W: ?Sized + io::Write,
@@ -90,30 +77,18 @@ pub trait Formatter {
         unreachable!();
     }
 
-    #[inline]
-    fn write_u8<W>(&mut self, writer: &mut W, value: u8) -> io::Result<()>
+    fn write_u8<W>(&mut self, _writer: &mut W, _value: u8) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
-        }
-        Ok(())
+        unreachable!();
     }
 
-    #[inline]
-    fn write_u16<W>(&mut self, writer: &mut W, value: u16) -> io::Result<()>
+    fn write_u16<W>(&mut self, _writer: &mut W, _value: u16) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
-        }
-        Ok(())
+        unreachable!();
     }
 
     #[inline]
@@ -142,7 +117,6 @@ pub trait Formatter {
         Ok(())
     }
 
-    #[inline]
     fn write_u128<W>(&mut self, _writer: &mut W, _value: u128) -> io::Result<()>
     where
         W: ?Sized + io::Write,
@@ -232,11 +206,9 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
+        reserve_minimum!(writer);
         if !first {
-            unsafe {
-                reserve_minimum!(writer);
-                writer.write_reserved_punctuation(b',').unwrap()
-            }
+            unsafe { writer.write_reserved_punctuation(b',').unwrap() }
         }
         Ok(())
     }
@@ -278,9 +250,9 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
+        reserve_minimum!(writer);
         if !first {
             unsafe {
-                reserve_minimum!(writer);
                 writer.write_reserved_punctuation(b',').unwrap();
             }
         }
@@ -323,6 +295,7 @@ pub struct PrettyFormatter {
 }
 
 impl PrettyFormatter {
+    #[allow(clippy::new_without_default)]
     pub const fn new() -> Self {
         PrettyFormatter {
             current_indent: 0,
@@ -350,7 +323,7 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
-        writer.reserve(num_spaces + 2);
+        reserve_pretty!(writer, num_spaces);
 
         unsafe {
             if self.has_value {
@@ -367,7 +340,7 @@ impl Formatter for PrettyFormatter {
         W: ?Sized + io::Write + WriteExt,
     {
         let num_spaces = self.current_indent * 2;
-        writer.reserve(num_spaces + 2);
+        reserve_pretty!(writer, num_spaces);
 
         unsafe {
             writer.write_reserved_fragment(if first { b"\n" } else { b",\n" })?;
@@ -404,7 +377,7 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
-        writer.reserve(num_spaces + 2);
+        reserve_pretty!(writer, num_spaces);
 
         unsafe {
             if self.has_value {
@@ -422,7 +395,7 @@ impl Formatter for PrettyFormatter {
         W: ?Sized + io::Write + WriteExt,
     {
         let num_spaces = self.current_indent * 2;
-        writer.reserve(num_spaces + 2);
+        reserve_pretty!(writer, num_spaces);
         unsafe {
             writer.write_reserved_fragment(if first { b"\n" } else { b",\n" })?;
             writer.write_reserved_indent(num_spaces)?;

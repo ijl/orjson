@@ -29,7 +29,7 @@ fn main() {
     }
 
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if !env::var("ORJSON_DISABLE_SIMD").is_ok() {
+    if env::var("ORJSON_DISABLE_SIMD").is_err() {
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
         }

@@ -71,18 +71,12 @@ where
             .map_err(Error::io)
     }
 
-    #[cold]
-    fn serialize_i8(self, value: i8) -> Result<()> {
-        self.formatter
-            .write_i8(&mut self.writer, value)
-            .map_err(Error::io)
+    fn serialize_i8(self, _value: i8) -> Result<()> {
+        unreachable!();
     }
 
-    #[cold]
-    fn serialize_i16(self, value: i16) -> Result<()> {
-        self.formatter
-            .write_i16(&mut self.writer, value)
-            .map_err(Error::io)
+    fn serialize_i16(self, _value: i16) -> Result<()> {
+        unreachable!();
     }
 
     #[inline]
@@ -103,18 +97,12 @@ where
         unreachable!();
     }
 
-    #[cold]
-    fn serialize_u8(self, value: u8) -> Result<()> {
-        self.formatter
-            .write_u8(&mut self.writer, value)
-            .map_err(Error::io)
+    fn serialize_u8(self, _value: u8) -> Result<()> {
+        unreachable!();
     }
 
-    #[cold]
-    fn serialize_u16(self, value: u16) -> Result<()> {
-        self.formatter
-            .write_u16(&mut self.writer, value)
-            .map_err(Error::io)
+    fn serialize_u16(self, _value: u16) -> Result<()> {
+        unreachable!();
     }
 
     #[inline]
@@ -310,21 +298,21 @@ where
         self.ser
             .formatter
             .begin_array_value(&mut self.ser.writer, self.state == State::First)
-            .map_err(Error::io)?;
+            .unwrap();
         self.state = State::Rest;
         value.serialize(&mut *self.ser)?;
         self.ser
             .formatter
             .end_array_value(&mut self.ser.writer)
             .map_err(Error::io)
+            .unwrap();
+        Ok(())
     }
 
     #[inline]
     fn end(self) -> Result<()> {
-        self.ser
-            .formatter
-            .end_array(&mut self.ser.writer)
-            .map_err(Error::io)
+        self.ser.formatter.end_array(&mut self.ser.writer).unwrap();
+        Ok(())
     }
 }
 
@@ -352,7 +340,7 @@ where
         self.ser
             .formatter
             .begin_object_key(&mut self.ser.writer, self.state == State::First)
-            .map_err(Error::io)?;
+            .unwrap();
         self.state = State::Rest;
 
         key.serialize(MapKeySerializer { ser: self.ser })?;
@@ -360,7 +348,8 @@ where
         self.ser
             .formatter
             .end_object_key(&mut self.ser.writer)
-            .map_err(Error::io)
+            .unwrap();
+        Ok(())
     }
 
     #[inline]
@@ -371,20 +360,19 @@ where
         self.ser
             .formatter
             .begin_object_value(&mut self.ser.writer)
-            .map_err(Error::io)?;
+            .unwrap();
         value.serialize(&mut *self.ser)?;
         self.ser
             .formatter
             .end_object_value(&mut self.ser.writer)
-            .map_err(Error::io)
+            .unwrap();
+        Ok(())
     }
 
     #[inline]
     fn end(self) -> Result<()> {
-        self.ser
-            .formatter
-            .end_object(&mut self.ser.writer)
-            .map_err(Error::io)
+        self.ser.formatter.end_object(&mut self.ser.writer).unwrap();
+        Ok(())
     }
 }
 

@@ -12,7 +12,6 @@ mod json;
 #[cfg(feature = "yyjson")]
 mod yyjson;
 
-pub use cache::KeyMap;
-pub use cache::KEY_MAP;
+pub use cache::{KeyMap, KEY_MAP};
 pub use deserializer::deserialize;
 pub use error::DeserializeError;

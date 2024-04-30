@@ -22,6 +22,7 @@ impl ZeroListSerializer {
 }
 
 impl Serialize for ZeroListSerializer {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

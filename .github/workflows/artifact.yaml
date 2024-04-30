@@ -1,7 +1,7 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-04-15"
+  RUST_TOOLCHAIN: "nightly-2024-04-30"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 jobs:
@@ -156,7 +156,7 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "-Z mir-opt-level=4 -Z threads=4 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-04-15
+        rust-toolchain: nightly-2024-04-30
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
@@ -245,7 +245,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-04-15
+        rust-toolchain: nightly-2024-04-30
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -308,7 +308,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-04-15"
+        toolchain: "nightly-2024-04-30"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -378,7 +378,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-04-15"
+        toolchain: "nightly-2024-04-30"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 

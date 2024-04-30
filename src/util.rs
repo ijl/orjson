@@ -258,6 +258,12 @@ macro_rules! reserve_minimum {
     };
 }
 
+macro_rules! reserve_pretty {
+    ($writer:expr, $val:expr) => {
+        $writer.reserve($val + 16);
+    };
+}
+
 macro_rules! assume {
     ($expr:expr) => {
         debug_assert!($expr);

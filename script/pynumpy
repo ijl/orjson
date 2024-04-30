@@ -35,7 +35,7 @@ elif kind == "float64":
     array = numpy.random.random(size=(50000, 100))
     assert array.dtype == numpy.float64
 elif kind == "bool":
-    dtype = numpy.bool
+    dtype = numpy.bool_
     array = numpy.random.choice((True, False), size=(100000, 200))
 elif kind == "int8":
     dtype = numpy.int8

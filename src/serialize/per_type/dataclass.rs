@@ -83,6 +83,7 @@ impl DataclassFastSerializer {
 }
 
 impl Serialize for DataclassFastSerializer {
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -92,12 +93,13 @@ impl Serialize for DataclassFastSerializer {
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
+
+        let mut pos = 0;
         let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
-        let mut pos = 0;
-
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
+
         for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
             let key = next_key;
             let value = next_value;
@@ -144,6 +146,8 @@ impl DataclassFallbackSerializer {
 }
 
 impl Serialize for DataclassFallbackSerializer {
+    #[cold]
+    #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -157,12 +161,12 @@ impl Serialize for DataclassFallbackSerializer {
         }
         let mut map = serializer.serialize_map(None).unwrap();
 
+        let mut pos = 0;
         let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
 
-        let mut pos = 0;
-
         pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
+
         for _ in 0..ffi!(Py_SIZE(fields)) as usize {
             let attr = next_key;
             let field = next_value;

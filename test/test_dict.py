@@ -26,7 +26,7 @@ class TestDict:
         """
         dict with >512 keys
         """
-        obj = {"key_%s" % idx: [{}, {"a": [{}, {}, {}]}, {}] for idx in range(513)}
+        obj = {"key_%s" % idx: [{}, {"a": [{}, {}, {}]}, {}] for idx in range(513)}  # type: ignore
         assert len(obj) == 513
         assert orjson.loads(orjson.dumps(obj)) == obj
 

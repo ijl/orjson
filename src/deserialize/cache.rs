@@ -38,6 +38,7 @@ pub type KeyMap =
 
 pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
+#[inline(always)]
 pub fn cache_hash(key: &[u8]) -> u64 {
     // try to omit code for >64 path in ahash
     assume!(key.len() <= 64);
