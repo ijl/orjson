@@ -527,16 +527,16 @@ extern "C" {
 #define YYJSON_VERSION_MAJOR  0
 
 /** The minor version of yyjson. */
-#define YYJSON_VERSION_MINOR  8
+#define YYJSON_VERSION_MINOR  9
 
 /** The patch version of yyjson. */
 #define YYJSON_VERSION_PATCH  0
 
 /** The version of yyjson in hex: `(major << 16) | (minor << 8) | (patch)`. */
-#define YYJSON_VERSION_HEX    0x000800
+#define YYJSON_VERSION_HEX    0x000900
 
 /** The version string of yyjson. */
-#define YYJSON_VERSION_STRING "0.8.0"
+#define YYJSON_VERSION_STRING "0.9.0"
 
 /** The version of yyjson in hex, same as `YYJSON_VERSION_HEX`. */
 yyjson_api uint32_t yyjson_version(void);
@@ -860,8 +860,6 @@ typedef struct yyjson_read_err {
     the `YYJSON_READ_INSITU` flag.
  @param len The length of JSON data in bytes.
     If this parameter is 0, the function will fail and return NULL.
- @param flg The JSON read options.
-    Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON reader.
     Pass NULL to use the libc's default allocator.
  @param err A pointer to receive error information.
@@ -871,7 +869,6 @@ typedef struct yyjson_read_err {
  */
 yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         size_t len,
-                                        yyjson_read_flag flg,
                                         const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
@@ -941,7 +938,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
                                           yyjson_read_flag flg) {
     flg &= ~YYJSON_READ_INSITU; /* const string cannot be modified */
     return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat,
-                            len, flg, NULL, NULL);
+                            len, NULL, NULL);
 }
 
 /**
@@ -3702,7 +3699,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strcpy(yyjson_mut_doc *doc,
     The `len` should be the length of the `val`, in bytes.
     This function allows duplicated key in one object.
     
-    @warning The key/value strings are not copied, you should keep these strings
+    @warning The key strings are not copied, you should keep these strings
         unmodified for the lifetime of this JSON document. */
 yyjson_api_inline bool yyjson_mut_obj_add_strncpy(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *obj,
@@ -5676,6 +5673,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_bool(yyjson_mut_doc *doc,
     if (yyjson_likely(doc)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         if (yyjson_likely(val)) {
+            _val = !!_val;
             val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
             return val;
         }
@@ -5928,7 +5926,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
     yyjson_mut_doc *doc, const bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)vals[i] << 3);
+        bool _val = !!vals[i];
+        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
     });
 }
 
@@ -6880,6 +6879,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_bool(yyjson_mut_doc *doc,
                                                const char *_key,
                                                bool _val) {
     yyjson_mut_obj_add_func({
+        _val = !!_val;
         val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)(_val) << 3);
     });
 }

@@ -2,7 +2,7 @@
 
 set -eou pipefail
 
-yyjson_version="0eca326fe57aeeb866e6f04c9ef9ea9f8343157e"
+yyjson_version="b21c02904188add942d3c7cd4885422e4335f115"
 
 curl -Ls -o include/yyjson/yyjson.c "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.c"
 curl -Ls -o include/yyjson/yyjson.h "https://raw.githubusercontent.com/ibireme/yyjson/${yyjson_version}/src/yyjson.h"
@@ -26,5 +26,11 @@ sed -i 's/    if (!err) err = &dummy_err;//g' include/yyjson/yyjson.c
 sed -i 's/likely(!alc_ptr)/!alc_ptr/g' include/yyjson/yyjson.c
 
 sed -i 's/unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))/false/g' include/yyjson/yyjson.c
+sed -i 's/has_read_flag(ALLOW_INF_AND_NAN)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_read_flag(ALLOW_COMMENTS)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_read_flag(BIGNUM_AS_RAW)/false/g' include/yyjson/yyjson.c
+sed -i 's/if (pre && \*pre)/if (false)/g' include/yyjson/yyjson.c
+sed -i 's/(pre && !false)/(false)/g' include/yyjson/yyjson.c
 
 git apply include/yyjson-recursion-limit.patch
+git apply include/yyjson-reduce-unused.patch

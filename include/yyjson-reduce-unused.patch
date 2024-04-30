@@ -1,0 +1,787 @@
+diff --git a/include/yyjson/yyjson.c b/include/yyjson/yyjson.c
+index fc80574..803c2f5 100644
+--- a/include/yyjson/yyjson.c
++++ b/include/yyjson/yyjson.c
+@@ -3846,14 +3846,6 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre, yyjson_val *val) {
+     return false;
+ }
+ 
+-/** Read 'Inf', 'Infinity' or 'NaN' literal (ignoring case). */
+-static_inline bool read_inf_or_nan(bool sign, u8 **ptr, u8 **pre,
+-                                   yyjson_val *val) {
+-    if (read_inf(sign, ptr, pre, val)) return true;
+-    if (read_nan(sign, ptr, pre, val)) return true;
+-    return false;
+-}
+-
+ /** Read a JSON number as raw string. */
+ static_noinline bool read_number_raw(u8 **ptr,
+                                      u8 **pre,
+@@ -3885,9 +3877,6 @@ static_noinline bool read_number_raw(u8 **ptr,
+     
+     /* read first digit, check leading zero */
+     if (unlikely(!digi_is_digit(*cur))) {
+-        if (false) {
+-            if (read_inf_or_nan(*hdr == '-', &cur, pre, val)) return_raw();
+-        }
+         return_err(cur, "no digit after minus sign");
+     }
+     
+@@ -3997,8 +3986,7 @@ static_inline bool is_truncated_str(u8 *cur, u8 *end,
+  Returns true if the input is valid but truncated.
+  */
+ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
+-                                      yyjson_read_code code,
+-                                      yyjson_read_flag flg) {
++                                      yyjson_read_code code) {
+     if (cur >= end) return true;
+     if (code == YYJSON_READ_ERROR_LITERAL) {
+         if (is_truncated_str(cur, end, "true", true) ||
+@@ -4368,8 +4356,6 @@ static const f64 f64_pow10_table[] = {
+  3. This function (with inline attribute) may generate a lot of instructions.
+  */
+ static_inline bool read_number(u8 **ptr,
+-                               u8 **pre,
+-                               yyjson_read_flag flg,
+                                yyjson_val *val,
+                                const char **msg) {
+     
+@@ -4404,18 +4390,10 @@ static_inline bool read_number(u8 **ptr,
+ } while (false)
+     
+ #define return_inf() do { \
+-    if (false) return_raw(); \
+     if (false) return_f64_bin(F64_RAW_INF); \
+     else return_err(hdr, "number is infinity when parsed as double"); \
+ } while (false)
+     
+-#define return_raw() do { \
+-    if (*pre) **pre = '\0'; /* add null-terminator for previous raw string */ \
+-    val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW; \
+-    val->uni.str = (const char *)hdr; \
+-    *pre = cur; *end = cur; return true; \
+-} while (false)
+-    
+     u8 *sig_cut = NULL; /* significant part cutting position for long number */
+     u8 *sig_end = NULL; /* significant part ending position */
+     u8 *dot_pos = NULL; /* decimal point position */
+@@ -4434,23 +4412,12 @@ static_inline bool read_number(u8 **ptr,
+     u8 **end = ptr;
+     bool sign;
+     
+-    /* read number as raw string if has `YYJSON_READ_NUMBER_AS_RAW` flag */
+-    if (unlikely(false)) {
+-        return read_number_raw(ptr, pre, flg, val, msg);
+-    }
+-    
+     sign = (*hdr == '-');
+     cur += sign;
+     
+     /* begin with a leading zero or non-digit */
+     if (unlikely(!digi_is_nonzero(*cur))) { /* 0 or non-digit char */
+         if (unlikely(*cur != '0')) { /* non-digit char */
+-            if (false) {
+-                if (read_inf_or_nan(sign, &cur, pre, val)) {
+-                    *end = cur;
+-                    return true;
+-                }
+-            }
+             return_err(cur, "no digit after minus sign");
+         }
+         /* begin with 0 */
+@@ -4504,7 +4471,6 @@ static_inline bool read_number(u8 **ptr,
+     if (!digi_is_digit_or_fp(*cur)) {
+         /* this number is an integer consisting of 19 digits */
+         if (sign && (sig > ((u64)1 << 63))) { /* overflow */
+-            if (false) return_raw();
+             return_f64(normalized_u64_to_f64(sig));
+         }
+         return_i64(sig);
+@@ -4558,7 +4524,6 @@ digi_intg_more:
+                 cur++;
+                 /* convert to double if overflow */
+                 if (sign) {
+-                    if (false) return_raw();
+                     return_f64(normalized_u64_to_f64(sig));
+                 }
+                 return_i64(sig);
+@@ -4585,9 +4550,6 @@ digi_frac_more:
+     sig += (*cur >= '5'); /* round */
+     while (digi_is_digit(*++cur));
+     if (!dot_pos) {
+-        if (!digi_is_fp(*cur) && false) {
+-            return_raw(); /* it's a large integer */
+-        }
+         dot_pos = cur;
+         if (*cur == '.') {
+             if (!digi_is_digit(*++cur)) {
+@@ -4980,8 +4942,6 @@ digi_finish:
+  This function use libc's strtod() to read floating-point number.
+  */
+ static_inline bool read_number(u8 **ptr,
+-                               u8 **pre,
+-                               yyjson_read_flag flg,
+                                yyjson_val *val,
+                                const char **msg) {
+     
+@@ -5016,18 +4976,10 @@ static_inline bool read_number(u8 **ptr,
+ } while (false)
+     
+ #define return_inf() do { \
+-    if (false) return_raw(); \
+     if (false) return_f64_bin(F64_RAW_INF); \
+     else return_err(hdr, "number is infinity when parsed as double"); \
+ } while (false)
+     
+-#define return_raw() do { \
+-    if (*pre) **pre = '\0'; /* add null-terminator for previous raw string */ \
+-    val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW; \
+-    val->uni.str = (const char *)hdr; \
+-    *pre = cur; *end = cur; return true; \
+-} while (false)
+-    
+     u64 sig, num;
+     u8 *hdr = *ptr;
+     u8 *cur = *ptr;
+@@ -5047,12 +4999,6 @@ static_inline bool read_number(u8 **ptr,
+     
+     /* read first digit, check leading zero */
+     if (unlikely(!digi_is_digit(*cur))) {
+-        if (false) {
+-            if (read_inf_or_nan(sign, &cur, pre, val)) {
+-                *end = cur;
+-                return true;
+-            }
+-        }
+         return_err(cur, "no digit after minus sign");
+     }
+     if (*cur == '0') {
+@@ -5102,9 +5048,6 @@ intg_end:
+ read_double:
+     /* this number should be read as double */
+     while (digi_is_digit(*cur)) cur++;
+-    if (!digi_is_fp(*cur) && false) {
+-        return_raw(); /* it's a large integer */
+-    }
+     if (*cur == '.') {
+         /* skip fraction part */
+         dot = cur;
+@@ -5186,7 +5129,6 @@ read_double:
+  */
+ static_inline bool read_string(u8 **ptr,
+                                u8 *lst,
+-                               bool inv,
+                                yyjson_val *val,
+                                const char **msg) {
+     /*
+@@ -5421,10 +5363,6 @@ skip_utf8:
+             uni = byte_load_4(src);
+         }
+ #endif
+-        if (false) {
+-            if (!inv) return_err(src, "invalid UTF-8 encoding in string");
+-            ++src;
+-        }
+         goto skip_ascii;
+     }
+     
+@@ -5486,13 +5424,10 @@ copy_escape:
+     } else if (likely(*src == '"')) {
+         val->tag = ((u64)(dst - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+         val->uni.str = (const char *)cur;
+-        *dst = '\0';
+         *end = src + 1;
+         return true;
+     } else {
+-        if (!inv) return_err(src, "unexpected control character in string");
+-        if (src >= lst) return_err(src, "unclosed string");
+-        *dst++ = *src++;
++        return_err(src, "unexpected control character in string");
+     }
+     
+ copy_ascii:
+@@ -5664,10 +5599,6 @@ copy_utf8:
+             uni = byte_load_4(src);
+         }
+ #endif
+-        if (false) {
+-            if (!inv) return_err(src, "invalid UTF-8 encoding in string");
+-            goto copy_ascii_stop_1;
+-        }
+         goto copy_ascii;
+     }
+     goto copy_escape;
+@@ -5694,11 +5625,10 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
+                                              u8 *cur,
+                                              u8 *end,
+                                              yyjson_alc alc,
+-                                             yyjson_read_flag flg,
+                                              yyjson_read_err *err) {
+     
+ #define return_err(_pos, _code, _msg) do { \
+-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
++    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+         err->pos = (usize)(end - hdr); \
+         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
+         err->msg = "unexpected end of data"; \
+@@ -5718,11 +5648,6 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
+     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
+     const char *msg; /* error message */
+     
+-    bool raw; /* read number as raw */
+-    bool inv; /* allow invalid unicode */
+-    u8 *raw_end; /* raw end for null-terminator */
+-    u8 **pre; /* previous raw end pointer */
+-    
+     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
+     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
+     alc_num = hdr_len + 1; /* single value */
+@@ -5730,17 +5655,13 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
+     val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
+     if (unlikely(!val_hdr)) goto fail_alloc;
+     val = val_hdr + hdr_len;
+-    raw = has_read_flag(NUMBER_AS_RAW) || false;
+-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
+-    raw_end = NULL;
+-    pre = raw ? &raw_end : NULL;
+     
+     if (char_is_number(*cur)) {
+-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto doc_end;
++        if (likely(read_number(&cur, val, &msg))) goto doc_end;
+         goto fail_number;
+     }
+     if (*cur == '"') {
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto doc_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto doc_end;
+         goto fail_string;
+     }
+     if (*cur == 't') {
+@@ -5754,13 +5675,10 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
+     if (*cur == 'n') {
+         if (likely(read_null(&cur, val))) goto doc_end;
+         if (false) {
+-            if (read_nan(false, &cur, pre, val)) goto doc_end;
++            if (read_nan(false, &cur, 0, val)) goto doc_end;
+         }
+         goto fail_literal;
+     }
+-    if (false) {
+-        if (read_inf_or_nan(false, &cur, pre, val)) goto doc_end;
+-    }
+     goto fail_character;
+     
+ doc_end:
+@@ -5776,13 +5694,12 @@ doc_end:
+         if (unlikely(cur < end)) goto fail_garbage;
+     }
+     
+-    if (false) **pre = '\0';
+     doc = (yyjson_doc *)val_hdr;
+     doc->root = val_hdr + hdr_len;
+     doc->alc = alc;
+     doc->dat_read = (usize)(cur - hdr);
+     doc->val_read = 1;
+-    doc->str_pool = has_read_flag(INSITU) ? NULL : (char *)hdr;
++    doc->str_pool = (char *)hdr;
+     return doc;
+     
+ fail_string:
+@@ -5810,11 +5727,10 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
+                                            u8 *cur,
+                                            u8 *end,
+                                            yyjson_alc alc,
+-                                           yyjson_read_flag flg,
+                                            yyjson_read_err *err) {
+     
+ #define return_err(_pos, _code, _msg) do { \
+-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
++    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+         err->pos = (usize)(end - hdr); \
+         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
+         err->msg = "unexpected end of data"; \
+@@ -5861,8 +5777,6 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
+     u32 container_depth = 0; /* limit on number of open array and map */
+     bool raw; /* read number as raw */
+     bool inv; /* allow invalid unicode */
+-    u8 *raw_end; /* raw end for null-terminator */
+-    u8 **pre; /* previous raw end pointer */
+     
+     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
+     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
+@@ -5877,11 +5791,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
+     val = val_hdr + hdr_len;
+     ctn = val;
+     ctn_len = 0;
+-    raw = has_read_flag(NUMBER_AS_RAW) || false;
+-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
+-    raw_end = NULL;
+-    pre = raw ? &raw_end : NULL;
+-    
++
+     if (*cur++ == '{') {
+         ctn->tag = YYJSON_TYPE_OBJ;
+         ctn->uni.ofs = 0;
+@@ -5923,13 +5833,13 @@ arr_val_begin:
+     if (char_is_number(*cur)) {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
++        if (likely(read_number(&cur, val, &msg))) goto arr_val_end;
+         goto fail_number;
+     }
+     if (*cur == '"') {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto arr_val_end;
+         goto fail_string;
+     }
+     if (*cur == 't') {
+@@ -5948,15 +5858,11 @@ arr_val_begin:
+         val_incr();
+         ctn_len++;
+         if (likely(read_null(&cur, val))) goto arr_val_end;
+-        if (false) {
+-            if (read_nan(false, &cur, pre, val)) goto arr_val_end;
+-        }
+         goto fail_literal;
+     }
+     if (*cur == ']') {
+         cur++;
+         if (likely(ctn_len == 0)) goto arr_end;
+-        if (has_read_flag(ALLOW_TRAILING_COMMAS)) goto arr_end;
+         while (*cur != ',') cur--;
+         goto fail_trailing_comma;
+     }
+@@ -5964,17 +5870,6 @@ arr_val_begin:
+         while (char_is_space(*++cur));
+         goto arr_val_begin;
+     }
+-    if (false &&
+-        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
+-        val_incr();
+-        ctn_len++;
+-        if (read_inf_or_nan(false, &cur, pre, val)) goto arr_val_end;
+-        goto fail_character;
+-    }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ arr_val_end:
+@@ -6036,13 +5931,12 @@ obj_key_begin:
+     if (likely(*cur == '"')) {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto obj_key_end;
+         goto fail_string;
+     }
+     if (likely(*cur == '}')) {
+         cur++;
+         if (likely(ctn_len == 0)) goto obj_end;
+-        if (has_read_flag(ALLOW_TRAILING_COMMAS)) goto obj_end;
+         while (*cur != ',') cur--;
+         goto fail_trailing_comma;
+     }
+@@ -6075,13 +5969,13 @@ obj_val_begin:
+     if (*cur == '"') {
+         val++;
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto obj_val_end;
+         goto fail_string;
+     }
+     if (char_is_number(*cur)) {
+         val++;
+         ctn_len++;
+-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
++        if (likely(read_number(&cur, val, &msg))) goto obj_val_end;
+         goto fail_number;
+     }
+     if (*cur == '{') {
+@@ -6108,26 +6002,12 @@ obj_val_begin:
+         val++;
+         ctn_len++;
+         if (likely(read_null(&cur, val))) goto obj_val_end;
+-        if (false) {
+-            if (read_nan(false, &cur, pre, val)) goto obj_val_end;
+-        }
+         goto fail_literal;
+     }
+     if (char_is_space(*cur)) {
+         while (char_is_space(*++cur));
+         goto obj_val_begin;
+     }
+-    if (false &&
+-        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
+-        val++;
+-        ctn_len++;
+-        if (read_inf_or_nan(false, &cur, pre, val)) goto obj_val_end;
+-        goto fail_character;
+-    }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ obj_val_end:
+@@ -6178,7 +6058,6 @@ doc_end:
+         if (unlikely(cur < end)) goto fail_garbage;
+     }
+     
+-    if (false) **pre = '\0';
+     doc = (yyjson_doc *)val_hdr;
+     doc->root = val_hdr + hdr_len;
+     doc->alc = alc;
+@@ -6215,11 +6094,10 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
+                                            u8 *cur,
+                                            u8 *end,
+                                            yyjson_alc alc,
+-                                           yyjson_read_flag flg,
+                                            yyjson_read_err *err) {
+     
+ #define return_err(_pos, _code, _msg) do { \
+-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
++    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+         err->pos = (usize)(end - hdr); \
+         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
+         err->msg = "unexpected end of data"; \
+@@ -6264,10 +6142,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
+     const char *msg; /* error message */
+ 
+     u32 container_depth = 0; /* limit on number of open array and map */
+-    bool raw; /* read number as raw */
+-    bool inv; /* allow invalid unicode */
+-    u8 *raw_end; /* raw end for null-terminator */
+-    u8 **pre; /* previous raw end pointer */
+     
+     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
+     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
+@@ -6282,10 +6156,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
+     val = val_hdr + hdr_len;
+     ctn = val;
+     ctn_len = 0;
+-    raw = has_read_flag(NUMBER_AS_RAW) || false;
+-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
+-    raw_end = NULL;
+-    pre = raw ? &raw_end : NULL;
+     
+     if (*cur++ == '{') {
+         ctn->tag = YYJSON_TYPE_OBJ;
+@@ -6343,13 +6213,13 @@ arr_val_begin:
+     if (char_is_number(*cur)) {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
++        if (likely(read_number(&cur, val, &msg))) goto arr_val_end;
+         goto fail_number;
+     }
+     if (*cur == '"') {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto arr_val_end;
+         goto fail_string;
+     }
+     if (*cur == 't') {
+@@ -6369,14 +6239,13 @@ arr_val_begin:
+         ctn_len++;
+         if (likely(read_null(&cur, val))) goto arr_val_end;
+         if (false) {
+-            if (read_nan(false, &cur, pre, val)) goto arr_val_end;
++            if (read_nan(false, &cur, 0, val)) goto arr_val_end;
+         }
+         goto fail_literal;
+     }
+     if (*cur == ']') {
+         cur++;
+         if (likely(ctn_len == 0)) goto arr_end;
+-        if (has_read_flag(ALLOW_TRAILING_COMMAS)) goto arr_end;
+         while (*cur != ',') cur--;
+         goto fail_trailing_comma;
+     }
+@@ -6384,17 +6253,6 @@ arr_val_begin:
+         while (char_is_space(*++cur));
+         goto arr_val_begin;
+     }
+-    if (false &&
+-        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
+-        val_incr();
+-        ctn_len++;
+-        if (read_inf_or_nan(false, &cur, pre, val)) goto arr_val_end;
+-        goto fail_character;
+-    }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ arr_val_end:
+@@ -6473,13 +6331,12 @@ obj_key_begin:
+     if (likely(*cur == '"')) {
+         val_incr();
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto obj_key_end;
+         goto fail_string;
+     }
+     if (likely(*cur == '}')) {
+         cur++;
+         if (likely(ctn_len == 0)) goto obj_end;
+-        if (has_read_flag(ALLOW_TRAILING_COMMAS)) goto obj_end;
+         while (*cur != ',') cur--;
+         goto fail_trailing_comma;
+     }
+@@ -6506,23 +6363,19 @@ obj_key_end:
+         while (char_is_space(*++cur));
+         goto obj_key_end;
+     }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto obj_key_end;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ obj_val_begin:
+     if (*cur == '"') {
+         val++;
+         ctn_len++;
+-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
++        if (likely(read_string(&cur, end, val, &msg))) goto obj_val_end;
+         goto fail_string;
+     }
+     if (char_is_number(*cur)) {
+         val++;
+         ctn_len++;
+-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
++        if (likely(read_number(&cur, val, &msg))) goto obj_val_end;
+         goto fail_number;
+     }
+     if (*cur == '{') {
+@@ -6549,26 +6402,12 @@ obj_val_begin:
+         val++;
+         ctn_len++;
+         if (likely(read_null(&cur, val))) goto obj_val_end;
+-        if (false) {
+-            if (read_nan(false, &cur, pre, val)) goto obj_val_end;
+-        }
+         goto fail_literal;
+     }
+     if (char_is_space(*cur)) {
+         while (char_is_space(*++cur));
+         goto obj_val_begin;
+     }
+-    if (false &&
+-        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
+-        val++;
+-        ctn_len++;
+-        if (read_inf_or_nan(false, &cur, pre, val)) goto obj_val_end;
+-        goto fail_character;
+-    }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ obj_val_end:
+@@ -6588,10 +6427,6 @@ obj_val_end:
+         while (char_is_space(*++cur));
+         goto obj_val_end;
+     }
+-    if (false) {
+-        if (skip_spaces_and_comments(&cur)) goto obj_val_end;
+-        if (byte_match_2(cur, "/*")) goto fail_comment;
+-    }
+     goto fail_character;
+     
+ obj_end:
+@@ -6624,7 +6459,6 @@ doc_end:
+         if (unlikely(cur < end)) goto fail_garbage;
+     }
+     
+-    if (false) **pre = '\0';
+     doc = (yyjson_doc *)val_hdr;
+     doc->root = val_hdr + hdr_len;
+     doc->alc = alc;
+@@ -6664,7 +6498,6 @@ fail_recursion:
+ 
+ yyjson_doc *yyjson_read_opts(char *dat,
+                              usize len,
+-                             yyjson_read_flag flg,
+                              const yyjson_alc *alc_ptr,
+                              yyjson_read_err *err) {
+     
+@@ -6675,56 +6508,26 @@ yyjson_doc *yyjson_read_opts(char *dat,
+     if (!has_read_flag(INSITU) && hdr) alc.free(alc.ctx, (void *)hdr); \
+     return NULL; \
+ } while (false)
+-    
+-
+     yyjson_alc alc;
+     yyjson_doc *doc;
+     u8 *hdr = NULL, *end, *cur;
+-    
+-    /* validate input parameters */
+ 
+     if (!alc_ptr) {
+         alc = YYJSON_DEFAULT_ALC;
+     } else {
+         alc = *alc_ptr;
+     }
+-    if (unlikely(!dat)) {
+-        return_err(0, INVALID_PARAMETER, "input data is NULL");
+-    }
+-    if (unlikely(!len)) {
+-        return_err(0, INVALID_PARAMETER, "input length is 0");
+-    }
+-    
+-    /* add 4-byte zero padding for input data if necessary */
+-    if (has_read_flag(INSITU)) {
+-        hdr = (u8 *)dat;
+-        end = (u8 *)dat + len;
+-        cur = (u8 *)dat;
+-    } else {
+-        if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
+-            return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
+-        }
+-        hdr = (u8 *)alc.malloc(alc.ctx, len + YYJSON_PADDING_SIZE);
+-        if (unlikely(!hdr)) {
+-            return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
+-        }
+-        end = hdr + len;
+-        cur = hdr;
+-        memcpy(hdr, dat, len);
+-        memset(end, 0, YYJSON_PADDING_SIZE);
+-    }
++
++    hdr = (u8 *)alc.malloc(alc.ctx, len + YYJSON_PADDING_SIZE);
++    end = hdr + len;
++    cur = hdr;
++    memcpy(hdr, dat, len);
++    memset(end, 0, YYJSON_PADDING_SIZE);
+     
+     /* skip empty contents before json document */
+     if (unlikely(char_is_space_or_comment(*cur))) {
+-        if (false) {
+-            if (!skip_spaces_and_comments(&cur)) {
+-                return_err(cur - hdr, INVALID_COMMENT,
+-                           "unclosed multiline comment");
+-            }
+-        } else {
+-            if (likely(char_is_space(*cur))) {
+-                while (char_is_space(*++cur));
+-            }
++        if (likely(char_is_space(*cur))) {
++            while (char_is_space(*++cur));
+         }
+         if (unlikely(cur >= end)) {
+             return_err(0, EMPTY_CONTENT, "input data is empty");
+@@ -6734,35 +6537,17 @@ yyjson_doc *yyjson_read_opts(char *dat,
+     /* read json document */
+     if (likely(char_is_container(*cur))) {
+         if (char_is_space(cur[1]) && char_is_space(cur[2])) {
+-            doc = read_root_pretty(hdr, cur, end, alc, flg, err);
++            doc = read_root_pretty(hdr, cur, end, alc, err);
+         } else {
+-            doc = read_root_minify(hdr, cur, end, alc, flg, err);
++            doc = read_root_minify(hdr, cur, end, alc, err);
+         }
+     } else {
+-        doc = read_root_single(hdr, cur, end, alc, flg, err);
++        doc = read_root_single(hdr, cur, end, alc, err);
+     }
+     
+     /* check result */
+-    if (likely(doc)) {
+-        memset(err, 0, sizeof(yyjson_read_err));
+-    } else {
+-        /* RFC 8259: JSON text MUST be encoded using UTF-8 */
+-        if (err->pos == 0 && err->code != YYJSON_READ_ERROR_MEMORY_ALLOCATION) {
+-            if ((hdr[0] == 0xEF && hdr[1] == 0xBB && hdr[2] == 0xBF)) {
+-                err->msg = "byte order mark (BOM) is not supported";
+-            } else if (len >= 4 &&
+-                       ((hdr[0] == 0x00 && hdr[1] == 0x00 &&
+-                         hdr[2] == 0xFE && hdr[3] == 0xFF) ||
+-                        (hdr[0] == 0xFF && hdr[1] == 0xFE &&
+-                         hdr[2] == 0x00 && hdr[3] == 0x00))) {
+-                err->msg = "UTF-32 encoding is not supported";
+-            } else if (len >= 2 &&
+-                       ((hdr[0] == 0xFE && hdr[1] == 0xFF) ||
+-                        (hdr[0] == 0xFF && hdr[1] == 0xFE))) {
+-                err->msg = "UTF-16 encoding is not supported";
+-            }
+-        }
+-        if (!has_read_flag(INSITU)) alc.free(alc.ctx, (void *)hdr);
++    if (unlikely(!doc)) {
++        alc.free(alc.ctx, (void *)hdr);
+     }
+     return doc;
+     
+@@ -6878,7 +6663,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
+     /* read JSON */
+     memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
+     flg |= YYJSON_READ_INSITU;
+-    doc = yyjson_read_opts((char *)buf, (usize)file_size, flg, &alc, err);
++    doc = yyjson_read_opts((char *)buf, (usize)file_size, &alc, err);
+     if (doc) {
+         doc->str_pool = (char *)buf;
+         return doc;
+@@ -6940,12 +6725,8 @@ const char *yyjson_read_number(const char *dat,
+     hdr[dat_len] = 0;
+ #endif
+     
+-    raw = false;
+-    raw_end = NULL;
+-    pre = raw ? &raw_end : NULL;
+-    
+ #if !YYJSON_HAS_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV
+-    if (!read_number(&cur, pre, flg, val, &msg)) {
++    if (!read_number(&cur, val, &msg)) {
+         if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
+         return_err(cur, INVALID_NUMBER, msg);
+     }
+@@ -6953,7 +6734,7 @@ const char *yyjson_read_number(const char *dat,
+     if (yyjson_is_raw(val)) val->uni.str = dat;
+     return dat + (cur - hdr);
+ #else
+-    if (!read_number(&cur, pre, flg, val, &msg)) {
++    if (!read_number(&cur, val, &msg)) {
+         return_err(cur, INVALID_NUMBER, msg);
+     }
+     return (const char *)cur;
+diff --git a/include/yyjson/yyjson.h b/include/yyjson/yyjson.h
+index c2dcdd6..210449d 100644
+--- a/include/yyjson/yyjson.h
++++ b/include/yyjson/yyjson.h
+@@ -860,8 +860,6 @@ typedef struct yyjson_read_err {
+     the `YYJSON_READ_INSITU` flag.
+  @param len The length of JSON data in bytes.
+     If this parameter is 0, the function will fail and return NULL.
+- @param flg The JSON read options.
+-    Multiple options can be combined with `|` operator. 0 means no options.
+  @param alc The memory allocator used by JSON reader.
+     Pass NULL to use the libc's default allocator.
+  @param err A pointer to receive error information.
+@@ -871,7 +869,6 @@ typedef struct yyjson_read_err {
+  */
+ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
+                                         size_t len,
+-                                        yyjson_read_flag flg,
+                                         const yyjson_alc *alc,
+                                         yyjson_read_err *err);
+ 
+@@ -941,7 +938,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
+                                           yyjson_read_flag flg) {
+     flg &= ~YYJSON_READ_INSITU; /* const string cannot be modified */
+     return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat,
+-                            len, flg, NULL, NULL);
++                            len, NULL, NULL);
+ }
+ 
+ /**
