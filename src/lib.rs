@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+#![cfg_attr(
+    all(target_arch = "x86_64", feature = "avx512"),
+    feature(avx512_target_feature)
+)]
+#![cfg_attr(
+    all(target_arch = "x86_64", feature = "avx512"),
+    feature(stdarch_x86_avx512)
+)]
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "strict_provenance", feature(strict_provenance))]

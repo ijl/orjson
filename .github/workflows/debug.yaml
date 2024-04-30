@@ -11,6 +11,7 @@ jobs:
           { rust: "1.72", features: "" },
           { rust: "1.72", features: "--features=yyjson" },
           { rust: "nightly-2024-04-30", features: "--features=yyjson,unstable-simd"},
+          { rust: "nightly-2024-04-30", features: "--features=avx512,yyjson,unstable-simd"},
         ]
         python: [
           { version: '3.13' },
@@ -25,6 +26,9 @@ jobs:
       UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.profile.rust }} --profile minimal -y
+
+    - name: cpuinfo
+      run: cat /proc/cpuinfo
 
     - uses: actions/setup-python@v5
       with:

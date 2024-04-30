@@ -2,6 +2,7 @@
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
 use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
+use crate::serialize::writer::str::*;
 use crate::serialize::writer::WriteExt;
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
@@ -148,9 +149,10 @@ where
         unreachable!();
     }
 
-    #[inline]
+    #[inline(always)]
     fn serialize_str(self, value: &str) -> Result<()> {
-        format_escaped_str(&mut self.writer, value).map_err(Error::io)
+        format_escaped_str(&mut self.writer, value);
+        Ok(())
     }
 
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
@@ -406,7 +408,7 @@ where
     type SerializeStruct = Impossible<(), Error>;
     type SerializeStructVariant = Impossible<(), Error>;
 
-    #[inline]
+    #[inline(always)]
     fn serialize_str(self, value: &str) -> Result<()> {
         self.ser.serialize_str(value)
     }
@@ -563,17 +565,25 @@ where
     }
 }
 
-#[cfg(feature = "unstable-simd")]
+macro_rules! reserve_str {
+    ($writer:expr, $value:expr) => {
+        $writer.reserve($value.len() * 8 + 32);
+    };
+}
+
+#[cfg(all(
+    feature = "unstable-simd",
+    any(not(target_arch = "x86_64"), not(feature = "avx512"))
+))]
 #[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
+fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
     W: ?Sized + io::Write + WriteExt,
 {
     unsafe {
-        let num_reserved_bytes = value.len() * 8 + 32;
-        writer.reserve(num_reserved_bytes);
+        reserve_str!(writer, value);
 
-        let written = crate::serialize::writer::escape::format_escaped_str_impl_128(
+        let written = format_escaped_str_impl_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -581,28 +591,51 @@ where
 
         writer.set_written(written);
     }
-    Ok(())
+}
+
+#[cfg(all(feature = "unstable-simd", target_arch = "x86_64", feature = "avx512"))]
+#[inline(always)]
+fn format_escaped_str<W>(writer: &mut W, value: &str)
+where
+    W: ?Sized + io::Write + WriteExt,
+{
+    unsafe {
+        reserve_str!(writer, value);
+
+        if std::is_x86_feature_detected!("avx512vl") {
+            let written = format_escaped_str_impl_512vl(
+                writer.as_mut_buffer_ptr(),
+                value.as_bytes().as_ptr(),
+                value.len(),
+            );
+            writer.set_written(written);
+        } else {
+            let written = format_escaped_str_impl_128(
+                writer.as_mut_buffer_ptr(),
+                value.as_bytes().as_ptr(),
+                value.len(),
+            );
+            writer.set_written(written);
+        };
+    }
 }
 
 #[cfg(not(feature = "unstable-simd"))]
 #[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str) -> io::Result<()>
+fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
     W: ?Sized + io::Write + WriteExt,
 {
     unsafe {
-        let num_reserved_bytes = value.len() * 8 + 32;
-        writer.reserve(num_reserved_bytes);
+        reserve_str!(writer, value);
 
-        let written = crate::serialize::writer::escape::format_escaped_str_scalar(
+        let written = format_escaped_str_scalar(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
         );
-
         writer.set_written(written);
     }
-    Ok(())
 }
 
 #[inline]

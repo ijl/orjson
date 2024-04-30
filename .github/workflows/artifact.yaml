@@ -79,6 +79,9 @@ jobs:
       options: --user 0
     steps:
 
+    - name: cpuinfo
+      run: cat /proc/cpuinfo
+
     - uses: actions/checkout@v4
 
     - name: Build environment

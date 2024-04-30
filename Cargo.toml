@@ -35,6 +35,9 @@ default = []
 # Use SIMD intrinsics. This requires Rust on the nightly channel.
 unstable-simd = []
 
+# Include runtime-detected functions that use AVX512VL. Requires unstable-simd and amd64.
+avx512 = []
+
 no-panic = [
     "itoa/no-panic",
     "ryu/no-panic",
