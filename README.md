@@ -617,7 +617,7 @@ The input must be valid UTF-8.
 
 orjson maintains a cache of map keys for the duration of the process. This
 causes a net reduction in memory usage by avoiding duplicate strings. The
-keys must be at most 64 bytes to be cached and 1024 entries are stored.
+keys must be at most 64 bytes to be cached and 2048 entries are stored.
 
 The global interpreter lock (GIL) is held for the duration of the call.
 
