@@ -33,7 +33,7 @@ support for 64-bit
 file-like objects
 
 orjson supports CPython 3.8, 3.9, 3.10, 3.11, and 3.12. It distributes
-amd64/x86_64, aarch64/armv8, arm7, POWER/ppc64le, and s390x wheels for Linux,
+amd64/x86_64, aarch64/armv8, POWER/ppc64le, and s390x wheels for Linux,
 amd64 and aarch64 wheels for macOS, and amd64 and i686/x86 wheels for Windows.
 orjson does not and will not support PyPy. orjson does not and will not
 support PEP 554 subinterpreters. Releases follow semantic versioning and
@@ -1207,7 +1207,7 @@ The project's own CI tests against `nightly-2024-04-15` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
-orjson is tested for amd64, aarch64, arm7, ppc64le, and s390x on Linux. It
+orjson is tested for amd64, aarch64, ppc64le, and s390x on Linux. It
 is tested for either aarch64 or amd64 on macOS and cross-compiles for the other,
 depending on version. For Windows it is tested on amd64 and i686.
 

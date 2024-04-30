@@ -215,13 +215,6 @@ jobs:
             target: 'aarch64-unknown-linux-gnu',
           },
           {
-            arch: 'armv7',
-            cflags: '-Os -flto=full -fstrict-aliasing',
-            features: 'no-panic,yyjson', # no SIMD
-            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C opt-level=s',
-            target: 'armv7-unknown-linux-gnueabihf',
-          },
-          {
             arch: 'ppc64le',
             cflags: '-Os -flto=full -fstrict-aliasing',
             features: 'no-panic,unstable-simd,yyjson',
