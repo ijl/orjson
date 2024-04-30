@@ -60,6 +60,6 @@ impl Serialize for UUID {
     {
         let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
         self.write_buf(&mut buf);
-        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
+        serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

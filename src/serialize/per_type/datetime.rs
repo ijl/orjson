@@ -73,7 +73,7 @@ impl Serialize for Date {
     {
         let mut buf = DateTimeBuffer::new();
         self.write_buf(&mut buf);
-        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
+        serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }
 
@@ -124,7 +124,7 @@ impl Serialize for Time {
         if self.write_buf(&mut buf).is_err() {
             err!(SerializeError::DatetimeLibraryUnsupported)
         };
-        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
+        serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }
 
@@ -243,6 +243,6 @@ impl Serialize for DateTime {
         if self.write_buf(&mut buf, self.opts).is_err() {
             err!(SerializeError::DatetimeLibraryUnsupported)
         }
-        serializer.serialize_str(str_from_slice!(buf.as_ptr(), buf.len()))
+        serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

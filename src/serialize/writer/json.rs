@@ -166,8 +166,18 @@ where
             .map_err(Error::io)
     }
 
-    fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        unreachable!();
+    #[inline(always)]
+    fn serialize_unit_struct(self, name: &'static str) -> Result<()> {
+        debug_assert!(name.len() <= 36);
+        reserve_minimum!(self.writer);
+        unsafe {
+            self.writer.write_reserved_punctuation(b'"').unwrap();
+            self.writer
+                .write_reserved_fragment(name.as_bytes())
+                .unwrap();
+            self.writer.write_reserved_punctuation(b'"').unwrap();
+        }
+        Ok(())
     }
 
     fn serialize_unit_variant(
