@@ -1,6 +1,18 @@
 # Changelog
 
 
+## 3.10.2 - 2024-05-01
+
+### Fixed
+
+- Fix crash serializing `str` introduced in 3.10.1.
+
+### Changed
+
+- Improve performance.
+- Drop support for arm7.
+
+
 ## 3.10.1 - 2024-04-15
 
 ### Fixed
