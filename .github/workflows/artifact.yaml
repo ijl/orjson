@@ -115,6 +115,11 @@ jobs:
     - run: ./integration/run http
     - run: ./integration/run init
 
+    - run: |
+        uv pip install -U --pre "numpy>=2.0.0rc1"
+        pytest -s test/test_numpy.py
+      if: matrix.python.version != '3.8'
+
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4

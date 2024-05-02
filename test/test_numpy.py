@@ -155,10 +155,10 @@ class TestNumpy:
                 numpy.array(
                     [
                         numpy.inf,
-                        numpy.NINF,
+                        -numpy.inf,
                         numpy.nan,
-                        numpy.NZERO,
-                        numpy.PZERO,
+                        -0.0,
+                        0.0,
                         numpy.pi,
                     ],
                     numpy.float16,
@@ -174,10 +174,10 @@ class TestNumpy:
                 numpy.array(
                     [
                         numpy.inf,
-                        numpy.NINF,
+                        -numpy.inf,
                         numpy.nan,
-                        numpy.NZERO,
-                        numpy.PZERO,
+                        -0.0,
+                        0.0,
                         numpy.pi,
                     ],
                     numpy.float32,
@@ -193,10 +193,10 @@ class TestNumpy:
                 numpy.array(
                     [
                         numpy.inf,
-                        numpy.NINF,
+                        -numpy.inf,
                         numpy.nan,
-                        numpy.NZERO,
-                        numpy.PZERO,
+                        -0.0,
+                        0.0,
                         numpy.pi,
                     ],
                     numpy.float64,

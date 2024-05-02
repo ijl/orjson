@@ -819,6 +819,8 @@ orjson natively serializes `numpy.ndarray` and individual
 `numpy.uintp`, `numpy.intp`, `numpy.datetime64`, and `numpy.bool`
 instances.
 
+orjson is compatible with both numpy v1 and v2.
+
 orjson is faster than all compared libraries at serializing
 numpy instances. Serializing numpy data requires specifying
 `option=orjson.OPT_SERIALIZE_NUMPY`.
