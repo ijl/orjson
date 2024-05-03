@@ -62,46 +62,47 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.12', abi: 'cp312-cp312' },
-          { version: '3.11', abi: 'cp311-cp311' },
-          { version: '3.10', abi: 'cp310-cp310' },
-          { version: '3.9', abi: 'cp39-cp39' },
-          { version: '3.8', abi: 'cp38-cp38' },
+          { version: '3.12' },
+          { version: '3.11' },
+          { version: '3.10' },
+          { version: '3.9' },
+          { version: '3.8' },
         ]
     env:
       CC: "clang"
-      CFLAGS: "-Os -fstrict-aliasing -flto=full"
-      LDFLAGS: "-fuse-ld=lld -Wl,--as-needed"
-      RUSTFLAGS: "-C linker=clang -C lto=fat -C link-arg=-fuse-ld=lld -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings"
+      CFLAGS: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
+      LDFLAGS: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
+      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings"
       PATH: "/__w/orjson/orjson/.venv/bin:/github/home/.cargo/bin:/root/.local/bin:/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     container:
       image: fedora:41
-      options: --user 0
     steps:
 
     - name: cpuinfo
       run: cat /proc/cpuinfo
 
+    - name: Build environment pre-clone
+      run: |
+        dnf install -y rustup clang lld python${{ matrix.python.version }} git
+        rustup-init --default-toolchain "${RUST_TOOLCHAIN}-x86_64-unknown-linux-gnu" --profile minimal --component rust-src -y
+
     - uses: actions/checkout@v4
 
-    - name: Build environment
+    - name: Build environment post-clone
       run: |
-        dnf install -y rustup clang lld python${{ matrix.python.version }}
-
-        rustup-init --default-toolchain "${RUST_TOOLCHAIN}-x86_64-unknown-linux-gnu" --profile minimal --component rust-src -y
         cargo fetch --target=x86_64-unknown-linux-gnu &
+
+        mkdir .cargo
+        cp ci/config.toml .cargo/config.toml
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
         uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
 
-        mkdir .cargo
-        cp ci/config.toml .cargo/config.toml
-
     - name: maturin
       run: |
         maturin build --release --strip \
-          --features=no-panic,unstable-simd,yyjson \
+          --features=avx512,no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
