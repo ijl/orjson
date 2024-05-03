@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.10.3 - 2024-05-03
+
+### Changed
+
+- `manylinux` amd64 builds include runtime-detected AVX-512 `str`
+implementation.
+- Tests now compatible with numpy v2.
+
+
 ## 3.10.2 - 2024-05-01
 
 ### Fixed
