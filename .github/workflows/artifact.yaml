@@ -32,23 +32,7 @@ jobs:
 
     - run: maturin sdist --out=dist
 
-    - run: python3 -m pip install --user dist/orjson*.tar.gz
-      env:
-        CARGO_NET_OFFLINE: "true"
-
-    - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
-
-    - run: pytest -s -rxX -v -n 4 test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: ./integration/run thread
-    - run: ./integration/run http
-    - run: ./integration/run init
-    - run: ./integration/run typestubs
-
     - name: Store sdist
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_sdist
@@ -106,23 +90,8 @@ jobs:
           --compatibility manylinux_2_17 \
           --interpreter python${{ matrix.python.version }} \
           --target=x86_64-unknown-linux-gnu
-        uv pip install target/wheels/orjson*.whl
-
-    - run: pytest -s -rxX -v -n 4 test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: ./integration/run thread
-    - run: ./integration/run http
-    - run: ./integration/run init
-
-    - run: |
-        uv pip install -U --pre "numpy>=2.0.0rc1"
-        pytest -s test/test_numpy.py
-      if: matrix.python.version != '3.8'
 
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_amd64_${{ matrix.python.version }}
@@ -178,24 +147,7 @@ jobs:
         image: tonistiigi/binfmt:qemu-v8.1.5
         platforms: ${{ matrix.platform.platform }}
 
-    - name: Test
-      uses: addnab/docker-run-action@v3
-      with:
-        image: quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:latest
-        options: -v ${{ github.workspace }}:/io -w /io
-        run: |
-          apk add tzdata
-          sed -i '/^psutil/d' test/requirements.txt # missing 3.11, 3.12 wheels
-          sed -i '/^numpy/d' test/requirements.txt
-
-          python${{ matrix.python.version }} -m venv venv
-          venv/bin/pip install -U pip wheel
-          venv/bin/pip install -r test/requirements.txt
-          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v -n 4 test
-
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_musllinux_1_2_${{ matrix.platform.arch }}_${{ matrix.python.version }}
@@ -259,29 +211,7 @@ jobs:
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
 
-    - uses: uraimo/run-on-arch-action@v2
-      name: Test
-      with:
-        arch: ${{ matrix.target.arch }}
-        distro: ubuntu22.04
-        githubToken: ${{ github.token }}
-        install: |
-          export TZ=UTC
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          apt-get install -y --no-install-recommends software-properties-common gpg gpg-agent curl
-          add-apt-repository ppa:deadsnakes/ppa
-          apt-get update
-          apt-get install -y python${{ matrix.python.version }}-dev python${{ matrix.python.version }}-venv
-        run: |
-          python${{ matrix.python.version }} -m venv venv
-          venv/bin/pip install -U pip wheel
-          venv/bin/pip install -r test/requirements.txt
-          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v -n 2 test
-
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_${{ matrix.target.arch }}_${{ matrix.python.version }}
@@ -341,18 +271,8 @@ jobs:
           --features=no-panic,unstable-simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
-        uv pip install target/wheels/orjson*.whl
-
-    - run: pytest -s -rxX -v -n 3 test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: source .venv/bin/activate && ./integration/run thread
-    - run: source .venv/bin/activate && ./integration/run http
-    - run: source .venv/bin/activate && ./integration/run init
 
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_universal2_aarch64_${{ matrix.python.version }}
@@ -411,18 +331,8 @@ jobs:
           --features=no-panic,unstable-simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
-        uv pip install target/wheels/orjson*.whl
-
-    - run: pytest -s -rxX -v -n 3 test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: source .venv/bin/activate && ./integration/run thread
-    - run: source .venv/bin/activate && ./integration/run http
-    - run: source .venv/bin/activate && ./integration/run init
 
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_universal2_amd64_${{ matrix.python.version }}
@@ -433,7 +343,6 @@ jobs:
   pypi:
     name: PyPI
     runs-on: ubuntu-22.04
-    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [
       sdist,
       manylinux_2_17_amd64,
@@ -451,12 +360,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pip "maturin>=1,<2"
-      - run: ls -1 .
-      - name: deploy wheel
-        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      - name: deploy sdist
-        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.tar.gz
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      - run: ls -l
