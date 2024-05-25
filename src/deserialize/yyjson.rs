@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::deserialize::pyobject::*;
-use crate::deserialize::DeserializeError;
-use crate::ffi::yyjson::*;
-use crate::str::unicode_from_str;
-use crate::typeref::{yyjson_init, YYJSON_ALLOC, YYJSON_BUFFER_SIZE};
 use core::ffi::c_char;
-use core::ptr::{null, null_mut, NonNull};
+use core::ptr::{NonNull, null, null_mut};
 use std::borrow::Cow;
-use std::ffi::CString;
-use pyo3_ffi::{PyCallable_Check, PyDict_GetItemString, PyObject};
+use std::collections::HashMap;
+
+use pyo3_ffi::PyObject;
+
+use crate::deserialize::DeserializeError;
+use crate::deserialize::deserializer::Callable;
+use crate::deserialize::pyobject::*;
+use crate::ffi::yyjson::*;
 use crate::raise_loads_exception;
+use crate::str::unicode_from_str;
+use crate::typeref::{YYJSON_ALLOC, YYJSON_BUFFER_SIZE, yyjson_init};
 
 const YYJSON_TAG_BIT: u8 = 8;
 
@@ -61,7 +64,7 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
 }
 
 pub fn deserialize_yyjson<const WITH_DEFAULT: bool>(
-    data: &'static str, default: Option<NonNull<pyo3_ffi::PyObject>>
+    data: &'static str, default: &Option<HashMap<String, Callable>>
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     let mut err = yyjson_read_err {
         code: YYJSON_READ_SUCCESS,
@@ -193,7 +196,7 @@ macro_rules! append_to_list {
 fn populate_yy_array<const WITH_DEFAULT: bool>(
     list: *mut pyo3_ffi::PyObject,
     elem: *mut yyjson_val,
-    default: Option<NonNull<pyo3_ffi::PyObject>>
+    default: &Option<HashMap<String, Callable>>
 ) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
@@ -246,32 +249,16 @@ macro_rules! add_to_dict {
 }
 
 #[cold]
-#[inline(never)]
+#[inline(always)]
 fn deserialize_default(
-    callable: *mut PyObject,
+    callable: &Callable,
     item: NonNull<PyObject>
 ) -> Result<*mut PyObject, *mut PyObject>
 {
     // TODO: if unlikely!(self.previous.state.default_calls_limit()) {
     //     err!(SerializeError::DefaultRecursionLimit)
     // }
-    let item_ptr = item.as_ptr();
-
-    #[cfg(not(Py_3_10))]
-    let default_obj = ffi!(PyObject_CallFunctionObjArgs(
-        callable,
-        item_ptr,
-        core::ptr::null_mut() as *mut pyo3_ffi::PyObject
-    ));
-    #[cfg(Py_3_10)]
-    let default_obj = unsafe {
-        pyo3_ffi::PyObject_Vectorcall(
-            callable,
-            core::ptr::addr_of!(item_ptr),
-            pyo3_ffi::PyVectorcall_NARGS(1) as usize,
-            core::ptr::null_mut(),
-        )
-    };
+    let default_obj = callable(item.as_ptr());
     if unlikely!(default_obj.is_null()) {
         // TODO: let name = unsafe { CStr::from_ptr((*ob_type!(item.as_ptr())).tp_name).to_string_lossy() };
         Err(raise_loads_exception(
@@ -288,7 +275,7 @@ fn deserialize_default(
 fn populate_yy_object<const WITH_DEFAULT: bool>(
     dict: *mut PyObject,
     elem: *mut yyjson_val,
-    default: Option<NonNull<PyObject>>
+    default: &Option<HashMap<String, Callable>>
 ) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
@@ -343,11 +330,8 @@ fn populate_yy_object<const WITH_DEFAULT: bool>(
             }
 
             if WITH_DEFAULT {
-                let callable = PyDict_GetItemString(
-                    default.unwrap_unchecked().as_ptr(),
-                    CString::new(key_str).unwrap_unchecked().as_ptr() as *const c_char
-                );
-                if unlikely!(!callable.is_null() && PyCallable_Check(callable) != 0) {
+                let callable = default.as_ref().unwrap_unchecked().get(key_str);
+                if let Some(callable) = callable {
                     let deserialized_obj = deserialize_default(callable, pyval);
                     if let Ok(deserialized_obj) = deserialized_obj {
                         add_to_dict!(dict, pykey, deserialized_obj);
