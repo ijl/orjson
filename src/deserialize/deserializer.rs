@@ -7,6 +7,7 @@ use core::ptr::NonNull;
 
 pub fn deserialize(
     ptr: *mut pyo3_ffi::PyObject,
+    default: Option<NonNull<pyo3_ffi::PyObject>>
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
     let buffer = read_input_to_buf(ptr)?;
@@ -25,7 +26,11 @@ pub fn deserialize(
 
     #[cfg(feature = "yyjson")]
     {
-        crate::deserialize::yyjson::deserialize_yyjson(buffer_str)
+        if default.is_some() {
+            crate::deserialize::yyjson::deserialize_yyjson::<true>(buffer_str, default)
+        } else {
+            crate::deserialize::yyjson::deserialize_yyjson::<false>(buffer_str, default)
+        }
     }
 
     #[cfg(not(feature = "yyjson"))]

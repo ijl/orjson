@@ -8,6 +8,9 @@ use crate::typeref::{yyjson_init, YYJSON_ALLOC, YYJSON_BUFFER_SIZE};
 use core::ffi::c_char;
 use core::ptr::{null, null_mut, NonNull};
 use std::borrow::Cow;
+use std::ffi::CString;
+use pyo3_ffi::{PyCallable_Check, PyDict_GetItemString, PyObject};
+use crate::raise_loads_exception;
 
 const YYJSON_TAG_BIT: u8 = 8;
 
@@ -57,8 +60,8 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
     unsafe { ((val as *mut u8).add(YYJSON_VAL_SIZE)) as *mut yyjson_val }
 }
 
-pub fn deserialize_yyjson(
-    data: &'static str,
+pub fn deserialize_yyjson<const WITH_DEFAULT: bool>(
+    data: &'static str, default: Option<NonNull<pyo3_ffi::PyObject>>
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     let mut err = yyjson_read_err {
         code: YYJSON_READ_SUCCESS,
@@ -93,7 +96,7 @@ pub fn deserialize_yyjson(
         } else if is_yyjson_tag!(val, TAG_ARRAY) {
             let pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
             if unsafe_yyjson_get_len(val) > 0 {
-                populate_yy_array(pyval.as_ptr(), val);
+                populate_yy_array::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
             }
             unsafe { yyjson_doc_free(doc) };
             Ok(pyval)
@@ -102,7 +105,7 @@ pub fn deserialize_yyjson(
                 unsafe_yyjson_get_len(val) as isize
             )));
             if unsafe_yyjson_get_len(val) > 0 {
-                populate_yy_object(pyval.as_ptr(), val);
+                populate_yy_object::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
             }
             unsafe { yyjson_doc_free(doc) };
             Ok(pyval)
@@ -187,7 +190,11 @@ macro_rules! append_to_list {
 }
 
 #[inline(never)]
-fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
+fn populate_yy_array<const WITH_DEFAULT: bool>(
+    list: *mut pyo3_ffi::PyObject,
+    elem: *mut yyjson_val,
+    default: Option<NonNull<pyo3_ffi::PyObject>>
+) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
@@ -202,7 +209,7 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     let pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
                     append_to_list!(dptr, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_array(pyval.as_ptr(), val);
+                        populate_yy_array::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
                     }
                 } else {
                     let pyval = nonnull!(ffi!(_PyDict_NewPresized(
@@ -210,7 +217,7 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     )));
                     append_to_list!(dptr, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval.as_ptr(), val);
+                        populate_yy_object::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
                     }
                 }
             } else {
@@ -238,8 +245,51 @@ macro_rules! add_to_dict {
     };
 }
 
+#[cold]
 #[inline(never)]
-fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
+fn deserialize_default(
+    callable: *mut PyObject,
+    item: NonNull<PyObject>
+) -> Result<*mut PyObject, *mut PyObject>
+{
+    // TODO: if unlikely!(self.previous.state.default_calls_limit()) {
+    //     err!(SerializeError::DefaultRecursionLimit)
+    // }
+    let item_ptr = item.as_ptr();
+
+    #[cfg(not(Py_3_10))]
+    let default_obj = ffi!(PyObject_CallFunctionObjArgs(
+        callable,
+        item_ptr,
+        core::ptr::null_mut() as *mut pyo3_ffi::PyObject
+    ));
+    #[cfg(Py_3_10)]
+    let default_obj = unsafe {
+        pyo3_ffi::PyObject_Vectorcall(
+            callable,
+            core::ptr::addr_of!(item_ptr),
+            pyo3_ffi::PyVectorcall_NARGS(1) as usize,
+            core::ptr::null_mut(),
+        )
+    };
+    if unlikely!(default_obj.is_null()) {
+        // TODO: let name = unsafe { CStr::from_ptr((*ob_type!(item.as_ptr())).tp_name).to_string_lossy() };
+        Err(raise_loads_exception(
+            DeserializeError::invalid(Cow::from(
+                // format!("Type is not JSON serializable: {}", name)
+                "Type is not JSON serializable"
+            ))
+        ))
+    } else {
+        Ok(default_obj)
+    }
+}
+#[inline(never)]
+fn populate_yy_object<const WITH_DEFAULT: bool>(
+    dict: *mut PyObject,
+    elem: *mut yyjson_val,
+    default: Option<NonNull<PyObject>>
+) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
@@ -250,32 +300,33 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
             let val = next_val;
             let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
             let pykey = get_unicode_key(key_str);
+            let pyval;
             if unlikely!(unsafe_yyjson_is_ctn(val)) {
                 next_key = unsafe_yyjson_get_next_container(val);
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
-                    let pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
+                    pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
                     add_to_dict!(dict, pykey, pyval.as_ptr());
                     reverse_pydict_incref!(pykey);
                     reverse_pydict_incref!(pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_array(pyval.as_ptr(), val);
+                        populate_yy_array::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
                     }
                 } else {
-                    let pyval = nonnull!(ffi!(_PyDict_NewPresized(
+                    pyval = nonnull!(ffi!(_PyDict_NewPresized(
                         unsafe_yyjson_get_len(val) as isize
                     )));
                     add_to_dict!(dict, pykey, pyval.as_ptr());
                     reverse_pydict_incref!(pykey);
                     reverse_pydict_incref!(pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval.as_ptr(), val);
+                        populate_yy_object::<WITH_DEFAULT>(pyval.as_ptr(), val, default);
                     }
                 }
             } else {
                 next_key = unsafe_yyjson_get_next_non_container(val);
                 next_val = next_key.add(1);
-                let pyval = match ElementType::from_tag(val) {
+                pyval = match ElementType::from_tag(val) {
                     ElementType::String => parse_yy_string(val),
                     ElementType::Uint64 => parse_yy_u64(val),
                     ElementType::Int64 => parse_yy_i64(val),
@@ -289,6 +340,21 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                 add_to_dict!(dict, pykey, pyval.as_ptr());
                 reverse_pydict_incref!(pykey);
                 reverse_pydict_incref!(pyval.as_ptr());
+            }
+
+            if WITH_DEFAULT {
+                let callable = PyDict_GetItemString(
+                    default.unwrap_unchecked().as_ptr(),
+                    CString::new(key_str).unwrap_unchecked().as_ptr() as *const c_char
+                );
+                if unlikely!(!callable.is_null() && PyCallable_Check(callable) != 0) {
+                    let deserialized_obj = deserialize_default(callable, pyval);
+                    if let Ok(deserialized_obj) = deserialized_obj {
+                        add_to_dict!(dict, pykey, deserialized_obj);
+                        reverse_pydict_incref!(pykey);
+                        reverse_pydict_incref!(deserialized_obj);
+                    }
+                }
             }
         }
     }

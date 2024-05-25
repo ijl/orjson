@@ -38,6 +38,8 @@ use pyo3_ffi::*;
 
 #[allow(unused_imports)]
 use core::ptr::{null, null_mut, NonNull};
+use std::borrow::Cow;
+use crate::deserialize::DeserializeError;
 
 #[cfg(Py_3_10)]
 macro_rules! add {
@@ -98,12 +100,12 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     }
 
     {
-        let loads_doc = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
+        let loads_doc = "loads(obj, /, default=None)\n--\n\nDeserialize JSON to Python objects.\0";
 
         let wrapped_loads = PyMethodDef {
             ml_name: "loads\0".as_ptr() as *const c_char,
-            ml_meth: PyMethodDefPointer { PyCFunction: loads },
-            ml_flags: METH_O,
+            ml_meth: PyMethodDefPointer { _PyCFunctionFastWithKeywords: loads },
+            ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
             ml_doc: loads_doc.as_ptr() as *const c_char,
         };
         let func = PyCFunction_NewEx(
@@ -294,8 +296,68 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
-    match crate::deserialize::deserialize(obj) {
+pub unsafe extern "C" fn loads(
+    _self: *mut PyObject,
+    args: *const *mut PyObject,
+    nargs: Py_ssize_t,
+    kwnames: *mut PyObject,
+) -> *mut PyObject {
+    let mut default: Option<NonNull<PyObject>> = None;
+
+    let num_args = PyVectorcall_NARGS(nargs as usize);
+
+    if unlikely!(num_args == 0) {
+        return raise_loads_exception(
+            DeserializeError::invalid(Cow::from(
+                "loads() missing 1 required positional argument: 'obj'"
+            ))
+        );
+    }
+
+    if num_args & 2 == 2 {
+        let arg = *args.offset(1);
+        if PyDict_Check(arg) == 0 {
+            // TODO better message
+            return raise_loads_exception(
+                DeserializeError::invalid(Cow::from(
+                    "expected default to be a dict"
+                ))
+            );
+        }
+
+        default = Some(NonNull::new_unchecked(arg));
+    }
+    if !kwnames.is_null() {
+        for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
+            let arg_name = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+            if arg_name == typeref::DEFAULT {
+                if unlikely!(num_args & 2 == 2) {
+                    return raise_loads_exception(
+                        DeserializeError::invalid(Cow::from(
+                            "loads() got multiple values for argument: 'default'"
+                        ))
+                    );
+                }
+                let arg_val = *args.offset(num_args + i);
+                if PyDict_Check(arg_val) == 0 {
+                    // TODO better message
+                    return raise_loads_exception(
+                        DeserializeError::invalid(Cow::from(
+                            "expected default to be a dict"
+                        ))
+                    );
+                }
+                default = Some(NonNull::new_unchecked(arg_val));
+            } else {
+                return raise_loads_exception(
+                    DeserializeError::invalid(Cow::from(
+                        "loads() got an unexpected keyword argument"
+                    ))
+                );
+            }
+        }
+    }
+    match crate::deserialize::deserialize(*args, default) {
         Ok(val) => val.as_ptr(),
         Err(err) => raise_loads_exception(err),
     }
