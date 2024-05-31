@@ -601,7 +601,10 @@ This is similar to `RawJSON` in rapidjson.
 ### Deserialize
 
 ```python
-def loads(__obj: Union[bytes, bytearray, memoryview, str]) -> Any: ...
+def loads(
+   __obj: Union[bytes, bytearray, memoryview, str],
+   default: Optional[Dict[str, Callable[[Any], Any]]] = ...
+) -> Any: ...
 ```
 
 `loads()` deserializes JSON to Python objects. It deserializes to `dict`,
@@ -630,6 +633,30 @@ It raises `JSONDecodeError` if a combination of array or object recurses
 
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
+
+
+### Default
+
+To deserialize arbitrary types, specify default as a mapping of tags and deserialization callables.
+
+```python
+>>> import orjson, decimal
+>>>
+def deserialize_decimal(serialized_decimal: str) -> decimal.Decimal:
+   return decimal.Decimal(serialized_decimal)
+>>>
+def deserialize_bytearray(serialized_bytearray: str) -> bytearray:
+   return bytearray.fromhex(serialized_bytearray)
+
+>>> orjson.loads(
+        '{"pi": {"__DECIMAL__": "3.14159"}, "data": {"__BYTEARRAY__": "1234abcd"}}', 
+        default={"__DECIMAL__": deserialize_decimal, "__BYTEARRAY__": deserialize_bytearray}
+    )
+{'pi': Decimal('3.14159'), 'data': bytearray(b'\x124\xab\xcd')}
+```
+
+This can be combined with default serializers in order to serialize and deserialize unsupported types. 
+
 
 ## Types
 
