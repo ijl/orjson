@@ -32,7 +32,7 @@ support for 64-bit
 * does not provide `load()` or `dump()` functions for reading from/writing to
 file-like objects
 
-orjson supports CPython 3.8, 3.9, 3.10, 3.11, and 3.12. It distributes
+orjson supports CPython 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13. It distributes
 amd64/x86_64, aarch64/armv8, POWER/ppc64le, and s390x wheels for Linux,
 amd64 and aarch64 wheels for macOS, and amd64 and i686/x86 wheels for Windows.
 orjson does not and will not support PyPy. orjson does not and will not

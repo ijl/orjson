@@ -62,6 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
           { version: '3.10' },
@@ -136,6 +137,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
           { version: '3.10' },
@@ -209,6 +211,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13', abi: 'cp313-cp313' },
           { version: '3.12', abi: 'cp312-cp312' },
           { version: '3.11', abi: 'cp311-cp311' },
           { version: '3.10', abi: 'cp310-cp310' },
@@ -295,6 +298,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13', macosx_target: "10.15" },
           { version: '3.12', macosx_target: "10.15" },
           { version: '3.11', macosx_target: "10.15" },
           { version: '3.10', macosx_target: "10.15" },
