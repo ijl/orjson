@@ -6,6 +6,8 @@ export UNSAFE_PYO3_SKIP_VERSION_CHECK=1
 
 export CC="${CC:-clang}"
 export LD="${LD:-lld}"
+export TARGET="${TARGET:-x86_64-unknown-linux-gnu}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
 
 echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 
@@ -13,6 +15,6 @@ export CFLAGS="-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
 export LDFLAGS="-fuse-ld=${LD} -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
 export RUSTFLAGS="-C linker=${CC} -C link-arg=-fuse-ld=${LD} -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=8"
 
-maturin build "$@"
+maturin build --target="${TARGET}" "$@"
 
-uv pip install target/wheels/*.whl
+uv pip install ${CARGO_TARGET_DIR}/wheels/*.whl

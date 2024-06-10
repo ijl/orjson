@@ -2,8 +2,8 @@
 -r integration/requirements.txt
 -r test/requirements.txt
 maturin
-mypy
-ruff
+mypy==1.10.0
+ruff==0.4.8
 types-python-dateutil
 types-pytz
 types-simplejson

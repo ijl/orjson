@@ -47,6 +47,11 @@ no-panic = [
 # to build and on failure fall back to another backend.
 yyjson = []
 
+# Features detected by build.rs. Do not specify.
+intrinsics = []
+optimize = []
+strict_provenance = []
+
 [dependencies]
 ahash = { version = "^0.8.9", default-features = false, features = ["compile-time-rng"] }
 arrayvec = { version = "0.7", default-features = false, features = ["std", "serde"] }

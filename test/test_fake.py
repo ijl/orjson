@@ -32,7 +32,7 @@ class TestFaker:
     @pytest.mark.skipif(Faker is None, reason="faker not available")
     def test_faker(self):
         fake = Faker(FAKER_LOCALES)
-        profile_keys = tuple(
+        profile_keys = list(
             set(fake.profile().keys()) - {"birthdate", "current_location"}
         )
         for _ in range(0, NUM_LOOPS):
