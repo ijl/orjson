@@ -343,7 +343,7 @@ pub unsafe extern "C" fn dumps(
     if num_args & 3 == 3 {
         optsptr = Some(NonNull::new_unchecked(*args.offset(2)));
     }
-    if !kwnames.is_null() {
+    if unlikely!(!kwnames.is_null()) {
         for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
             let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
             if arg == typeref::DEFAULT {
@@ -367,15 +367,15 @@ pub unsafe extern "C" fn dumps(
     }
 
     let mut optsbits: i32 = 0;
-    if let Some(opts) = optsptr {
-        if opts.as_ptr() == typeref::NONE {
-        } else if (*opts.as_ptr()).ob_type != typeref::INT_TYPE {
-            return raise_dumps_exception_fixed("Invalid opts");
-        } else {
+    if unlikely!(optsptr.is_some()) {
+        let opts = optsptr.unwrap();
+        if (*opts.as_ptr()).ob_type == typeref::INT_TYPE {
             optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
-            if !(0..=opt::MAX_OPT).contains(&optsbits) {
+            if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
                 return raise_dumps_exception_fixed("Invalid opts");
             }
+        } else if unlikely!(opts.as_ptr() != typeref::NONE) {
+            return raise_dumps_exception_fixed("Invalid opts");
         }
     }
 

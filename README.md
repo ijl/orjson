@@ -1205,7 +1205,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2024-04-30` and stable 1.72. It
+The project's own CI tests against `nightly-2024-06-10` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 

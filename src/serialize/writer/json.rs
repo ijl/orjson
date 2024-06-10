@@ -134,7 +134,7 @@ where
                 .map_err(Error::io)
         }
     }
-    #[inline]
+    #[inline(never)]
     fn serialize_f64(self, value: f64) -> Result<()> {
         if unlikely!(value.is_infinite() || value.is_nan()) {
             self.serialize_unit()
@@ -155,8 +155,9 @@ where
         Ok(())
     }
 
+    #[inline(always)]
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
-        self.writer.reserve(value.len());
+        self.writer.reserve(value.len() + 32);
         unsafe { self.writer.write_reserved_fragment(value).unwrap() };
         Ok(())
     }

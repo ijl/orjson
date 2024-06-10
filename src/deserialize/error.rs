@@ -9,6 +9,7 @@ pub struct DeserializeError<'a> {
     #[cfg(not(feature = "yyjson"))]
     pub column: usize, // start at 1
     pub data: Option<&'a str>,
+    #[cfg(feature = "yyjson")]
     pub pos: i64,
 }
 
@@ -22,6 +23,7 @@ impl<'a> DeserializeError<'a> {
             #[cfg(not(feature = "yyjson"))]
             column: 0,
             data: None,
+            #[cfg(feature = "yyjson")]
             pos: 0,
         }
     }
@@ -34,7 +36,6 @@ impl<'a> DeserializeError<'a> {
             line,
             column,
             data: Some(data),
-            pos: 0,
         }
     }
 

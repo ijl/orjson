@@ -8,6 +8,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CC");
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
+    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_AVX512");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_SIMD");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
@@ -40,6 +41,10 @@ fn main() {
     if env::var("ORJSON_DISABLE_SIMD").is_err() {
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
+            #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
+            if env::var("ORJSON_DISABLE_AVX512").is_err() {
+                println!("cargo:rustc-cfg=feature=\"avx512\"");
+            }
         }
     }
 

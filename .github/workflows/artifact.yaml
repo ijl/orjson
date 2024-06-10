@@ -1,7 +1,7 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-04-30"
+  RUST_TOOLCHAIN: "nightly-2024-06-10"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 jobs:
@@ -38,7 +38,7 @@ jobs:
 
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
-    - run: pytest -s -rxX -v -n 4 test
+    - run: pytest -s -rxX -v -n 2 test
       env:
         PYTHONMALLOC: "debug"
 
@@ -72,7 +72,7 @@ jobs:
       CC: "clang"
       CFLAGS: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
       LDFLAGS: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
-      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings"
+      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings"
       PATH: "/__w/orjson/orjson/.venv/bin:/github/home/.cargo/bin:/root/.local/bin:/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     container:
       image: fedora:41
@@ -108,7 +108,7 @@ jobs:
           --target=x86_64-unknown-linux-gnu
         uv pip install target/wheels/orjson*.whl
 
-    - run: pytest -s -rxX -v -n 4 test
+    - run: pytest -s -rxX -v -n 2 test
       env:
         PYTHONMALLOC: "debug"
 
@@ -146,9 +146,11 @@ jobs:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
             platform: linux/arm64
+            features: no-panic,unstable-simd,unwind,yyjson
           - target: x86_64-unknown-linux-musl
             arch: x86_64
             platform: linux/amd64
+            features: avx512,no-panic,unstable-simd,unwind,yyjson
     steps:
     - uses: actions/checkout@v4
 
@@ -163,13 +165,13 @@ jobs:
         CC: "gcc"
         CFLAGS: "-Os"
         LDFLAGS: "-Wl,--as-needed"
-        RUSTFLAGS: "-Z mir-opt-level=4 -Z threads=4 -D warnings -C target-feature=-crt-static"
+        RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-04-30
+        rust-toolchain: nightly-2024-06-10
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
-        args: --release --strip --out=dist --features=no-panic,unstable-simd,unwind,yyjson -i python${{ matrix.python.version }}
+        args: --release --strip --out=dist --features=${{ matrix.platform.features }} -i python${{ matrix.python.version }}
 
     - name: QEMU
       if: matrix.platform.arch != 'x86_64'
@@ -192,7 +194,7 @@ jobs:
           venv/bin/pip install -U pip wheel
           venv/bin/pip install -r test/requirements.txt
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v -n 4 test
+          venv/bin/python -m pytest -s -rxX -v -n 2 test
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
@@ -254,7 +256,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-04-30
+        rust-toolchain: nightly-2024-06-10
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -317,7 +319,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-04-30"
+        toolchain: "nightly-2024-06-10"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -387,7 +389,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-04-30"
+        toolchain: "nightly-2024-06-10"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 

@@ -47,8 +47,8 @@ impl<'de> DeserializeSeed<'de> for JsonValue {
 impl<'de> Visitor<'de> for JsonValue {
     type Value = NonNull<pyo3_ffi::PyObject>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("JSON")
+    fn expecting(&self, _formatter: &mut fmt::Formatter) -> fmt::Result {
+        Ok(())
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E> {

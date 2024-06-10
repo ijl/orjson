@@ -14,7 +14,7 @@ impl FloatSerializer {
 }
 
 impl Serialize for FloatSerializer {
-    #[inline(never)]
+    #[inline(always)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

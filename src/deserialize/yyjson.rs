@@ -199,18 +199,16 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
             if unlikely!(unsafe_yyjson_is_ctn(val)) {
                 next = unsafe_yyjson_get_next_container(val);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
-                    let pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
-                    append_to_list!(dptr, pyval.as_ptr());
+                    let pyval = ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize));
+                    append_to_list!(dptr, pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_array(pyval.as_ptr(), val);
+                        populate_yy_array(pyval, val);
                     }
                 } else {
-                    let pyval = nonnull!(ffi!(_PyDict_NewPresized(
-                        unsafe_yyjson_get_len(val) as isize
-                    )));
-                    append_to_list!(dptr, pyval.as_ptr());
+                    let pyval = ffi!(_PyDict_NewPresized(unsafe_yyjson_get_len(val) as isize));
+                    append_to_list!(dptr, pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval.as_ptr(), val);
+                        populate_yy_object(pyval, val);
                     }
                 }
             } else {
@@ -246,30 +244,32 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
         let mut next_key = unsafe_yyjson_get_first(elem);
         let mut next_val = next_key.add(1);
         for _ in 0..len {
-            let key = next_key;
             let val = next_val;
-            let key_str = str_from_slice!((*key).uni.str_ as *const u8, unsafe_yyjson_get_len(key));
-            let pykey = get_unicode_key(key_str);
+            let pykey = {
+                let key_str = str_from_slice!(
+                    (*next_key).uni.str_ as *const u8,
+                    unsafe_yyjson_get_len(next_key)
+                );
+                get_unicode_key(key_str)
+            };
             if unlikely!(unsafe_yyjson_is_ctn(val)) {
                 next_key = unsafe_yyjson_get_next_container(val);
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
-                    let pyval = nonnull!(ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize)));
-                    add_to_dict!(dict, pykey, pyval.as_ptr());
+                    let pyval = ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize));
+                    add_to_dict!(dict, pykey, pyval);
                     reverse_pydict_incref!(pykey);
-                    reverse_pydict_incref!(pyval.as_ptr());
+                    reverse_pydict_incref!(pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_array(pyval.as_ptr(), val);
+                        populate_yy_array(pyval, val);
                     }
                 } else {
-                    let pyval = nonnull!(ffi!(_PyDict_NewPresized(
-                        unsafe_yyjson_get_len(val) as isize
-                    )));
-                    add_to_dict!(dict, pykey, pyval.as_ptr());
+                    let pyval = ffi!(_PyDict_NewPresized(unsafe_yyjson_get_len(val) as isize));
+                    add_to_dict!(dict, pykey, pyval);
                     reverse_pydict_incref!(pykey);
-                    reverse_pydict_incref!(pyval.as_ptr());
+                    reverse_pydict_incref!(pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval.as_ptr(), val);
+                        populate_yy_object(pyval, val);
                     }
                 }
             } else {
