@@ -23,6 +23,9 @@
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
 
+#[cfg(feature = "unwind")]
+extern crate unwinding;
+
 #[macro_use]
 mod util;
 

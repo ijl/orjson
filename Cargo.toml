@@ -43,6 +43,9 @@ no-panic = [
     "ryu/no-panic",
 ]
 
+# Avoid bundling libgcc on musl.
+unwind = ["unwinding"]
+
 # Build yyjson as a backend and panic if it fails. The default is to attempt
 # to build and on failure fall back to another backend.
 yyjson = []
@@ -71,6 +74,7 @@ serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
+unwinding = { version = "0.2", features = ["unwinder"], optional = true }
 
 [build-dependencies]
 cc = { version = "1" }
