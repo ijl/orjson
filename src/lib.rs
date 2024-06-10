@@ -152,10 +152,22 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     0
 }
 
+#[cfg(Py_3_13)]
+#[allow(non_upper_case_globals)]
+const Py_mod_gil: c_int = 4;
+#[cfg(Py_3_13)]
+#[allow(non_upper_case_globals, dead_code, fuzzy_provenance_casts)]
+const Py_MOD_GIL_USED: *mut c_void = 0 as *mut c_void;
+#[cfg(Py_3_13)]
+#[allow(non_upper_case_globals, dead_code, fuzzy_provenance_casts)]
+const Py_MOD_GIL_NOT_USED: *mut c_void = 1 as *mut c_void;
+
 #[cfg(not(Py_3_12))]
 const PYMODULEDEF_LEN: usize = 2;
-#[cfg(Py_3_12)]
+#[cfg(all(Py_3_12, not(Py_3_13)))]
 const PYMODULEDEF_LEN: usize = 3;
+#[cfg(Py_3_13)]
+const PYMODULEDEF_LEN: usize = 4;
 
 #[allow(non_snake_case)]
 #[no_mangle]
@@ -171,6 +183,11 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
         PyModuleDef_Slot {
             slot: Py_mod_multiple_interpreters,
             value: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
+        },
+        #[cfg(Py_3_13)]
+        PyModuleDef_Slot {
+            slot: Py_mod_gil,
+            value: Py_MOD_GIL_USED,
         },
         PyModuleDef_Slot {
             slot: 0,
