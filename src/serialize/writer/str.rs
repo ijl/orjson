@@ -14,7 +14,7 @@ use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 #[cfg(all(feature = "unstable-simd", target_arch = "x86_64", feature = "avx512"))]
 use core::arch::x86_64::{
     __m256i, _mm256_cmpeq_epu8_mask, _mm256_cmplt_epu8_mask, _mm256_lddqu_si256,
-    _mm256_maskz_loadu_epi8, _mm256_set1_epi8, _mm256_storeu_epi8, _tzcnt_u32,
+    _mm256_maskz_loadu_epi8, _mm256_set1_epi8, _mm256_storeu_epi8,
 };
 
 #[cfg(all(feature = "unstable-simd", target_arch = "x86_64", feature = "avx512"))]
@@ -45,7 +45,7 @@ macro_rules! impl_format_simd_avx512vl {
                     | _mm256_cmplt_epu8_mask(str_vec, x20);
 
                 if unlikely!(mask > 0) {
-                    let cn = _tzcnt_u32(mask) as usize;
+                    let cn = mask.trailing_zeros() as usize; // _tzcnt_u32() not inlining
 
                     $src = $src.add(cn);
                     let escape = QUOTE_TAB[*($src) as usize];
@@ -77,7 +77,7 @@ macro_rules! impl_format_simd_avx512vl {
                 mask &= remainder_mask;
 
                 if unlikely!(mask > 0) {
-                    let cn = _tzcnt_u32(mask) as usize;
+                    let cn = mask.trailing_zeros() as usize; // _tzcnt_u32() not inlining
 
                     $src = $src.add(cn);
                     let escape = QUOTE_TAB[*($src) as usize];
