@@ -106,14 +106,17 @@ impl Serialize for DataclassFastSerializer {
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
-                err!(SerializeError::KeyMustBeStr)
-            }
-            let data = unicode_to_str(key);
-            if unlikely!(data.is_none()) {
-                err!(SerializeError::InvalidStr)
-            }
-            let key_as_str = data.unwrap();
+            let key_as_str = {
+                let key_ob_type = ob_type!(key);
+                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                    err!(SerializeError::KeyMustBeStr)
+                }
+                let tmp = unicode_to_str(key);
+                if unlikely!(tmp.is_none()) {
+                    err!(SerializeError::InvalidStr)
+                };
+                tmp.unwrap()
+            };
             if unlikely!(key_as_str.as_bytes()[0] == b'_') {
                 continue;
             }
@@ -179,11 +182,14 @@ impl Serialize for DataclassFallbackSerializer {
             if unsafe { field_type as *mut pyo3_ffi::PyTypeObject != FIELD_TYPE } {
                 continue;
             }
-            let data = unicode_to_str(attr);
-            if unlikely!(data.is_none()) {
-                err!(SerializeError::InvalidStr);
-            }
-            let key_as_str = data.unwrap();
+
+            let key_as_str = {
+                let tmp = unicode_to_str(attr);
+                if unlikely!(tmp.is_none()) {
+                    err!(SerializeError::InvalidStr)
+                };
+                tmp.unwrap()
+            };
             if key_as_str.as_bytes()[0] == b'_' {
                 continue;
             }

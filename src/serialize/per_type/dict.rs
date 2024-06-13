@@ -3,18 +3,17 @@
 use crate::opt::*;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
+use crate::serialize::per_type::datetimelike::DateTimeLike;
 use crate::serialize::per_type::{
-    BoolSerializer, Date, DateTime, DateTimeBuffer, DateTimeLike, FloatSerializer, Int53Serializer,
-    IntSerializer, ListTupleSerializer, NoneSerializer, StrSerializer, Time, ZeroListSerializer,
-    UUID,
+    BoolSerializer, DataclassGenericSerializer, Date, DateTime, DateTimeBuffer, DefaultSerializer,
+    EnumSerializer, FloatSerializer, FragmentSerializer, Int53Serializer, IntSerializer,
+    ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
+    StrSubclassSerializer, Time, ZeroListSerializer, UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
-use crate::typeref::{
-    BOOL_TYPE, DATETIME_TYPE, DICT_TYPE, FLOAT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE,
-    TRUE, VALUE_STR,
-};
+use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use compact_str::CompactString;
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -89,6 +88,125 @@ impl Serialize for DictGenericSerializer {
     }
 }
 
+macro_rules! impl_serialize_entry {
+    ($map:expr, $self:expr, $key:expr, $value:expr) => {
+        match pyobject_to_obtype($value, $self.state.opts()) {
+            ObType::Str => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&StrSerializer::new($value))?;
+            }
+            ObType::StrSubclass => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&StrSubclassSerializer::new($value))?;
+            }
+            ObType::Int => {
+                if unlikely!(opt_enabled!($self.state.opts(), STRICT_INTEGER)) {
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&Int53Serializer::new($value))?;
+                } else {
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&IntSerializer::new($value))?;
+                }
+            }
+            ObType::None => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&NoneSerializer::new()).unwrap();
+            }
+            ObType::Float => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&FloatSerializer::new($value))?;
+            }
+            ObType::Bool => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&BoolSerializer::new($value)).unwrap();
+            }
+            ObType::Datetime => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&DateTime::new($value, $self.state.opts()))?;
+            }
+            ObType::Date => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&Date::new($value))?;
+            }
+            ObType::Time => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&Time::new($value, $self.state.opts()))?;
+            }
+            ObType::Uuid => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&UUID::new($value)).unwrap();
+            }
+            ObType::Dict => {
+                let pyvalue = DictGenericSerializer::new($value, $self.state, $self.default);
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&pyvalue)?;
+            }
+            ObType::List => {
+                if ffi!(Py_SIZE($value)) == 0 {
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&ZeroListSerializer::new()).unwrap();
+                } else {
+                    let pyvalue =
+                        ListTupleSerializer::from_list($value, $self.state, $self.default);
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&pyvalue)?;
+                }
+            }
+            ObType::Tuple => {
+                if ffi!(Py_SIZE($value)) == 0 {
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&ZeroListSerializer::new()).unwrap();
+                } else {
+                    let pyvalue =
+                        ListTupleSerializer::from_tuple($value, $self.state, $self.default);
+                    $map.serialize_key($key).unwrap();
+                    $map.serialize_value(&pyvalue)?;
+                }
+            }
+            ObType::Dataclass => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&DataclassGenericSerializer::new(&PyObjectSerializer::new(
+                    $value,
+                    $self.state,
+                    $self.default,
+                )))?;
+            }
+            ObType::Enum => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&EnumSerializer::new(&PyObjectSerializer::new(
+                    $value,
+                    $self.state,
+                    $self.default,
+                )))?;
+            }
+            ObType::NumpyArray => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&NumpySerializer::new(&PyObjectSerializer::new(
+                    $value,
+                    $self.state,
+                    $self.default,
+                )))?;
+            }
+            ObType::NumpyScalar => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&NumpyScalar::new($value, $self.state.opts()))?;
+            }
+            ObType::Fragment => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&FragmentSerializer::new($value))?;
+            }
+            ObType::Unknown => {
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&DefaultSerializer::new(&PyObjectSerializer::new(
+                    $value,
+                    $self.state,
+                    $self.default,
+                )))?;
+            }
+        }
+    };
+}
+
 pub struct Dict {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
@@ -119,60 +237,20 @@ impl Serialize for Dict {
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             // key
-            let key_ob_type = ob_type!(key);
-            if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
-                err!(SerializeError::KeyMustBeStr)
-            }
-            let key_as_str = unicode_to_str(key);
-            if unlikely!(key_as_str.is_none()) {
-                err!(SerializeError::InvalidStr)
-            }
+            let key_as_str = {
+                let key_ob_type = ob_type!(key);
+                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                    err!(SerializeError::KeyMustBeStr)
+                }
+                let tmp = unicode_to_str(key);
+                if unlikely!(tmp.is_none()) {
+                    err!(SerializeError::InvalidStr)
+                };
+                tmp.unwrap()
+            };
 
             // value
-            let value_ob_type = ob_type!(value);
-            if is_class_by_type!(value_ob_type, STR_TYPE) {
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&StrSerializer::new(value))?;
-            } else if is_class_by_type!(value_ob_type, INT_TYPE) {
-                if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
-                    map.serialize_key(key_as_str.unwrap()).unwrap();
-                    map.serialize_value(&Int53Serializer::new(value))?;
-                } else {
-                    map.serialize_key(key_as_str.unwrap()).unwrap();
-                    map.serialize_value(&IntSerializer::new(value))?;
-                }
-            } else if is_class_by_type!(value_ob_type, BOOL_TYPE) {
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&BoolSerializer::new(value))?;
-            } else if is_class_by_type!(value_ob_type, NONE_TYPE) {
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&NoneSerializer::new())?;
-            } else if is_class_by_type!(value_ob_type, FLOAT_TYPE) {
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&FloatSerializer::new(value))?;
-            } else if is_class_by_type!(value_ob_type, DICT_TYPE) {
-                let pyvalue = DictGenericSerializer::new(value, self.state, self.default);
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&pyvalue)?;
-            } else if is_class_by_type!(value_ob_type, LIST_TYPE) {
-                if ffi!(Py_SIZE(value)) == 0 {
-                    map.serialize_key(key_as_str.unwrap()).unwrap();
-                    map.serialize_value(&ZeroListSerializer::new())?;
-                } else {
-                    let pyvalue = ListTupleSerializer::from_list(value, self.state, self.default);
-                    map.serialize_key(key_as_str.unwrap()).unwrap();
-                    map.serialize_value(&pyvalue)?;
-                }
-            } else if is_class_by_type!(value_ob_type, DATETIME_TYPE)
-                && opt_disabled!(self.state.opts(), PASSTHROUGH_DATETIME)
-            {
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&DateTime::new(value, self.state.opts()))?;
-            } else {
-                let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
-                map.serialize_key(key_as_str.unwrap()).unwrap();
-                map.serialize_value(&pyvalue)?;
-            }
+            impl_serialize_entry!(map, self, key_as_str, value);
         }
 
         map.end()
