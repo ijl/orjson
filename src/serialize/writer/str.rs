@@ -24,6 +24,12 @@ macro_rules! splat_mm256 {
     };
 }
 
+macro_rules! write_escape {
+    ($escape:expr, $dst:expr) => {
+        core::ptr::copy_nonoverlapping($escape.0.as_ptr(), $dst, 8);
+    };
+}
+
 #[cfg(all(feature = "unstable-simd", target_arch = "x86_64", feature = "avx512"))]
 macro_rules! impl_format_simd_avx512vl {
     ($dst:expr, $src:expr, $value_len:expr) => {
@@ -55,7 +61,7 @@ macro_rules! impl_format_simd_avx512vl {
                     nb -= 1;
 
                     $dst = $dst.add(cn);
-                    core::ptr::write($dst as *mut u64, *(escape.0.as_ptr() as *const u64));
+                    write_escape!(escape, $dst);
                     $dst = $dst.add(escape.1 as usize);
                 } else {
                     nb -= STRIDE;
@@ -87,7 +93,7 @@ macro_rules! impl_format_simd_avx512vl {
                     nb -= 1;
 
                     $dst = $dst.add(cn);
-                    core::ptr::write($dst as *mut u64, *(escape.0.as_ptr() as *const u64));
+                    write_escape!(escape, $dst);
                     $dst = $dst.add(escape.1 as usize);
                 } else {
                     $dst = $dst.add(nb);
@@ -117,7 +123,7 @@ macro_rules! impl_escape_unchecked {
             $nb -= 1;
             $omask >>= 1;
             let escape = QUOTE_TAB[*($src) as usize];
-            core::ptr::write($dst as *mut u64, *(escape.0.as_ptr() as *const u64));
+            write_escape!(escape, $dst);
             $dst = $dst.add(escape.1 as usize);
             $src = $src.add(1);
             if likely!($omask & 1 != 1) {
@@ -202,7 +208,7 @@ macro_rules! impl_format_scalar {
                 $dst = $dst.add(1);
                 if unlikely!(NEED_ESCAPED[*($src.sub(1)) as usize] > 0) {
                     let escape = QUOTE_TAB[*($src.sub(1)) as usize];
-                    core::ptr::write($dst.sub(1) as *mut u64, *(escape.0.as_ptr() as *const u64));
+                    write_escape!(escape, $dst.sub(1));
                     $dst = $dst.add(escape.1 as usize - 1);
                 }
             }

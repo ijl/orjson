@@ -112,6 +112,9 @@ class TestType:
             == b'"aa\\"aaaaabbbbbbbbbbbbbbbbbbbb\\"bb"'
         )
 
+    def test_str_escape_quote_buffer(self):
+        orjson.dumps(['"' * 4096] * 1024)
+
     def test_str_escape_backslash_0(self):
         assert orjson.dumps("\\aaaaaaabb") == b'"\\\\aaaaaaabb"'
 
@@ -145,6 +148,9 @@ class TestType:
             == b'"aa\\\\aaaaabbbbbbbbbbbbbbbbbbbb\\\\bb"'
         )
 
+    def test_str_escape_backslash_buffer(self):
+        orjson.dumps(["\\" * 4096] * 1024)
+
     def test_str_escape_x32_0(self):
         assert orjson.dumps("\taaaaaaabb") == b'"\\taaaaaaabb"'
 
@@ -177,6 +183,9 @@ class TestType:
             orjson.dumps("aa\taaaaabbbbbbbbbbbbbbbbbbbb\tbb")
             == b'"aa\\taaaaabbbbbbbbbbbbbbbbbbbb\\tbb"'
         )
+
+    def test_str_escape_x32_buffer(self):
+        orjson.dumps(["\t" * 4096] * 1024)
 
     def test_str_emoji(self):
         ref = "®️"
