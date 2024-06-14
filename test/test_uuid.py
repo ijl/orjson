@@ -99,4 +99,4 @@ class TestUUID:
             uuid.uuid5(uuid.NAMESPACE_DNS, "python.org"),
         )
         for val in uuids:
-            assert orjson.dumps(val) == f'"{val}"'.encode("utf-8")
+            assert orjson.dumps(val) == f'"{val}"'.encode()

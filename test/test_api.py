@@ -276,7 +276,7 @@ class TestApi:
         a = "a" * 900
         b = "b" * 4096
         c = "c" * 4096 * 4096
-        assert orjson.dumps([a, b, c]) == f'["{a}","{b}","{c}"]'.encode("utf-8")
+        assert orjson.dumps([a, b, c]) == f'["{a}","{b}","{c}"]'.encode()
 
     def test_bytes_null_terminated(self):
         """

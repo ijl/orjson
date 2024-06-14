@@ -49,7 +49,7 @@ class TestFragment:
     def test_fragment_fragment_str_array(self):
         n = 8096
         obj = [orjson.Fragment('"🐈"')] * n
-        ref = b"[" + b",".join((b'"\xf0\x9f\x90\x88"' for _ in range(0, n))) + b"]"
+        ref = b"[" + b",".join(b'"\xf0\x9f\x90\x88"' for _ in range(0, n)) + b"]"
         assert orjson.dumps(obj) == ref
 
     def test_fragment_fragment_str_invalid(self):
