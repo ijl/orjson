@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 3.10.6 - 2024-07-02
+
+### Changed
+
+- Improve performance.
+
+
 ## 3.10.5 - 2024-06-13
 
 ### Changed
