@@ -56,7 +56,6 @@ optimize = []
 strict_provenance = []
 
 [dependencies]
-ahash = { version = "^0.8.9", default-features = false, features = ["compile-time-rng"] }
 arrayvec = { version = "0.7", default-features = false, features = ["std", "serde"] }
 associative-cache = { version = "2", default-features = false }
 beef = { version = "0.5", default-features = false, features = ["impl_serde"] }
@@ -75,6 +74,7 @@ serde_json = { version = "1", default-features = false, features = ["std", "floa
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
 unwinding = { version = "0.2", features = ["unwinder"], optional = true }
+xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 
 [build-dependencies]
 cc = { version = "1" }

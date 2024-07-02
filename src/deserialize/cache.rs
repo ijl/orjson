@@ -3,7 +3,6 @@
 use associative_cache::{AssociativeCache, Capacity2048, HashDirectMapped, RoundRobinReplacement};
 use core::ffi::c_void;
 use once_cell::unsync::OnceCell;
-use std::hash::Hasher;
 
 #[repr(transparent)]
 pub struct CachedKey {
@@ -40,9 +39,6 @@ pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
 
 #[inline(always)]
 pub fn cache_hash(key: &[u8]) -> u64 {
-    // try to omit code for >64 path in ahash
     assume!(key.len() <= 64);
-    let mut hasher = ahash::AHasher::default();
-    hasher.write(key);
-    hasher.finish()
+    xxhash_rust::xxh3::xxh3_64(key)
 }
