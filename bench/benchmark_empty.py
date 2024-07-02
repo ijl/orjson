@@ -11,7 +11,6 @@ from .data import libraries
 @pytest.mark.parametrize("library", libraries)
 def test_empty(benchmark, data, library):
     dumper, loader = libraries[library]
-    benchmark.extra_info["correct"] = json_loads(dumper(loader(data))) == json_loads(
-        data
-    )
+    correct = json_loads(dumper(loader(data))) == json_loads(data)  # type: ignore
+    benchmark.extra_info["correct"] = correct
     benchmark(loader, data)

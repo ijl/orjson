@@ -15,7 +15,6 @@ def test_loads(benchmark, fixture, library):
     benchmark.group = f"{fixture} deserialization"
     benchmark.extra_info["lib"] = library
     data = read_fixture(f"{fixture}.xz")
-    benchmark.extra_info["correct"] = json_loads(dumper(loader(data))) == json_loads(
-        data
-    )
+    correct = json_loads(dumper(loader(data))) == json_loads(data)  # type: ignore
+    benchmark.extra_info["correct"] = correct
     benchmark(loader, data)

@@ -3,10 +3,14 @@
 
 import collections
 import io
+import json
 import lzma
 import os
 from pathlib import Path
 
+import rapidjson
+import simplejson
+import ujson
 from tabulate import tabulate
 
 import orjson
@@ -14,6 +18,15 @@ import orjson
 dirname = os.path.join(os.path.dirname(__file__), "..", "data")
 
 LIBRARIES = ["orjson", "ujson", "rapidjson", "simplejson", "json"]
+
+
+LIBRARY_FUNC_MAP = {
+    "orjson": orjson.loads,
+    "ujson": ujson.loads,
+    "rapidjson": rapidjson.loads,
+    "simplejson": simplejson.loads,
+    "json": json.loads,
+}
 
 
 def read_fixture_bytes(filename, subdir=None):
@@ -43,29 +56,30 @@ JSONCHECKER = {
 RESULTS = collections.defaultdict(dict)
 
 
-def test_passed(library, fixture):
+def test_passed(libname, fixture):
     passed = []
+    loads = LIBRARY_FUNC_MAP[libname]
     try:
-        passed.append(library.loads(fixture) == orjson.loads(fixture))
+        passed.append(loads(fixture) == orjson.loads(fixture))
         passed.append(
-            library.loads(fixture.decode("utf-8"))
-            == orjson.loads(fixture.decode("utf-8"))
+            loads(fixture.decode("utf-8")) == orjson.loads(fixture.decode("utf-8"))
         )
     except Exception:
         passed.append(False)
     return all(passed)
 
 
-def test_failed(library, fixture):
+def test_failed(libname, fixture):
     rejected_as_bytes = False
+    loads = LIBRARY_FUNC_MAP[libname]
     try:
-        library.loads(fixture)
+        loads(fixture)
     except Exception:
         rejected_as_bytes = True
 
     rejected_as_str = False
     try:
-        library.loads(fixture.decode("utf-8"))
+        loads(fixture.decode("utf-8"))
     except Exception:
         rejected_as_str = True
     return rejected_as_bytes and rejected_as_str
@@ -96,17 +110,16 @@ def should_fail(filename):
 
 
 for libname in LIBRARIES:
-    library = __import__(libname)
     for fixture_set in (PARSING, JSONCHECKER):
         for filename, fixture in fixture_set.items():
             if should_pass(filename):
-                res = test_passed(library, fixture)
+                res = test_passed(libname, fixture)
                 RESULTS[filename][libname] = res
                 if not res:
                     MISTAKEN_PASSES[libname] += 1
 
             elif should_fail(filename):
-                res = test_failed(library, fixture)
+                res = test_failed(libname, fixture)
                 RESULTS[filename][libname] = res
                 if not res:
                     MISTAKEN_FAILS[libname] += 1

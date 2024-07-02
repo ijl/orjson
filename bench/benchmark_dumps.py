@@ -15,5 +15,5 @@ def test_dumps(benchmark, fixture, library):
     benchmark.group = f"{fixture} serialization"
     benchmark.extra_info["lib"] = library
     data = read_fixture_obj(f"{fixture}.xz")
-    benchmark.extra_info["correct"] = json_loads(dumper(data)) == data
+    benchmark.extra_info["correct"] = json_loads(dumper(data)) == data  # type: ignore
     benchmark(dumper, data)

@@ -10,14 +10,8 @@ from simplejson import loads as simplejson_loads
 from ujson import dumps as _ujson_dumps
 from ujson import loads as ujson_loads
 
-from orjson import dumps as _orjson_dumps
+from orjson import dumps as orjson_dumps
 from orjson import loads as orjson_loads
-
-# dumps wrappers that return UTF-8
-
-
-def orjson_dumps(obj):
-    return _orjson_dumps(obj)
 
 
 def ujson_dumps(obj):
@@ -36,7 +30,6 @@ def simplejson_dumps(obj):
     return _simplejson_dumps(obj).encode("utf-8")
 
 
-# Add new libraries here (pair of UTF-8 dumper, loader)
 libraries = {
     "orjson": (orjson_dumps, orjson_loads),
     "ujson": (ujson_dumps, ujson_loads),
@@ -45,7 +38,7 @@ libraries = {
     "simplejson": (simplejson_dumps, simplejson_loads),
 }
 
-# Add new JSON files here (corresponding to ../data/*.json.xz)
+
 fixtures = [
     "canada.json",
     "citm_catalog.json",

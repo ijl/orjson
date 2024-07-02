@@ -127,8 +127,14 @@ def tab(obj):
 
         # ensure Y range
         max_y = int(math.ceil(max_y))
+        if max_y > 10 and max_y % 2 > 0:
+            max_y = max_y + 1
         pyplot.gca().set_yticks(
-            list((int(y) for y in pyplot.gca().get_yticks() if int(y) <= max_y))
+            list(
+                {1, max_y}.union(
+                    set(int(y) for y in pyplot.gca().get_yticks() if int(y) <= max_y)
+                )
+            )
         )
 
         # print Y as percent
