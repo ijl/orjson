@@ -3,6 +3,7 @@
 
 import collections
 import io
+import math
 import os
 
 import pandas as pd
@@ -41,6 +42,7 @@ def tab(obj):
         "Relative (latency)",
     )
 
+    seaborn.set(rc={"figure.facecolor": (0, 0, 0, 0)})
     seaborn.set_style("darkgrid")
 
     barplot_data = []
@@ -92,7 +94,7 @@ def tab(obj):
         if not per_op_data:
             continue
 
-        clamp = 10 if operation == "serialization" else 5
+        max_y = 0
 
         json_baseline = {}
         for each in per_op_data:
@@ -102,9 +104,9 @@ def tab(obj):
                 json_baseline[each["group"]] = each["operations"]
 
         for each in per_op_data:
-            each["relative"] = min(
-                each["operations"] / json_baseline[each["group"]], clamp
-            )
+            relative = each["operations"] / json_baseline[each["group"]]
+            each["relative"] = relative
+            max_y = max(max_y, relative)
 
         p = pd.DataFrame.from_dict(per_op_data)
         p.groupby("group")
@@ -124,11 +126,13 @@ def tab(obj):
         pyplot.title(operation)
 
         # ensure Y range
-        ylabels = set((min(v, clamp) for v in pyplot.gca().get_yticks()))
-        pyplot.gca().set_yticks(list({1.0, 1.5}.union(ylabels)))
+        max_y = int(math.ceil(max_y))
+        pyplot.gca().set_yticks(
+            list((int(y) for y in pyplot.gca().get_yticks() if int(y) <= max_y))
+        )
 
         # print Y as percent
-        pyplot.gca().set_yticklabels([f"{x:.0%}" for x in pyplot.gca().get_yticks()])
+        pyplot.gca().set_yticklabels([f"{x}x" for x in pyplot.gca().get_yticks()])
 
         # reference for stdlib
         pyplot.axhline(y=1, color="#999", linestyle="dashed")

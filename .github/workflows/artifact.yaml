@@ -1,7 +1,7 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-06-10"
+  RUST_TOOLCHAIN: "nightly-2024-07-02"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 jobs:
@@ -101,6 +101,7 @@ jobs:
 
     - name: maturin
       run: |
+        source .venv/bin/activate
         maturin build --release --strip \
           --features=avx512,no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
@@ -108,15 +109,16 @@ jobs:
           --target=x86_64-unknown-linux-gnu
         uv pip install target/wheels/orjson*.whl
 
-    - run: pytest -s -rxX -v -n 2 test
+    - run: source .venv/bin/activate && pytest -s -rxX -v -n 2 test
       env:
         PYTHONMALLOC: "debug"
 
-    - run: ./integration/run thread
-    - run: ./integration/run http
-    - run: ./integration/run init
+    - run: source .venv/bin/activate && ./integration/run thread
+    - run: source .venv/bin/activate && ./integration/run http
+    - run: source .venv/bin/activate && ./integration/run init
 
     - run: |
+        source .venv/bin/activate
         uv pip install -U --pre "numpy>=2.0.0rc1"
         pytest -s test/test_numpy.py
       if: matrix.python.version != '3.8'
@@ -167,7 +169,7 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-06-10
+        rust-toolchain: nightly-2024-07-02
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
@@ -226,6 +228,13 @@ jobs:
             target: 'aarch64-unknown-linux-gnu',
           },
           {
+            arch: 'armv7',
+            cflags: '-Os -flto=full -fstrict-aliasing',
+            features: 'no-panic,yyjson', # no SIMD
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C opt-level=s',
+            target: 'armv7-unknown-linux-gnueabihf',
+          },
+          {
             arch: 'ppc64le',
             cflags: '-Os -flto=full -fstrict-aliasing',
             features: 'no-panic,unstable-simd,yyjson',
@@ -256,7 +265,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-06-10
+        rust-toolchain: nightly-2024-07-02
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -319,7 +328,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-06-10"
+        toolchain: "nightly-2024-07-02"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -389,7 +398,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-06-10"
+        toolchain: "nightly-2024-07-02"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 

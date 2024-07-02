@@ -1,13 +1,13 @@
 # orjson
 
 orjson is a fast, correct JSON library for Python. It
-[benchmarks](https://github.com/ijl/orjson#performance) as the fastest Python
+[benchmarks](https://github.com/ijl/orjson?tab=readme-ov-file#performance) as the fastest Python
 library for JSON and is more correct than the standard json library or other
 third-party libraries. It serializes
-[dataclass](https://github.com/ijl/orjson#dataclass),
-[datetime](https://github.com/ijl/orjson#datetime),
-[numpy](https://github.com/ijl/orjson#numpy), and
-[UUID](https://github.com/ijl/orjson#uuid) instances natively.
+[dataclass](https://github.com/ijl/orjson?tab=readme-ov-file#dataclass),
+[datetime](https://github.com/ijl/orjson?tab=readme-ov-file#datetime),
+[numpy](https://github.com/ijl/orjson?tab=readme-ov-file#numpy), and
+[UUID](https://github.com/ijl/orjson?tab=readme-ov-file#uuid) instances natively.
 
 Its features and drawbacks compared to other Python JSON libraries:
 
@@ -33,7 +33,7 @@ support for 64-bit
 file-like objects
 
 orjson supports CPython 3.8, 3.9, 3.10, 3.11, and 3.12. It distributes
-amd64/x86_64, aarch64/armv8, POWER/ppc64le, and s390x wheels for Linux,
+amd64/x86_64, aarch64/armv8, arm7, POWER/ppc64le, and s390x wheels for Linux,
 amd64 and aarch64 wheels for macOS, and amd64 and i686/x86 wheels for Windows.
 orjson does not and will not support PyPy. orjson does not and will not
 support PEP 554 subinterpreters. Releases follow semantic versioning and
@@ -47,32 +47,32 @@ submitted there. There is a
 [CHANGELOG](https://github.com/ijl/orjson/blob/master/CHANGELOG.md)
 available in the repository.
 
-1. [Usage](https://github.com/ijl/orjson#usage)
-    1. [Install](https://github.com/ijl/orjson#install)
-    2. [Quickstart](https://github.com/ijl/orjson#quickstart)
-    3. [Migrating](https://github.com/ijl/orjson#migrating)
-    4. [Serialize](https://github.com/ijl/orjson#serialize)
-        1. [default](https://github.com/ijl/orjson#default)
-        2. [option](https://github.com/ijl/orjson#option)
-        3. [Fragment](https://github.com/ijl/orjson#fragment)
-    5. [Deserialize](https://github.com/ijl/orjson#deserialize)
-2. [Types](https://github.com/ijl/orjson#types)
-    1. [dataclass](https://github.com/ijl/orjson#dataclass)
-    2. [datetime](https://github.com/ijl/orjson#datetime)
-    3. [enum](https://github.com/ijl/orjson#enum)
-    4. [float](https://github.com/ijl/orjson#float)
-    5. [int](https://github.com/ijl/orjson#int)
-    6. [numpy](https://github.com/ijl/orjson#numpy)
-    7. [str](https://github.com/ijl/orjson#str)
-    8. [uuid](https://github.com/ijl/orjson#uuid)
-3. [Testing](https://github.com/ijl/orjson#testing)
-4. [Performance](https://github.com/ijl/orjson#performance)
-    1. [Latency](https://github.com/ijl/orjson#latency)
-    2. [Memory](https://github.com/ijl/orjson#memory)
-    3. [Reproducing](https://github.com/ijl/orjson#reproducing)
-5. [Questions](https://github.com/ijl/orjson#questions)
-6. [Packaging](https://github.com/ijl/orjson#packaging)
-7. [License](https://github.com/ijl/orjson#license)
+1. [Usage](https://github.com/ijl/orjson?tab=readme-ov-file#usage)
+    1. [Install](https://github.com/ijl/orjson?tab=readme-ov-file#install)
+    2. [Quickstart](https://github.com/ijl/orjson?tab=readme-ov-file#quickstart)
+    3. [Migrating](https://github.com/ijl/orjson?tab=readme-ov-file#migrating)
+    4. [Serialize](https://github.com/ijl/orjson?tab=readme-ov-file#serialize)
+        1. [default](https://github.com/ijl/orjson?tab=readme-ov-file#default)
+        2. [option](https://github.com/ijl/orjson?tab=readme-ov-file#option)
+        3. [Fragment](https://github.com/ijl/orjson?tab=readme-ov-file#fragment)
+    5. [Deserialize](https://github.com/ijl/orjson?tab=readme-ov-file#deserialize)
+2. [Types](https://github.com/ijl/orjson?tab=readme-ov-file#types)
+    1. [dataclass](https://github.com/ijl/orjson?tab=readme-ov-file#dataclass)
+    2. [datetime](https://github.com/ijl/orjson?tab=readme-ov-file#datetime)
+    3. [enum](https://github.com/ijl/orjson?tab=readme-ov-file#enum)
+    4. [float](https://github.com/ijl/orjson?tab=readme-ov-file#float)
+    5. [int](https://github.com/ijl/orjson?tab=readme-ov-file#int)
+    6. [numpy](https://github.com/ijl/orjson?tab=readme-ov-file#numpy)
+    7. [str](https://github.com/ijl/orjson?tab=readme-ov-file#str)
+    8. [uuid](https://github.com/ijl/orjson?tab=readme-ov-file#uuid)
+3. [Testing](https://github.com/ijl/orjson?tab=readme-ov-file#testing)
+4. [Performance](https://github.com/ijl/orjson?tab=readme-ov-file#performance)
+    1. [Latency](https://github.com/ijl/orjson?tab=readme-ov-file#latency)
+    2. [Memory](https://github.com/ijl/orjson?tab=readme-ov-file#memory)
+    3. [Reproducing](https://github.com/ijl/orjson?tab=readme-ov-file#reproducing)
+5. [Questions](https://github.com/ijl/orjson?tab=readme-ov-file#questions)
+6. [Packaging](https://github.com/ijl/orjson?tab=readme-ov-file#packaging)
+7. [License](https://github.com/ijl/orjson?tab=readme-ov-file#license)
 
 ## Usage
 
@@ -85,7 +85,7 @@ pip install --upgrade "pip>=20.3" # manylinux_x_y, universal2 wheel support
 pip install --upgrade orjson
 ```
 
-To build a wheel, see [packaging](https://github.com/ijl/orjson#packaging).
+To build a wheel, see [packaging](https://github.com/ijl/orjson?tab=readme-ov-file#packaging).
 
 ### Quickstart
 
@@ -155,7 +155,7 @@ The global interpreter lock (GIL) is held for the duration of the call.
 It raises `JSONEncodeError` on an unsupported type. This exception message
 describes the invalid object with the error message
 `Type is not JSON serializable: ...`. To fix this, specify
-[default](https://github.com/ijl/orjson#default).
+[default](https://github.com/ijl/orjson?tab=readme-ov-file#default).
 
 It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 
@@ -496,18 +496,18 @@ OPT_NON_STR_KEYS.
 
 This is deprecated and has no effect in version 3. In version 2 this was
 required to serialize  `dataclasses.dataclass` instances. For more, see
-[dataclass](https://github.com/ijl/orjson#dataclass).
+[dataclass](https://github.com/ijl/orjson?tab=readme-ov-file#dataclass).
 
 ##### OPT_SERIALIZE_NUMPY
 
 Serialize `numpy.ndarray` instances. For more, see
-[numpy](https://github.com/ijl/orjson#numpy).
+[numpy](https://github.com/ijl/orjson?tab=readme-ov-file#numpy).
 
 ##### OPT_SERIALIZE_UUID
 
 This is deprecated and has no effect in version 3. In version 2 this was
 required to serialize `uuid.UUID` instances. For more, see
-[UUID](https://github.com/ijl/orjson#UUID).
+[UUID](https://github.com/ijl/orjson?tab=readme-ov-file#UUID).
 
 ##### OPT_SORT_KEYS
 
@@ -554,7 +554,7 @@ simplejson, and ujson.
 ##### OPT_STRICT_INTEGER
 
 Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
-the Python standard library. For more, see [int](https://github.com/ijl/orjson#int).
+the Python standard library. For more, see [int](https://github.com/ijl/orjson?tab=readme-ov-file#int).
 
 ##### OPT_UTC_Z
 
@@ -1205,11 +1205,11 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2024-06-10` and stable 1.72. It
+The project's own CI tests against `nightly-2024-07-02` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes.
 
-orjson is tested for amd64, aarch64, ppc64le, and s390x on Linux. It
+orjson is tested for amd64, aarch64, arm7, ppc64le, and s390x on Linux. It
 is tested for either aarch64 or amd64 on macOS and cross-compiles for the other,
 depending on version. For Windows it is tested on amd64 and i686.
 

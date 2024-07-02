@@ -67,8 +67,8 @@ encoding_rs = { version = "0.8", default-features = false }
 half = { version = "2", default-features = false, features = ["std"] }
 itoa = { version = "1", default-features = false }
 itoap = { version = "1", features = ["std", "simd"] }
-once_cell = { version = "1", default-features = false, features = ["race"] }
-pyo3-ffi = { version = "^0.21", default-features = false, features = ["extension-module"]}
+once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
+pyo3-ffi = { version = "^0.22", default-features = false, features = ["extension-module"]}
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
@@ -78,7 +78,7 @@ unwinding = { version = "0.2", features = ["unwinder"], optional = true }
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "^0.21" }
+pyo3-build-config = { version = "^0.22" }
 version_check = { version = "0.9" }
 
 [profile.dev]
