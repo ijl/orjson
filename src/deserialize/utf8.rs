@@ -8,16 +8,16 @@ use crate::util::INVALID_STR;
 use core::ffi::c_char;
 use std::borrow::Cow;
 
-#[cfg(all(target_arch = "x86_64", not(target_feature = "sse4.2")))]
+#[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
-    if std::is_x86_feature_detected!("sse4.2") {
-        simdutf8::basic::from_utf8(buf).is_ok()
+    if std::is_x86_feature_detected!("avx2") {
+        unsafe { simdutf8::basic::imp::x86::avx2::validate_utf8(buf).is_ok() }
     } else {
         encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
     }
 }
 
-#[cfg(all(target_arch = "x86_64", target_feature = "sse4.2"))]
+#[cfg(all(target_arch = "x86_64", target_feature = "avx2"))]
 fn is_valid_utf8(buf: &[u8]) -> bool {
     simdutf8::basic::from_utf8(buf).is_ok()
 }

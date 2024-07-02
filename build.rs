@@ -41,10 +41,6 @@ fn main() {
     if env::var("ORJSON_DISABLE_SIMD").is_err() {
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
-            #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
-            if env::var("ORJSON_DISABLE_AVX512").is_err() {
-                println!("cargo:rustc-cfg=feature=\"avx512\"");
-            }
         }
     }
 

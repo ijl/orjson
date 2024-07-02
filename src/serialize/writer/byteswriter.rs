@@ -114,6 +114,11 @@ pub trait WriteExt: std::io::Write {
     }
 
     #[inline]
+    fn has_capacity(&mut self, _len: usize) -> bool {
+        false
+    }
+
+    #[inline]
     fn set_written(&mut self, len: usize) {
         let _ = len;
     }
@@ -155,6 +160,11 @@ impl WriteExt for &mut BytesWriter {
         if unlikely!(end_length >= self.cap) {
             self.grow(end_length);
         }
+    }
+
+    #[inline]
+    fn has_capacity(&mut self, len: usize) -> bool {
+        return self.len + len <= self.cap;
     }
 
     #[inline(always)]

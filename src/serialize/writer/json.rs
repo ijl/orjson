@@ -572,9 +572,29 @@ macro_rules! reserve_str {
     };
 }
 
+#[cfg(all(feature = "unstable-simd", not(target_arch = "x86_64")))]
+#[inline(always)]
+fn format_escaped_str<W>(writer: &mut W, value: &str)
+where
+    W: ?Sized + io::Write + WriteExt,
+{
+    unsafe {
+        reserve_str!(writer, value);
+
+        let written = format_escaped_str_impl_generic_128(
+            writer.as_mut_buffer_ptr(),
+            value.as_bytes().as_ptr(),
+            value.len(),
+        );
+
+        writer.set_written(written);
+    }
+}
+
 #[cfg(all(
     feature = "unstable-simd",
-    any(not(target_arch = "x86_64"), not(feature = "avx512"))
+    target_arch = "x86_64",
+    not(feature = "avx512")
 ))]
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
@@ -584,7 +604,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_impl_128(
+        let written = format_escaped_str_impl_generic_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -611,7 +631,7 @@ where
             );
             writer.set_written(written);
         } else {
-            let written = format_escaped_str_impl_128(
+            let written = format_escaped_str_impl_generic_128(
                 writer.as_mut_buffer_ptr(),
                 value.as_bytes().as_ptr(),
                 value.len(),

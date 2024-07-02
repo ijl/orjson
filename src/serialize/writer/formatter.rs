@@ -4,6 +4,12 @@
 use crate::serialize::writer::WriteExt;
 use std::io;
 
+macro_rules! debug_assert_has_capacity {
+    ($writer:expr) => {
+        debug_assert!($writer.has_capacity(4))
+    };
+}
+
 pub trait Formatter {
     #[inline]
     fn write_null<W>(&mut self, writer: &mut W) -> io::Result<()>
@@ -196,7 +202,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        reserve_minimum!(writer);
+        debug_assert_has_capacity!(writer);
         unsafe { writer.write_reserved_punctuation(b']').unwrap() };
         Ok(())
     }
@@ -206,7 +212,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        reserve_minimum!(writer);
+        debug_assert_has_capacity!(writer);
         if !first {
             unsafe { writer.write_reserved_punctuation(b',').unwrap() }
         }
@@ -238,7 +244,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        reserve_minimum!(writer);
+        debug_assert_has_capacity!(writer);
         unsafe {
             writer.write_reserved_punctuation(b'}').unwrap();
         }
@@ -250,7 +256,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        reserve_minimum!(writer);
+        debug_assert_has_capacity!(writer);
         if !first {
             unsafe {
                 writer.write_reserved_punctuation(b',').unwrap();
@@ -272,7 +278,7 @@ pub trait Formatter {
     where
         W: ?Sized + io::Write + WriteExt,
     {
-        reserve_minimum!(writer);
+        debug_assert_has_capacity!(writer);
         unsafe { writer.write_reserved_punctuation(b':') }
     }
 

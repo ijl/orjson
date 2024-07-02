@@ -17,16 +17,19 @@ impl StrSerializer {
 }
 
 impl Serialize for StrSerializer {
-    #[inline]
+    #[inline(always)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let uni = unicode_to_str(self.ptr);
-        if unlikely!(uni.is_none()) {
-            err!(SerializeError::InvalidStr)
-        }
-        serializer.serialize_str(uni.unwrap())
+        let uni = {
+            let tmp = unicode_to_str(self.ptr);
+            if unlikely!(tmp.is_none()) {
+                err!(SerializeError::InvalidStr)
+            };
+            tmp.unwrap()
+        };
+        serializer.serialize_str(uni)
     }
 }
 

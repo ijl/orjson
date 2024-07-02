@@ -273,3 +273,35 @@ macro_rules! assume {
         };
     };
 }
+
+#[allow(unused_macros)]
+#[cfg(feature = "intrinsics")]
+macro_rules! trailing_zeros {
+    ($val:expr) => {
+        core::intrinsics::cttz_nonzero($val) as usize
+    };
+}
+
+#[allow(unused_macros)]
+#[cfg(not(feature = "intrinsics"))]
+macro_rules! trailing_zeros {
+    ($val:expr) => {
+        $val.trailing_zeros() as usize
+    };
+}
+
+#[allow(unused_macros)]
+#[cfg(feature = "intrinsics")]
+macro_rules! popcnt {
+    ($val:expr) => {
+        core::intrinsics::ctpop(core::mem::transmute::<u32, i32>($val)) as usize
+    };
+}
+
+#[allow(unused_macros)]
+#[cfg(not(feature = "intrinsics"))]
+macro_rules! popcnt {
+    ($val:expr) => {
+        core::mem::transmute::<u32, i32>($val).count_ones() as usize
+    };
+}
