@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 3.10.7 - 2024-08-08
+
+### Changed
+
+- Improve performance of stable Rust amd64 builds.
+
+
 ## 3.10.6 - 2024-07-02
 
 ### Changed
