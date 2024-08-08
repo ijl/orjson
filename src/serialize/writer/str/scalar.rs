@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#[cfg(not(feature = "unstable-simd"))]
+#[cfg(all(not(feature = "unstable-simd"), not(target_arch = "x86_64")))]
 use super::escape::{NEED_ESCAPED, QUOTE_TAB};
 
 macro_rules! impl_format_scalar {
@@ -20,7 +20,7 @@ macro_rules! impl_format_scalar {
     };
 }
 
-#[cfg(not(feature = "unstable-simd"))]
+#[cfg(all(not(feature = "unstable-simd"), not(target_arch = "x86_64")))]
 pub unsafe fn format_escaped_str_scalar(
     odst: *mut u8,
     value_ptr: *const u8,

@@ -604,7 +604,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_impl_generic_128(
+        let written = format_escaped_str_impl_sse2_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -631,7 +631,7 @@ where
             );
             writer.set_written(written);
         } else {
-            let written = format_escaped_str_impl_generic_128(
+            let written = format_escaped_str_impl_sse2_128(
                 writer.as_mut_buffer_ptr(),
                 value.as_bytes().as_ptr(),
                 value.len(),
@@ -641,7 +641,7 @@ where
     }
 }
 
-#[cfg(not(feature = "unstable-simd"))]
+#[cfg(all(not(feature = "unstable-simd"), not(target_arch = "x86_64")))]
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
@@ -655,6 +655,25 @@ where
             value.as_bytes().as_ptr(),
             value.len(),
         );
+        writer.set_written(written);
+    }
+}
+
+#[cfg(all(not(feature = "unstable-simd"), target_arch = "x86_64"))]
+#[inline(always)]
+fn format_escaped_str<W>(writer: &mut W, value: &str)
+where
+    W: ?Sized + io::Write + WriteExt,
+{
+    unsafe {
+        reserve_str!(writer, value);
+
+        let written = format_escaped_str_impl_sse2_128(
+            writer.as_mut_buffer_ptr(),
+            value.as_bytes().as_ptr(),
+            value.len(),
+        );
+
         writer.set_written(written);
     }
 }
