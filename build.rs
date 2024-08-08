@@ -37,10 +37,19 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
     }
 
+    // auto build unstable SIMD on nightly
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     if env::var("ORJSON_DISABLE_SIMD").is_err() {
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
+
+            // auto build AVX512 on x86-64-v4 or supporting native targets
+            #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
+            if let Some(true) = version_check::supports_feature("stdarch_x86_avx512") {
+                if env::var("ORJSON_DISABLE_AVX512").is_err() {
+                    println!("cargo:rustc-cfg=feature=\"avx512\"");
+                }
+            }
         }
     }
 

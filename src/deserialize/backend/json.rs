@@ -9,7 +9,7 @@ use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::fmt;
 
-pub fn deserialize_json(
+pub(crate) fn deserialize(
     data: &'static str,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     let mut deserializer = serde_json::Deserializer::from_str(data);

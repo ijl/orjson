@@ -57,7 +57,7 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
     unsafe { ((val as *mut u8).add(YYJSON_VAL_SIZE)) as *mut yyjson_val }
 }
 
-pub fn deserialize_yyjson(
+pub(crate) fn deserialize(
     data: &'static str,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     let mut err = yyjson_read_err {

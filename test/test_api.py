@@ -49,7 +49,7 @@ class TestApi:
         """
         loads() invalid type
         """
-        for val in (1, 3.14, [], {}, None):
+        for val in (1, 3.14, [], {}, None):  # type: ignore
             pytest.raises(orjson.JSONDecodeError, orjson.loads, val)
 
     def test_loads_recursion_partial(self):

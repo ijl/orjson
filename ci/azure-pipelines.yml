@@ -1,7 +1,24 @@
 variables:
-  toolchain: nightly-2024-07-02
+  toolchain: nightly-2024-08-05
 
 jobs:
+
+- job: win_python313_amd64
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.13.0-rc.1\x64\python.exe
+    rustup: https://win.rustup.rs/x86_64
+    target: x86_64-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.13.0-rc.1'
+      addToPath: true
+      architecture: 'x64'
+      allowUnstable: true
+  - checkout: self
+  - template: ./azure-win.yml
 
 - job: win_python312_amd64
   pool:
@@ -80,6 +97,23 @@ jobs:
       versionSpec: '3.8.10'
       addToPath: true
       architecture: 'x64'
+  - checkout: self
+  - template: ./azure-win.yml
+
+- job: win_python313_x86
+  pool:
+    vmImage: windows-2022
+  variables:
+    interpreter: C:\hostedtoolcache\windows\Python\3.13.0-rc.1\x86\python.exe
+    rustup: https://win.rustup.rs/x86
+    target: i686-pc-windows-msvc
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.13.0-rc.1'
+      addToPath: true
+      architecture: 'x86'
+      allowUnstable: true
   - checkout: self
   - template: ./azure-win.yml
 

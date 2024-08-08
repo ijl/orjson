@@ -10,8 +10,8 @@ jobs:
         profile: [
           { rust: "1.72", features: "" },
           { rust: "1.72", features: "--features=yyjson" },
-          { rust: "nightly-2024-07-02", features: "--features=yyjson,unstable-simd"},
-          { rust: "nightly-2024-07-02", features: "--features=avx512,yyjson,unstable-simd"},
+          { rust: "nightly-2024-08-05", features: "--features=yyjson,unstable-simd"},
+          { rust: "nightly-2024-08-05", features: "--features=avx512,yyjson,unstable-simd"},
         ]
         python: [
           { version: '3.13' },

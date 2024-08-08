@@ -67,11 +67,7 @@ impl BytesWriter {
     fn grow(&mut self, len: usize) {
         let mut cap = self.cap;
         while len >= cap {
-            if len < 262144 {
-                cap *= 4;
-            } else {
-                cap *= 2;
-            }
+            cap *= 2;
         }
         self.resize(cap);
     }
@@ -164,7 +160,7 @@ impl WriteExt for &mut BytesWriter {
 
     #[inline]
     fn has_capacity(&mut self, len: usize) -> bool {
-        return self.len + len <= self.cap;
+        self.len + len <= self.cap
     }
 
     #[inline(always)]

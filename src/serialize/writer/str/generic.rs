@@ -80,8 +80,7 @@ macro_rules! impl_format_simd_generic_128 {
 
 #[allow(dead_code)]
 #[inline(never)]
-#[cfg_attr(target_arch = "x86_64", target_feature(enable = "sse2"))]
-#[cfg_attr(target_arch = "x86_64", target_feature(enable = "bmi1"))]
+#[cfg_attr(target_arch = "x86_64", target_feature(enable = "sse2,bmi1"))]
 #[cfg_attr(target_arch = "aarch64", target_feature(enable = "neon"))]
 pub unsafe fn format_escaped_str_impl_generic_128(
     odst: *mut u8,

@@ -90,11 +90,10 @@ macro_rules! impl_format_simd_avx512vl {
 }
 
 #[inline(never)]
-#[cfg_attr(feature = "avx512", target_feature(enable = "avx512f"))]
-#[cfg_attr(feature = "avx512", target_feature(enable = "avx512bw"))]
-#[cfg_attr(feature = "avx512", target_feature(enable = "avx512vl"))]
-#[cfg_attr(feature = "avx512", target_feature(enable = "bmi2"))]
-#[cfg_attr(feature = "avx512", target_feature(enable = "bmi1"))]
+#[cfg_attr(
+    feature = "avx512",
+    target_feature(enable = "avx512f,avx512bw,avx512vl,bmi2")
+)]
 pub unsafe fn format_escaped_str_impl_512vl(
     odst: *mut u8,
     value_ptr: *const u8,

@@ -23,13 +23,5 @@ pub fn deserialize(
 
     let buffer_str = unsafe { std::str::from_utf8_unchecked(buffer) };
 
-    #[cfg(feature = "yyjson")]
-    {
-        crate::deserialize::yyjson::deserialize_yyjson(buffer_str)
-    }
-
-    #[cfg(not(feature = "yyjson"))]
-    {
-        crate::deserialize::json::deserialize_json(buffer_str)
-    }
+    crate::deserialize::backend::deserialize(buffer_str)
 }

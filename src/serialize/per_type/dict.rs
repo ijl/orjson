@@ -381,7 +381,7 @@ fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, Serialize
 fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
     let val = ffi!(PyFloat_AS_DOUBLE(key));
     if !val.is_finite() {
-        Ok(CompactString::new_inline("null"))
+        Ok(CompactString::const_new("null"))
     } else {
         Ok(CompactString::from(ryu::Buffer::new().format_finite(val)))
     }
@@ -419,12 +419,12 @@ impl DictNonStrKey {
         opts: crate::opt::Opt,
     ) -> Result<CompactString, SerializeError> {
         match pyobject_to_obtype(key, opts) {
-            ObType::None => Ok(CompactString::new_inline("null")),
+            ObType::None => Ok(CompactString::const_new("null")),
             ObType::Bool => {
                 if unsafe { key == TRUE } {
-                    Ok(CompactString::new_inline("true"))
+                    Ok(CompactString::const_new("true"))
                 } else {
-                    Ok(CompactString::new_inline("false"))
+                    Ok(CompactString::const_new("false"))
                 }
             }
             ObType::Int => non_str_int(key),

@@ -1,8 +1,9 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-07-02"
+  RUST_TOOLCHAIN: "nightly-2024-08-05"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+  UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 jobs:
 
@@ -57,16 +58,17 @@ jobs:
         retention-days: 1
 
   manylinux_2_17_amd64:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.12' },
-          { version: '3.11' },
-          { version: '3.10' },
-          { version: '3.9' },
-          { version: '3.8' },
+          { interpreter: 'python3.13', package: 'python3.13' },
+          { interpreter: 'python3.12', package: 'python3.12' },
+          { interpreter: 'python3.11', package: 'python3.11' },
+          { interpreter: 'python3.10', package: 'python3.10' },
+          { interpreter: 'python3.9', package: 'python3.9' },
+          { interpreter: 'python3.8', package: 'python3.8' },
         ]
     env:
       CC: "clang"
@@ -83,7 +85,8 @@ jobs:
 
     - name: Build environment pre-clone
       run: |
-        dnf install -y rustup clang lld python${{ matrix.python.version }} git
+        dnf copr enable -y @fedora-llvm-team/llvm19
+        dnf install -y rustup clang lld ${{ matrix.python.package }} git
         rustup-init --default-toolchain "${RUST_TOOLCHAIN}-x86_64-unknown-linux-gnu" --profile minimal --component rust-src -y
 
     - uses: actions/checkout@v4
@@ -96,7 +99,7 @@ jobs:
         cp ci/config.toml .cargo/config.toml
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv --python python${{ matrix.python.version }}
+        uv venv --python ${{ matrix.python.interpreter }}
         uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
 
     - name: maturin
@@ -105,7 +108,7 @@ jobs:
         maturin build --release --strip \
           --features=avx512,no-panic,unstable-simd,yyjson \
           --compatibility manylinux_2_17 \
-          --interpreter python${{ matrix.python.version }} \
+          --interpreter ${{ matrix.python.interpreter }} \
           --target=x86_64-unknown-linux-gnu
         uv pip install target/wheels/orjson*.whl
 
@@ -117,12 +120,6 @@ jobs:
     - run: source .venv/bin/activate && ./integration/run http
     - run: source .venv/bin/activate && ./integration/run init
 
-    - run: |
-        source .venv/bin/activate
-        uv pip install -U --pre "numpy>=2.0.0rc1"
-        pytest -s test/test_numpy.py
-      if: matrix.python.version != '3.8'
-
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
@@ -133,11 +130,12 @@ jobs:
         retention-days: 1
 
   musllinux_1_2:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
           { version: '3.10' },
@@ -169,7 +167,7 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-07-02
+        rust-toolchain: nightly-2024-08-05
         rustup-components: rust-src
         target: ${{ matrix.platform.target }}
         manylinux: musllinux_1_2
@@ -208,7 +206,7 @@ jobs:
         retention-days: 1
 
   manylinux_2_17_non_amd64:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -265,7 +263,7 @@ jobs:
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
         target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-07-02
+        rust-toolchain: nightly-2024-08-05
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
@@ -306,6 +304,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.13', macosx_target: "10.15" },
           { version: '3.12', macosx_target: "10.15" },
           { version: '3.11', macosx_target: "10.15" },
           { version: '3.10', macosx_target: "10.15" },
@@ -325,10 +324,11 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: "${{ matrix.python.version }}"
+        allow-prereleases: true
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-07-02"
+        toolchain: "nightly-2024-08-05"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -398,7 +398,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-07-02"
+        toolchain: "nightly-2024-08-05"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -443,7 +443,7 @@ jobs:
 
   pypi:
     name: PyPI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [
       sdist,

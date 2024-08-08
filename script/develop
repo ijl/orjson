@@ -2,6 +2,7 @@
 
 rm -f target/wheels/*
 
+export UNSAFE_PYO3_BUILD_FREE_THREADED=1
 export UNSAFE_PYO3_SKIP_VERSION_CHECK=1
 
 export CC="${CC:-clang}"
