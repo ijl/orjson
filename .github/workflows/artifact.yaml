@@ -124,7 +124,7 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_manylinux_2_17_amd64_${{ matrix.python.version }}
+        name: orjson_manylinux_2_17_amd64_${{ matrix.python.interpreter }}
         path: target/wheels
         overwrite: true
         retention-days: 1
