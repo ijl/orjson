@@ -6,8 +6,9 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
-use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use core::ffi::{c_char, c_int, c_void};
+use jiff::civil::DateTime;
+use jiff::Timestamp;
 use pyo3_ffi::*;
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::fmt;
@@ -1203,6 +1204,19 @@ impl NumpyDateTimeError {
     }
 }
 
+macro_rules! to_jiff_datetime {
+    ($timestamp:expr, $self:expr, $val:expr) => {
+        Ok(
+            ($timestamp.map_err(|_| NumpyDateTimeError::Unrepresentable {
+                unit: *$self,
+                val: $val,
+            })?)
+            .to_zoned(jiff::tz::TimeZone::UTC)
+            .datetime(),
+        )
+    };
+}
+
 impl NumpyDatetimeUnit {
     /// Create a `NumpyDatetimeUnit` from a pointer to a Python object holding a
     /// numpy array.
@@ -1255,17 +1269,19 @@ impl NumpyDatetimeUnit {
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn datetime(&self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
         match self {
-            Self::Years => Ok(NaiveDate::from_ymd_opt(
+            Self::Years => Ok(DateTime::new(
                 (val + 1970)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
                 1,
                 1,
+                0,
+                0,
+                0,
+                0,
             )
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
             .unwrap()),
-            Self::Months => Ok(NaiveDate::from_ymd_opt(
+            Self::Months => Ok(DateTime::new(
                 (val / 12 + 1970)
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
@@ -1273,38 +1289,24 @@ impl NumpyDatetimeUnit {
                     .try_into()
                     .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
                 1,
+                0,
+                0,
+                0,
+                0,
             )
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
             .unwrap()),
             Self::Weeks => {
-                Ok(NaiveDateTime::from_timestamp_opt(val * 7 * 24 * 60 * 60, 0).unwrap())
+                to_jiff_datetime!(Timestamp::from_second(val * 7 * 24 * 60 * 60), self, val)
             }
-            Self::Days => Ok(NaiveDateTime::from_timestamp_opt(val * 24 * 60 * 60, 0).unwrap()),
-            Self::Hours => Ok(NaiveDateTime::from_timestamp_opt(val * 60 * 60, 0).unwrap()),
-            Self::Minutes => Ok(NaiveDateTime::from_timestamp_opt(val * 60, 0).unwrap()),
-            Self::Seconds => Ok(NaiveDateTime::from_timestamp_opt(val, 0).unwrap()),
-            Self::Milliseconds => Ok(NaiveDateTime::from_timestamp_opt(
-                val / 1_000,
-                (val % 1_000 * 1_000_000)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )
-            .unwrap()),
-            Self::Microseconds => Ok(NaiveDateTime::from_timestamp_opt(
-                val / 1_000_000,
-                (val % 1_000_000 * 1_000)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )
-            .unwrap()),
-            Self::Nanoseconds => Ok(NaiveDateTime::from_timestamp_opt(
-                val / 1_000_000_000,
-                (val % 1_000_000_000)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: *self, val })?,
-            )
-            .unwrap()),
+            Self::Days => to_jiff_datetime!(Timestamp::from_second(val * 24 * 60 * 60), self, val),
+            Self::Hours => to_jiff_datetime!(Timestamp::from_second(val * 60 * 60), self, val),
+            Self::Minutes => to_jiff_datetime!(Timestamp::from_second(val * 60), self, val),
+            Self::Seconds => to_jiff_datetime!(Timestamp::from_second(val), self, val),
+            Self::Milliseconds => to_jiff_datetime!(Timestamp::from_millisecond(val), self, val),
+            Self::Microseconds => to_jiff_datetime!(Timestamp::from_microsecond(val), self, val),
+            Self::Nanoseconds => {
+                to_jiff_datetime!(Timestamp::from_nanosecond(val as i128), self, val)
+            }
             _ => Err(NumpyDateTimeError::UnsupportedUnit(*self)),
         }
         .map(|dt| NumpyDatetime64Repr { dt, opts })
@@ -1357,7 +1359,7 @@ macro_rules! forward_inner {
 }
 
 struct NumpyDatetime64Repr {
-    dt: NaiveDateTime,
+    dt: DateTime,
     opts: Opt,
 }
 
@@ -1368,7 +1370,10 @@ impl DateTimeLike for NumpyDatetime64Repr {
     forward_inner!(hour, u8);
     forward_inner!(minute, u8);
     forward_inner!(second, u8);
-    forward_inner!(nanosecond, u32);
+
+    fn nanosecond(&self) -> u32 {
+        self.dt.subsec_nanosecond() as u32
+    }
 
     fn microsecond(&self) -> u32 {
         self.nanosecond() / 1_000
