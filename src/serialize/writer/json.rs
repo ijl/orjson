@@ -134,7 +134,7 @@ where
                 .map_err(Error::io)
         }
     }
-    #[inline(never)]
+    #[inline]
     fn serialize_f64(self, value: f64) -> Result<()> {
         if unlikely!(value.is_infinite() || value.is_nan()) {
             self.serialize_unit()

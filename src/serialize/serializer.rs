@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2, STRICT_INTEGER};
+use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2};
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
-    DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, Int53Serializer,
-    IntSerializer, ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer,
-    StrSerializer, StrSubclassSerializer, Time, ZeroListSerializer, UUID,
+    DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
+    ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
+    StrSubclassSerializer, Time, ZeroListSerializer, UUID,
 };
 use crate::serialize::state::SerializerState;
 use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
@@ -68,13 +68,7 @@ impl Serialize for PyObjectSerializer {
         match pyobject_to_obtype(self.ptr, self.state.opts()) {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
-            ObType::Int => {
-                if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
-                    Int53Serializer::new(self.ptr).serialize(serializer)
-                } else {
-                    IntSerializer::new(self.ptr).serialize(serializer)
-                }
-            }
+            ObType::Int => IntSerializer::new(self.ptr, self.state.opts()).serialize(serializer),
             ObType::None => NoneSerializer::new().serialize(serializer),
             ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
             ObType::Bool => BoolSerializer::new(self.ptr).serialize(serializer),

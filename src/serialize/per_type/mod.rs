@@ -24,7 +24,7 @@ pub use default::DefaultSerializer;
 pub use dict::DictGenericSerializer;
 pub use float::FloatSerializer;
 pub use fragment::FragmentSerializer;
-pub use int::{Int53Serializer, IntSerializer};
+pub use int::IntSerializer;
 pub use list::{ListTupleSerializer, ZeroListSerializer};
 pub use none::NoneSerializer;
 pub use numpy::{is_numpy_array, is_numpy_scalar, NumpyScalar, NumpySerializer};

@@ -420,6 +420,14 @@ class TestType:
             with pytest.raises(orjson.JSONEncodeError):
                 orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER)
 
+    def test_int_53_exc_128(self):
+        """
+        int 53-bit exception on 128-bit
+        """
+        val = 2**65
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER)
+
     def test_int_64(self):
         """
         int 64-bit

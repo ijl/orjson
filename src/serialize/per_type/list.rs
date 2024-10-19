@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::STRICT_INTEGER;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
-    DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, Int53Serializer,
-    IntSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
-    StrSubclassSerializer, Time, UUID,
+    DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
+    NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
@@ -102,11 +100,7 @@ impl Serialize for ListTupleSerializer {
                     seq.serialize_element(&StrSubclassSerializer::new(value))?;
                 }
                 ObType::Int => {
-                    if unlikely!(opt_enabled!(self.state.opts(), STRICT_INTEGER)) {
-                        seq.serialize_element(&Int53Serializer::new(value))?;
-                    } else {
-                        seq.serialize_element(&IntSerializer::new(value))?;
-                    }
+                    seq.serialize_element(&IntSerializer::new(value, self.state.opts()))?;
                 }
                 ObType::None => {
                     seq.serialize_element(&NoneSerializer::new()).unwrap();

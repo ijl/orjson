@@ -6,9 +6,9 @@ use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::datetimelike::DateTimeLike;
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DateTimeBuffer, DefaultSerializer,
-    EnumSerializer, FloatSerializer, FragmentSerializer, Int53Serializer, IntSerializer,
-    ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
-    StrSubclassSerializer, Time, ZeroListSerializer, UUID,
+    EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer, ListTupleSerializer,
+    NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time,
+    ZeroListSerializer, UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
@@ -100,13 +100,8 @@ macro_rules! impl_serialize_entry {
                 $map.serialize_value(&StrSubclassSerializer::new($value))?;
             }
             ObType::Int => {
-                if unlikely!(opt_enabled!($self.state.opts(), STRICT_INTEGER)) {
-                    $map.serialize_key($key).unwrap();
-                    $map.serialize_value(&Int53Serializer::new($value))?;
-                } else {
-                    $map.serialize_key($key).unwrap();
-                    $map.serialize_value(&IntSerializer::new($value))?;
-                }
+                $map.serialize_key($key).unwrap();
+                $map.serialize_value(&IntSerializer::new($value, $self.state.opts()))?;
             }
             ObType::None => {
                 $map.serialize_key($key).unwrap();
