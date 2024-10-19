@@ -1,6 +1,16 @@
 # Changelog
 
 
+### 3.10.8
+
+### Changed
+
+- `int` serialization no longer chains `OverflowError` to the
+the `__cause__` attribute of `orjson.JSONEncodeError` when range exceeded.
+- Compatibility with CPython 3.14 alpha 1.
+- Improve performance.
+
+
 ## 3.10.7 - 2024-08-08
 
 ### Changed
