@@ -1,6 +1,14 @@
 # Changelog
 
 
+### 3.10.9
+
+### Fixed
+
+- Fix `int` serialization on 32-bit Python 3.8, 3.9, 3.10. This was
+introduced in 3.10.8.
+
+
 ### 3.10.8
 
 ### Changed
