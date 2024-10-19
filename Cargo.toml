@@ -54,6 +54,7 @@ yyjson = []
 intrinsics = []
 optimize = []
 strict_provenance = []
+inline_int = []
 
 [dependencies]
 arrayvec = { version = "0.7", default-features = false, features = ["std", "serde"] }

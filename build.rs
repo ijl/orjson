@@ -54,6 +54,9 @@ fn main() {
         }
     }
 
+    #[cfg(target_pointer_width = "64")]
+    println!("cargo:rustc-cfg=feature=\"inline_int\"");
+
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
         if env::var("CARGO_FEATURE_YYJSON").is_ok() {
             panic!("ORJSON_DISABLE_YYJSON and --features=yyjson both enabled.")
