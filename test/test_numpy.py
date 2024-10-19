@@ -718,82 +718,337 @@ class TestNumpy:
             == b'{"a":true,"b":false}'
         )
 
-    def test_numpy_datetime(self):
+    def test_numpy_datetime_year(self):
+        assert (
+            orjson.dumps(numpy.datetime64("2021"), option=orjson.OPT_SERIALIZE_NUMPY)
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_month(self):
+        assert (
+            orjson.dumps(numpy.datetime64("2021-01"), option=orjson.OPT_SERIALIZE_NUMPY)
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_day(self):
         assert (
             orjson.dumps(
-                {
-                    "year": numpy.datetime64("2021"),
-                    "month": numpy.datetime64("2021-01"),
-                    "day": numpy.datetime64("2021-01-01"),
-                    "hour": numpy.datetime64("2021-01-01T00"),
-                    "minute": numpy.datetime64("2021-01-01T00:00"),
-                    "second": numpy.datetime64("2021-01-01T00:00:00"),
-                    "milli": numpy.datetime64("2021-01-01T00:00:00.172"),
-                    "micro": numpy.datetime64("2021-01-01T00:00:00.172576"),
-                    "nano": numpy.datetime64("2021-01-01T00:00:00.172576789"),
-                },
+                numpy.datetime64("2021-01-01"), option=orjson.OPT_SERIALIZE_NUMPY
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_hour(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00"), option=orjson.OPT_SERIALIZE_NUMPY
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_minute(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00"), option=orjson.OPT_SERIALIZE_NUMPY
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_second(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00"),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b'{"year":"2021-01-01T00:00:00","month":"2021-01-01T00:00:00","day":"2021-01-01T00:00:00","hour":"2021-01-01T00:00:00","minute":"2021-01-01T00:00:00","second":"2021-01-01T00:00:00","milli":"2021-01-01T00:00:00.172000","micro":"2021-01-01T00:00:00.172576","nano":"2021-01-01T00:00:00.172576"}'
+            == b'"2021-01-01T00:00:00"'
         )
 
-    def test_numpy_datetime_naive_utc(self):
+    def test_numpy_datetime_milli(self):
         assert (
             orjson.dumps(
-                {
-                    "year": numpy.datetime64("2021"),
-                    "month": numpy.datetime64("2021-01"),
-                    "day": numpy.datetime64("2021-01-01"),
-                    "hour": numpy.datetime64("2021-01-01T00"),
-                    "minute": numpy.datetime64("2021-01-01T00:00"),
-                    "second": numpy.datetime64("2021-01-01T00:00:00"),
-                    "milli": numpy.datetime64("2021-01-01T00:00:00.172"),
-                    "micro": numpy.datetime64("2021-01-01T00:00:00.172576"),
-                    "nano": numpy.datetime64("2021-01-01T00:00:00.172576789"),
-                },
+                numpy.datetime64("2021-01-01T00:00:00.172"),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b'"2021-01-01T00:00:00.172000"'
+        )
+
+    def test_numpy_datetime_micro(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576"),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b'"2021-01-01T00:00:00.172576"'
+        )
+
+    def test_numpy_datetime_nano(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576789"),
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+            == b'"2021-01-01T00:00:00.172576"'
+        )
+
+    def test_numpy_datetime_naive_utc_year(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021"),
                 option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
             )
-            == b'{"year":"2021-01-01T00:00:00+00:00","month":"2021-01-01T00:00:00+00:00","day":"2021-01-01T00:00:00+00:00","hour":"2021-01-01T00:00:00+00:00","minute":"2021-01-01T00:00:00+00:00","second":"2021-01-01T00:00:00+00:00","milli":"2021-01-01T00:00:00.172000+00:00","micro":"2021-01-01T00:00:00.172576+00:00","nano":"2021-01-01T00:00:00.172576+00:00"}'
+            == b'"2021-01-01T00:00:00+00:00"'
         )
 
-    def test_numpy_datetime_naive_utc_utc_z(self):
+    def test_numpy_datetime_naive_utc_month(self):
         assert (
             orjson.dumps(
-                {
-                    "year": numpy.datetime64("2021"),
-                    "month": numpy.datetime64("2021-01"),
-                    "day": numpy.datetime64("2021-01-01"),
-                    "hour": numpy.datetime64("2021-01-01T00"),
-                    "minute": numpy.datetime64("2021-01-01T00:00"),
-                    "second": numpy.datetime64("2021-01-01T00:00:00"),
-                    "milli": numpy.datetime64("2021-01-01T00:00:00.172"),
-                    "micro": numpy.datetime64("2021-01-01T00:00:00.172576"),
-                    "nano": numpy.datetime64("2021-01-01T00:00:00.172576789"),
-                },
+                numpy.datetime64("2021-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_day(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_hour(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_minute(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_second(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_milli(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00.172000+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_micro(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00.172576+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_nano(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576789"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
+            )
+            == b'"2021-01-01T00:00:00.172576+00:00"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_year(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021"),
                 option=orjson.OPT_SERIALIZE_NUMPY
                 | orjson.OPT_NAIVE_UTC
                 | orjson.OPT_UTC_Z,
             )
-            == b'{"year":"2021-01-01T00:00:00Z","month":"2021-01-01T00:00:00Z","day":"2021-01-01T00:00:00Z","hour":"2021-01-01T00:00:00Z","minute":"2021-01-01T00:00:00Z","second":"2021-01-01T00:00:00Z","milli":"2021-01-01T00:00:00.172000Z","micro":"2021-01-01T00:00:00.172576Z","nano":"2021-01-01T00:00:00.172576Z"}'
+            == b'"2021-01-01T00:00:00Z"'
         )
 
-    def test_numpy_datetime_omit_microseconds(self):
+    def test_numpy_datetime_naive_utc_utc_z_month(self):
         assert (
             orjson.dumps(
-                {
-                    "year": numpy.datetime64("2021"),
-                    "month": numpy.datetime64("2021-01"),
-                    "day": numpy.datetime64("2021-01-01"),
-                    "hour": numpy.datetime64("2021-01-01T00"),
-                    "minute": numpy.datetime64("2021-01-01T00:00"),
-                    "second": numpy.datetime64("2021-01-01T00:00:00"),
-                    "milli": numpy.datetime64("2021-01-01T00:00:00.172"),
-                    "micro": numpy.datetime64("2021-01-01T00:00:00.172576"),
-                    "nano": numpy.datetime64("2021-01-01T00:00:00.172576789"),
-                },
+                numpy.datetime64("2021-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_day(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_hour(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_minute(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_second(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_milli(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00.172000Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_micro(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00.172576Z"'
+        )
+
+    def test_numpy_datetime_naive_utc_utc_z_nano(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576789"),
+                option=orjson.OPT_SERIALIZE_NUMPY
+                | orjson.OPT_NAIVE_UTC
+                | orjson.OPT_UTC_Z,
+            )
+            == b'"2021-01-01T00:00:00.172576Z"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_year(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021"),
                 option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
             )
-            == b'{"year":"2021-01-01T00:00:00","month":"2021-01-01T00:00:00","day":"2021-01-01T00:00:00","hour":"2021-01-01T00:00:00","minute":"2021-01-01T00:00:00","second":"2021-01-01T00:00:00","milli":"2021-01-01T00:00:00","micro":"2021-01-01T00:00:00","nano":"2021-01-01T00:00:00"}'
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_month(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_day(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_hour(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_minute(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_second(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_milli(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_micro(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
+        )
+
+    def test_numpy_datetime_omit_microseconds_nano(self):
+        assert (
+            orjson.dumps(
+                numpy.datetime64("2021-01-01T00:00:00.172576789"),
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_OMIT_MICROSECONDS,
+            )
+            == b'"2021-01-01T00:00:00"'
         )
 
     def test_numpy_datetime_nat(self):

@@ -34,7 +34,7 @@ pub fn serialize(
             Ok(buf.finish())
         }
         Err(err) => {
-            ffi!(_Py_Dealloc(buf.bytes_ptr().as_ptr()));
+            ffi!(Py_DECREF(buf.bytes_ptr().as_ptr()));
             Err(err.to_string())
         }
     }

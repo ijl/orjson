@@ -1,10 +1,11 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-08-05"
+  RUST_TOOLCHAIN: "nightly-2024-09-25"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
+  UV_LINK_MODE: "copy"
 jobs:
 
   sdist:
@@ -71,54 +72,43 @@ jobs:
           { interpreter: 'python3.8', package: 'python3.8' },
         ]
     env:
+      PYTHON: "${{ matrix.python.interpreter }}"
+      PYTHON_PACKAGE: "${{ matrix.python.package }}"
+      TARGET: "x86_64-unknown-linux-gnu"
       CC: "clang"
+      VENV: ".venv"
       CFLAGS: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
       LDFLAGS: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
       RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings"
       PATH: "/__w/orjson/orjson/.venv/bin:/github/home/.cargo/bin:/root/.local/bin:/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     container:
-      image: fedora:41
+      image: fedora:42
     steps:
 
     - name: cpuinfo
       run: cat /proc/cpuinfo
 
     - name: Build environment pre-clone
-      run: |
-        dnf copr enable -y @fedora-llvm-team/llvm19
-        dnf install -y rustup clang lld ${{ matrix.python.package }} git
-        rustup-init --default-toolchain "${RUST_TOOLCHAIN}-x86_64-unknown-linux-gnu" --profile minimal --component rust-src -y
+      run: dnf install -y git
 
     - uses: actions/checkout@v4
 
     - name: Build environment post-clone
       run: |
-        cargo fetch --target=x86_64-unknown-linux-gnu &
+        ./script/install-fedora
 
-        mkdir .cargo
-        cp ci/config.toml .cargo/config.toml
-
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv --python ${{ matrix.python.interpreter }}
-        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
-
-    - name: maturin
-      run: |
-        source .venv/bin/activate
         maturin build --release --strip \
           --features=avx512,no-panic,unstable-simd,yyjson \
-          --compatibility manylinux_2_17 \
-          --interpreter ${{ matrix.python.interpreter }} \
-          --target=x86_64-unknown-linux-gnu
+          --compatibility=manylinux_2_17 \
+          --interpreter="${PYTHON}" \
+          --target="${TARGET}"
+
         uv pip install target/wheels/orjson*.whl
 
-    - run: source .venv/bin/activate && pytest -s -rxX -v -n 2 test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: source .venv/bin/activate && ./integration/run thread
-    - run: source .venv/bin/activate && ./integration/run http
-    - run: source .venv/bin/activate && ./integration/run init
+        pytest -s -rxX -v -n 2 test
+        ./integration/run thread
+        ./integration/run http
+        ./integration/run init
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
@@ -167,9 +157,9 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
-        rust-toolchain: nightly-2024-08-05
+        rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
-        target: ${{ matrix.platform.target }}
+        target: "${{ matrix.platform.target }}"
         manylinux: musllinux_1_2
         args: --release --strip --out=dist --features=${{ matrix.platform.features }} -i python${{ matrix.python.version }}
 
@@ -249,6 +239,7 @@ jobs:
         ]
     steps:
     - uses: actions/checkout@v4
+
     - name: build-std
       run: |
         mkdir .cargo
@@ -262,32 +253,11 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
-        target: ${{ matrix.target.target }}
-        rust-toolchain: nightly-2024-08-05
+        target: "${{ matrix.target.target }}"
+        rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
         manylinux: auto
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i python${{ matrix.python.version }}
-
-    - uses: uraimo/run-on-arch-action@v2
-      name: Test
-      with:
-        arch: ${{ matrix.target.arch }}
-        distro: ubuntu22.04
-        githubToken: ${{ github.token }}
-        install: |
-          export TZ=UTC
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get update
-          apt-get install -y --no-install-recommends software-properties-common gpg gpg-agent curl
-          add-apt-repository ppa:deadsnakes/ppa
-          apt-get update
-          apt-get install -y python${{ matrix.python.version }}-dev python${{ matrix.python.version }}-venv
-        run: |
-          python${{ matrix.python.version }} -m venv venv
-          venv/bin/pip install -U pip wheel
-          venv/bin/pip install -r test/requirements.txt
-          venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v -n 2 test
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
@@ -328,7 +298,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-08-05"
+        toolchain: "${{ env.RUST_TOOLCHAIN }}"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 
@@ -398,7 +368,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: "nightly-2024-08-05"
+        toolchain: "${{ env.RUST_TOOLCHAIN }}"
         targets: "aarch64-apple-darwin, x86_64-apple-darwin"
         components: "rust-src"
 

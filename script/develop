@@ -18,4 +18,4 @@ export RUSTFLAGS="-C linker=${CC} -C link-arg=-fuse-ld=${LD} -C linker-plugin-lt
 
 maturin build --target="${TARGET}" "$@"
 
-uv pip install ${CARGO_TARGET_DIR}/wheels/*.whl
+uv pip install --link-mode=copy ${CARGO_TARGET_DIR}/wheels/*.whl

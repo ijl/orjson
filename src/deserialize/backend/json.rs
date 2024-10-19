@@ -125,7 +125,7 @@ impl<'de> Visitor<'de> for JsonValue {
         A: MapAccess<'de>,
     {
         let dict_ptr = ffi!(PyDict_New());
-        while let Some(key) = map.next_key::<beef::lean::Cow<str>>()? {
+        while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey = get_unicode_key(&key);
             let pyval = map.next_value_seed(self)?;
             let _ = unsafe {

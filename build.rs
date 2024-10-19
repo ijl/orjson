@@ -18,8 +18,10 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_11)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_12)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_13)");
+    println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_8)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
+    println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
 
     for cfg in pyo3_build_config::get().build_script_outputs() {
         println!("{cfg}");
@@ -37,18 +39,17 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
     }
 
-    // auto build unstable SIMD on nightly
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     if env::var("ORJSON_DISABLE_SIMD").is_err() {
+        // auto build unstable SIMD on nightly
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
-
-            // auto build AVX512 on x86-64-v4 or supporting native targets
-            #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
-            if let Some(true) = version_check::supports_feature("stdarch_x86_avx512") {
-                if env::var("ORJSON_DISABLE_AVX512").is_err() {
-                    println!("cargo:rustc-cfg=feature=\"avx512\"");
-                }
+        }
+        // auto build AVX512 on x86-64-v4 or supporting native targets
+        #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
+        if let Some(true) = version_check::supports_feature("stdarch_x86_avx512") {
+            if env::var("ORJSON_DISABLE_AVX512").is_err() {
+                println!("cargo:rustc-cfg=feature=\"avx512\"");
             }
         }
     }

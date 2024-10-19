@@ -58,7 +58,6 @@ strict_provenance = []
 [dependencies]
 arrayvec = { version = "0.7", default-features = false, features = ["std", "serde"] }
 associative-cache = { version = "2", default-features = false }
-beef = { version = "0.5", default-features = false, features = ["impl_serde"] }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
 chrono = { version = "=0.4.34", default-features = false }
 compact_str = { version = "0.8", default-features = false, features = ["serde"] }
@@ -67,18 +66,18 @@ half = { version = "2", default-features = false, features = ["std"] }
 itoa = { version = "1", default-features = false }
 itoap = { version = "1", features = ["std", "simd"] }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { version = "^0.22", default-features = false, features = ["extension-module"]}
+pyo3-ffi = { path = "include/pyo3/pyo3-ffi", default-features = false, features = ["extension-module"]}
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
-unwinding = { version = "0.2", features = ["unwinder"], optional = true }
+unwinding = { version = "=0.2.2", features = ["unwinder"], optional = true }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "^0.22" }
+pyo3-build-config = { path = "include/pyo3/pyo3-build-config" }
 version_check = { version = "0.9" }
 
 [profile.dev]

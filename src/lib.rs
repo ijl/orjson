@@ -6,10 +6,11 @@
 #![cfg_attr(feature = "strict_provenance", feature(strict_provenance))]
 #![cfg_attr(feature = "strict_provenance", warn(fuzzy_provenance_casts))]
 #![cfg_attr(feature = "unstable-simd", feature(portable_simd))]
-#![allow(unknown_lints)] // internal_features
 #![allow(internal_features)] // core_intrinsics
-#![allow(unused_unsafe)]
 #![allow(non_camel_case_types)]
+#![allow(static_mut_refs)]
+#![allow(unknown_lints)] // internal_features
+#![allow(unused_unsafe)]
 #![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::uninlined_format_args)] // MSRV 1.66
@@ -35,7 +36,14 @@ use pyo3_ffi::*;
 #[allow(unused_imports)]
 use core::ptr::{null, null_mut, NonNull};
 
-#[cfg(Py_3_10)]
+#[cfg(Py_3_13)]
+macro_rules! add {
+    ($mptr:expr, $name:expr, $obj:expr) => {
+        PyModule_Add($mptr, $name.as_ptr() as *const c_char, $obj);
+    };
+}
+
+#[cfg(all(Py_3_10, not(Py_3_13)))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
         PyModule_AddObjectRef($mptr, $name.as_ptr() as *const c_char, $obj);
@@ -79,6 +87,9 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         let wrapped_dumps = PyMethodDef {
             ml_name: "dumps\0".as_ptr() as *const c_char,
             ml_meth: PyMethodDefPointer {
+                #[cfg(Py_3_10)]
+                PyCFunctionFastWithKeywords: dumps,
+                #[cfg(not(Py_3_10))]
                 _PyCFunctionFastWithKeywords: dumps,
             },
             ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,

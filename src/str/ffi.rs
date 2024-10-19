@@ -17,6 +17,9 @@ pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
         };
         let num_bytes =
             (*(op as *mut PyASCIIObject)).length * ((*(op as *mut PyASCIIObject)).kind()) as isize;
+        #[cfg(Py_3_14)]
+        let hash = pyo3_ffi::Py_HashBuffer(data_ptr, num_bytes);
+        #[cfg(not(Py_3_14))]
         let hash = pyo3_ffi::_Py_HashBytes(data_ptr, num_bytes);
         (*op.cast::<PyASCIIObject>()).hash = hash;
         hash
