@@ -1,6 +1,17 @@
 # Changelog
 
 
+### 3.10.10
+
+### Fixed
+
+- Fix `int` serialization on `s390x`. This was introduced in 3.10.8.
+
+### Changed
+
+- Publish aarch64 manylinux_2_17 wheel for 3.13 to PyPI.
+
+
 ### 3.10.9
 
 ### Fixed
