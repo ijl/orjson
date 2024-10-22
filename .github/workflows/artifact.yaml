@@ -40,7 +40,7 @@ jobs:
 
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
-    - run: pytest -s -rxX -v -n 2 test
+    - run: pytest -s -rxX -v -n 4 test
       env:
         PYTHONMALLOC: "debug"
 
@@ -60,9 +60,21 @@ jobs:
 
   manylinux_2_17_amd64:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        arch: [
+          {
+            cc: "clang",
+            cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
+            features: "avx512,no-panic,unstable-simd,yyjson",
+            ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
+            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings",
+            tag: null,
+            target: "x86_64-unknown-linux-gnu",
+          },
+        ]
         python: [
           { interpreter: 'python3.13', package: 'python3.13' },
           { interpreter: 'python3.12', package: 'python3.12' },
@@ -74,48 +86,153 @@ jobs:
     env:
       PYTHON: "${{ matrix.python.interpreter }}"
       PYTHON_PACKAGE: "${{ matrix.python.package }}"
-      TARGET: "x86_64-unknown-linux-gnu"
-      CC: "clang"
+      TARGET: "${{ matrix.arch.target }}"
+      CC: "${{ matrix.arch.cc }}"
       VENV: ".venv"
-      CFLAGS: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
-      LDFLAGS: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
-      RUSTFLAGS: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings"
-      PATH: "/__w/orjson/orjson/.venv/bin:/github/home/.cargo/bin:/root/.local/bin:/root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    container:
-      image: fedora:42
+      FEATURES: "${{ matrix.arch.features }}"
+      CFLAGS: "${{ matrix.arch.cflags }}"
+      LDFLAGS: "${{ matrix.arch.ldflags }}"
+      RUSTFLAGS: "${{ matrix.arch.rustflags }}"
+      CARGO_TARGET_DIR: "/tmp/orjson"
     steps:
 
     - name: cpuinfo
       run: cat /proc/cpuinfo
 
-    - name: Build environment pre-clone
-      run: dnf install -y git
-
     - uses: actions/checkout@v4
 
-    - name: Build environment post-clone
+    - name: setup-qemu-container
+      uses: sandervocke/setup-qemu-container@v1
+      with:
+        container: registry.fedoraproject.org/fedora:42
+        arch: ${{ matrix.arch.tag }}
+        podman_args: "-v .:/orjson -v /tmp:/tmp --workdir /orjson"
+
+    - name: setup-shell-wrapper
+      uses: sandervocke/setup-shell-wrapper@v1
+
+    - name: Build and test
+      shell: wrap-shell {0}
+      env:
+        WRAP_SHELL: run-in-container.sh
       run: |
+        set -eou pipefail
+
+        mkdir dist
+
+        export PATH="/root/.cargo/bin:/home/runner/work/orjson/orjson/.venv:/home/runner/.cargo/bin:$PATH"
+
         ./script/install-fedora
 
+        source "${VENV}/bin/activate"
+
         maturin build --release --strip \
-          --features=avx512,no-panic,unstable-simd,yyjson \
+          --features="${FEATURES}" \
           --compatibility=manylinux_2_17 \
           --interpreter="${PYTHON}" \
           --target="${TARGET}"
 
-        uv pip install target/wheels/orjson*.whl
+        uv pip install ${CARGO_TARGET_DIR}/wheels/orjson*.whl
 
-        pytest -s -rxX -v -n 2 test
+        pytest -s -rxX -v -n 4 test
         ./integration/run thread
         ./integration/run http
         ./integration/run init
+
+        cp ${CARGO_TARGET_DIR}/wheels/orjson*.whl dist
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_amd64_${{ matrix.python.interpreter }}
-        path: target/wheels
+        path: dist
+        overwrite: true
+        retention-days: 1
+
+
+  manylinux_2_17_aarch64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [
+          {
+            cc: "clang",
+            cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
+            features: "no-panic,unstable-simd,yyjson",
+            ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
+            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings",
+            tag: "aarch64",
+            target: "aarch64-unknown-linux-gnu",
+          },
+        ]
+        python: [
+          { interpreter: 'python3.13', package: 'python3.13' },
+        ]
+    env:
+      PYTHON: "${{ matrix.python.interpreter }}"
+      PYTHON_PACKAGE: "${{ matrix.python.package }}"
+      TARGET: "${{ matrix.arch.target }}"
+      CC: "${{ matrix.arch.cc }}"
+      VENV: ".venv"
+      FEATURES: "${{ matrix.arch.features }}"
+      CFLAGS: "${{ matrix.arch.cflags }}"
+      LDFLAGS: "${{ matrix.arch.ldflags }}"
+      RUSTFLAGS: "${{ matrix.arch.rustflags }}"
+      CARGO_TARGET_DIR: "/tmp/orjson"
+    steps:
+
+    - name: cpuinfo
+      run: cat /proc/cpuinfo
+
+    - uses: actions/checkout@v4
+
+    - name: setup-qemu-container
+      uses: sandervocke/setup-qemu-container@v1
+      with:
+        container: registry.fedoraproject.org/fedora:42
+        arch: ${{ matrix.arch.tag }}
+        podman_args: "-v .:/orjson -v /tmp:/tmp --workdir /orjson"
+
+    - name: setup-shell-wrapper
+      uses: sandervocke/setup-shell-wrapper@v1
+
+    - name: Build and test
+      shell: wrap-shell {0}
+      env:
+        WRAP_SHELL: run-in-container.sh
+      run: |
+        set -eou pipefail
+
+        mkdir dist
+
+        export PATH="/root/.cargo/bin:/home/runner/work/orjson/orjson/.venv:/home/runner/.cargo/bin:$PATH"
+
+        ./script/install-fedora
+
+        source "${HOME}/.cargo/env"
+        source "${VENV}/bin/activate"
+
+        maturin build --release --strip \
+          --features="${FEATURES}" \
+          --compatibility=manylinux_2_17 \
+          --interpreter="${PYTHON}" \
+          --target="${TARGET}"
+
+        uv pip install ${CARGO_TARGET_DIR}/wheels/orjson*.whl
+
+        pytest -s -rxX -v -n 2 test
+
+        cp ${CARGO_TARGET_DIR}/wheels/orjson*.whl dist
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v4
+      with:
+        name: orjson_manylinux_2_17_aarch64_${{ matrix.python.interpreter }}
+        path: dist
         overwrite: true
         retention-days: 1
 
@@ -416,12 +533,13 @@ jobs:
     runs-on: ubuntu-24.04
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [
-      sdist,
-      manylinux_2_17_amd64,
-      musllinux_1_2,
-      manylinux_2_17_non_amd64,
       macos_universal2_aarch64,
       macos_universal2_amd64,
+      manylinux_2_17_aarch64,
+      manylinux_2_17_amd64,
+      manylinux_2_17_non_amd64,
+      musllinux_1_2,
+      sdist,
     ]
     steps:
       - uses: actions/download-artifact@v4

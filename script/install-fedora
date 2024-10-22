@@ -1,4 +1,6 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
+
+set -eou pipefail
 
 # export PYTHON=python3.11
 # export PYTHON_PACKAGE=python3.11
@@ -10,9 +12,9 @@
 export VENV="${VENV:-.venv}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
 
-sudo rm /etc/yum.repos.d/fedora-cisco-openh264.repo || true
+rm /etc/yum.repos.d/fedora-cisco-openh264.repo || true
 
-dnf install -y rustup clang lld "${PYTHON_PACKAGE}"
+dnf install --setopt=install_weak_deps=false -y rustup clang lld "${PYTHON_PACKAGE}"
 
 rustup-init --default-toolchain "${RUST_TOOLCHAIN}-${TARGET}" --profile minimal --component rust-src -y
 source "${HOME}/.cargo/env"

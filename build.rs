@@ -54,7 +54,10 @@ fn main() {
         }
     }
 
-    #[cfg(target_pointer_width = "64")]
+    #[cfg(all(
+        target_pointer_width = "64",
+        any(target_arch = "x86_64", target_arch = "aarch64")
+    ))]
     println!("cargo:rustc-cfg=feature=\"inline_int\"");
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
