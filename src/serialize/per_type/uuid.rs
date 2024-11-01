@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::serialize::buffer::SmallFixedBuffer;
 use crate::typeref::INT_ATTR_STR;
 use core::ffi::c_uchar;
 use serde::ser::{Serialize, Serializer};
-use std::io::Write;
-
-pub type UUIDBuffer = arrayvec::ArrayVec<u8, 36>;
 
 #[repr(transparent)]
 pub struct UUID {
@@ -18,7 +16,7 @@ impl UUID {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut UUIDBuffer) {
+    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) {
         let value: u128;
         {
             // test_uuid_immutable, test_uuid_int
@@ -37,19 +35,15 @@ impl UUID {
             };
             value = u128::from_le_bytes(buffer);
         }
-
-        let mut hexadecimal = arrayvec::ArrayVec::<u8, 32>::new();
-        write!(hexadecimal, "{:032x}", value).unwrap();
-
-        buf.try_extend_from_slice(&hexadecimal[..8]).unwrap();
-        buf.push(b'-');
-        buf.try_extend_from_slice(&hexadecimal[8..12]).unwrap();
-        buf.push(b'-');
-        buf.try_extend_from_slice(&hexadecimal[12..16]).unwrap();
-        buf.push(b'-');
-        buf.try_extend_from_slice(&hexadecimal[16..20]).unwrap();
-        buf.push(b'-');
-        buf.try_extend_from_slice(&hexadecimal[20..32]).unwrap();
+        unsafe {
+            debug_assert!(buf.len() == 0);
+            let len = uuid::Uuid::from_u128(value)
+                .hyphenated()
+                .encode_lower(buf.as_mut_slice())
+                .len();
+            buf.set_written(len);
+            debug_assert!(buf.len() == len);
+        }
     }
 }
 impl Serialize for UUID {
@@ -58,7 +52,7 @@ impl Serialize for UUID {
     where
         S: Serializer,
     {
-        let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
+        let mut buf = SmallFixedBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }

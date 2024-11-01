@@ -1,8 +1,9 @@
 use crate::opt::*;
 
+use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::{
-    DateTimeBuffer, DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
+    DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
@@ -1398,7 +1399,7 @@ impl Serialize for NumpyDatetime64Repr {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::new();
+        let mut buf = SmallFixedBuffer::new();
         let _ = self.write_buf(&mut buf, self.opts);
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }

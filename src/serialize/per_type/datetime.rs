@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
+use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
-use crate::serialize::per_type::datetimelike::{
-    DateTimeBuffer, DateTimeError, DateTimeLike, Offset,
-};
+use crate::serialize::per_type::datetimelike::{DateTimeError, DateTimeLike, Offset};
 #[cfg(Py_3_9)]
 use crate::typeref::ZONEINFO_TYPE;
 use crate::typeref::{CONVERT_METHOD_STR, DST_STR, NORMALIZE_METHOD_STR, UTCOFFSET_METHOD_STR};
@@ -43,7 +42,7 @@ impl Date {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut DateTimeBuffer) {
+    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
             let mut yearbuf = itoa::Buffer::new();
@@ -71,7 +70,7 @@ impl Serialize for Date {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::new();
+        let mut buf = SmallFixedBuffer::new();
         self.write_buf(&mut buf);
         serializer.serialize_unit_struct(str_from_slice!(buf.as_ptr(), buf.len()))
     }
@@ -95,7 +94,7 @@ impl Time {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut DateTimeBuffer) -> Result<(), TimeError> {
+    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) -> Result<(), TimeError> {
         if unsafe { (*(self.ptr as *mut pyo3_ffi::PyDateTime_Time)).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
@@ -120,7 +119,7 @@ impl Serialize for Time {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::new();
+        let mut buf = SmallFixedBuffer::new();
         if self.write_buf(&mut buf).is_err() {
             err!(SerializeError::DatetimeLibraryUnsupported)
         };
@@ -239,7 +238,7 @@ impl Serialize for DateTime {
     where
         S: Serializer,
     {
-        let mut buf = DateTimeBuffer::new();
+        let mut buf = SmallFixedBuffer::new();
         if self.write_buf(&mut buf, self.opts).is_err() {
             err!(SerializeError::DatetimeLibraryUnsupported)
         }

@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::*;
+use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::datetimelike::DateTimeLike;
 use crate::serialize::per_type::{
-    BoolSerializer, DataclassGenericSerializer, Date, DateTime, DateTimeBuffer, DefaultSerializer,
-    EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer, ListTupleSerializer,
-    NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time,
-    ZeroListSerializer, UUID,
+    BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer, EnumSerializer,
+    FloatSerializer, FragmentSerializer, IntSerializer, ListTupleSerializer, NoneSerializer,
+    NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, ZeroListSerializer,
+    UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
@@ -328,7 +329,7 @@ fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, S
 
 #[inline(never)]
 fn non_str_date(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
-    let mut buf = DateTimeBuffer::new();
+    let mut buf = SmallFixedBuffer::new();
     Date::new(key).write_buf(&mut buf);
     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
     Ok(CompactString::from(key_as_str))
@@ -339,7 +340,7 @@ fn non_str_datetime(
     key: *mut pyo3_ffi::PyObject,
     opts: crate::opt::Opt,
 ) -> Result<CompactString, SerializeError> {
-    let mut buf = DateTimeBuffer::new();
+    let mut buf = SmallFixedBuffer::new();
     let dt = DateTime::new(key, opts);
     if dt.write_buf(&mut buf, opts).is_err() {
         return Err(SerializeError::DatetimeLibraryUnsupported);
@@ -354,7 +355,7 @@ fn non_str_time(
     key: *mut pyo3_ffi::PyObject,
     opts: crate::opt::Opt,
 ) -> Result<CompactString, SerializeError> {
-    let mut buf = DateTimeBuffer::new();
+    let mut buf = SmallFixedBuffer::new();
     let time = Time::new(key, opts);
     if time.write_buf(&mut buf).is_err() {
         return Err(SerializeError::TimeHasTzinfo);
@@ -365,7 +366,7 @@ fn non_str_time(
 
 #[inline(never)]
 fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
-    let mut buf = arrayvec::ArrayVec::<u8, 36>::new();
+    let mut buf = SmallFixedBuffer::new();
     UUID::new(key).write_buf(&mut buf);
     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
     Ok(CompactString::from(key_as_str))

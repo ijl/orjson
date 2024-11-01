@@ -57,7 +57,6 @@ strict_provenance = []
 inline_int = []
 
 [dependencies]
-arrayvec = { version = "0.7", default-features = false, features = ["std", "serde"] }
 associative-cache = { version = "2", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
 compact_str = { version = "0.8", default-features = false, features = ["serde"] }
@@ -74,6 +73,7 @@ serde_json = { version = "1", default-features = false, features = ["std", "floa
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
 unwinding = { version = "=0.2.2", features = ["unwinder"], optional = true }
+uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 
 [build-dependencies]

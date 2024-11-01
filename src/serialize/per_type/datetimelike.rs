@@ -2,36 +2,10 @@
 
 use crate::opt::*;
 
+use crate::serialize::buffer::SmallFixedBuffer;
+
 pub enum DateTimeError {
     LibraryUnsupported,
-}
-
-#[repr(transparent)]
-pub struct DateTimeBuffer {
-    buf: arrayvec::ArrayVec<u8, 32>,
-}
-
-impl DateTimeBuffer {
-    pub fn new() -> DateTimeBuffer {
-        DateTimeBuffer {
-            buf: arrayvec::ArrayVec::<u8, 32>::new(),
-        }
-    }
-    pub fn push(&mut self, value: u8) {
-        self.buf.push(value);
-    }
-
-    pub fn extend_from_slice(&mut self, slice: &[u8]) {
-        self.buf.try_extend_from_slice(slice).unwrap();
-    }
-
-    pub fn as_ptr(&self) -> *const u8 {
-        self.buf.as_ptr()
-    }
-
-    pub fn len(&self) -> usize {
-        self.buf.len()
-    }
 }
 
 macro_rules! write_double_digit {
@@ -95,7 +69,7 @@ pub trait DateTimeLike {
     /// Write `self` to a buffer in RFC3339 format, using `opts` to
     /// customise if desired.
     #[inline(never)]
-    fn write_buf(&self, buf: &mut DateTimeBuffer, opts: Opt) -> Result<(), DateTimeError> {
+    fn write_buf(&self, buf: &mut SmallFixedBuffer, opts: Opt) -> Result<(), DateTimeError> {
         {
             let year = self.year();
             let mut yearbuf = itoa::Buffer::new();
@@ -124,8 +98,7 @@ pub trait DateTimeLike {
                 write_triple_digit!(buf, microsecond % 1_000);
                 // Don't support writing nanoseconds for now.
                 // If requested, something like the following should work,
-                // and the `DateTimeBuffer` type alias should be changed to
-                // have length 35.
+                // and `SmallFixedBuffer` needs at least length 35.
                 // let nanosecond = self.nanosecond();
                 // if nanosecond % 1_000 != 0 {
                 //     write_triple_digit!(buf, nanosecond % 1_000);
