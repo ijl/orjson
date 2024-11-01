@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.10.11
+
+### Changed
+
+- Improve performance of UUIDs.
+- Publish PyPI wheels with trusted publishing and PEP 740 attestations.
+- Include text of licenses for vendored dependencies.
 
 ## 3.10.10
 
