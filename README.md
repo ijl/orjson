@@ -1202,6 +1202,14 @@ level above this.
 
 No. `bytes` is the correct type for a serialized blob.
 
+### Will it support NDJSON or JSONL?
+
+No. [orjsonl](https://github.com/umarbutler/orjsonl) may be appropriate.
+
+### Will it support JSON5 or RJSON?
+
+No, it supports RFC 8259.
+
 ## Packaging
 
 To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.72

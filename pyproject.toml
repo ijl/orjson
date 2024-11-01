@@ -25,6 +25,7 @@ classifiers = [
 ]
 
 [project.urls]
+Documentation = "https://github.com/ijl/orjson"
 Changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
 
 [build-system]
@@ -58,3 +59,7 @@ known-first-party = ["orjson"]
 
 [tool.mypy]
 python_version = "3.8"
+
+[[tool.mypy.overrides]]
+module = ["dateutil", "pytz", "simplejson", "ujson"]
+ignore_missing_imports = true

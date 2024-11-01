@@ -51,10 +51,9 @@ unwind = ["unwinding"]
 yyjson = []
 
 # Features detected by build.rs. Do not specify.
+inline_int = []
 intrinsics = []
 optimize = []
-strict_provenance = []
-inline_int = []
 
 [dependencies]
 associative-cache = { version = "2", default-features = false }
@@ -72,7 +71,7 @@ serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
-unwinding = { version = "=0.2.2", features = ["unwinder"], optional = true }
+unwinding = { version = "=0.2.2", default-features = false, features = ["unwinder"], optional = true }
 uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 

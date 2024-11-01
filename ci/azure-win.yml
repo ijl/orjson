@@ -24,7 +24,7 @@ steps:
   env:
     CFLAGS: "-Os -flto"
     LDFLAGS: "-Wl,--as-needed"
-    RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -D warnings"
+    RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -D warnings"
     CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
     UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
 - script: python.exe -m pip install orjson --no-index --find-links=D:\a\1\s\target\wheels

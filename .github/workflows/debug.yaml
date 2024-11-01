@@ -10,8 +10,8 @@ jobs:
         profile: [
           { rust: "1.72", features: "" },
           { rust: "1.72", features: "--features=yyjson" },
-          { rust: "nightly-2024-09-25", features: "--features=yyjson,unstable-simd"},
-          { rust: "nightly-2024-09-25", features: "--features=avx512,yyjson,unstable-simd"},
+          { rust: "nightly-2024-09-25", features: "--features=yyjson,unstable-simd" },
+          { rust: "nightly-2024-09-25", features: "--features=avx512,yyjson,unstable-simd" },
         ]
         python: [
           { version: '3.13' },
@@ -27,12 +27,8 @@ jobs:
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.profile.rust }} --profile minimal -y
 
-    - name: cpuinfo
-      run: cat /proc/cpuinfo
-
     - uses: actions/setup-python@v5
       with:
-        allow-prereleases: true
         python-version: '${{ matrix.python.version }}'
 
     - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel

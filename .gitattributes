@@ -1,1 +1,3 @@
-include linguist-vendored
+include/pyo3/pyo3-build-config/**/* linguist-vendored
+include/pyo3/pyo3-ffi/**/* linguist-vendored
+include/yyjson/* linguist-vendored

@@ -1,7 +1,7 @@
 # Changelog
 
 
-### 3.10.10
+## 3.10.10
 
 ### Fixed
 
@@ -12,7 +12,7 @@
 - Publish aarch64 manylinux_2_17 wheel for 3.13 to PyPI.
 
 
-### 3.10.9
+## 3.10.9
 
 ### Fixed
 
@@ -20,7 +20,7 @@
 introduced in 3.10.8.
 
 
-### 3.10.8
+## 3.10.8
 
 ### Changed
 

@@ -1,8 +1,9 @@
 name: artifact
 on: push
 env:
-  RUST_TOOLCHAIN: "nightly-2024-09-25"
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  RUST_TOOLCHAIN: "nightly-2024-09-25"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   UV_LINK_MODE: "copy"
@@ -40,7 +41,7 @@ jobs:
 
     - run: python3 -m pip install --user -r test/requirements.txt -r integration/requirements.txt mypy
 
-    - run: pytest -s -rxX -v -n 4 test
+    - run: pytest -v test
       env:
         PYTHONMALLOC: "debug"
 
@@ -58,30 +59,29 @@ jobs:
         overwrite: true
         retention-days: 1
 
-  manylinux_2_17_amd64:
+  manylinux_amd64:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
+        python: [
+          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.12', package: 'python3.12', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17" },
+        ]
         arch: [
           {
             cc: "clang",
             cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
             features: "avx512,no-panic,unstable-simd,yyjson",
             ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
-            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings",
+            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z threads=4 -D warnings",
             tag: null,
             target: "x86_64-unknown-linux-gnu",
           },
-        ]
-        python: [
-          { interpreter: 'python3.13', package: 'python3.13' },
-          { interpreter: 'python3.12', package: 'python3.12' },
-          { interpreter: 'python3.11', package: 'python3.11' },
-          { interpreter: 'python3.10', package: 'python3.10' },
-          { interpreter: 'python3.9', package: 'python3.9' },
-          { interpreter: 'python3.8', package: 'python3.8' },
         ]
     env:
       PYTHON: "${{ matrix.python.interpreter }}"
@@ -94,6 +94,7 @@ jobs:
       LDFLAGS: "${{ matrix.arch.ldflags }}"
       RUSTFLAGS: "${{ matrix.arch.rustflags }}"
       CARGO_TARGET_DIR: "/tmp/orjson"
+      COMPATIBILITY: "${{ matrix.python.compatibility }}"
     steps:
 
     - name: cpuinfo
@@ -106,6 +107,7 @@ jobs:
       with:
         container: registry.fedoraproject.org/fedora:42
         arch: ${{ matrix.arch.tag }}
+        initial_delay: 5s
         podman_args: "-v .:/orjson -v /tmp:/tmp --workdir /orjson"
 
     - name: setup-shell-wrapper
@@ -128,13 +130,13 @@ jobs:
 
         maturin build --release --strip \
           --features="${FEATURES}" \
-          --compatibility=manylinux_2_17 \
+          --compatibility="${COMPATIBILITY}" \
           --interpreter="${PYTHON}" \
           --target="${TARGET}"
 
         uv pip install ${CARGO_TARGET_DIR}/wheels/orjson*.whl
 
-        pytest -s -rxX -v -n 4 test
+        pytest -v test
         ./integration/run thread
         ./integration/run http
         ./integration/run init
@@ -151,25 +153,25 @@ jobs:
         retention-days: 1
 
 
-  manylinux_2_17_aarch64:
+  manylinux_aarch64:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
+        python: [
+          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17" },
+        ]
         arch: [
           {
             cc: "clang",
             cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
             features: "no-panic,unstable-simd,yyjson",
             ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
-            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=4 -D warnings",
+            rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z threads=4 -D warnings",
             tag: "aarch64",
             target: "aarch64-unknown-linux-gnu",
           },
-        ]
-        python: [
-          { interpreter: 'python3.13', package: 'python3.13' },
         ]
     env:
       PYTHON: "${{ matrix.python.interpreter }}"
@@ -182,6 +184,7 @@ jobs:
       LDFLAGS: "${{ matrix.arch.ldflags }}"
       RUSTFLAGS: "${{ matrix.arch.rustflags }}"
       CARGO_TARGET_DIR: "/tmp/orjson"
+      COMPATIBILITY: "${{ matrix.python.compatibility }}"
     steps:
 
     - name: cpuinfo
@@ -212,18 +215,17 @@ jobs:
 
         ./script/install-fedora
 
-        source "${HOME}/.cargo/env"
         source "${VENV}/bin/activate"
 
         maturin build --release --strip \
           --features="${FEATURES}" \
-          --compatibility=manylinux_2_17 \
+          --compatibility="${COMPATIBILITY}" \
           --interpreter="${PYTHON}" \
           --target="${TARGET}"
 
         uv pip install ${CARGO_TARGET_DIR}/wheels/orjson*.whl
 
-        pytest -s -rxX -v -n 2 test
+        pytest -v test
 
         cp ${CARGO_TARGET_DIR}/wheels/orjson*.whl dist
 
@@ -231,12 +233,12 @@ jobs:
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_manylinux_2_17_aarch64_${{ matrix.python.interpreter }}
+        name: orjson_manylinux_aarch64_${{ matrix.python.interpreter }}
         path: dist
         overwrite: true
         retention-days: 1
 
-  musllinux_1_2:
+  musllinux:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -272,7 +274,7 @@ jobs:
         CC: "gcc"
         CFLAGS: "-Os"
         LDFLAGS: "-Wl,--as-needed"
-        RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=2 -D warnings -C target-feature=-crt-static"
+        RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
         rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
@@ -301,18 +303,18 @@ jobs:
           venv/bin/pip install -U pip wheel
           venv/bin/pip install -r test/requirements.txt
           venv/bin/pip install orjson --no-index --find-links dist/ --force-reinstall
-          venv/bin/python -m pytest -s -rxX -v -n 2 test
+          venv/bin/python -m pytest -v test
 
     - name: Store wheels
       if: "startsWith(github.ref, 'refs/tags/')"
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_musllinux_1_2_${{ matrix.platform.arch }}_${{ matrix.python.version }}
+        name: orjson_musllinux_${{ matrix.platform.arch }}_${{ matrix.python.version }}
         path: dist
         overwrite: true
         retention-days: 1
 
-  manylinux_2_17_non_amd64:
+  manylinux_non_amd64:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -385,7 +387,7 @@ jobs:
         overwrite: true
         retention-days: 1
 
-  macos_universal2_aarch64:
+  macos_aarch64:
     runs-on: macos-14
     strategy:
       fail-fast: false
@@ -402,7 +404,7 @@ jobs:
       LDFLAGS: "-Wl,--as-needed"
       CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
       CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
-      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=3 -D warnings"
+      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z threads=3 -D warnings"
       PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     steps:
 
@@ -441,7 +443,7 @@ jobs:
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
 
-    - run: pytest -s -rxX -v -n 3 test
+    - run: pytest -v test
       env:
         PYTHONMALLOC: "debug"
 
@@ -458,7 +460,7 @@ jobs:
         overwrite: true
         retention-days: 1
 
-  macos_universal2_amd64:
+  macos_amd64:
     runs-on: macos-13
     strategy:
       fail-fast: false
@@ -473,7 +475,7 @@ jobs:
       LDFLAGS: "-Wl,--as-needed"
       CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -march=x86-64-v2 -mtune=generic"
       CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -flto=full -mcpu=apple-m1 -mtune=generic"
-      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z virtual-function-elimination -Z threads=3 -D warnings"
+      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z threads=3 -D warnings"
       PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     steps:
 
@@ -511,7 +513,7 @@ jobs:
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
 
-    - run: pytest -s -rxX -v -n 3 test
+    - run: pytest -v test
       env:
         PYTHONMALLOC: "debug"
 
@@ -533,29 +535,39 @@ jobs:
     runs-on: ubuntu-24.04
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [
-      macos_universal2_aarch64,
-      macos_universal2_amd64,
-      manylinux_2_17_aarch64,
-      manylinux_2_17_amd64,
-      manylinux_2_17_non_amd64,
-      musllinux_1_2,
+      macos_aarch64,
+      macos_amd64,
+      manylinux_aarch64,
+      manylinux_amd64,
+      manylinux_non_amd64,
+      musllinux,
       sdist,
     ]
+    environment:
+      name: pypi
+      url: https://pypi.org/p/orjson
+    permissions:
+      id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: orjson_*
           merge-multiple: true
+          name: python-package-distributions
+          path: dist/
+          pattern: orjson_*
+
+      - run: ls -1 dist/
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pip "maturin>=1,<2"
-      - run: ls -1 .
-      - name: deploy wheel
-        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.whl
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      - name: deploy sdist
-        run: maturin upload --skip-existing --username "$MATURIN_USERNAME" *.tar.gz
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+          packages-dir: dist
+          repository-url: https://github.com/ijl/orjson
+          skip-existing: true
+          user: ijl
+          verbose: true

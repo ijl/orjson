@@ -23,7 +23,8 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
 
-    for cfg in pyo3_build_config::get().build_script_outputs() {
+    let python_config = pyo3_build_config::get();
+    for cfg in python_config.build_script_outputs() {
         println!("{cfg}");
     }
 
@@ -33,10 +34,6 @@ fn main() {
 
     if let Some(true) = version_check::supports_feature("optimize_attribute") {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
-    }
-
-    if let Some(true) = version_check::supports_feature("strict_provenance") {
-        println!("cargo:rustc-cfg=feature=\"strict_provenance\"");
     }
 
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
