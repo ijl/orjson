@@ -71,6 +71,7 @@ jobs:
           { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17" },
           { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17" },
           { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.8', package: 'python3.8', compatibility: "manylinux_2_17" },
         ]
         arch: [
           {
@@ -552,7 +553,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          name: python-package-distributions
           path: dist/
           pattern: orjson_*
 
@@ -567,7 +567,5 @@ jobs:
         with:
           attestations: true
           packages-dir: dist
-          repository-url: https://github.com/ijl/orjson
           skip-existing: true
-          user: ijl
           verbose: true
