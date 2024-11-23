@@ -3,7 +3,7 @@ on: push
 env:
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2024-09-25"
+  RUST_TOOLCHAIN: "nightly-2024-11-22"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   UV_LINK_MODE: "copy"
@@ -11,6 +11,7 @@ jobs:
 
   sdist:
     runs-on: ubuntu-22.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
     env:
@@ -77,7 +78,7 @@ jobs:
           {
             cc: "clang",
             cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
-            features: "avx512,no-panic,unstable-simd,yyjson",
+            features: "avx512,unstable-simd,yyjson",
             ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
             rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z threads=4 -D warnings",
             tag: null,
@@ -85,17 +86,17 @@ jobs:
           },
         ]
     env:
+      CARGO_TARGET_DIR: "/tmp/orjson"
+      CC: "${{ matrix.arch.cc }}"
+      CFLAGS: "${{ matrix.arch.cflags }}"
+      COMPATIBILITY: "${{ matrix.python.compatibility }}"
+      FEATURES: "${{ matrix.arch.features }}"
+      LDFLAGS: "${{ matrix.arch.ldflags }}"
       PYTHON: "${{ matrix.python.interpreter }}"
       PYTHON_PACKAGE: "${{ matrix.python.package }}"
-      TARGET: "${{ matrix.arch.target }}"
-      CC: "${{ matrix.arch.cc }}"
-      VENV: ".venv"
-      FEATURES: "${{ matrix.arch.features }}"
-      CFLAGS: "${{ matrix.arch.cflags }}"
-      LDFLAGS: "${{ matrix.arch.ldflags }}"
       RUSTFLAGS: "${{ matrix.arch.rustflags }}"
-      CARGO_TARGET_DIR: "/tmp/orjson"
-      COMPATIBILITY: "${{ matrix.python.compatibility }}"
+      TARGET: "${{ matrix.arch.target }}"
+      VENV: ".venv"
     steps:
 
     - name: cpuinfo
@@ -167,7 +168,7 @@ jobs:
           {
             cc: "clang",
             cflags: "-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm",
-            features: "no-panic,unstable-simd,yyjson",
+            features: "unstable-simd,yyjson",
             ldflags: "-fuse-ld=lld -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow",
             rustflags: "-C linker=clang -C link-arg=-fuse-ld=lld -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z threads=4 -D warnings",
             tag: "aarch64",
@@ -175,17 +176,17 @@ jobs:
           },
         ]
     env:
+      CARGO_TARGET_DIR: "/tmp/orjson"
+      CC: "${{ matrix.arch.cc }}"
+      CFLAGS: "${{ matrix.arch.cflags }}"
+      COMPATIBILITY: "${{ matrix.python.compatibility }}"
+      FEATURES: "${{ matrix.arch.features }}"
+      LDFLAGS: "${{ matrix.arch.ldflags }}"
       PYTHON: "${{ matrix.python.interpreter }}"
       PYTHON_PACKAGE: "${{ matrix.python.package }}"
-      TARGET: "${{ matrix.arch.target }}"
-      CC: "${{ matrix.arch.cc }}"
-      VENV: ".venv"
-      FEATURES: "${{ matrix.arch.features }}"
-      CFLAGS: "${{ matrix.arch.cflags }}"
-      LDFLAGS: "${{ matrix.arch.ldflags }}"
       RUSTFLAGS: "${{ matrix.arch.rustflags }}"
-      CARGO_TARGET_DIR: "/tmp/orjson"
-      COMPATIBILITY: "${{ matrix.python.compatibility }}"
+      TARGET: "${{ matrix.arch.target }}"
+      VENV: ".venv"
     steps:
 
     - name: cpuinfo
@@ -241,6 +242,7 @@ jobs:
 
   musllinux:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -256,11 +258,19 @@ jobs:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
             platform: linux/arm64
-            features: no-panic,unstable-simd,unwind,yyjson
+            features: unstable-simd,unwind,yyjson
+          - target: armv7-unknown-linux-musleabihf
+            arch: armv7l
+            platform: linux/arm/v7
+            features: unstable-simd,yyjson
           - target: x86_64-unknown-linux-musl
             arch: x86_64
             platform: linux/amd64
-            features: avx512,no-panic,unstable-simd,unwind,yyjson
+            features: avx512,unstable-simd,unwind,yyjson
+          - target: i686-unknown-linux-musl
+            arch: i686
+            platform: linux/386
+            features: unstable-simd,unwind,yyjson
     steps:
     - uses: actions/checkout@v4
 
@@ -317,6 +327,7 @@ jobs:
 
   manylinux_non_amd64:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -331,28 +342,35 @@ jobs:
           {
             arch: 'aarch64',
             cflags: '-Os -flto=full -fstrict-aliasing',
-            features: 'no-panic,unstable-simd,yyjson',
+            features: 'unstable-simd,yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'aarch64-unknown-linux-gnu',
           },
           {
+            arch: 'i686',
+            cflags: '-Os -flto -fstrict-aliasing',
+            features: 'unstable-simd,yyjson',
+            rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
+            target: 'i686-unknown-linux-gnu',
+          },
+          {
             arch: 'armv7',
             cflags: '-Os -flto=full -fstrict-aliasing',
-            features: 'no-panic,yyjson', # no SIMD
+            features: 'yyjson', # no SIMD
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C opt-level=s',
             target: 'armv7-unknown-linux-gnueabihf',
           },
           {
             arch: 'ppc64le',
             cflags: '-Os -flto=full -fstrict-aliasing',
-            features: 'no-panic,unstable-simd,yyjson',
+            features: 'unstable-simd,yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
           },
           {
             arch: 's390x',
             cflags: '-Os -flto=full -fstrict-aliasing -march=z10',
-            features: 'no-panic,yyjson',
+            features: 'yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings -C target-cpu=z10',
             target: 's390x-unknown-linux-gnu',
           },
@@ -389,7 +407,8 @@ jobs:
         retention-days: 1
 
   macos_aarch64:
-    runs-on: macos-14
+    runs-on: macos-15
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -414,7 +433,6 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: "${{ matrix.python.version }}"
-        allow-prereleases: true
 
     - uses: dtolnay/rust-toolchain@master
       with:
@@ -426,6 +444,8 @@ jobs:
       run: |
         cargo fetch --target aarch64-apple-darwin &
 
+        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
         uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
@@ -435,11 +455,12 @@ jobs:
 
     - name: maturin
       run: |
-        PATH=$HOME/.cargo/bin:$PATH \
+        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
         maturin build --release --strip \
-          --features=no-panic,unstable-simd,yyjson \
+          --features=unstable-simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -463,6 +484,7 @@ jobs:
 
   macos_amd64:
     runs-on: macos-13
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -496,6 +518,8 @@ jobs:
       run: |
         cargo fetch --target aarch64-apple-darwin &
 
+        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
         uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
@@ -505,11 +529,12 @@ jobs:
 
     - name: maturin
       run: |
-        PATH=$HOME/.cargo/bin:$PATH \
+        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
+
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
         maturin build --release --strip \
-          --features=no-panic,unstable-simd,yyjson \
+          --features=unstable-simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -531,9 +556,75 @@ jobs:
         overwrite: true
         retention-days: 1
 
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.13' },
+          { version: '3.12' },
+          { version: '3.11' },
+          { version: '3.10' },
+          { version: '3.9' },
+          { version: '3.8' },
+        ]
+        platform: [
+          { arch: "x64", target: "x86_64-pc-windows-msvc" },
+          { arch: "x86", target: "i686-pc-windows-msvc" },
+        ]
+    env:
+      CFLAGS: "-Os"
+      LDFLAGS: "-Wl,--as-needed"
+      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -D warnings"
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "${{ matrix.python.version }}"
+        architecture: "${{ matrix.platform.arch }}"
+
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: "${{ env.RUST_TOOLCHAIN }}"
+        targets: "${{ matrix.platform.target }}"
+        components: "rust-src"
+
+    - name: Build environment
+      run: |
+        cargo fetch --target "${{ matrix.platform.target }}" &
+
+        python.exe -m pip install --upgrade pip "maturin>=1,<2" wheel
+        python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
+
+        mkdir .cargo
+        cp ci\config.toml .cargo\config.toml
+
+    - name: maturin
+      run: |
+        maturin.exe build --release --strip --features=unstable-simd,yyjson --target="${{ matrix.platform.target }}"
+        python.exe -m pip install orjson --no-index --find-links target\wheels
+
+    - run: python.exe -m pytest -s -rxX -v test
+      env:
+        PYTHONMALLOC: "debug"
+
+    - name: Store wheels
+      if: "startsWith(github.ref, 'refs/tags/')"
+      uses: actions/upload-artifact@v4
+      with:
+        name: orjson_windows_${{ matrix.platform.arch }}_${{ matrix.python.version }}
+        path: target\wheels
+        overwrite: true
+        retention-days: 1
+
   pypi:
     name: PyPI
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: "startsWith(github.ref, 'refs/tags/')"
     needs: [
       macos_aarch64,
@@ -543,6 +634,7 @@ jobs:
       manylinux_non_amd64,
       musllinux,
       sdist,
+      windows,
     ]
     environment:
       name: pypi

@@ -51,11 +51,10 @@ fn main() {
         }
     }
 
-    #[cfg(all(
-        target_pointer_width = "64",
-        any(target_arch = "x86_64", target_arch = "aarch64")
-    ))]
-    println!("cargo:rustc-cfg=feature=\"inline_int\"");
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    if let Some(64) = python_config.pointer_width {
+        println!("cargo:rustc-cfg=feature=\"inline_int\"");
+    }
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
         if env::var("CARGO_FEATURE_YYJSON").is_ok() {

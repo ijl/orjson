@@ -38,11 +38,6 @@ unstable-simd = []
 # Include runtime-detected functions that use AVX512VL. Requires unstable-simd and amd64.
 avx512 = []
 
-no-panic = [
-    "itoa/no-panic",
-    "ryu/no-panic",
-]
-
 # Avoid bundling libgcc on musl.
 unwind = ["unwinding"]
 
@@ -71,7 +66,7 @@ serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
-unwinding = { version = "=0.2.2", default-features = false, features = ["unwinder"], optional = true }
+unwinding = { version = "^0.2.4", default-features = false, features = ["unwinder"], optional = true }
 uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 
