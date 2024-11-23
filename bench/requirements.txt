@@ -1,9 +1,6 @@
-memory-profiler
+memory-profiler; python_version<"3.13"
 pandas; python_version<"3.13"
 pytest-benchmark
 pytest-random-order
-python-rapidjson
 seaborn; python_version<"3.13"
-simplejson
 tabulate
-ujson

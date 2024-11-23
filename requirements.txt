@@ -3,4 +3,4 @@
 -r test/requirements.txt
 maturin
 mypy==1.13.0
-ruff==0.7.1
+ruff==0.8.0

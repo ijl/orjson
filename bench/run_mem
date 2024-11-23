@@ -19,12 +19,6 @@ if lib_name == "json":
     from json import dumps, loads
 elif lib_name == "orjson":
     from orjson import dumps, loads
-elif lib_name == "rapidjson":
-    from rapidjson import dumps, loads
-elif lib_name == "simplejson":
-    from simplejson import dumps, loads
-elif lib_name == "ujson":
-    from ujson import dumps, loads
 else:
     raise NotImplementedError
 

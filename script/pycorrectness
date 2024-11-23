@@ -8,23 +8,17 @@ import lzma
 import os
 from pathlib import Path
 
-import rapidjson
-import simplejson
-import ujson
 from tabulate import tabulate
 
 import orjson
 
 dirname = os.path.join(os.path.dirname(__file__), "..", "data")
 
-LIBRARIES = ["orjson", "ujson", "rapidjson", "simplejson", "json"]
+LIBRARIES = ["orjson", "json"]
 
 
 LIBRARY_FUNC_MAP = {
     "orjson": orjson.loads,
-    "ujson": ujson.loads,
-    "rapidjson": rapidjson.loads,
-    "simplejson": simplejson.loads,
     "json": json.loads,
 }
 

@@ -8,9 +8,6 @@ import os
 from pathlib import Path
 from timeit import timeit
 
-import rapidjson
-import simplejson
-import ujson
 from tabulate import tabulate
 
 import orjson
@@ -34,7 +31,7 @@ data = read_fixture_obj("twitter.json.xz")
 
 headers = ("Library", "unsorted (ms)", "sorted (ms)", "vs. orjson")
 
-LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "json")
 
 ITERATIONS = 500
 
@@ -54,33 +51,6 @@ for lib_name in LIBRARIES:
         )
         time_sorted = timeit(
             lambda: json.dumps(data, sort_keys=True).encode("utf-8"),
-            number=ITERATIONS,
-        )
-    elif lib_name == "simplejson":
-        time_unsorted = timeit(
-            lambda: simplejson.dumps(data).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        time_sorted = timeit(
-            lambda: simplejson.dumps(data, sort_keys=True).encode("utf-8"),
-            number=ITERATIONS,
-        )
-    elif lib_name == "ujson":
-        time_unsorted = timeit(
-            lambda: ujson.dumps(data).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        time_sorted = timeit(
-            lambda: ujson.dumps(data, sort_keys=True).encode("utf-8"),
-            number=ITERATIONS,
-        )
-    elif lib_name == "rapidjson":
-        time_unsorted = timeit(
-            lambda: rapidjson.dumps(data).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        time_sorted = timeit(
-            lambda: rapidjson.dumps(data, sort_keys=True).encode("utf-8"),
             number=ITERATIONS,
         )
     elif lib_name == "orjson":

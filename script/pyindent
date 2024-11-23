@@ -9,9 +9,6 @@ import sys
 from pathlib import Path
 from timeit import timeit
 
-import rapidjson
-import simplejson
-import ujson
 from tabulate import tabulate
 
 import orjson
@@ -37,7 +34,7 @@ data = read_fixture_obj(f"{filename}.json.xz")
 
 headers = ("Library", "compact (ms)", "pretty (ms)", "vs. orjson")
 
-LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "json")
 
 output_in_kib_compact = len(orjson.dumps(data)) / 1024
 output_in_kib_pretty = len(orjson.dumps(data, option=orjson.OPT_INDENT_2)) / 1024
@@ -73,30 +70,6 @@ for lib_name in LIBRARIES:
             number=ITERATIONS,
         )
         correct = test_correctness(json.dumps(data, indent=2).encode("utf-8"))
-    elif lib_name == "simplejson":
-        time_compact = timeit(
-            lambda: simplejson.dumps(data).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        time_pretty = timeit(
-            lambda: simplejson.dumps(data, indent=2).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        correct = test_correctness(simplejson.dumps(data, indent=2).encode("utf-8"))
-    elif lib_name == "ujson":
-        time_compact = timeit(
-            lambda: ujson.dumps(data).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        time_pretty = timeit(
-            lambda: ujson.dumps(data, indent=2).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        correct = test_correctness(ujson.dumps(data, indent=2).encode("utf-8"))
-    elif lib_name == "rapidjson":
-        time_compact = timeit(lambda: rapidjson.dumps(data), number=ITERATIONS)
-        time_pretty = timeit(lambda: rapidjson.dumps(data, indent=2), number=ITERATIONS)
-        correct = test_correctness(rapidjson.dumps(data, indent=2))
     elif lib_name == "orjson":
         time_compact = timeit(lambda: orjson.dumps(data), number=ITERATIONS)
         time_pretty = timeit(

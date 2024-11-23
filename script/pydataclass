@@ -8,9 +8,6 @@ import os
 from timeit import timeit
 from typing import List
 
-import rapidjson
-import simplejson
-import ujson
 from tabulate import tabulate
 
 import orjson
@@ -50,7 +47,7 @@ def default(__obj):
 
 headers = ("Library", "dict (ms)", "dataclass (ms)", "vs. orjson")
 
-LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "json")
 
 ITERATIONS = 100
 
@@ -70,34 +67,6 @@ for lib_name in LIBRARIES:
         )
         as_dataclass = timeit(
             lambda: json.dumps(objects_as_dataclass, default=default).encode("utf-8"),
-            number=ITERATIONS,
-        )
-    elif lib_name == "simplejson":
-        as_dict = timeit(
-            lambda: simplejson.dumps(objects_as_dict).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        as_dataclass = timeit(
-            lambda: simplejson.dumps(objects_as_dataclass, default=default).encode(
-                "utf-8"
-            ),
-            number=ITERATIONS,
-        )
-    elif lib_name == "ujson":
-        as_dict = timeit(
-            lambda: ujson.dumps(objects_as_dict).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        as_dataclass = None
-    elif lib_name == "rapidjson":
-        as_dict = timeit(
-            lambda: rapidjson.dumps(objects_as_dict).encode("utf-8"),
-            number=ITERATIONS,
-        )
-        as_dataclass = timeit(
-            lambda: rapidjson.dumps(objects_as_dataclass, default=default).encode(
-                "utf-8"
-            ),
             number=ITERATIONS,
         )
     elif lib_name == "orjson":

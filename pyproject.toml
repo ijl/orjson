@@ -61,5 +61,5 @@ known-first-party = ["orjson"]
 python_version = "3.8"
 
 [[tool.mypy.overrides]]
-module = ["dateutil", "pytz", "simplejson", "ujson"]
+module = ["dateutil", "pytz"]
 ignore_missing_imports = true

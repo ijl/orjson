@@ -13,7 +13,7 @@ from tabulate import tabulate
 
 import orjson
 
-LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "json")
 
 
 def aggregate():

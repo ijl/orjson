@@ -11,8 +11,6 @@ from timeit import timeit
 
 import numpy
 import psutil
-import rapidjson
-import simplejson
 from memory_profiler import memory_usage
 from tabulate import tabulate
 
@@ -71,24 +69,13 @@ def default(__obj):
 
 headers = ("Library", "Latency (ms)", "RSS diff (MiB)", "vs. orjson")
 
-LIBRARIES = ("orjson", "ujson", "rapidjson", "simplejson", "json")
+LIBRARIES = ("orjson", "json")
 
 ITERATIONS = 10
 
 
 def orjson_dumps():
     return orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
-
-
-ujson_dumps = None
-
-
-def rapidjson_dumps():
-    return rapidjson.dumps(array, default=default).encode("utf-8")
-
-
-def simplejson_dumps():
-    return simplejson.dumps(array, default=default).encode("utf-8")
 
 
 def json_dumps():
