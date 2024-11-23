@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.10.12
+
+### Changed
+
+- Publish PyPI manylinux i686 wheels.
+- Publish PyPI musllinux i686 and arm7l wheels.
+- Publish PyPI macOS wheels for Python 3.10 or later built on macOS 15.
+- Publish PyPI Windows wheels using trusted publishing.
+
+
 ## 3.10.11
 
 ### Changed
@@ -7,6 +17,7 @@
 - Improve performance of UUIDs.
 - Publish PyPI wheels with trusted publishing and PEP 740 attestations.
 - Include text of licenses for vendored dependencies.
+
 
 ## 3.10.10
 
