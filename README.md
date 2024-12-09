@@ -503,9 +503,9 @@ required to serialize `uuid.UUID` instances. For more, see
 
 ##### OPT_SORT_KEYS
 
-Serialize `dict` keys in sorted order. The default is to serialize in an
-unspecified order. This is equivalent to `sort_keys=True` in the standard
-library.
+Serialize `dict` keys in sorted order, equivalent to `sort_keys=True` in
+the standard library. The orjson default behaviour is to serialize in an
+unspecified order.
 
 This can be used to ensure the order is deterministic for hashing or tests.
 It has a substantial performance penalty and is not recommended in general.
