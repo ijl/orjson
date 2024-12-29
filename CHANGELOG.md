@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.10.13
+
+### Changed
+
+- Fix compatibility with maturin introducing a breaking change in 1.8.0 and
+specify a fixed version of maturin. Projects relying on any previous version
+being buildable from source by end users (via PEP 517) must upgrade to at
+least this version.
+
+
 ## 3.10.12
 
 ### Changed
