@@ -1,5 +1,6 @@
 [project]
 name = "orjson"
+version = "3.10.12"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.8"
 classifiers = [
@@ -30,7 +31,7 @@ Changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin>=1,<2"]
+requires = ["maturin==1.7.8"]
 
 [tool.maturin]
 python-source = "pysrc"

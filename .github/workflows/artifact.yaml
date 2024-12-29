@@ -24,7 +24,7 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin==1.7.8" wheel
 
     - name: Vendor dependencies
       run: |
@@ -287,6 +287,7 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z threads=2 -D warnings -C target-feature=-crt-static"
       with:
+        maturin-version: 1.7.8
         rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
         target: "${{ matrix.platform.target }}"
@@ -391,6 +392,7 @@ jobs:
         LDFLAGS: "-Wl,--as-needed"
         RUSTFLAGS: "${{ matrix.target.rustflags }}"
       with:
+        maturin-version: 1.7.8
         target: "${{ matrix.target.target }}"
         rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
@@ -448,7 +450,7 @@ jobs:
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
-        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+        uv pip install --upgrade "maturin==1.7.8" -r test/requirements.txt -r integration/requirements.txt
 
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -522,7 +524,7 @@ jobs:
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
-        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+        uv pip install --upgrade "maturin==1.7.8" -r test/requirements.txt -r integration/requirements.txt
 
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -597,7 +599,7 @@ jobs:
       run: |
         cargo fetch --target "${{ matrix.platform.target }}" &
 
-        python.exe -m pip install --upgrade pip "maturin>=1,<2" wheel
+        python.exe -m pip install --upgrade pip "maturin==1.7.8" wheel
         python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
 
         mkdir .cargo
