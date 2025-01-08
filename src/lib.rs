@@ -22,6 +22,7 @@ extern crate unwinding;
 #[macro_use]
 mod util;
 
+mod alloc;
 mod deserialize;
 mod ffi;
 mod opt;
