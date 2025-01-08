@@ -9,7 +9,7 @@ try:
 except ImportError:
     pandas = None  # type: ignore
 
-from .util import read_fixture_bytes
+from .util import needs_data, read_fixture_bytes
 
 
 class TestFragment:
@@ -99,6 +99,7 @@ class TestFragmentPandas:
         )
 
 
+@needs_data
 class TestFragmentParsing:
     def _run_test(self, filename: str):
         data = read_fixture_bytes(filename, "parsing")

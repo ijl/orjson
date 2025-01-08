@@ -4,7 +4,7 @@ set -eou pipefail
 
 to_lint="./bench/*.py ./pysrc/orjson/__init__.pyi ./test/*.py script/pydataclass
 script/pysort script/pynumpy script/pynonstr script/pycorrectness script/graph integration/init
-integration/wsgi.py integration/typestubs.py integration/thread"
+integration/wsgi.py integration/typestubs.py integration/thread script/check-version"
 
 ruff check ${to_lint} --fix
 ruff format ${to_lint}

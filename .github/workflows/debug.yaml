@@ -8,9 +8,9 @@ jobs:
       fail-fast: false
       matrix:
         profile: [
-          { rust: "1.72", features: "" },
-          { rust: "1.72", features: "--features=yyjson" },
-          { rust: "nightly-2024-11-22", features: "--features=avx512,yyjson,unstable-simd" },
+          { rust: "1.82", features: "" },
+          { rust: "1.82", features: "--features=yyjson" },
+          { rust: "nightly-2025-01-07", features: "--features=avx512,yyjson,unstable-simd" },
         ]
         python: [
           { version: '3.13' },
@@ -30,7 +30,7 @@ jobs:
       with:
         python-version: '${{ matrix.python.version }}'
 
-    - run: python -m pip install --user --upgrade pip "maturin==1.7.8" wheel
+    - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
     - uses: actions/checkout@v4
 

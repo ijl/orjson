@@ -2,9 +2,10 @@
 
 import orjson
 
-from .util import read_fixture_obj
+from .util import needs_data, read_fixture_obj
 
 
+@needs_data
 class TestDictSortKeys:
     # citm_catalog is already sorted
     def test_twitter_sorted(self):

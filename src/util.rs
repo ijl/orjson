@@ -305,3 +305,9 @@ macro_rules! popcnt {
         core::mem::transmute::<u32, i32>($val).count_ones() as usize
     };
 }
+
+macro_rules! unreachable_unchecked {
+    () => {
+        unsafe { core::hint::unreachable_unchecked() }
+    };
+}

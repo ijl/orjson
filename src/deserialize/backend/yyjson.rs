@@ -85,8 +85,8 @@ pub(crate) fn deserialize(
                 ElementType::Null => parse_none(),
                 ElementType::True => parse_true(),
                 ElementType::False => parse_false(),
-                ElementType::Array => unreachable!(),
-                ElementType::Object => unreachable!(),
+                ElementType::Array => unreachable_unchecked!(),
+                ElementType::Object => unreachable_unchecked!(),
             };
             unsafe { yyjson_doc_free(doc) };
             Ok(pyval)
@@ -149,7 +149,7 @@ impl ElementType {
             TAG_FALSE => Self::False,
             TAG_ARRAY => Self::Array,
             TAG_OBJECT => Self::Object,
-            _ => unreachable!(),
+            _ => unreachable_unchecked!(),
         }
     }
 }
@@ -221,8 +221,8 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::Null => parse_none(),
                     ElementType::True => parse_true(),
                     ElementType::False => parse_false(),
-                    ElementType::Array => unreachable!(),
-                    ElementType::Object => unreachable!(),
+                    ElementType::Array => unreachable_unchecked!(),
+                    ElementType::Object => unreachable_unchecked!(),
                 };
                 append_to_list!(dptr, pyval.as_ptr());
             }
@@ -283,8 +283,8 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::Null => parse_none(),
                     ElementType::True => parse_true(),
                     ElementType::False => parse_false(),
-                    ElementType::Array => unreachable!(),
-                    ElementType::Object => unreachable!(),
+                    ElementType::Array => unreachable_unchecked!(),
+                    ElementType::Object => unreachable_unchecked!(),
                 };
                 add_to_dict!(dict, pykey, pyval.as_ptr());
                 reverse_pydict_incref!(pykey);

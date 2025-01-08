@@ -205,27 +205,32 @@ fn _init_typerefs_impl() -> bool {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_json_exc() -> *mut PyObject {
-    let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
-    let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char);
-    let res = pyo3_ffi::PyErr_NewException(
-        "orjson.JSONDecodeError\0".as_ptr() as *const c_char,
-        ptr,
-        null_mut(),
-    );
-    Py_DECREF(ptr);
-    Py_DECREF(module_dict);
-    Py_DECREF(module);
-    Py_INCREF(res);
-    res
+    unsafe {
+        let module = PyImport_ImportModule("json\0".as_ptr() as *const c_char);
+        let module_dict = PyObject_GenericGetDict(module, null_mut());
+        let ptr =
+            PyMapping_GetItemString(module_dict, "JSONDecodeError\0".as_ptr() as *const c_char);
+        let res = pyo3_ffi::PyErr_NewException(
+            "orjson.JSONDecodeError\0".as_ptr() as *const c_char,
+            ptr,
+            null_mut(),
+        );
+        Py_DECREF(ptr);
+        Py_DECREF(module_dict);
+        Py_DECREF(module);
+        Py_INCREF(res);
+        res
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_numpy_type(numpy_module_dict: *mut PyObject, np_type: &str) -> *mut PyTypeObject {
-    let ptr = PyMapping_GetItemString(numpy_module_dict, np_type.as_ptr() as *const c_char);
-    Py_XDECREF(ptr);
-    ptr as *mut PyTypeObject
+    unsafe {
+        let ptr = PyMapping_GetItemString(numpy_module_dict, np_type.as_ptr() as *const c_char);
+        Py_XDECREF(ptr);
+        ptr as *mut PyTypeObject
+    }
 }
 
 #[cold]
@@ -263,86 +268,102 @@ pub fn load_numpy_types() -> Box<Option<NonNull<NumpyTypes>>> {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_field_type() -> *mut PyTypeObject {
-    let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
-    let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "_FIELD\0".as_ptr() as *const c_char)
-        as *mut PyTypeObject;
-    Py_DECREF(module_dict);
-    Py_DECREF(module);
-    ptr
+    unsafe {
+        let module = PyImport_ImportModule("dataclasses\0".as_ptr() as *const c_char);
+        let module_dict = PyObject_GenericGetDict(module, null_mut());
+        let ptr = PyMapping_GetItemString(module_dict, "_FIELD\0".as_ptr() as *const c_char)
+            as *mut PyTypeObject;
+        Py_DECREF(module_dict);
+        Py_DECREF(module);
+        ptr
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_enum_type() -> *mut PyTypeObject {
-    let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
-    let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "EnumMeta\0".as_ptr() as *const c_char)
-        as *mut PyTypeObject;
-    Py_DECREF(module_dict);
-    Py_DECREF(module);
-    ptr
+    unsafe {
+        let module = PyImport_ImportModule("enum\0".as_ptr() as *const c_char);
+        let module_dict = PyObject_GenericGetDict(module, null_mut());
+        let ptr = PyMapping_GetItemString(module_dict, "EnumMeta\0".as_ptr() as *const c_char)
+            as *mut PyTypeObject;
+        Py_DECREF(module_dict);
+        Py_DECREF(module);
+        ptr
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_uuid_type() -> *mut PyTypeObject {
-    let uuid_mod = PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
-    let uuid_mod_dict = PyObject_GenericGetDict(uuid_mod, null_mut());
-    let uuid = PyMapping_GetItemString(uuid_mod_dict, "NAMESPACE_DNS\0".as_ptr() as *const c_char);
-    let ptr = (*uuid).ob_type;
-    Py_DECREF(uuid);
-    Py_DECREF(uuid_mod_dict);
-    Py_DECREF(uuid_mod);
-    ptr
+    unsafe {
+        let uuid_mod = PyImport_ImportModule("uuid\0".as_ptr() as *const c_char);
+        let uuid_mod_dict = PyObject_GenericGetDict(uuid_mod, null_mut());
+        let uuid =
+            PyMapping_GetItemString(uuid_mod_dict, "NAMESPACE_DNS\0".as_ptr() as *const c_char);
+        let ptr = (*uuid).ob_type;
+        Py_DECREF(uuid);
+        Py_DECREF(uuid_mod_dict);
+        Py_DECREF(uuid_mod);
+        ptr
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_datetime_type() -> *mut PyTypeObject {
-    let datetime = ((*PyDateTimeAPI()).DateTime_FromDateAndTime)(
-        1970,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        NONE,
-        (*(PyDateTimeAPI())).DateTimeType,
-    );
-    let ptr = (*datetime).ob_type;
-    Py_DECREF(datetime);
-    ptr
+    unsafe {
+        let datetime = ((*PyDateTimeAPI()).DateTime_FromDateAndTime)(
+            1970,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            NONE,
+            (*(PyDateTimeAPI())).DateTimeType,
+        );
+        let ptr = (*datetime).ob_type;
+        Py_DECREF(datetime);
+        ptr
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_date_type() -> *mut PyTypeObject {
-    let date = ((*PyDateTimeAPI()).Date_FromDate)(1, 1, 1, (*(PyDateTimeAPI())).DateType);
-    let ptr = (*date).ob_type;
-    Py_DECREF(date);
-    ptr
+    unsafe {
+        let date = ((*PyDateTimeAPI()).Date_FromDate)(1, 1, 1, (*(PyDateTimeAPI())).DateType);
+        let ptr = (*date).ob_type;
+        Py_DECREF(date);
+        ptr
+    }
 }
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_time_type() -> *mut PyTypeObject {
-    let time = ((*PyDateTimeAPI()).Time_FromTime)(0, 0, 0, 0, NONE, (*(PyDateTimeAPI())).TimeType);
-    let ptr = (*time).ob_type;
-    Py_DECREF(time);
-    ptr
+    unsafe {
+        let time =
+            ((*PyDateTimeAPI()).Time_FromTime)(0, 0, 0, 0, NONE, (*(PyDateTimeAPI())).TimeType);
+        let ptr = (*time).ob_type;
+        Py_DECREF(time);
+        ptr
+    }
 }
 
 #[cfg(Py_3_9)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_zoneinfo_type() -> *mut PyTypeObject {
-    let module = PyImport_ImportModule("zoneinfo\0".as_ptr() as *const c_char);
-    let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "ZoneInfo\0".as_ptr() as *const c_char)
-        as *mut PyTypeObject;
-    Py_DECREF(module_dict);
-    Py_DECREF(module);
-    ptr
+    unsafe {
+        let module = PyImport_ImportModule("zoneinfo\0".as_ptr() as *const c_char);
+        let module_dict = PyObject_GenericGetDict(module, null_mut());
+        let ptr = PyMapping_GetItemString(module_dict, "ZoneInfo\0".as_ptr() as *const c_char)
+            as *mut PyTypeObject;
+        Py_DECREF(module_dict);
+        Py_DECREF(module);
+        ptr
+    }
 }

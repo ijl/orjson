@@ -16,7 +16,7 @@ pub fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
         unsafe {
             let entry = KEY_MAP
                 .get_mut()
-                .unwrap_or_else(|| unreachable!())
+                .unwrap_or_else(|| unreachable_unchecked!())
                 .entry(&hash)
                 .or_insert_with(
                     || hash,

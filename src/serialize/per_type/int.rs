@@ -39,7 +39,7 @@ impl Serialize for IntSerializer {
                 if is_signed == 0 {
                     serializer.serialize_u64(crate::ffi::pylong_get_inline_value(self.ptr) as u64)
                 } else {
-                    serializer.serialize_i64(crate::ffi::pylong_get_inline_value(self.ptr) as i64)
+                    serializer.serialize_i64(crate::ffi::pylong_get_inline_value(self.ptr))
                 }
             } else {
                 let mut buffer: [u8; 8] = [0; 8];

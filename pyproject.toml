@@ -31,7 +31,7 @@ Changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
 
 [build-system]
 build-backend = "maturin"
-requires = ["maturin==1.7.8"]
+requires = ["maturin>=1,<2"]
 
 [tool.maturin]
 python-source = "pysrc"
@@ -39,7 +39,9 @@ include = [
     { format = "sdist", path = ".cargo/*" },
     { format = "sdist", path = "build.rs" },
     { format = "sdist", path = "Cargo.lock" },
-    { format = "sdist", path = "include/**/*" },
+    { format = "sdist", path = "include/cargo/**/*" },
+    { format = "sdist", path = "include/pyo3/**/*" },
+    { format = "sdist", path = "include/yyjson/**/*" },
 ]
 
 [tool.ruff]

@@ -6,7 +6,7 @@ import pytest
 
 import orjson
 
-from .util import read_fixture_str
+from .util import needs_data, read_fixture_str
 
 ASCII_TEST = b"""\
 {
@@ -81,6 +81,7 @@ class TestJsonDecodeError:
             {"pos": 19, "lineno": 4, "colno": 1},
         )
 
+    @needs_data
     def test_tab(self):
         data = read_fixture_str("fail26.json", "jsonchecker")
         with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:

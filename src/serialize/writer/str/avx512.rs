@@ -99,18 +99,20 @@ pub unsafe fn format_escaped_str_impl_512vl(
     value_ptr: *const u8,
     value_len: usize,
 ) -> usize {
-    const STRIDE: usize = 32;
+    unsafe {
+        const STRIDE: usize = 32;
 
-    let mut dst = odst;
-    let mut src = value_ptr;
+        let mut dst = odst;
+        let mut src = value_ptr;
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    impl_format_simd_avx512vl!(dst, src, value_len);
+        impl_format_simd_avx512vl!(dst, src, value_len);
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    dst as usize - odst as usize
+        dst as usize - odst as usize
+    }
 }

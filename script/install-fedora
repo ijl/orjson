@@ -2,13 +2,6 @@
 
 set -eou pipefail
 
-# export PYTHON=python3.11
-# export PYTHON_PACKAGE=python3.11
-# export RUST_TOOLCHAIN=nightly-2024-11-22
-# export TARGET=x86_64-unknown-linux-gnu
-# export VENV=.venv
-# export CARGO_TARGET_DIR=/tmp/orjson
-
 export VENV="${VENV:-.venv}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
 
@@ -28,4 +21,4 @@ rm -rf "${VENV}"
 uv venv --python "${PYTHON}" "${VENV}"
 source "${VENV}/bin/activate"
 
-uv pip install --upgrade "maturin==1.7.8" -r test/requirements.txt -r integration/requirements.txt
+uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
