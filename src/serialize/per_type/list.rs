@@ -47,7 +47,7 @@ impl ListTupleSerializer {
     ) -> Self {
         debug_assert!(
             is_type!(ob_type!(ptr), LIST_TYPE)
-                || is_subclass_by_flag!(ob_type!(ptr), Py_TPFLAGS_LIST_SUBCLASS)
+                || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_LIST_SUBCLASS)
         );
         let data_ptr = unsafe { (*(ptr as *mut pyo3_ffi::PyListObject)).ob_item };
         let len = ffi!(Py_SIZE(ptr)) as usize;
@@ -66,7 +66,7 @@ impl ListTupleSerializer {
     ) -> Self {
         debug_assert!(
             is_type!(ob_type!(ptr), TUPLE_TYPE)
-                || is_subclass_by_flag!(ob_type!(ptr), Py_TPFLAGS_TUPLE_SUBCLASS)
+                || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_TUPLE_SUBCLASS)
         );
         let data_ptr = unsafe { (*(ptr as *mut pyo3_ffi::PyTupleObject)).ob_item.as_ptr() };
         let len = ffi!(Py_SIZE(ptr)) as usize;

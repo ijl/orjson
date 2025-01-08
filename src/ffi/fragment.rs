@@ -1,13 +1,34 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use core::ffi::{c_char, c_ulong};
+use core::ffi::c_char;
+
+#[cfg(Py_GIL_DISABLED)]
+use std::sync::atomic::{AtomicIsize, AtomicU32, AtomicU64};
+
 use core::ptr::null_mut;
 use pyo3_ffi::*;
 
 // https://docs.python.org/3/c-api/typeobj.html#typedef-examples
 
+#[cfg(Py_GIL_DISABLED)]
+#[allow(non_upper_case_globals)]
+const _Py_IMMORTAL_REFCNT_LOCAL: u32 = u32::MAX;
+
 #[repr(C)]
 pub struct Fragment {
+    #[cfg(Py_GIL_DISABLED)]
+    pub ob_tid: usize,
+    #[cfg(Py_GIL_DISABLED)]
+    pub _padding: u16,
+    #[cfg(Py_GIL_DISABLED)]
+    pub ob_mutex: PyMutex,
+    #[cfg(Py_GIL_DISABLED)]
+    pub ob_gc_bits: u8,
+    #[cfg(Py_GIL_DISABLED)]
+    pub ob_ref_local: AtomicU32,
+    #[cfg(Py_GIL_DISABLED)]
+    pub ob_ref_shared: AtomicIsize,
+    #[cfg(not(Py_GIL_DISABLED))]
     pub ob_refcnt: pyo3_ffi::Py_ssize_t,
     pub ob_type: *mut pyo3_ffi::PyTypeObject,
     pub contents: *mut pyo3_ffi::PyObject,
@@ -42,6 +63,19 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
             let contents = PyTuple_GET_ITEM(args, 0);
             Py_INCREF(contents);
             let obj = Box::new(Fragment {
+                #[cfg(Py_GIL_DISABLED)]
+                ob_tid: 0,
+                #[cfg(Py_GIL_DISABLED)]
+                _padding: 0,
+                #[cfg(Py_GIL_DISABLED)]
+                ob_mutex: PyMutex::new(),
+                #[cfg(Py_GIL_DISABLED)]
+                ob_gc_bits: 0,
+                #[cfg(Py_GIL_DISABLED)]
+                ob_ref_local: AtomicU32::new(0),
+                #[cfg(Py_GIL_DISABLED)]
+                ob_ref_shared: AtomicIsize::new(0),
+                #[cfg(not(Py_GIL_DISABLED))]
                 ob_refcnt: 1,
                 ob_type: crate::typeref::FRAGMENT_TYPE,
                 contents: contents,
@@ -61,11 +95,14 @@ pub unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     }
 }
 
-#[cfg(Py_3_10)]
-const FRAGMENT_TP_FLAGS: c_ulong = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE;
+#[cfg(Py_GIL_DISABLED)]
+const FRAGMENT_TP_FLAGS: AtomicU64 = AtomicU64::new(Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE);
+
+#[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
+const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE;
 
 #[cfg(not(Py_3_10))]
-const FRAGMENT_TP_FLAGS: c_ulong = Py_TPFLAGS_DEFAULT;
+const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
 
 #[unsafe(no_mangle)]
 #[cold]
@@ -75,7 +112,19 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
         let ob = Box::new(PyTypeObject {
             ob_base: PyVarObject {
                 ob_base: PyObject {
-                    #[cfg(Py_3_12)]
+                    #[cfg(Py_GIL_DISABLED)]
+                    ob_tid: 0,
+                    #[cfg(Py_GIL_DISABLED)]
+                    _padding: 0,
+                    #[cfg(Py_GIL_DISABLED)]
+                    ob_mutex: PyMutex::new(),
+                    #[cfg(Py_GIL_DISABLED)]
+                    ob_gc_bits: 0,
+                    #[cfg(Py_GIL_DISABLED)]
+                    ob_ref_local: AtomicU32::new(_Py_IMMORTAL_REFCNT_LOCAL),
+                    #[cfg(Py_GIL_DISABLED)]
+                    ob_ref_shared: AtomicIsize::new(0),
+                    #[cfg(all(Py_3_12, not(Py_GIL_DISABLED)))]
                     ob_refcnt: pyo3_ffi::PyObjectObRefcnt { ob_refcnt: 0 },
                     #[cfg(not(Py_3_12))]
                     ob_refcnt: 0,

@@ -75,12 +75,13 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.12', package: 'python3.12', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.8', package: 'python3.8', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.13', package: 'python3.13-freethreading', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.12', package: 'python3.12', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.8', package: 'python3.8', compatibility: "manylinux_2_17", publish: true },
         ]
         arch: [
           {
@@ -154,7 +155,7 @@ jobs:
         cp ${CARGO_TARGET_DIR}/wheels/orjson*.whl dist
 
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
+      if: "startsWith(github.ref, 'refs/tags/') && matrix.python.publish == true"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_amd64_${{ matrix.python.interpreter }}
