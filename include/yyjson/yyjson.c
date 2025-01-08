@@ -5265,7 +5265,7 @@ static_inline bool read_string(u8 **ptr,
     
     u8 *cur = *ptr;
     u8 **end = ptr;
-    u8 *src = ++cur, *dst, *pos;
+    u8 *src = ++cur, *dst;
     u16 hi, lo;
     u32 uni, tmp;
     
