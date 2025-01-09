@@ -19,6 +19,18 @@ impl Serialize for FloatSerializer {
     where
         S: Serializer,
     {
-        serializer.serialize_f64(ffi!(PyFloat_AS_DOUBLE(self.ptr)))
+        let value = ffi!(PyFloat_AS_DOUBLE(self.ptr));
+        #[cfg(yyjson_allow_inf_and_nan)]
+        {
+            serializer.serialize_f64(value)
+        }
+        #[cfg(not(yyjson_allow_inf_and_nan))]
+        {
+            if value.is_finite() {
+                serializer.serialize_f64(value)
+            } else {
+                Err(serde::ser::Error::custom("Cannot serialize Infinity or NaN"))
+            }
+        }
     }
 }

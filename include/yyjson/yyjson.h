@@ -831,9 +831,6 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_OPEN               = 12;
 /** Failed to read a file. */
 static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
-/** Document exceeded YYJSON_READER_CONTAINER_RECURSION_LIMIT.  */
-static const yyjson_read_code YYJSON_READ_ERROR_RECURSION_DEPTH         = 14;
-
 /** Error information for JSON reader. */
 typedef struct yyjson_read_err {
     /** Error code, see `yyjson_read_code` for all possible values. */
@@ -860,6 +857,8 @@ typedef struct yyjson_read_err {
     the `YYJSON_READ_INSITU` flag.
  @param len The length of JSON data in bytes.
     If this parameter is 0, the function will fail and return NULL.
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON reader.
     Pass NULL to use the libc's default allocator.
  @param err A pointer to receive error information.
@@ -869,6 +868,7 @@ typedef struct yyjson_read_err {
  */
 yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         size_t len,
+                                        yyjson_read_flag flg,
                                         const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
@@ -938,7 +938,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
                                           yyjson_read_flag flg) {
     flg &= ~YYJSON_READ_INSITU; /* const string cannot be modified */
     return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat,
-                            len, NULL, NULL);
+                            len, flg, NULL, NULL);
 }
 
 /**

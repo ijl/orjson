@@ -61,23 +61,18 @@ fn main() {
             panic!("ORJSON_DISABLE_YYJSON and --features=yyjson both enabled.")
         }
     } else {
-        match cc::Build::new()
+        // Compile yyjson
+        cc::Build::new()
             .file("include/yyjson/yyjson.c")
-            .include("include/yyjson")
-            .define("YYJSON_DISABLE_NON_STANDARD", "1")
-            .define("YYJSON_DISABLE_UTF8_VALIDATION", "1")
-            .define("YYJSON_DISABLE_UTILS", "1")
-            .define("YYJSON_DISABLE_WRITER", "1")
-            .try_compile("yyjson")
-        {
-            Ok(_) => {
-                println!("cargo:rustc-cfg=feature=\"yyjson\"");
-            }
-            Err(_) => {
-                if env::var("CARGO_FEATURE_YYJSON").is_ok() {
-                    panic!("yyjson was enabled but the build failed. To build with a different backend do not specify the feature.")
-                }
-            }
+            .compile("yyjson");
+
+        // Link against Python
+        let python_config = pyo3_build_config::get();
+        for cfg in python_config.build_script_outputs() {
+            println!("{cfg}");
         }
+
+        println!("cargo:rustc-cfg=feature=\"yyjson\"");
+        println!("cargo:rustc-cfg=yyjson_allow_inf_and_nan");
     }
 }
