@@ -1,5 +1,28 @@
 # Changelog
 
+
+## 3.10.14
+
+### Changed
+
+- Specify build system dependency on `maturin>=1,<2` again.
+- Allocate memory using `PyMem_Malloc()` and similar APIs for integration
+with pymalloc, mimalloc, and tracemalloc.
+- Source distribution does not ship compressed test documents and relevant
+tests skip if fixtures are not present.
+- Build now depends on Rust 1.82 or later instead of 1.72.
+
+
+## 3.10.13
+
+### Changed
+
+- Fix compatibility with maturin introducing a breaking change in 1.8.0 and
+specify a fixed version of maturin. Projects relying on any previous version
+being buildable from source by end users (via PEP 517) must upgrade to at
+least this version.
+
+
 ## 3.10.12
 
 ### Changed

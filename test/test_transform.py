@@ -4,13 +4,14 @@ import pytest
 
 import orjson
 
-from .util import read_fixture_bytes
+from .util import needs_data, read_fixture_bytes
 
 
 def _read_file(filename):
     return read_fixture_bytes(filename, "transform").strip(b"\n").strip(b"\r")
 
 
+@needs_data
 class TestJSONTestSuiteTransform:
     def _pass_transform(self, filename, reference=None):
         data = _read_file(filename)

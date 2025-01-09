@@ -1066,7 +1066,7 @@ No, it supports RFC 8259.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.72
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.82
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
@@ -1078,7 +1078,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2024-11-22` and stable 1.72. It
+The project's own CI tests against `nightly-2025-01-07` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.
@@ -1101,5 +1101,5 @@ tests should be run as part of the build. It can be run with
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2024, available
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2025, available
 to you under either the Apache 2 license or MIT license at your choice.

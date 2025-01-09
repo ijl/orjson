@@ -2,9 +2,10 @@
 
 import orjson
 
-from .util import read_fixture_str
+from .util import needs_data, read_fixture_str
 
 
+@needs_data
 class TestJsonChecker:
     def _run_roundtrip_json(self, filename):
         data = read_fixture_str(filename, "roundtrip")

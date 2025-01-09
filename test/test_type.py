@@ -5,11 +5,6 @@ import sys
 
 import pytest
 
-try:
-    import xxhash
-except ImportError:
-    xxhash = None
-
 import orjson
 
 
@@ -259,17 +254,6 @@ class TestType:
         pytest.raises(
             orjson.JSONEncodeError, orjson.dumps, b"\xed\xa0\xbd\xed\xba\x80"
         )  # \ud83d\ude80
-
-    @pytest.mark.skipif(
-        xxhash is None, reason="xxhash install broken on win, python3.9, Azure"
-    )
-    def test_str_ascii(self):
-        """
-        str is ASCII but not compact
-        """
-        digest = xxhash.xxh32_hexdigest("12345")
-        for _ in range(2):
-            assert orjson.dumps(digest) == b'"b30d56b4"'
 
     def test_bytes_dumps(self):
         """

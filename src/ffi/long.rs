@@ -80,7 +80,7 @@ pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
         if pylong_is_unsigned(ptr) {
             (*(ptr as *mut PyLongObject)).long_value.ob_digit as i64
         } else {
-            -1 * (*(ptr as *mut PyLongObject)).long_value.ob_digit as i64
+            -((*(ptr as *mut PyLongObject)).long_value.ob_digit as i64)
         }
     }
 }

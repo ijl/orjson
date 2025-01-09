@@ -36,6 +36,15 @@ extern "C" {
         item: *mut PyObject,
         hash: crate::Py_hash_t,
     ) -> c_int;
+
+    #[cfg(Py_3_13)]
+    pub fn _PyDict_SetItem_KnownHash_LockHeld(
+        mp: *mut PyDictObject,
+        name: *mut PyObject,
+        value: *mut PyObject,
+        hash: crate::Py_hash_t,
+    ) -> c_int;
+
     // skipped _PyDict_DelItem_KnownHash
     // skipped _PyDict_DelItemIf
     // skipped _PyDict_NewKeysForClass

@@ -4,7 +4,7 @@ import datetime
 
 import orjson
 
-from .util import read_fixture_bytes
+from .util import needs_data, read_fixture_bytes
 
 FIXTURE_ISSUE_335 = {
     "pfkrpavmb": "maxyjzmvacdwjfiifmzwbztjmnqdsjesykpf",
@@ -253,6 +253,7 @@ FIXTURE_ISSUE_335 = {
 }
 
 
+@needs_data
 def test_issue331_1_pretty():
     as_bytes = read_fixture_bytes("issue331_1.json.xz")
     as_obj = orjson.loads(as_bytes)
@@ -260,6 +261,7 @@ def test_issue331_1_pretty():
         assert orjson.loads(orjson.dumps(as_obj, option=orjson.OPT_INDENT_2)) == as_obj
 
 
+@needs_data
 def test_issue331_1_compact():
     as_bytes = read_fixture_bytes("issue331_1.json.xz")
     as_obj = orjson.loads(as_bytes)
@@ -267,6 +269,7 @@ def test_issue331_1_compact():
         assert orjson.loads(orjson.dumps(as_obj)) == as_obj
 
 
+@needs_data
 def test_issue331_2_pretty():
     as_bytes = read_fixture_bytes("issue331_2.json.xz")
     as_obj = orjson.loads(as_bytes)
@@ -274,6 +277,7 @@ def test_issue331_2_pretty():
         assert orjson.loads(orjson.dumps(as_obj, option=orjson.OPT_INDENT_2)) == as_obj
 
 
+@needs_data
 def test_issue331_2_compact():
     as_bytes = read_fixture_bytes("issue331_2.json.xz")
     as_obj = orjson.loads(as_bytes)

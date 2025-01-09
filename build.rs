@@ -52,7 +52,7 @@ fn main() {
     }
 
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if let Some(64) = python_config.pointer_width {
+    if matches!(python_config.pointer_width, Some(64)) {
         println!("cargo:rustc-cfg=feature=\"inline_int\"");
     }
 

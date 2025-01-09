@@ -4,9 +4,10 @@ import pytest
 
 import orjson
 
-from .util import read_fixture_bytes
+from .util import needs_data, read_fixture_bytes
 
 
+@needs_data
 class TestJSONTestSuiteParsing:
     def _run_fail_json(self, filename, exc=orjson.JSONDecodeError):
         data = read_fixture_bytes(filename, "parsing")

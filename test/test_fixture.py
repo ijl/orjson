@@ -4,9 +4,10 @@ import pytest
 
 import orjson
 
-from .util import read_fixture_bytes, read_fixture_str
+from .util import needs_data, read_fixture_bytes, read_fixture_str
 
 
+@needs_data
 class TestFixture:
     def test_twitter(self):
         """
@@ -16,6 +17,7 @@ class TestFixture:
         read = orjson.loads(val)
         assert orjson.loads(orjson.dumps(read)) == read
 
+    @needs_data
     def test_canada(self):
         """
         loads(), dumps() canada.json

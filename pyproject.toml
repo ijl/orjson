@@ -1,6 +1,6 @@
 [project]
 name = "orjson"
-version = "4.10.12"
+version = "3.10.14.post1"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.8"
 classifiers = [
@@ -39,7 +39,9 @@ include = [
     { format = "sdist", path = ".cargo/*" },
     { format = "sdist", path = "build.rs" },
     { format = "sdist", path = "Cargo.lock" },
-    { format = "sdist", path = "include/**/*" },
+    { format = "sdist", path = "include/cargo/**/*" },
+    { format = "sdist", path = "include/pyo3/**/*" },
+    { format = "sdist", path = "include/yyjson/**/*" },
 ]
 
 [tool.ruff]

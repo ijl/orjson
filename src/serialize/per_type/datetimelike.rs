@@ -112,7 +112,7 @@ pub trait DateTimeLike {
                 if opt_enabled!(opts, UTC_Z) {
                     buf.push(b'Z');
                 } else {
-                    buf.extend_from_slice(&[b'+', b'0', b'0', b':', b'0', b'0']);
+                    buf.extend_from_slice(b"+00:00");
                 }
             } else {
                 // This branch is only really hit by the Python datetime implementation,
