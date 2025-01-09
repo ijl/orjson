@@ -26,11 +26,12 @@ sed -i 's/    if (!err) err = &dummy_err;//g' include/yyjson/yyjson.c
 sed -i 's/likely(!alc_ptr)/!alc_ptr/g' include/yyjson/yyjson.c
 
 sed -i 's/unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))/false/g' include/yyjson/yyjson.c
-sed -i 's/has_read_flag(ALLOW_INF_AND_NAN)/false/g' include/yyjson/yyjson.c
+sed -i 's/has_read_flag(ALLOW_INF_AND_NAN)/true/g' include/yyjson/yyjson.c
 sed -i 's/has_read_flag(ALLOW_COMMENTS)/false/g' include/yyjson/yyjson.c
 sed -i 's/has_read_flag(BIGNUM_AS_RAW)/false/g' include/yyjson/yyjson.c
 sed -i 's/if (pre && \*pre)/if (false)/g' include/yyjson/yyjson.c
 sed -i 's/(pre && !false)/(false)/g' include/yyjson/yyjson.c
 
-git apply include/yyjson-recursion-limit.patch
-git apply include/yyjson-reduce-unused.patch
+# Patches temporarily disabled while testing Inf/NaN support
+# git apply include/yyjson-recursion-limit.patch
+# git apply include/yyjson-reduce-unused.patch
