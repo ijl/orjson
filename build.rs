@@ -22,6 +22,7 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_8)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
+    println!("cargo:rustc-check-cfg=cfg(yyjson_allow_inf_and_nan)");
 
     let python_config = pyo3_build_config::get();
     for cfg in python_config.build_script_outputs() {
