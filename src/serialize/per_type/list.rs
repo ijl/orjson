@@ -5,7 +5,7 @@ use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
-    NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
+    NoneSerializer, NumpyScalar, NumpySerializer, PyTorchSerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
@@ -169,6 +169,13 @@ impl Serialize for ListTupleSerializer {
                 }
                 ObType::Fragment => {
                     seq.serialize_element(&FragmentSerializer::new(value))?;
+                }
+                ObType::PyTorchTensor => {
+                    seq.serialize_element(&PyTorchSerializer::new(&PyObjectSerializer::new(
+                        value,
+                        self.state,
+                        self.default,
+                    )))?;
                 }
                 ObType::Unknown => {
                     seq.serialize_element(&DefaultSerializer::new(&PyObjectSerializer::new(

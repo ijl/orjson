@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.10.13
+
+### Added
+
+- Support serializing PyTorch tensors when numpy serialization is enabled.
+
 ## 3.10.12
 
 ### Changed

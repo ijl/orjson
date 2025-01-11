@@ -19,6 +19,7 @@ pub enum SerializeError {
     NumpyNotCContiguous,
     NumpyNotNativeEndian,
     NumpyUnsupportedDatatype,
+    PyTorchTensorConversion,
     UnsupportedType(NonNull<pyo3_ffi::PyObject>),
 }
 
@@ -55,6 +56,9 @@ impl std::fmt::Display for SerializeError {
             ),
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")
+            }
+            SerializeError::PyTorchTensorConversion => {
+                write!(f, "failed to convert PyTorch tensor to numpy array")
             }
             SerializeError::UnsupportedType(ptr) => {
                 let name = unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };

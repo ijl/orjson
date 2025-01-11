@@ -6,7 +6,7 @@ library for JSON and is more correct than the standard json library or other
 third-party libraries. It serializes
 [dataclass](https://github.com/ijl/orjson?tab=readme-ov-file#dataclass),
 [datetime](https://github.com/ijl/orjson?tab=readme-ov-file#datetime),
-[numpy](https://github.com/ijl/orjson?tab=readme-ov-file#numpy), and
+[numpy](https://github.com/ijl/orjson?tab=readme-ov-file#numpy), [PyTorch](https://github.com/ijl/orjson?tab=readme-ov-file#pytorch), and
 [UUID](https://github.com/ijl/orjson?tab=readme-ov-file#uuid) instances natively.
 
 [orjson.dumps()](https://github.com/ijl/orjson?tab=readme-ov-file#serialize) is
@@ -797,6 +797,19 @@ orjson natively serializes `numpy.ndarray` and individual
 `numpy.uint64`, `numpy.uint32`, `numpy.uint16`, `numpy.uint8`,
 `numpy.uintp`, `numpy.intp`, `numpy.datetime64`, and `numpy.bool`
 instances.
+
+### pytorch
+
+orjson natively serializes PyTorch tensors (`torch.Tensor`) by converting them to numpy arrays. This requires both numpy and PyTorch to be installed, and the `OPT_SERIALIZE_NUMPY` option to be enabled:
+
+```python
+>>> import orjson, torch
+>>> tensor = torch.tensor([[1, 2], [3, 4]])
+>>> orjson.dumps(tensor, option=orjson.OPT_SERIALIZE_NUMPY)
+b'[[1,2],[3,4]]'
+```
+
+The tensor must be on CPU and have a dtype that can be converted to a numpy array. GPU tensors are automatically moved to CPU before serialization.
 
 orjson is compatible with both numpy v1 and v2.
 

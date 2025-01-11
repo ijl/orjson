@@ -3,10 +3,11 @@
 use crate::opt::{
     Opt, PASSTHROUGH_DATACLASS, PASSTHROUGH_DATETIME, PASSTHROUGH_SUBCLASS, SERIALIZE_NUMPY,
 };
-use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar};
+use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar, is_pytorch_tensor};
 use crate::typeref::{
     BOOL_TYPE, DATACLASS_FIELDS_STR, DATETIME_TYPE, DATE_TYPE, DICT_TYPE, ENUM_TYPE, FLOAT_TYPE,
     FRAGMENT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE, TIME_TYPE, TUPLE_TYPE, UUID_TYPE,
+    PYTORCH_TENSOR_TYPE,
 };
 
 #[repr(u32)]
@@ -29,6 +30,7 @@ pub enum ObType {
     Enum,
     StrSubclass,
     Fragment,
+    PyTorchTensor,
     Unknown,
 }
 
@@ -101,6 +103,8 @@ pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: O
             return ObType::NumpyScalar;
         } else if is_numpy_array(ob_type) {
             return ObType::NumpyArray;
+        } else if is_pytorch_tensor(ob_type) {
+            return ObType::PyTorchTensor;
         }
     }
 
