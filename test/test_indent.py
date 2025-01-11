@@ -5,9 +5,10 @@ import json
 
 import orjson
 
-from .util import read_fixture_obj
+from .util import needs_data, read_fixture_obj
 
 
+@needs_data
 class TestIndentedOutput:
     def test_equivalent(self):
         """

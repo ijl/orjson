@@ -77,14 +77,16 @@ pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: O
         }
     }
 
+    let tp_flags = tp_flags!(ob_type);
+
     if opt_disabled!(opts, PASSTHROUGH_SUBCLASS) {
-        if is_subclass_by_flag!(ob_type, Py_TPFLAGS_UNICODE_SUBCLASS) {
+        if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_UNICODE_SUBCLASS) {
             return ObType::StrSubclass;
-        } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_LONG_SUBCLASS) {
+        } else if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_LONG_SUBCLASS) {
             return ObType::Int;
-        } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_LIST_SUBCLASS) {
+        } else if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_LIST_SUBCLASS) {
             return ObType::List;
-        } else if is_subclass_by_flag!(ob_type, Py_TPFLAGS_DICT_SUBCLASS) {
+        } else if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_DICT_SUBCLASS) {
             return ObType::Dict;
         }
     }

@@ -1,6 +1,6 @@
 -r bench/requirements.txt
 -r integration/requirements.txt
 -r test/requirements.txt
-maturin
+maturin>=1,<2
 mypy==1.13.0
-ruff==0.8.0
+ruff>=0.8,<9

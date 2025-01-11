@@ -106,22 +106,24 @@ pub unsafe fn format_escaped_str_impl_sse2_128(
     value_ptr: *const u8,
     value_len: usize,
 ) -> usize {
-    const STRIDE: usize = 16;
+    unsafe {
+        const STRIDE: usize = 16;
 
-    let mut dst = odst;
-    let mut src = value_ptr;
+        let mut dst = odst;
+        let mut src = value_ptr;
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    if value_len < STRIDE {
-        impl_format_scalar!(dst, src, value_len)
-    } else {
-        impl_format_simd_sse2_128!(dst, src, value_len);
+        if value_len < STRIDE {
+            impl_format_scalar!(dst, src, value_len)
+        } else {
+            impl_format_simd_sse2_128!(dst, src, value_len);
+        }
+
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
+
+        dst as usize - odst as usize
     }
-
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
-
-    dst as usize - odst as usize
 }

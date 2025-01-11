@@ -26,5 +26,5 @@ pub struct PyMemoryViewObject {
 #[allow(non_snake_case)]
 #[inline(always)]
 pub unsafe fn PyMemoryView_GET_BUFFER(op: *mut PyObject) -> *const Py_buffer {
-    &(*op.cast::<PyMemoryViewObject>()).view
+    unsafe { &(*op.cast::<PyMemoryViewObject>()).view }
 }

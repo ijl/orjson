@@ -3,26 +3,34 @@ on: push
 env:
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2024-11-22"
+  RUST_TOOLCHAIN: "nightly-2025-01-07"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   UV_LINK_MODE: "copy"
 jobs:
 
   sdist:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
     env:
-      RUST_TOOLCHAIN: "1.72" # MSRV
+      RUST_TOOLCHAIN: "1.82" # MSRV
     steps:
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
     - name: rustup stable
       run: |
         curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain "${RUST_TOOLCHAIN}" -y
         rustup default "${RUST_TOOLCHAIN}"
 
     - uses: actions/checkout@v4
+
+    - name: Cargo.toml and pyproject.toml version must match
+      run: ./script/check-version
 
     - run: python3 -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
@@ -67,12 +75,13 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.12', package: 'python3.12', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17" },
-          { interpreter: 'python3.8', package: 'python3.8', compatibility: "manylinux_2_17" },
+          { interpreter: 'python3.13t', package: 'python3.13-freethreading', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.13', package: 'python3.13', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.12', package: 'python3.12', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.11', package: 'python3.11', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.10', package: 'python3.10', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.9', package: 'python3.9', compatibility: "manylinux_2_17", publish: true },
+          { interpreter: 'python3.8', package: 'python3.8', compatibility: "manylinux_2_17", publish: true },
         ]
         arch: [
           {
@@ -146,7 +155,7 @@ jobs:
         cp ${CARGO_TARGET_DIR}/wheels/orjson*.whl dist
 
     - name: Store wheels
-      if: "startsWith(github.ref, 'refs/tags/')"
+      if: "startsWith(github.ref, 'refs/tags/') && matrix.python.publish == true"
       uses: actions/upload-artifact@v4
       with:
         name: orjson_manylinux_2_17_amd64_${{ matrix.python.interpreter }}

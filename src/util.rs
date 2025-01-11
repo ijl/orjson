@@ -20,9 +20,27 @@ macro_rules! is_class_by_type {
     };
 }
 
+#[cfg(not(Py_GIL_DISABLED))]
+macro_rules! tp_flags {
+    ($ob_type:expr) => {
+        unsafe { (*$ob_type).tp_flags }
+    };
+}
+
+#[cfg(Py_GIL_DISABLED)]
+macro_rules! tp_flags {
+    ($ob_type:expr) => {
+        unsafe {
+            (*$ob_type)
+                .tp_flags
+                .load(std::sync::atomic::Ordering::Relaxed)
+        }
+    };
+}
+
 macro_rules! is_subclass_by_flag {
-    ($ob_type:expr, $flag:ident) => {
-        unsafe { (((*$ob_type).tp_flags & pyo3_ffi::$flag) != 0) }
+    ($tp_flags:expr, $flag:ident) => {
+        unsafe { (($tp_flags & pyo3_ffi::$flag) != 0) }
     };
 }
 
@@ -98,7 +116,7 @@ macro_rules! str_from_slice {
     };
 }
 
-#[cfg(Py_3_12)]
+#[cfg(all(Py_3_12, not(Py_GIL_DISABLED)))]
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
@@ -107,6 +125,14 @@ macro_rules! reverse_pydict_incref {
                 (*$op).ob_refcnt.ob_refcnt -= 1;
             }
         }
+    };
+}
+
+#[cfg(Py_GIL_DISABLED)]
+macro_rules! reverse_pydict_incref {
+    ($op:expr) => {
+        debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
+        ffi!(Py_DECREF($op))
     };
 }
 
@@ -303,5 +329,11 @@ macro_rules! popcnt {
 macro_rules! popcnt {
     ($val:expr) => {
         core::mem::transmute::<u32, i32>($val).count_ones() as usize
+    };
+}
+
+macro_rules! unreachable_unchecked {
+    () => {
+        unsafe { core::hint::unreachable_unchecked() }
     };
 }

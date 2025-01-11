@@ -50,7 +50,7 @@ pub type PyCFunctionFast = unsafe extern "C" fn(
 ) -> *mut PyObject;
 
 #[cfg(any(Py_3_10, not(Py_LIMITED_API)))]
-#[deprecated(note = "renamed to `PyCFunctionFast`")]
+#[cfg_attr(Py_3_10, deprecated(note = "renamed to `PyCFunctionFast`"))]
 pub type _PyCFunctionFast = PyCFunctionFast;
 
 pub type PyCFunctionWithKeywords = unsafe extern "C" fn(
@@ -68,6 +68,7 @@ pub type PyCFunctionFastWithKeywords = unsafe extern "C" fn(
 ) -> *mut PyObject;
 
 #[cfg(any(Py_3_10, not(Py_LIMITED_API)))]
+#[cfg_attr(Py_3_10, deprecated(note = "renamed to `PyCFunctionFastWithKeywords`"))]
 pub type _PyCFunctionFastWithKeywords = PyCFunctionFastWithKeywords;
 
 #[cfg(all(Py_3_9, not(Py_LIMITED_API)))]
@@ -152,7 +153,7 @@ pub union PyMethodDefPointer {
 
     /// This variant corresponds with [`METH_FASTCALL`].
     #[cfg(any(Py_3_10, not(Py_LIMITED_API)))]
-    #[deprecated(note = "renamed to `PyCFunctionFast`")]
+    #[cfg_attr(Py_3_10, deprecated(note = "renamed to `PyCFunctionFast`"))]
     pub _PyCFunctionFast: PyCFunctionFast,
 
     /// This variant corresponds with [`METH_FASTCALL`].
@@ -161,6 +162,7 @@ pub union PyMethodDefPointer {
 
     /// This variant corresponds with [`METH_FASTCALL`] | [`METH_KEYWORDS`].
     #[cfg(any(Py_3_10, not(Py_LIMITED_API)))]
+    #[cfg_attr(Py_3_10, deprecated(note = "renamed to `PyCFunctionFastWithKeywords`"))]
     pub _PyCFunctionFastWithKeywords: PyCFunctionFastWithKeywords,
 
     /// This variant corresponds with [`METH_FASTCALL`] | [`METH_KEYWORDS`].

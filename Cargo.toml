@@ -1,11 +1,11 @@
 [package]
 name = "orjson"
-version = "3.10.12"
+version = "3.10.14"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
-rust-version = "1.72"
+rust-version = "1.82"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/ijl/orjson"
 homepage = "https://github.com/ijl/orjson"
@@ -14,8 +14,8 @@ keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
-    "data",
-    "include",
+    "include/pyo3",
+    "include/yyjson",
     "LICENSE-APACHE",
     "LICENSE-MIT",
     "pyproject.toml",
@@ -71,7 +71,7 @@ uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 
 [build-dependencies]
-cc = { version = "1" }
+cc = { version = "=1.2.1" } # aarch64-linux-musl link errors
 pyo3-build-config = { path = "include/pyo3/pyo3-build-config" }
 version_check = { version = "0.9" }
 

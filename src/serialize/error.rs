@@ -28,14 +28,19 @@ impl std::fmt::Display for SerializeError {
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
-            SerializeError::DatetimeLibraryUnsupported => write!(f, "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil"),
+            SerializeError::DatetimeLibraryUnsupported => write!(
+                f,
+                "datetime's timezone library is not supported: use datetime.timezone.utc, pendulum, pytz, or dateutil"
+            ),
             SerializeError::DefaultRecursionLimit => {
                 write!(f, "default serializer exceeds recursion limit")
             }
             SerializeError::Integer53Bits => write!(f, "Integer exceeds 53-bit range"),
             SerializeError::Integer64Bits => write!(f, "Integer exceeds 64-bit range"),
             SerializeError::InvalidStr => write!(f, "{}", crate::util::INVALID_STR),
-            SerializeError::InvalidFragment => write!(f, "orjson.Fragment's content is not of type bytes or str"),
+            SerializeError::InvalidFragment => {
+                write!(f, "orjson.Fragment's content is not of type bytes or str")
+            }
             SerializeError::KeyMustBeStr => write!(f, "Dict key must be str"),
             SerializeError::RecursionLimit => write!(f, "Recursion limit reached"),
             SerializeError::TimeHasTzinfo => write!(f, "datetime.time must not have tzinfo set"),
@@ -50,10 +55,9 @@ impl std::fmt::Display for SerializeError {
                 f,
                 "numpy array is not C contiguous; use ndarray.tolist() in default"
             ),
-            SerializeError::NumpyNotNativeEndian => write!(
-                f,
-                "numpy array is not native-endianness"
-            ),
+            SerializeError::NumpyNotNativeEndian => {
+                write!(f, "numpy array is not native-endianness")
+            }
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")
             }
@@ -61,7 +65,8 @@ impl std::fmt::Display for SerializeError {
                 write!(f, "failed to convert PyTorch tensor to numpy array")
             }
             SerializeError::UnsupportedType(ptr) => {
-                let name = unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
+                let name =
+                    unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
                 write!(f, "Type is not JSON serializable: {}", name)
             }
         }
