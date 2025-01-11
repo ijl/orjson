@@ -346,37 +346,32 @@ class TestType:
 
     def test_nan_dumps(self):
         """
-        NaN serializes to null
+        NaN serializes to NaN
         """
-        assert orjson.dumps(float("NaN")) == b"null"
+        assert orjson.dumps(float("NaN")) == b"NaN"
 
     def test_nan_loads(self):
         """
-        NaN is not valid JSON
+        NaN is valid JSON in this fork
         """
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[NaN]")
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[nan]")
+        assert str(orjson.loads("[NaN]")[0]) == "nan"
+        assert str(orjson.loads("[nan]")[0]) == "nan"
 
     def test_infinity_dumps(self):
         """
-        Infinity serializes to null
+        Infinity serializes to Infinity
         """
-        assert orjson.dumps(float("Infinity")) == b"null"
+        assert orjson.dumps(float("Infinity")) == b"Infinity"
+        assert orjson.dumps(float("-Infinity")) == b"-Infinity"
 
     def test_infinity_loads(self):
         """
-        Infinity, -Infinity is not valid JSON
+        Infinity, -Infinity is valid JSON in this fork
         """
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[infinity]")
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[Infinity]")
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[-Infinity]")
-        with pytest.raises(orjson.JSONDecodeError):
-            orjson.loads("[-infinity]")
+        assert str(orjson.loads("[Infinity]")[0]) == "inf"
+        assert str(orjson.loads("[infinity]")[0]) == "inf"
+        assert str(orjson.loads("[-Infinity]")[0]) == "-inf"
+        assert str(orjson.loads("[-infinity]")[0]) == "-inf"
 
     def test_int_53(self):
         """

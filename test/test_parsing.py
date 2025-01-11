@@ -822,7 +822,7 @@ class TestJSONTestSuiteParsing:
         """
         n_number_-NaN.json
         """
-        self._run_fail_json("n_number_-NaN.json")
+        self._run_pass_json("n_number_-NaN.json")
 
     def test_n_number_negative_1(self):
         """
@@ -942,13 +942,13 @@ class TestJSONTestSuiteParsing:
         """
         n_number_Inf.json
         """
-        self._run_fail_json("n_number_Inf.json")
+        self._run_pass_json("n_number_Inf.json")
 
     def test_n_number_NaN(self):
         """
         n_number_NaN.json
         """
-        self._run_fail_json("n_number_NaN.json")
+        self._run_pass_json("n_number_NaN.json")
 
     def test_n_number_U_FF11_fullwidth_digit_one(self):
         """
@@ -978,7 +978,7 @@ class TestJSONTestSuiteParsing:
         """
         n_number_infinity.json
         """
-        self._run_fail_json("n_number_infinity.json")
+        self._run_pass_json("n_number_infinity.json")
 
     def test_n_number_invalid_(self):
         """
@@ -1014,7 +1014,7 @@ class TestJSONTestSuiteParsing:
         """
         n_number_minus_infinity.json
         """
-        self._run_fail_json("n_number_minus_infinity.json")
+        self._run_pass_json("n_number_minus_infinity.json")
 
     def test_n_number_minus_sign_with_trailing_garbage(self):
         """
@@ -1742,31 +1742,31 @@ class TestJSONTestSuiteParsing:
         """
         i_number_huge_exp.json
         """
-        self._run_fail_json("i_number_huge_exp.json")
+        self._run_pass_json("i_number_huge_exp.json")
 
     def test_i_number_neg_int_huge_exp(self):
         """
         i_number_neg_int_huge_exp.json
         """
-        self._run_fail_json("i_number_neg_int_huge_exp.json")
+        self._run_pass_json("i_number_neg_int_huge_exp.json")
 
     def test_i_number_pos_double_huge_exp(self):
         """
         i_number_pos_double_huge_exp.json
         """
-        self._run_fail_json("i_number_pos_double_huge_exp.json")
+        self._run_pass_json("i_number_pos_double_huge_exp.json")
 
     def test_i_number_real_neg_overflow(self):
         """
         i_number_real_neg_overflow.json
         """
-        self._run_fail_json("i_number_real_neg_overflow.json")
+        self._run_pass_json("i_number_real_neg_overflow.json")
 
     def test_i_number_real_pos_overflow(self):
         """
         i_number_real_pos_overflow.json
         """
-        self._run_fail_json("i_number_real_pos_overflow.json")
+        self._run_pass_json("i_number_real_pos_overflow.json")
 
     def test_i_number_real_underflow(self):
         """

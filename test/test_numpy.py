@@ -165,7 +165,7 @@ class TestNumpy:
                 ),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b"[null,null,null,-0.0,0.0,3.140625]"
+            == b"[Infinity,-Infinity,NaN,-0.0,0.0,3.140625]"
         )
 
     def test_numpy_array_f32_edge(self):
@@ -184,7 +184,7 @@ class TestNumpy:
                 ),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b"[null,null,null,-0.0,0.0,3.1415927]"
+            == b"[Infinity,-Infinity,NaN,-0.0,0.0,3.1415927]"
         )
 
     def test_numpy_array_f64_edge(self):
@@ -203,7 +203,7 @@ class TestNumpy:
                 ),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b"[null,null,null,-0.0,0.0,3.141592653589793]"
+            == b"[Infinity,-Infinity,NaN,-0.0,0.0,3.141592653589793]"
         )
 
     def test_numpy_array_d1_f64(self):
