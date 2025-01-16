@@ -36,15 +36,25 @@ impl<'a> Serialize for PyTorchSerializer<'a> {
             let detached = PyObject_CallMethodObjArgs(self.previous.ptr, detach_method, std::ptr::null_mut::<pyo3_ffi::PyObject>());
             Py_DECREF(detach_method);
 
-            // Get numpy() method from detached tensor
-            let numpy_method = PyUnicode_InternFromString("numpy\0".as_ptr() as *const c_char);
-            let numpy_array = if detached.is_null() {
-                // If detach failed (tensor doesn't require grad), try numpy directly
-                PyObject_CallMethodObjArgs(self.previous.ptr, numpy_method, std::ptr::null_mut::<pyo3_ffi::PyObject>())
+            // Get cpu() method to ensure tensor is on CPU
+            let cpu_method = PyUnicode_InternFromString("cpu\0".as_ptr() as *const c_char);
+            let cpu_tensor = if detached.is_null() {
+                PyObject_CallMethodObjArgs(self.previous.ptr, cpu_method, std::ptr::null_mut::<pyo3_ffi::PyObject>())
             } else {
-                let result = PyObject_CallMethodObjArgs(detached, numpy_method, std::ptr::null_mut::<pyo3_ffi::PyObject>());
+                let result = PyObject_CallMethodObjArgs(detached, cpu_method, std::ptr::null_mut::<pyo3_ffi::PyObject>());
                 Py_DECREF(detached);
                 result
+            };
+            Py_DECREF(cpu_method);
+
+            // Get numpy() method from CPU tensor
+            let numpy_method = PyUnicode_InternFromString("numpy\0".as_ptr() as *const c_char);
+            let numpy_array = if !cpu_tensor.is_null() {
+                let result = PyObject_CallMethodObjArgs(cpu_tensor, numpy_method, std::ptr::null_mut::<pyo3_ffi::PyObject>());
+                Py_DECREF(cpu_tensor);
+                result
+            } else {
+                std::ptr::null_mut()
             };
             Py_DECREF(numpy_method);
 

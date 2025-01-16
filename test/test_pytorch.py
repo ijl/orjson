@@ -71,6 +71,15 @@ class PyTorchTests(unittest.TestCase):
         tensor = torch.tensor([1, 2, 3]).cuda()
         self.assertEqual(orjson.dumps(tensor, option=orjson.OPT_SERIALIZE_NUMPY), b'[1,2,3]')
 
+    def test_tensor_on_gpu_and_requires_grad(self):
+        """
+        torch.Tensor on GPU if available AND requires_grad=True
+        """
+        if not torch.cuda.is_available():
+            self.skipTest("CUDA not available")
+        tensor = torch.tensor([1., 2., 3.], requires_grad=True).cuda()
+        self.assertEqual(orjson.dumps(tensor, option=orjson.OPT_SERIALIZE_NUMPY), b'[1.0,2.0,3.0]')
+
     def test_tensor_zero_dim(self):
         """
         Test 0-dimensional tensors are properly serialized as scalar values
