@@ -7,7 +7,6 @@ use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar, is_pytorch_ten
 use crate::typeref::{
     BOOL_TYPE, DATACLASS_FIELDS_STR, DATETIME_TYPE, DATE_TYPE, DICT_TYPE, ENUM_TYPE, FLOAT_TYPE,
     FRAGMENT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE, TIME_TYPE, TUPLE_TYPE, UUID_TYPE,
-    PYTORCH_TENSOR_TYPE,
 };
 
 #[repr(u32)]
