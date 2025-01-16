@@ -185,6 +185,7 @@ pub struct NumpyArray {
     capsule: *mut PyCapsule,
     kind: ItemType,
     opts: Opt,
+    is_zero_dimensional: bool,
 }
 
 impl NumpyArray {
@@ -205,10 +206,9 @@ impl NumpyArray {
             Err(PyArrayError::NotNativeEndian)
         } else {
             let num_dimensions = unsafe { (*array).nd as usize };
-            if num_dimensions == 0 {
-                ffi!(Py_DECREF(capsule));
-                return Err(PyArrayError::UnsupportedDataType);
-            }
+            let is_zero_dimensional = num_dimensions == 0;
+            // For zero-dimensional arrays, treat as 1-dimensional with size 1
+            let effective_dimensions = if is_zero_dimensional { 1 } else { num_dimensions };
             match ItemType::find(array, ptr) {
                 None => {
                     ffi!(Py_DECREF(capsule));
@@ -217,12 +217,13 @@ impl NumpyArray {
                 Some(kind) => {
                     let mut pyarray = NumpyArray {
                         array: array,
-                        position: vec![0; num_dimensions],
-                        children: Vec::with_capacity(num_dimensions),
+                        position: vec![0; effective_dimensions],
+                        children: Vec::with_capacity(effective_dimensions),
                         depth: 0,
                         capsule: capsule as *mut PyCapsule,
                         kind: kind,
                         opts,
+                        is_zero_dimensional,
                     };
                     if pyarray.dimensions() > 1 {
                         pyarray.build();
@@ -243,6 +244,7 @@ impl NumpyArray {
             capsule: self.capsule,
             kind: self.kind,
             opts: self.opts,
+            is_zero_dimensional: self.is_zero_dimensional,
         };
         arr.build();
         arr
@@ -311,7 +313,29 @@ impl Serialize for NumpyArray {
     where
         S: Serializer,
     {
-        if unlikely!(!(self.depth >= self.dimensions() || self.shape()[self.depth] != 0)) {
+        if self.is_zero_dimensional {
+            // For zero-dimensional arrays, serialize the single value directly
+            match self.kind {
+                ItemType::F64 => DataTypeF64 { obj: unsafe { *(self.data() as *const f64) } }.serialize(serializer),
+                ItemType::F32 => DataTypeF32 { obj: unsafe { *(self.data() as *const f32) } }.serialize(serializer),
+                ItemType::F16 => DataTypeF16 { obj: unsafe { *(self.data() as *const u16) } }.serialize(serializer),
+                ItemType::U64 => DataTypeU64 { obj: unsafe { *(self.data() as *const u64) } }.serialize(serializer),
+                ItemType::U32 => DataTypeU32 { obj: unsafe { *(self.data() as *const u32) } }.serialize(serializer),
+                ItemType::U16 => DataTypeU16 { obj: unsafe { *(self.data() as *const u16) } }.serialize(serializer),
+                ItemType::U8 => DataTypeU8 { obj: unsafe { *(self.data() as *const u8) } }.serialize(serializer),
+                ItemType::I64 => DataTypeI64 { obj: unsafe { *(self.data() as *const i64) } }.serialize(serializer),
+                ItemType::I32 => DataTypeI32 { obj: unsafe { *(self.data() as *const i32) } }.serialize(serializer),
+                ItemType::I16 => DataTypeI16 { obj: unsafe { *(self.data() as *const i16) } }.serialize(serializer),
+                ItemType::I8 => DataTypeI8 { obj: unsafe { *(self.data() as *const i8) } }.serialize(serializer),
+                ItemType::BOOL => DataTypeBool { obj: unsafe { *(self.data() as *const u8) } }.serialize(serializer),
+                ItemType::DATETIME64(unit) => {
+                    let val = unsafe { *(self.data() as *const i64) };
+                    unit.datetime(val, self.opts)
+                        .map_err(NumpyDateTimeError::into_serde_err)?
+                        .serialize(serializer)
+                },
+            }
+        } else if unlikely!(!(self.depth >= self.dimensions() || self.shape()[self.depth] != 0)) {
             ZeroListSerializer::new().serialize(serializer)
         } else if !self.children.is_empty() {
             let mut seq = serializer.serialize_seq(None).unwrap();
