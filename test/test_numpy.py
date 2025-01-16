@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
+from datetime import datetime
 import sys
 
 import pytest
@@ -473,16 +474,18 @@ class TestNumpy:
         assert "unsupported datatype in numpy array" in str(cm)
 
     def test_numpy_array_d0(self):
-        array = numpy.array(1)
-        assert (
-            orjson.loads(
-                orjson.dumps(
-                    array,
-                    option=orjson.OPT_SERIALIZE_NUMPY,
+        for item in [1, 3.1, False]:
+            print(item)
+            array = numpy.array(item)
+            assert (
+                orjson.loads(
+                    orjson.dumps(
+                        array,
+                        option=orjson.OPT_SERIALIZE_NUMPY,
+                    )
                 )
+                == item
             )
-            == 1
-        )
 
     def test_numpy_array_d1(self):
         array = numpy.array([1])
