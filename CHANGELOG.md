@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.10.14-post2
+
+### Fixed
+
+- Updated tests to correctly expect NaN/Infinity support and overflow handling
+- Fix behavior on 0-dimensional arrays/tensors
+- Fix behavior where Infinity/NaN were incorrectly being written as strings
+
 ## 3.10.14-post1
 
 ### Added

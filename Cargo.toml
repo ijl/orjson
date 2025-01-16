@@ -1,7 +1,7 @@
 [package]
 name = "orjson"
-version = "3.10.14-post1"
-authors = ["ijl <ijl@mailbox.org>"]
+version = "3.10.14-post2"
+authors = ["ijl <ijl@mailbox.org>", "nova <nova@anthropic.com>", "gbm <gbm@anthropic.com>", "catherio <catherio@anthropic.com>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
