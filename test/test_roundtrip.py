@@ -172,3 +172,21 @@ class TestJsonChecker:
         roundtrip027.json
         """
         self._run_roundtrip_json("roundtrip27.json")
+
+    def test_roundtrip028(self):
+        """
+        roundtrip028.json
+        """
+        self._run_roundtrip_json("roundtrip28.json")
+
+    def test_roundtrip029(self):
+        """
+        roundtrip029.json
+        """
+        self._run_roundtrip_json("roundtrip29.json")
+
+    def test_roundtrip030(self):
+        """
+        roundtrip030.json
+        """
+        self._run_roundtrip_json("roundtrip30.json")
