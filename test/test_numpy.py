@@ -472,6 +472,18 @@ class TestNumpy:
             orjson.dumps(array, option=orjson.OPT_SERIALIZE_NUMPY)
         assert "unsupported datatype in numpy array" in str(cm)
 
+    def test_numpy_array_d0(self):
+        array = numpy.array(1)
+        assert (
+            orjson.loads(
+                orjson.dumps(
+                    array,
+                    option=orjson.OPT_SERIALIZE_NUMPY,
+                )
+            )
+            == 1
+        )
+
     def test_numpy_array_d1(self):
         array = numpy.array([1])
         assert (
