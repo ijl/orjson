@@ -130,12 +130,15 @@ where
         {
             if value.is_infinite() {
                 if value.is_sign_positive() {
-                    self.writer.write_all(b"Infinity").map_err(Error::io)
+                    unsafe { self.writer.write_reserved_fragment(b"Infinity").unwrap() };
+                    Ok(())
                 } else {
-                    self.writer.write_all(b"-Infinity").map_err(Error::io)
+                    unsafe { self.writer.write_reserved_fragment(b"-Infinity").unwrap() };
+                    Ok(())
                 }
             } else if value.is_nan() {
-                self.writer.write_all(b"NaN").map_err(Error::io)
+                unsafe { self.writer.write_reserved_fragment(b"NaN").unwrap() };
+                Ok(())
             } else {
                 self.formatter
                     .write_f32(&mut self.writer, value)
@@ -159,12 +162,15 @@ where
         {
             if value.is_infinite() {
                 if value.is_sign_positive() {
-                    self.writer.write_all(b"Infinity").map_err(Error::io)
+                    unsafe { self.writer.write_reserved_fragment(b"Infinity").unwrap() };
+                    Ok(())
                 } else {
-                    self.writer.write_all(b"-Infinity").map_err(Error::io)
+                    unsafe { self.writer.write_reserved_fragment(b"-Infinity").unwrap() };
+                    Ok(())
                 }
             } else if value.is_nan() {
-                self.writer.write_all(b"NaN").map_err(Error::io)
+                unsafe { self.writer.write_reserved_fragment(b"NaN").unwrap() };
+                Ok(())
             } else {
                 self.formatter
                     .write_f64(&mut self.writer, value)
