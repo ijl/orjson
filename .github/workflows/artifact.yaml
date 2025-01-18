@@ -108,7 +108,7 @@ jobs:
           publish: "${{ matrix.python.publish }}"
 
       - name: Store wheels
-        if: "startsWith(github.ref, 'refs/tags/') && inputs.publish == true"
+        if: "startsWith(github.ref, 'refs/tags/') &&  matrix.python.publish == true"
         uses: actions/upload-artifact@v4
         with:
           name: "orjson_manylinux_amd64_${{ matrix.python.interpreter }}_${{ matrix.python.compatibility }}"
@@ -156,7 +156,7 @@ jobs:
           publish: "${{ matrix.python.publish }}"
 
       - name: Store wheels
-        if: "startsWith(github.ref, 'refs/tags/') && inputs.publish == true"
+        if: "startsWith(github.ref, 'refs/tags/') &&  matrix.python.publish == true"
         uses: actions/upload-artifact@v4
         with:
           name: "orjson_manylinux_aarch64_${{ matrix.python.interpreter }}_${{ matrix.python.compatibility }}"
