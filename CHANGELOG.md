@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.10.15
+
+### Changed
+
+- Publish PyPI manylinux aarch64 wheels built and tested on aarch64.
+- Publish PyPI musllinux aarch64 and arm7l wheels built and tested on aarch64.
+- Publish PyPI manylinux Python 3.13 wheels for i686, arm7l, ppc64le, and s390x.
+
+
 ## 3.10.14
 
 ### Changed

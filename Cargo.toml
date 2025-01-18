@@ -1,14 +1,12 @@
 [package]
 name = "orjson"
-version = "3.10.14"
+version = "3.10.15"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
 rust-version = "1.82"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/ijl/orjson"
-homepage = "https://github.com/ijl/orjson"
 readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [

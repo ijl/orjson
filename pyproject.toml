@@ -1,6 +1,6 @@
 [project]
 name = "orjson"
-version = "3.10.14"
+version = "3.10.15"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.8"
 classifiers = [
@@ -26,8 +26,9 @@ classifiers = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/ijl/orjson"
-Changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
+source = "https://github.com/ijl/orjson"
+documentation = "https://github.com/ijl/orjson"
+changelog = "https://github.com/ijl/orjson/blob/master/CHANGELOG.md"
 
 [build-system]
 build-backend = "maturin"
