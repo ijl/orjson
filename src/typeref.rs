@@ -58,8 +58,6 @@ pub static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();
 
 pub static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
 
-pub static mut PYTORCH_TENSOR_TYPE: *mut PyTypeObject = null_mut();
-
 #[cfg(Py_3_9)]
 pub static mut ZONEINFO_TYPE: *mut PyTypeObject = null_mut();
 
@@ -174,7 +172,6 @@ fn _init_typerefs_impl() -> bool {
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
         FIELD_TYPE = look_up_field_type();
-        PYTORCH_TENSOR_TYPE = look_up_pytorch_type();
 
         #[cfg(Py_3_9)]
         {
@@ -234,21 +231,6 @@ unsafe fn look_up_numpy_type(numpy_module_dict: *mut PyObject, np_type: &str) ->
         Py_XDECREF(ptr);
         ptr as *mut PyTypeObject
     }
-}
-
-#[cold]
-#[cfg_attr(feature = "optimize", optimize(size))]
-unsafe fn look_up_pytorch_type() -> *mut PyTypeObject {
-    let module = PyImport_ImportModule("torch\0".as_ptr() as *const c_char);
-    if module.is_null() {
-        PyErr_Clear();
-        return null_mut();
-    }
-    let module_dict = PyObject_GenericGetDict(module, null_mut());
-    let ptr = PyMapping_GetItemString(module_dict, "Tensor\0".as_ptr() as *const c_char) as *mut PyTypeObject;
-    Py_DECREF(module_dict);
-    Py_DECREF(module);
-    ptr
 }
 
 #[cold]
