@@ -3,7 +3,7 @@
 use crate::opt::{
     Opt, PASSTHROUGH_DATACLASS, PASSTHROUGH_DATETIME, PASSTHROUGH_SUBCLASS, SERIALIZE_NUMPY,
 };
-use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar, is_pytorch_tensor};
+use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar};
 use crate::typeref::{
     BOOL_TYPE, DATACLASS_FIELDS_STR, DATETIME_TYPE, DATE_TYPE, DICT_TYPE, ENUM_TYPE, FLOAT_TYPE,
     FRAGMENT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE, TIME_TYPE, TUPLE_TYPE, UUID_TYPE,
@@ -53,6 +53,30 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     {
         ObType::Datetime
     } else {
+        // Special case for PyTorch tensors - detect by object methods
+        if unlikely!(opt_enabled!(opts, SERIALIZE_NUMPY)) {
+            unsafe {
+                // Simple and effective check - PyTorch tensors have these methods
+                let has_numpy = pyo3_ffi::PyObject_HasAttrString(
+                    obj,
+                    "numpy\0".as_ptr() as *const core::ffi::c_char,
+                ) == 1;
+                let has_cpu = pyo3_ffi::PyObject_HasAttrString(
+                    obj,
+                    "cpu\0".as_ptr() as *const core::ffi::c_char,
+                ) == 1;
+                let has_detach = pyo3_ffi::PyObject_HasAttrString(
+                    obj,
+                    "detach\0".as_ptr() as *const core::ffi::c_char,
+                ) == 1;
+
+                // If it has the key PyTorch tensor methods, treat it as a tensor
+                if has_numpy && has_cpu && has_detach {
+                    return ObType::PyTorchTensor;
+                }
+            }
+        }
+
         pyobject_to_obtype_unlikely(ob_type, opts)
     }
 }
@@ -104,8 +128,6 @@ pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: O
             return ObType::NumpyScalar;
         } else if is_numpy_array(ob_type) {
             return ObType::NumpyArray;
-        } else if is_pytorch_tensor(ob_type) {
-            return ObType::PyTorchTensor;
         }
     }
 

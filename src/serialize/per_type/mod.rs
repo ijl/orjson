@@ -29,7 +29,7 @@ pub use int::IntSerializer;
 pub use list::{ListTupleSerializer, ZeroListSerializer};
 pub use none::NoneSerializer;
 pub use numpy::{is_numpy_array, is_numpy_scalar, NumpyScalar, NumpySerializer};
-pub use pytorch::{is_pytorch_tensor, PyTorchSerializer};
+pub use pytorch::PyTorchSerializer;
 pub use pybool::BoolSerializer;
 pub use pyenum::EnumSerializer;
 pub use unicode::{StrSerializer, StrSubclassSerializer};
