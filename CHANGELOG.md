@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.14-post3
+
+- Defer importing torch. Use heuristics to check torch tensor.
+
 ## 3.10.14-post2
 
 ### Fixed
