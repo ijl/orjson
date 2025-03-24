@@ -93,10 +93,18 @@ pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
         if unlikely!(buf.is_empty()) {
             return use_immortal!(crate::typeref::EMPTY_UNICODE);
         }
+        STR_CREATE_FN(buf)
+    }
+}
+
+pub type StrDeserializer = unsafe fn(&str) -> *mut pyo3_ffi::PyObject;
+
+static mut STR_CREATE_FN: StrDeserializer = super::scalar::str_impl_kind_scalar;
+
+pub fn set_str_create_fn() {
+    unsafe {
         if std::is_x86_feature_detected!("avx512vl") {
-            create_str_impl_avx512vl(buf)
-        } else {
-            super::scalar::unicode_from_str(buf)
+            STR_CREATE_FN = create_str_impl_avx512vl;
         }
     }
 }

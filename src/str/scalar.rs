@@ -3,10 +3,13 @@
 use crate::str::pyunicode_new::{
     pyunicode_ascii, pyunicode_fourbyte, pyunicode_onebyte, pyunicode_twobyte,
 };
-use crate::typeref::EMPTY_UNICODE;
 
-#[inline(always)]
-pub fn str_impl_kind_scalar(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+#[inline(never)]
+pub fn str_impl_kind_scalar(buf: &str) -> *mut pyo3_ffi::PyObject {
+    let num_chars = bytecount::num_chars(buf.as_bytes());
+    if buf.len() == num_chars {
+        return pyunicode_ascii(buf.as_ptr(), num_chars);
+    }
     unsafe {
         let len = buf.len();
         assume!(len > 0);
@@ -33,15 +36,14 @@ pub fn str_impl_kind_scalar(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObj
     }
 }
 
-#[inline(never)]
+#[cfg(not(feature = "avx512"))]
+#[inline(always)]
 pub fn unicode_from_str(buf: &str) -> *mut pyo3_ffi::PyObject {
     if unlikely!(buf.is_empty()) {
-        return use_immortal!(EMPTY_UNICODE);
+        return use_immortal!(crate::typeref::EMPTY_UNICODE);
     }
-    let num_chars = bytecount::num_chars(buf.as_bytes());
-    if buf.len() == num_chars {
-        pyunicode_ascii(buf.as_ptr(), num_chars)
-    } else {
-        str_impl_kind_scalar(buf, num_chars)
-    }
+    str_impl_kind_scalar(buf)
 }
+
+#[cfg(not(feature = "avx512"))]
+pub fn set_str_create_fn() {}

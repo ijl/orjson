@@ -6,4 +6,4 @@ mod json;
 mod str;
 
 pub use byteswriter::{BytesWriter, WriteExt};
-pub use json::{to_writer, to_writer_pretty};
+pub use json::{set_str_formatter_fn, to_writer, to_writer_pretty};

@@ -140,6 +140,10 @@ fn _init_typerefs_impl() -> bool {
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());
+
+        crate::serialize::writer::set_str_formatter_fn();
+        crate::str::set_str_create_fn();
+
         FRAGMENT_TYPE = orjson_fragmenttype_new();
         PyDateTime_IMPORT();
         NONE = Py_None();
