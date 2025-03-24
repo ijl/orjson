@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::DeserializeError;
-use crate::ffi::*;
+use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
 use crate::str::unicode_to_str;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
+use crate::util::isize_to_usize;
 use crate::util::INVALID_STR;
 use core::ffi::c_char;
 use std::borrow::Cow;
@@ -40,8 +41,8 @@ pub fn read_input_to_buf(
     if is_type!(obj_type_ptr, BYTES_TYPE) {
         buffer = unsafe {
             core::slice::from_raw_parts(
-                PyBytes_AS_STRING(ptr) as *const u8,
-                PyBytes_GET_SIZE(ptr) as usize,
+                PyBytes_AS_STRING(ptr).cast::<u8>(),
+                isize_to_usize(PyBytes_GET_SIZE(ptr)),
             )
         };
         if !is_valid_utf8(buffer) {
@@ -62,7 +63,7 @@ pub fn read_input_to_buf(
             )));
         }
         buffer = unsafe {
-            core::slice::from_raw_parts((*membuf).buf as *const u8, (*membuf).len as usize)
+            core::slice::from_raw_parts((*membuf).buf as *const u8, isize_to_usize((*membuf).len))
         };
         if !is_valid_utf8(buffer) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
@@ -71,7 +72,7 @@ pub fn read_input_to_buf(
         buffer = unsafe {
             core::slice::from_raw_parts(
                 ffi!(PyByteArray_AsString(ptr)) as *const u8,
-                ffi!(PyByteArray_Size(ptr)) as usize,
+                isize_to_usize(ffi!(PyByteArray_Size(ptr))),
             )
         };
         if !is_valid_utf8(buffer) {

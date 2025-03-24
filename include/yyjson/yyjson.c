@@ -5265,7 +5265,7 @@ static_inline bool read_string(u8 **ptr,
     
     u8 *cur = *ptr;
     u8 **end = ptr;
-    u8 *src = ++cur, *dst, *pos;
+    u8 *src = ++cur, *dst;
     u16 hi, lo;
     u32 uni, tmp;
     
@@ -5332,7 +5332,6 @@ skip_utf8:
          consecutively. We process the byte sequences of the same length in each
          loop, which is more friendly to branch prediction.
          */
-        pos = src;
 #if YYJSON_DISABLE_UTF8_VALIDATION
         while (true) repeat8({
             if (likely((*src & 0xF0) == 0xE0)) src += 3;
@@ -5550,7 +5549,6 @@ copy_ascii_stop_15:
     
 copy_utf8:
     if (*src & 0x80) { /* non-ASCII character */
-        pos = src;
         uni = byte_load_4(src);
 #if YYJSON_DISABLE_UTF8_VALIDATION
         while (true) repeat4({

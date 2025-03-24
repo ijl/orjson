@@ -8,6 +8,7 @@ use crate::str::unicode_to_str;
 use crate::typeref::{
     DATACLASS_FIELDS_STR, DICT_STR, FIELD_TYPE, FIELD_TYPE_STR, SLOTS_STR, STR_TYPE,
 };
+use crate::util::isize_to_usize;
 
 use serde::ser::{Serialize, SerializeMap, Serializer};
 
@@ -88,7 +89,7 @@ impl Serialize for DataclassFastSerializer {
     where
         S: Serializer,
     {
-        let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         if unlikely!(len == 0) {
             return ZeroDictSerializer::new().serialize(serializer);
         }
@@ -100,7 +101,7 @@ impl Serialize for DataclassFastSerializer {
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-        for _ in 0..ffi!(Py_SIZE(self.ptr)) as usize {
+        for _ in 0..len {
             let key = next_key;
             let value = next_value;
 
@@ -114,7 +115,7 @@ impl Serialize for DataclassFastSerializer {
                 let tmp = unicode_to_str(key);
                 if unlikely!(tmp.is_none()) {
                     err!(SerializeError::InvalidStr)
-                };
+                }
                 tmp.unwrap()
             };
             if unlikely!(key_as_str.as_bytes()[0] == b'_') {
@@ -158,7 +159,7 @@ impl Serialize for DataclassFallbackSerializer {
         let fields = ffi!(PyObject_GetAttr(self.ptr, DATACLASS_FIELDS_STR));
         debug_assert!(ffi!(Py_REFCNT(fields)) >= 2);
         ffi!(Py_DECREF(fields));
-        let len = ffi!(Py_SIZE(fields)) as usize;
+        let len = isize_to_usize(ffi!(Py_SIZE(fields)));
         if unlikely!(len == 0) {
             return ZeroDictSerializer::new().serialize(serializer);
         }
@@ -170,7 +171,7 @@ impl Serialize for DataclassFallbackSerializer {
 
         pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
 
-        for _ in 0..ffi!(Py_SIZE(fields)) as usize {
+        for _ in 0..len {
             let attr = next_key;
             let field = next_value;
 
@@ -179,7 +180,7 @@ impl Serialize for DataclassFallbackSerializer {
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);
             ffi!(Py_DECREF(field_type));
-            if unsafe { field_type as *mut pyo3_ffi::PyTypeObject != FIELD_TYPE } {
+            if unsafe { field_type.cast::<pyo3_ffi::PyTypeObject>() != FIELD_TYPE } {
                 continue;
             }
 
@@ -187,7 +188,7 @@ impl Serialize for DataclassFallbackSerializer {
                 let tmp = unicode_to_str(attr);
                 if unlikely!(tmp.is_none()) {
                     err!(SerializeError::InvalidStr)
-                };
+                }
                 tmp.unwrap()
             };
             if key_as_str.as_bytes()[0] == b'_' {
@@ -200,7 +201,7 @@ impl Serialize for DataclassFallbackSerializer {
             let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
 
             map.serialize_key(key_as_str).unwrap();
-            map.serialize_value(&pyvalue)?
+            map.serialize_value(&pyvalue)?;
         }
         map.end()
     }

@@ -47,7 +47,7 @@ macro_rules! is_subclass_by_flag {
 macro_rules! is_subclass_by_type {
     ($ob_type:expr, $type:ident) => {
         unsafe {
-            (*($ob_type as *mut pyo3_ffi::PyTypeObject))
+            (*($ob_type.cast::<pyo3_ffi::PyTypeObject>()))
                 .ob_base
                 .ob_base
                 .ob_type
@@ -112,7 +112,7 @@ macro_rules! nonnull {
 
 macro_rules! str_from_slice {
     ($ptr:expr, $size:expr) => {
-        unsafe { std::str::from_utf8_unchecked(core::slice::from_raw_parts($ptr, $size as usize)) }
+        unsafe { core::str::from_utf8_unchecked(core::slice::from_raw_parts($ptr, $size as usize)) }
     };
 }
 
@@ -334,4 +334,18 @@ macro_rules! unreachable_unchecked {
     () => {
         unsafe { core::hint::unreachable_unchecked() }
     };
+}
+
+#[inline(always)]
+#[allow(clippy::cast_possible_wrap)]
+pub fn usize_to_isize(val: usize) -> isize {
+    debug_assert!(val < (isize::MAX as usize));
+    val as isize
+}
+
+#[inline(always)]
+#[allow(clippy::cast_sign_loss)]
+pub fn isize_to_usize(val: isize) -> usize {
+    debug_assert!(val >= 0);
+    val as usize
 }

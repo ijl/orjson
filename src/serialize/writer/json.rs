@@ -2,7 +2,6 @@
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
 use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
-use crate::serialize::writer::str::*;
 use crate::serialize::writer::WriteExt;
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
@@ -581,7 +580,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_impl_generic_128(
+        let written = crate::serialize::writer::str::format_escaped_str_impl_generic_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -604,7 +603,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_impl_sse2_128(
+        let written = crate::serialize::writer::str::format_escaped_str_impl_sse2_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -624,20 +623,20 @@ where
         reserve_str!(writer, value);
 
         if std::is_x86_feature_detected!("avx512vl") {
-            let written = format_escaped_str_impl_512vl(
+            let written = crate::serialize::writer::str::format_escaped_str_impl_512vl(
                 writer.as_mut_buffer_ptr(),
                 value.as_bytes().as_ptr(),
                 value.len(),
             );
             writer.set_written(written);
         } else {
-            let written = format_escaped_str_impl_sse2_128(
+            let written = crate::serialize::writer::str::format_escaped_str_impl_sse2_128(
                 writer.as_mut_buffer_ptr(),
                 value.as_bytes().as_ptr(),
                 value.len(),
             );
             writer.set_written(written);
-        };
+        }
     }
 }
 
@@ -650,7 +649,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_scalar(
+        let written = crate::serialize::writer::str::format_escaped_str_scalar(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),
@@ -668,7 +667,7 @@ where
     unsafe {
         reserve_str!(writer, value);
 
-        let written = format_escaped_str_impl_sse2_128(
+        let written = crate::serialize::writer::str::format_escaped_str_impl_sse2_128(
             writer.as_mut_buffer_ptr(),
             value.as_bytes().as_ptr(),
             value.len(),

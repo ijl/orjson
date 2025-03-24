@@ -6,7 +6,11 @@ use core::ffi::c_char;
 use std::sync::atomic::{AtomicIsize, AtomicU32, AtomicU64};
 
 use core::ptr::null_mut;
-use pyo3_ffi::*;
+use pyo3_ffi::{
+    PyErr_SetObject, PyExc_TypeError, PyObject, PyTuple_GET_ITEM, PyTypeObject, PyType_Ready,
+    PyType_Type, PyUnicode_FromStringAndSize, PyVarObject, Py_DECREF, Py_INCREF, Py_SIZE,
+    Py_TPFLAGS_DEFAULT,
+};
 
 // https://docs.python.org/3/c-api/typeobj.html#typedef-examples
 
@@ -21,7 +25,7 @@ pub struct Fragment {
     #[cfg(Py_GIL_DISABLED)]
     pub _padding: u16,
     #[cfg(Py_GIL_DISABLED)]
-    pub ob_mutex: PyMutex,
+    pub ob_mutex: pyo3_ffi::PyMutex,
     #[cfg(Py_GIL_DISABLED)]
     pub ob_gc_bits: u8,
     #[cfg(Py_GIL_DISABLED)]
@@ -41,7 +45,7 @@ fn raise_args_exception() {
     unsafe {
         let msg = "orjson.Fragment() takes exactly 1 positional argument";
         let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
+            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), msg.len() as isize);
         PyErr_SetObject(PyExc_TypeError, err_msg);
         Py_DECREF(err_msg);
     };
@@ -68,7 +72,7 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
                 #[cfg(Py_GIL_DISABLED)]
                 _padding: 0,
                 #[cfg(Py_GIL_DISABLED)]
-                ob_mutex: PyMutex::new(),
+                ob_mutex: pyo3_ffi::PyMutex::new(),
                 #[cfg(Py_GIL_DISABLED)]
                 ob_gc_bits: 0,
                 #[cfg(Py_GIL_DISABLED)]
@@ -80,7 +84,7 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
                 ob_type: crate::typeref::FRAGMENT_TYPE,
                 contents: contents,
             });
-            Box::into_raw(obj) as *mut PyObject
+            Box::into_raw(obj).cast::<PyObject>()
         }
     }
 }
@@ -90,16 +94,18 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     unsafe {
-        Py_DECREF((*(object as *mut Fragment)).contents);
-        std::alloc::dealloc(object as *mut u8, std::alloc::Layout::new::<Fragment>());
+        Py_DECREF((*object.cast::<Fragment>()).contents);
+        std::alloc::dealloc(object.cast::<u8>(), core::alloc::Layout::new::<Fragment>());
     }
 }
 
 #[cfg(Py_GIL_DISABLED)]
-const FRAGMENT_TP_FLAGS: AtomicU64 = AtomicU64::new(Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE);
+const FRAGMENT_TP_FLAGS: AtomicU64 =
+    AtomicU64::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
 
 #[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
-const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE;
+const FRAGMENT_TP_FLAGS: core::ffi::c_ulong =
+    Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE;
 
 #[cfg(not(Py_3_10))]
 const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
@@ -117,7 +123,7 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
                     #[cfg(Py_GIL_DISABLED)]
                     _padding: 0,
                     #[cfg(Py_GIL_DISABLED)]
-                    ob_mutex: PyMutex::new(),
+                    ob_mutex: pyo3_ffi::PyMutex::new(),
                     #[cfg(Py_GIL_DISABLED)]
                     ob_gc_bits: 0,
                     #[cfg(Py_GIL_DISABLED)]
@@ -128,11 +134,11 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
                     ob_refcnt: pyo3_ffi::PyObjectObRefcnt { ob_refcnt: 0 },
                     #[cfg(not(Py_3_12))]
                     ob_refcnt: 0,
-                    ob_type: core::ptr::addr_of_mut!(PyType_Type),
+                    ob_type: &raw mut PyType_Type,
                 },
                 ob_size: 0,
             },
-            tp_name: "orjson.Fragment\0".as_ptr() as *const c_char,
+            tp_name: c"orjson.Fragment".as_ptr(),
             tp_basicsize: core::mem::size_of::<Fragment>() as isize,
             tp_itemsize: 0,
             tp_dealloc: Some(orjson_fragment_dealloc),

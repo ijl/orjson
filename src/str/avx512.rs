@@ -25,13 +25,13 @@ macro_rules! impl_kind_simd_avx512vl {
 
             let remainder_mask: u32 = !(u32::MAX << remainder);
             let mut str_vec =
-                _mm256_maskz_loadu_epi8(remainder_mask, $buf.as_bytes().as_ptr() as *const i8);
+                _mm256_maskz_loadu_epi8(remainder_mask, $buf.as_bytes().as_ptr().cast::<i8>());
             let sptr = $buf.as_bytes().as_ptr().add(remainder);
 
             for i in 0..num_loops {
                 str_vec = _mm256_max_epu8(
                     str_vec,
-                    _mm256_loadu_si256(sptr.add(STRIDE * i) as *const __m256i),
+                    _mm256_loadu_si256(sptr.add(STRIDE * i).cast::<__m256i>()),
                 );
             }
 
@@ -49,7 +49,7 @@ macro_rules! impl_kind_simd_avx512vl {
                     _mm256_and_si256(
                         _mm256_maskz_loadu_epi8(
                             remainder_mask,
-                            $buf.as_bytes().as_ptr() as *const i8
+                            $buf.as_bytes().as_ptr().cast::<i8>()
                         ),
                         multibyte
                     ),
@@ -59,7 +59,7 @@ macro_rules! impl_kind_simd_avx512vl {
                 for i in 0..num_loops {
                     num_chars += popcnt!(_mm256_cmpneq_epi8_mask(
                         _mm256_and_si256(
-                            _mm256_loadu_si256(sptr.add(STRIDE * i) as *const __m256i),
+                            _mm256_loadu_si256(sptr.add(STRIDE * i).cast::<__m256i>()),
                             multibyte
                         ),
                         vec_128,

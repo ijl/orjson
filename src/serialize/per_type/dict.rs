@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::*;
+use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
@@ -15,6 +15,7 @@ use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
 use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
+use crate::util::isize_to_usize;
 use compact_str::CompactString;
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -73,16 +74,17 @@ impl Serialize for DictGenericSerializer {
             ZeroDictSerializer::new().serialize(serializer)
         } else if likely!(opt_disabled!(self.state.opts(), SORT_OR_NON_STR_KEYS)) {
             unsafe {
-                core::mem::transmute::<&DictGenericSerializer, &Dict>(self).serialize(serializer)
+                (*(core::ptr::from_ref::<DictGenericSerializer>(self)).cast::<Dict>())
+                    .serialize(serializer)
             }
         } else if opt_enabled!(self.state.opts(), NON_STR_KEYS) {
             unsafe {
-                core::mem::transmute::<&DictGenericSerializer, &DictNonStrKey>(self)
+                (*(core::ptr::from_ref::<DictGenericSerializer>(self)).cast::<DictNonStrKey>())
                     .serialize(serializer)
             }
         } else {
             unsafe {
-                core::mem::transmute::<&DictGenericSerializer, &DictSortedKey>(self)
+                (*(core::ptr::from_ref::<DictGenericSerializer>(self)).cast::<DictSortedKey>())
                     .serialize(serializer)
             }
         }
@@ -223,7 +225,7 @@ impl Serialize for Dict {
 
         let mut map = serializer.serialize_map(None).unwrap();
 
-        let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
 
         for _ in 0..len {
@@ -241,7 +243,7 @@ impl Serialize for Dict {
                 let tmp = unicode_to_str(key);
                 if unlikely!(tmp.is_none()) {
                     err!(SerializeError::InvalidStr)
-                };
+                }
                 tmp.unwrap()
             };
 
@@ -271,7 +273,7 @@ impl Serialize for DictSortedKey {
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-        let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
 
         let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
@@ -327,6 +329,7 @@ fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, S
     }
 }
 
+#[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_date(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
@@ -364,6 +367,7 @@ fn non_str_time(
     Ok(CompactString::from(key_as_str))
 }
 
+#[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
@@ -372,6 +376,7 @@ fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, Serialize
     Ok(CompactString::from(key_as_str))
 }
 
+#[allow(clippy::unnecessary_wraps)]
 #[cold]
 #[inline(never)]
 fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
@@ -383,6 +388,7 @@ fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, Serializ
     }
 }
 
+#[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_int(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
     let ival = ffi!(PyLong_AsLongLong(key));
@@ -464,7 +470,7 @@ impl Serialize for DictNonStrKey {
 
         let opts = self.state.opts() & NOT_PASSTHROUGH;
 
-        let len = ffi!(Py_SIZE(self.ptr)) as usize;
+        let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
 
         let mut items: SmallVec<[(CompactString, *mut pyo3_ffi::PyObject); 8]> =

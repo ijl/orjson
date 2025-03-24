@@ -18,6 +18,7 @@ macro_rules! impl_format_simd_generic_128 {
             {
                 while nb >= STRIDE {
                     let v = StrVector::from_slice(core::slice::from_raw_parts($src, STRIDE));
+                    #[allow(clippy::cast_possible_truncation)]
                     let mask =
                         (v.simd_eq(BLASH) | v.simd_eq(QUOTE) | v.simd_lt(X20)).to_bitmask() as u32;
                     v.copy_to_slice(core::slice::from_raw_parts_mut($dst, STRIDE));
@@ -51,6 +52,7 @@ macro_rules! impl_format_simd_generic_128 {
 
                 let mut scratch_ptr = scratch.as_mut_ptr().add(16 - nb);
                 v = StrVector::from_slice(core::slice::from_raw_parts(scratch_ptr, STRIDE));
+                #[allow(clippy::cast_possible_truncation)]
                 let mut mask =
                     (v.simd_eq(BLASH) | v.simd_eq(QUOTE) | v.simd_lt(X20)).to_bitmask() as u32;
 
@@ -98,7 +100,7 @@ pub unsafe fn format_escaped_str_impl_generic_128(
         dst = dst.add(1);
 
         if value_len < STRIDE {
-            impl_format_scalar!(dst, src, value_len)
+            impl_format_scalar!(dst, src, value_len);
         } else {
             impl_format_simd_generic_128!(dst, src, value_len);
         }

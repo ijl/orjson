@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::*;
+use crate::opt::Opt;
 
 const RECURSION_SHIFT: usize = 24;
 const RECURSION_MASK: u32 = 255 << RECURSION_SHIFT;
@@ -20,27 +20,27 @@ pub struct SerializerState {
 impl SerializerState {
     #[inline(always)]
     pub fn new(opts: Opt) -> Self {
-        debug_assert!(opts < u16::MAX as u32);
+        debug_assert!(opts < u32::from(u16::MAX));
         Self { state: opts }
     }
 
     #[inline(always)]
-    pub fn opts(&self) -> u32 {
+    pub fn opts(self) -> u32 {
         self.state
     }
 
     #[inline(always)]
-    pub fn recursion_limit(&self) -> bool {
+    pub fn recursion_limit(self) -> bool {
         self.state & RECURSION_MASK == RECURSION_MASK
     }
 
     #[inline(always)]
-    pub fn default_calls_limit(&self) -> bool {
+    pub fn default_calls_limit(self) -> bool {
         self.state & DEFAULT_MASK == DEFAULT_MASK
     }
 
     #[inline(always)]
-    pub fn copy_for_recursive_call(&self) -> Self {
+    pub fn copy_for_recursive_call(self) -> Self {
         let opt = self.state & !RECURSION_MASK;
         let recursion = (((self.state & RECURSION_MASK) >> RECURSION_SHIFT) + 1) << RECURSION_SHIFT;
         Self {
@@ -49,7 +49,7 @@ impl SerializerState {
     }
 
     #[inline(always)]
-    pub fn copy_for_default_call(&self) -> Self {
+    pub fn copy_for_default_call(self) -> Self {
         let opt = self.state & !DEFAULT_MASK;
         let default_calls = (((self.state & DEFAULT_MASK) >> DEFAULT_SHIFT) + 1) << DEFAULT_SHIFT;
         Self {

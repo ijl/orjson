@@ -26,7 +26,7 @@ impl Serialize for StrSerializer {
             let tmp = unicode_to_str(self.ptr);
             if unlikely!(tmp.is_none()) {
                 err!(SerializeError::InvalidStr)
-            };
+            }
             tmp.unwrap()
         };
         serializer.serialize_str(uni)

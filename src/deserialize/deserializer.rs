@@ -21,7 +21,7 @@ pub fn deserialize(
         }
     }
 
-    let buffer_str = unsafe { std::str::from_utf8_unchecked(buffer) };
+    let buffer_str = unsafe { core::str::from_utf8_unchecked(buffer) };
 
     crate::deserialize::backend::deserialize(buffer_str)
 }

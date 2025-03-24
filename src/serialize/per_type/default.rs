@@ -35,11 +35,14 @@ impl<'a> Serialize for DefaultSerializer<'a> {
                     core::ptr::null_mut() as *mut pyo3_ffi::PyObject
                 ));
                 #[cfg(Py_3_10)]
+                #[allow(clippy::cast_sign_loss)]
+                let nargs = ffi!(PyVectorcall_NARGS(1)) as usize;
+                #[cfg(Py_3_10)]
                 let default_obj = unsafe {
                     pyo3_ffi::PyObject_Vectorcall(
                         callable.as_ptr(),
-                        core::ptr::addr_of!(self.previous.ptr),
-                        pyo3_ffi::PyVectorcall_NARGS(1) as usize,
+                        &raw const self.previous.ptr,
+                        nargs,
                         core::ptr::null_mut(),
                     )
                 };

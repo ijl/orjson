@@ -26,8 +26,8 @@ impl UUID {
             unsafe {
                 // test_uuid_overflow
                 pyo3_ffi::_PyLong_AsByteArray(
-                    py_int as *mut pyo3_ffi::PyLongObject,
-                    buffer.as_ptr() as *mut c_uchar,
+                    py_int.cast::<pyo3_ffi::PyLongObject>(),
+                    buffer.as_ptr().cast_mut(),
                     16,
                     1, // little_endian
                     0, // is_signed

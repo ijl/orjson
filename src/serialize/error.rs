@@ -22,10 +22,10 @@ pub enum SerializeError {
     UnsupportedType(NonNull<pyo3_ffi::PyObject>),
 }
 
-impl std::fmt::Display for SerializeError {
+impl core::fmt::Display for SerializeError {
     #[cold]
     #[cfg_attr(feature = "optimize", optimize(size))]
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match *self {
             SerializeError::DatetimeLibraryUnsupported => write!(
                 f,
@@ -63,7 +63,7 @@ impl std::fmt::Display for SerializeError {
             SerializeError::UnsupportedType(ptr) => {
                 let name =
                     unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
-                write!(f, "Type is not JSON serializable: {}", name)
+                write!(f, "Type is not JSON serializable: {name}")
             }
         }
     }

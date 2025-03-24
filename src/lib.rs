@@ -9,12 +9,47 @@
 #![allow(static_mut_refs)]
 #![allow(unknown_lints)] // internal_features
 #![allow(unused_unsafe)]
+#![allow(clippy::absolute_paths)]
+#![allow(clippy::arbitrary_source_item_ordering)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::explicit_iter_loop)]
+#![allow(clippy::if_not_else)]
+#![allow(clippy::implicit_return)]
+#![allow(clippy::inline_always)]
+#![allow(clippy::let_underscore_untyped)]
+#![allow(clippy::missing_assert_message)]
+#![allow(clippy::missing_docs_in_private_items)]
+#![allow(clippy::missing_inline_in_public_items)]
+#![allow(clippy::missing_panics_doc)]
 #![allow(clippy::missing_safety_doc)]
+#![allow(clippy::multiple_unsafe_ops_per_block)]
 #![allow(clippy::needless_lifetimes)]
+#![allow(clippy::question_mark_used)]
+#![allow(clippy::redundant_else)]
 #![allow(clippy::redundant_field_names)]
-#![allow(clippy::uninlined_format_args)] // MSRV 1.66
+#![allow(clippy::renamed_function_params)]
+#![allow(clippy::semicolon_outside_block)]
+#![allow(clippy::single_call_fn)]
+#![allow(clippy::undocumented_unsafe_blocks)]
+#![allow(clippy::unreachable)]
+#![allow(clippy::unreadable_literal)]
+#![allow(clippy::unusual_byte_groupings)]
+#![allow(clippy::unwrap_in_result)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
+#![warn(clippy::ptr_arg)]
+#![warn(clippy::ptr_as_ptr)]
+#![warn(clippy::ptr_cast_constness)]
+#![warn(clippy::redundant_allocation)]
+#![warn(clippy::redundant_clone)]
+#![warn(clippy::redundant_locals)]
+#![warn(clippy::redundant_slicing)]
+#![warn(clippy::size_of_ref)]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::trivially_copy_pass_by_ref)]
+#![warn(clippy::unnecessary_semicolon)]
+#![warn(clippy::unnecessary_wraps)]
+#![warn(clippy::zero_ptr)]
 
 #[cfg(feature = "unwind")]
 extern crate unwinding;
@@ -31,7 +66,15 @@ mod str;
 mod typeref;
 
 use core::ffi::{c_char, c_int, c_void};
-use pyo3_ffi::*;
+use pyo3_ffi::{
+    PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
+    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
+    PyTuple_GET_ITEM, PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize,
+    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS,
+    METH_O,
+};
+
+use crate::util::{isize_to_usize, usize_to_isize};
 
 #[allow(unused_imports)]
 use core::ptr::{null, null_mut, NonNull};
@@ -39,32 +82,32 @@ use core::ptr::{null, null_mut, NonNull};
 #[cfg(Py_3_13)]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        PyModule_Add($mptr, $name.as_ptr() as *const c_char, $obj);
+        pyo3_ffi::PyModule_Add($mptr, $name.as_ptr(), $obj);
     };
 }
 
 #[cfg(all(Py_3_10, not(Py_3_13)))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        PyModule_AddObjectRef($mptr, $name.as_ptr() as *const c_char, $obj);
+        pyo3_ffi::PyModule_AddObjectRef($mptr, $name.as_ptr(), $obj);
     };
 }
 
 #[cfg(not(Py_3_10))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        PyModule_AddObject($mptr, $name.as_ptr() as *const c_char, $obj);
+        pyo3_ffi::PyModule_AddObject($mptr, $name.as_ptr(), $obj);
     };
 }
 
 macro_rules! opt {
     ($mptr:expr, $name:expr, $opt:expr) => {
         #[cfg(all(not(target_os = "windows"), target_pointer_width = "64"))]
-        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i64);
+        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), i64::from($opt));
         #[cfg(all(not(target_os = "windows"), target_pointer_width = "32"))]
-        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
+        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
         #[cfg(target_os = "windows")]
-        PyModule_AddIntConstant($mptr, $name.as_ptr() as *const c_char, $opt as i32);
+        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
     };
 }
 
@@ -75,19 +118,21 @@ macro_rules! opt {
 pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     unsafe {
         typeref::init_typerefs();
+
         {
             let version = env!("CARGO_PKG_VERSION");
             let pyversion = PyUnicode_FromStringAndSize(
-                version.as_ptr() as *const c_char,
-                version.len() as isize,
+                version.as_ptr().cast::<c_char>(),
+                usize_to_isize(version.len()),
             );
-            add!(mptr, "__version__\0", pyversion);
+            add!(mptr, c"__version__", pyversion);
         }
+
         {
-            let dumps_doc = "dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.\0";
+            let dumps_doc = c"dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.";
 
             let wrapped_dumps = PyMethodDef {
-                ml_name: "dumps\0".as_ptr() as *const c_char,
+                ml_name: c"dumps".as_ptr(),
                 ml_meth: PyMethodDefPointer {
                     #[cfg(Py_3_10)]
                     PyCFunctionFastWithKeywords: dumps,
@@ -95,65 +140,57 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
                     _PyCFunctionFastWithKeywords: dumps,
                 },
                 ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
-                ml_doc: dumps_doc.as_ptr() as *const c_char,
+                ml_doc: dumps_doc.as_ptr(),
             };
 
             let func = PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_dumps)),
                 null_mut(),
-                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
+                PyUnicode_InternFromString(c"orjson".as_ptr()),
             );
-            add!(mptr, "dumps\0", func);
+            add!(mptr, c"dumps", func);
         }
 
         {
-            let loads_doc = "loads(obj, /)\n--\n\nDeserialize JSON to Python objects.\0";
+            let loads_doc = c"loads(obj, /)\n--\n\nDeserialize JSON to Python objects.";
 
             let wrapped_loads = PyMethodDef {
-                ml_name: "loads\0".as_ptr() as *const c_char,
+                ml_name: c"loads".as_ptr(),
                 ml_meth: PyMethodDefPointer { PyCFunction: loads },
                 ml_flags: METH_O,
-                ml_doc: loads_doc.as_ptr() as *const c_char,
+                ml_doc: loads_doc.as_ptr(),
             };
             let func = PyCFunction_NewEx(
                 Box::into_raw(Box::new(wrapped_loads)),
                 null_mut(),
-                PyUnicode_InternFromString("orjson\0".as_ptr() as *const c_char),
+                PyUnicode_InternFromString(c"orjson".as_ptr()),
             );
-            add!(mptr, "loads\0", func);
+            add!(mptr, c"loads", func);
         }
 
-        add!(mptr, "Fragment\0", typeref::FRAGMENT_TYPE as *mut PyObject);
+        add!(mptr, c"Fragment", typeref::FRAGMENT_TYPE.cast::<PyObject>());
 
-        opt!(mptr, "OPT_APPEND_NEWLINE\0", opt::APPEND_NEWLINE);
-        opt!(mptr, "OPT_INDENT_2\0", opt::INDENT_2);
-        opt!(mptr, "OPT_NAIVE_UTC\0", opt::NAIVE_UTC);
-        opt!(mptr, "OPT_NON_STR_KEYS\0", opt::NON_STR_KEYS);
-        opt!(mptr, "OPT_OMIT_MICROSECONDS\0", opt::OMIT_MICROSECONDS);
+        opt!(mptr, c"OPT_APPEND_NEWLINE", opt::APPEND_NEWLINE);
+        opt!(mptr, c"OPT_INDENT_2", opt::INDENT_2);
+        opt!(mptr, c"OPT_NAIVE_UTC", opt::NAIVE_UTC);
+        opt!(mptr, c"OPT_NON_STR_KEYS", opt::NON_STR_KEYS);
+        opt!(mptr, c"OPT_OMIT_MICROSECONDS", opt::OMIT_MICROSECONDS);
         opt!(
             mptr,
-            "OPT_PASSTHROUGH_DATACLASS\0",
+            c"OPT_PASSTHROUGH_DATACLASS",
             opt::PASSTHROUGH_DATACLASS
         );
-        opt!(
-            mptr,
-            "OPT_PASSTHROUGH_DATETIME\0",
-            opt::PASSTHROUGH_DATETIME
-        );
-        opt!(
-            mptr,
-            "OPT_PASSTHROUGH_SUBCLASS\0",
-            opt::PASSTHROUGH_SUBCLASS
-        );
-        opt!(mptr, "OPT_SERIALIZE_DATACLASS\0", opt::SERIALIZE_DATACLASS);
-        opt!(mptr, "OPT_SERIALIZE_NUMPY\0", opt::SERIALIZE_NUMPY);
-        opt!(mptr, "OPT_SERIALIZE_UUID\0", opt::SERIALIZE_UUID);
-        opt!(mptr, "OPT_SORT_KEYS\0", opt::SORT_KEYS);
-        opt!(mptr, "OPT_STRICT_INTEGER\0", opt::STRICT_INTEGER);
-        opt!(mptr, "OPT_UTC_Z\0", opt::UTC_Z);
+        opt!(mptr, c"OPT_PASSTHROUGH_DATETIME", opt::PASSTHROUGH_DATETIME);
+        opt!(mptr, c"OPT_PASSTHROUGH_SUBCLASS", opt::PASSTHROUGH_SUBCLASS);
+        opt!(mptr, c"OPT_SERIALIZE_DATACLASS", opt::SERIALIZE_DATACLASS);
+        opt!(mptr, c"OPT_SERIALIZE_NUMPY", opt::SERIALIZE_NUMPY);
+        opt!(mptr, c"OPT_SERIALIZE_UUID", opt::SERIALIZE_UUID);
+        opt!(mptr, c"OPT_SORT_KEYS", opt::SORT_KEYS);
+        opt!(mptr, c"OPT_STRICT_INTEGER", opt::STRICT_INTEGER);
+        opt!(mptr, c"OPT_UTC_Z", opt::UTC_Z);
 
-        add!(mptr, "JSONDecodeError\0", typeref::JsonDecodeError);
-        add!(mptr, "JSONEncodeError\0", typeref::JsonEncodeError);
+        add!(mptr, c"JSONDecodeError", typeref::JsonDecodeError);
+        add!(mptr, c"JSONEncodeError", typeref::JsonEncodeError);
 
         0
     }
@@ -174,18 +211,18 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
     unsafe {
         let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
             PyModuleDef_Slot {
-                slot: Py_mod_exec,
+                slot: pyo3_ffi::Py_mod_exec,
                 value: orjson_init_exec as *mut c_void,
             },
             #[cfg(Py_3_12)]
             PyModuleDef_Slot {
-                slot: Py_mod_multiple_interpreters,
-                value: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
+                slot: pyo3_ffi::Py_mod_multiple_interpreters,
+                value: pyo3_ffi::Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
             },
             #[cfg(Py_3_13)]
             PyModuleDef_Slot {
-                slot: Py_mod_gil,
-                value: Py_MOD_GIL_USED,
+                slot: pyo3_ffi::Py_mod_gil,
+                value: pyo3_ffi::Py_MOD_GIL_USED,
             },
             PyModuleDef_Slot {
                 slot: 0,
@@ -195,11 +232,11 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 
         let init = Box::new(PyModuleDef {
             m_base: PyModuleDef_HEAD_INIT,
-            m_name: "orjson\0".as_ptr() as *const c_char,
+            m_name: c"orjson".as_ptr(),
             m_doc: null(),
             m_size: 0,
             m_methods: null_mut(),
-            m_slots: Box::into_raw(mod_slots) as *mut PyModuleDef_Slot,
+            m_slots: Box::into_raw(mod_slots).cast::<PyModuleDef_Slot>(),
             m_traverse: None,
             m_clear: None,
             m_free: None,
@@ -214,19 +251,20 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
-    let pos = err.pos();
-    let msg = err.message;
-    let doc = match err.data {
-        Some(as_str) => unsafe {
-            PyUnicode_FromStringAndSize(as_str.as_ptr() as *const c_char, as_str.len() as isize)
-        },
-        None => {
-            use_immortal!(crate::typeref::EMPTY_UNICODE)
-        }
-    };
     unsafe {
+        let pos = err.pos();
+        let msg = err.message;
+        let doc = match err.data {
+            Some(as_str) => PyUnicode_FromStringAndSize(
+                as_str.as_ptr().cast::<c_char>(),
+                usize_to_isize(as_str.len()),
+            ),
+            None => {
+                use_immortal!(crate::typeref::EMPTY_UNICODE)
+            }
+        };
         let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
+            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
         let args = PyTuple_New(3);
         let pos = PyLong_FromLongLong(pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
@@ -235,7 +273,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
         PyErr_SetObject(typeref::JsonDecodeError, args);
         debug_assert!(ffi!(Py_REFCNT(args)) <= 2);
         Py_DECREF(args);
-    };
+    }
     null_mut()
 }
 
@@ -245,11 +283,11 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
 fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
     unsafe {
         let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr() as *const c_char, msg.len() as isize);
+            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
-    };
+    }
     null_mut()
 }
 
@@ -259,20 +297,20 @@ fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
 #[cfg(Py_3_12)]
 fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
     unsafe {
-        let cause_exc: *mut PyObject = PyErr_GetRaisedException();
+        let cause_exc: *mut PyObject = pyo3_ffi::PyErr_GetRaisedException();
 
         let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
+            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
         Py_DECREF(err_msg);
 
         if !cause_exc.is_null() {
-            let exc: *mut PyObject = PyErr_GetRaisedException();
-            PyException_SetCause(exc, cause_exc);
-            PyErr_SetRaisedException(exc);
+            let exc: *mut PyObject = pyo3_ffi::PyErr_GetRaisedException();
+            pyo3_ffi::PyException_SetCause(exc, cause_exc);
+            pyo3_ffi::PyErr_SetRaisedException(exc);
         }
-    };
+    }
     null_mut()
 }
 
@@ -285,30 +323,30 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
         let mut cause_tp: *mut PyObject = null_mut();
         let mut cause_val: *mut PyObject = null_mut();
         let mut cause_traceback: *mut PyObject = null_mut();
-        PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
+        pyo3_ffi::PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
 
         let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr() as *const c_char, err.len() as isize);
+            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
         PyErr_SetObject(typeref::JsonEncodeError, err_msg);
         debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
         Py_DECREF(err_msg);
         let mut tp: *mut PyObject = null_mut();
         let mut val: *mut PyObject = null_mut();
         let mut traceback: *mut PyObject = null_mut();
-        PyErr_Fetch(&mut tp, &mut val, &mut traceback);
-        PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
+        pyo3_ffi::PyErr_Fetch(&mut tp, &mut val, &mut traceback);
+        pyo3_ffi::PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
 
         if !cause_tp.is_null() {
-            PyErr_NormalizeException(&mut cause_tp, &mut cause_val, &mut cause_traceback);
-            PyException_SetCause(val, cause_val);
+            pyo3_ffi::PyErr_NormalizeException(&mut cause_tp, &mut cause_val, &mut cause_traceback);
+            pyo3_ffi::PyException_SetCause(val, cause_val);
             Py_DECREF(cause_tp);
         }
         if !cause_traceback.is_null() {
             Py_DECREF(cause_traceback);
         }
 
-        PyErr_Restore(tp, val, traceback);
-    };
+        pyo3_ffi::PyErr_Restore(tp, val, traceback);
+    }
     null_mut()
 }
 
@@ -331,7 +369,7 @@ pub unsafe extern "C" fn dumps(
         let mut default: Option<NonNull<PyObject>> = None;
         let mut optsptr: Option<NonNull<PyObject>> = None;
 
-        let num_args = PyVectorcall_NARGS(nargs as usize);
+        let num_args = PyVectorcall_NARGS(isize_to_usize(nargs));
         if unlikely!(num_args == 0) {
             return raise_dumps_exception_fixed(
                 "dumps() missing 1 required positional argument: 'obj'",
@@ -372,7 +410,9 @@ pub unsafe extern "C" fn dumps(
         if unlikely!(optsptr.is_some()) {
             let opts = optsptr.unwrap();
             if (*opts.as_ptr()).ob_type == typeref::INT_TYPE {
-                optsbits = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32;
+                #[allow(clippy::cast_possible_truncation)]
+                let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
+                optsbits = tmp;
                 if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
                     return raise_dumps_exception_fixed("Invalid opts");
                 }
@@ -381,6 +421,7 @@ pub unsafe extern "C" fn dumps(
             }
         }
 
+        #[allow(clippy::cast_sign_loss)]
         match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
             Ok(val) => val.as_ptr(),
             Err(err) => raise_dumps_exception_dynamic(err.as_str()),

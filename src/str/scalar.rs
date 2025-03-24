@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::str::pyunicode_new::*;
+use crate::str::pyunicode_new::{
+    pyunicode_ascii, pyunicode_fourbyte, pyunicode_onebyte, pyunicode_twobyte,
+};
 use crate::typeref::EMPTY_UNICODE;
 
 #[inline(always)]

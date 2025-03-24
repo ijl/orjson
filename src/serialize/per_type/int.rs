@@ -34,9 +34,10 @@ impl Serialize for IntSerializer {
             if crate::ffi::pylong_is_zero(self.ptr) {
                 return serializer.serialize_bytes(b"0");
             }
-            let is_signed = !crate::ffi::pylong_is_unsigned(self.ptr) as i32;
+            let is_signed = i32::from(!crate::ffi::pylong_is_unsigned(self.ptr));
             if crate::ffi::pylong_fits_in_i32(self.ptr) {
                 if is_signed == 0 {
+                    #[allow(clippy::cast_sign_loss)]
                     serializer.serialize_u64(crate::ffi::pylong_get_inline_value(self.ptr) as u64)
                 } else {
                     serializer.serialize_i64(crate::ffi::pylong_get_inline_value(self.ptr))
@@ -44,8 +45,8 @@ impl Serialize for IntSerializer {
             } else {
                 let mut buffer: [u8; 8] = [0; 8];
                 let ret = pyo3_ffi::_PyLong_AsByteArray(
-                    self.ptr as *mut pyo3_ffi::PyLongObject,
-                    buffer.as_mut_ptr() as *mut core::ffi::c_uchar,
+                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
+                    buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
                     8,
                     1,
                     is_signed,

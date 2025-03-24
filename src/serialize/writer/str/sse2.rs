@@ -29,7 +29,7 @@ macro_rules! impl_format_simd_sse2_128 {
 
         unsafe {
             while nb >= STRIDE {
-                let str_vec = _mm_loadu_si128($src as *const __m128i);
+                let str_vec = _mm_loadu_si128($src.cast::<__m128i>());
 
                 let mask = _mm_movemask_epi8(_mm_or_si128(
                     _mm_or_si128(
@@ -37,11 +37,11 @@ macro_rules! impl_format_simd_sse2_128 {
                         _mm_cmpeq_epi8(str_vec, quote),
                     ),
                     _mm_cmpeq_epi8(_mm_subs_epu8(str_vec, x20), v0),
-                )) as u32;
+                ));
 
-                _mm_storeu_si128($dst as *mut __m128i, str_vec);
+                _mm_storeu_si128($dst.cast::<__m128i>(), str_vec);
 
-                if unlikely!(mask > 0) {
+                if unlikely!(mask != 0) {
                     let cn = trailing_zeros!(mask) as usize;
                     nb -= cn;
                     $dst = $dst.add(cn);
@@ -60,8 +60,8 @@ macro_rules! impl_format_simd_sse2_128 {
 
             if nb > 0 {
                 let mut scratch: [u8; 32] = [b'a'; 32];
-                let mut str_vec = _mm_loadu_si128(last_stride_src as *const __m128i);
-                _mm_storeu_si128(scratch.as_mut_ptr() as *mut __m128i, str_vec);
+                let mut str_vec = _mm_loadu_si128(last_stride_src.cast::<__m128i>());
+                _mm_storeu_si128(scratch.as_mut_ptr().cast::<__m128i>(), str_vec);
 
                 let mut scratch_ptr = scratch.as_mut_ptr().add(16 - nb);
                 str_vec = _mm_loadu_si128(scratch_ptr as *const __m128i);
@@ -72,12 +72,12 @@ macro_rules! impl_format_simd_sse2_128 {
                         _mm_cmpeq_epi8(str_vec, quote),
                     ),
                     _mm_cmpeq_epi8(_mm_subs_epu8(str_vec, x20), v0),
-                )) as u32;
+                ));
 
                 while nb > 0 {
-                    _mm_storeu_si128($dst as *mut __m128i, str_vec);
+                    _mm_storeu_si128($dst.cast::<__m128i>(), str_vec);
 
-                    if unlikely!(mask > 0) {
+                    if unlikely!(mask != 0) {
                         let cn = trailing_zeros!(mask) as usize;
                         nb -= cn;
                         $dst = $dst.add(cn);
@@ -99,6 +99,7 @@ macro_rules! impl_format_simd_sse2_128 {
     };
 }
 
+#[allow(clippy::cast_ptr_alignment)]
 #[allow(dead_code)]
 #[inline(never)]
 pub unsafe fn format_escaped_str_impl_sse2_128(
@@ -116,7 +117,7 @@ pub unsafe fn format_escaped_str_impl_sse2_128(
         dst = dst.add(1);
 
         if value_len < STRIDE {
-            impl_format_scalar!(dst, src, value_len)
+            impl_format_scalar!(dst, src, value_len);
         } else {
             impl_format_simd_sse2_128!(dst, src, value_len);
         }

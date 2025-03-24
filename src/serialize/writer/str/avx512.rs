@@ -22,15 +22,15 @@ macro_rules! impl_format_simd_avx512vl {
     ($dst:expr, $src:expr, $value_len:expr) => {
         let mut nb: usize = $value_len;
 
-        let blash = _mm256_load_si256(BLASH.data.as_ptr() as *const __m256i);
-        let quote = _mm256_load_si256(QUOTE.data.as_ptr() as *const __m256i);
-        let x20 = _mm256_load_si256(X20.data.as_ptr() as *const __m256i);
+        let blash = _mm256_load_si256(BLASH.data.as_ptr().cast::<__m256i>());
+        let quote = _mm256_load_si256(QUOTE.data.as_ptr().cast::<__m256i>());
+        let x20 = _mm256_load_si256(X20.data.as_ptr().cast::<__m256i>());
 
         unsafe {
             while nb >= STRIDE {
                 let str_vec = _mm256_loadu_si256(transmute::<*const u8, *const __m256i>($src));
 
-                _mm256_storeu_epi8($dst as *mut i8, str_vec);
+                _mm256_storeu_epi8($dst.cast::<i8>(), str_vec);
 
                 let mask = _mm256_cmpeq_epu8_mask(str_vec, blash)
                     | _mm256_cmpeq_epu8_mask(str_vec, quote)
@@ -58,9 +58,9 @@ macro_rules! impl_format_simd_avx512vl {
             if nb > 0 {
                 loop {
                     let remainder_mask = !(u32::MAX << nb);
-                    let str_vec = _mm256_maskz_loadu_epi8(remainder_mask, $src as *const i8);
+                    let str_vec = _mm256_maskz_loadu_epi8(remainder_mask, $src.cast::<i8>());
 
-                    _mm256_storeu_epi8($dst as *mut i8, str_vec);
+                    _mm256_storeu_epi8($dst.cast::<i8>(), str_vec);
 
                     let mask = (_mm256_cmpeq_epu8_mask(str_vec, blash)
                         | _mm256_cmpeq_epu8_mask(str_vec, quote)

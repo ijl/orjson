@@ -24,6 +24,7 @@ pub const SORT_OR_NON_STR_KEYS: Opt = SORT_KEYS | NON_STR_KEYS;
 pub const NOT_PASSTHROUGH: Opt =
     !(PASSTHROUGH_DATETIME | PASSTHROUGH_DATACLASS | PASSTHROUGH_SUBCLASS);
 
+#[allow(clippy::cast_possible_wrap)]
 pub const MAX_OPT: i32 = (APPEND_NEWLINE
     | INDENT_2
     | NAIVE_UTC

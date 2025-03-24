@@ -27,7 +27,7 @@ pub fn serialize(
         to_writer_pretty(&mut buf, &obj)
     };
     match res {
-        Ok(_) => {
+        Ok(()) => {
             if opt_enabled!(opts, APPEND_NEWLINE) {
                 let _ = buf.write(b"\n");
             }

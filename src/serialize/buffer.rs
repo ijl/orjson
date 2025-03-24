@@ -23,7 +23,7 @@ impl SmallFixedBuffer {
     pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe {
             core::slice::from_raw_parts_mut(
-                (core::ptr::addr_of_mut!(self.bytes) as *mut u8).add(self.idx),
+                (&raw mut self.bytes).cast::<u8>().add(self.idx),
                 BUFFER_LENGTH - self.idx,
             )
         }
@@ -39,10 +39,7 @@ impl SmallFixedBuffer {
     pub fn push(&mut self, value: u8) {
         debug_assert!(self.idx + 1 < BUFFER_LENGTH);
         unsafe {
-            core::ptr::write(
-                (core::ptr::addr_of_mut!(self.bytes) as *mut u8).add(self.idx),
-                value,
-            );
+            core::ptr::write((&raw mut self.bytes).cast::<u8>().add(self.idx), value);
             self.idx += 1;
         };
     }
@@ -53,7 +50,7 @@ impl SmallFixedBuffer {
         unsafe {
             core::ptr::copy_nonoverlapping(
                 slice.as_ptr(),
-                (core::ptr::addr_of_mut!(self.bytes) as *mut u8).add(self.idx),
+                (&raw mut self.bytes).cast::<u8>().add(self.idx),
                 slice.len(),
             );
             self.idx += slice.len();
@@ -62,7 +59,7 @@ impl SmallFixedBuffer {
 
     #[inline]
     pub fn as_ptr(&self) -> *const u8 {
-        core::ptr::addr_of!(self.bytes) as *const u8
+        (&raw const self.bytes).cast::<u8>()
     }
 
     #[inline]

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use core::ffi::c_char;
+use crate::util::usize_to_isize;
 use core::ptr::NonNull;
-use pyo3_ffi::{
-    PyBytesObject, PyBytes_FromStringAndSize, PyObject, PyVarObject, Py_ssize_t, _PyBytes_Resize,
-};
+use pyo3_ffi::{PyBytesObject, PyBytes_FromStringAndSize, PyObject, PyVarObject, _PyBytes_Resize};
 use std::io::Error;
 
 const BUFFER_LENGTH: usize = 1024;
@@ -21,43 +19,36 @@ impl BytesWriter {
             cap: BUFFER_LENGTH,
             len: 0,
             bytes: unsafe {
-                PyBytes_FromStringAndSize(core::ptr::null_mut(), BUFFER_LENGTH as isize)
-                    as *mut PyBytesObject
+                PyBytes_FromStringAndSize(core::ptr::null_mut(), usize_to_isize(BUFFER_LENGTH))
+                    .cast::<PyBytesObject>()
             },
         }
     }
 
     pub fn bytes_ptr(&mut self) -> NonNull<PyObject> {
-        unsafe { NonNull::new_unchecked(self.bytes as *mut PyObject) }
+        unsafe { NonNull::new_unchecked(self.bytes.cast::<PyObject>()) }
     }
 
     pub fn finish(&mut self) -> NonNull<PyObject> {
         unsafe {
             core::ptr::write(self.buffer_ptr(), 0);
-            (*self.bytes.cast::<PyVarObject>()).ob_size = self.len as Py_ssize_t;
+            (*self.bytes.cast::<PyVarObject>()).ob_size = usize_to_isize(self.len);
             self.resize(self.len);
             self.bytes_ptr()
         }
     }
 
     fn buffer_ptr(&self) -> *mut u8 {
-        unsafe {
-            core::mem::transmute::<*mut [c_char; 1], *mut u8>(core::ptr::addr_of_mut!(
-                (*self.bytes).ob_sval
-            ))
-            .add(self.len)
-        }
+        unsafe { (&raw mut (*self.bytes).ob_sval).cast::<u8>().add(self.len) }
     }
 
     #[inline]
     pub fn resize(&mut self, len: usize) {
         self.cap = len;
         unsafe {
-            #[allow(clippy::unnecessary_cast)]
             _PyBytes_Resize(
-                core::ptr::addr_of_mut!(self.bytes) as *mut *mut PyBytesObject
-                    as *mut *mut PyObject,
-                len as isize,
+                (&raw mut self.bytes).cast::<*mut PyObject>(),
+                usize_to_isize(len),
             );
         }
     }

@@ -40,37 +40,37 @@ pub struct PyLongObject {
 #[cfg(Py_3_12)]
 #[inline(always)]
 pub fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { (*(ptr as *mut PyLongObject)).long_value.lv_tag & SIGN_MASK == 0 }
+    unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag & SIGN_MASK == 0 }
 }
 
 #[cfg(not(Py_3_12))]
 #[inline(always)]
 pub fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { (*(ptr as *mut pyo3_ffi::PyVarObject)).ob_size > 0 }
+    unsafe { (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size > 0 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
 #[inline(always)]
 pub fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { (*(ptr as *mut PyLongObject)).long_value.lv_tag < (2 << NON_SIZE_BITS) }
+    unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag < (2 << NON_SIZE_BITS) }
 }
 
 #[cfg(all(not(Py_3_12), feature = "inline_int"))]
 #[inline(always)]
 pub fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { isize::abs((*(ptr as *mut pyo3_ffi::PyVarObject)).ob_size) == 1 }
+    unsafe { isize::abs((*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size) == 1 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
 #[inline(always)]
 pub fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { (*(ptr as *mut PyLongObject)).long_value.lv_tag & SIGN_MASK == SIGN_ZERO }
+    unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag & SIGN_MASK == SIGN_ZERO }
 }
 
 #[cfg(all(not(Py_3_12), feature = "inline_int"))]
 #[inline(always)]
 pub fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
-    unsafe { (*(ptr as *mut pyo3_ffi::PyVarObject)).ob_size == 0 }
+    unsafe { (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size == 0 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
@@ -78,9 +78,9 @@ pub fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
 pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
     unsafe {
         if pylong_is_unsigned(ptr) {
-            (*(ptr as *mut PyLongObject)).long_value.ob_digit as i64
+            i64::from((*ptr.cast::<PyLongObject>()).long_value.ob_digit)
         } else {
-            -((*(ptr as *mut PyLongObject)).long_value.ob_digit as i64)
+            -i64::from((*ptr.cast::<PyLongObject>()).long_value.ob_digit)
         }
     }
 }
@@ -89,7 +89,7 @@ pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
 #[inline(always)]
 pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
     unsafe {
-        (*(ptr as *mut pyo3_ffi::PyVarObject)).ob_size as i64
-            * (*(ptr as *mut PyLongObject)).ob_digit as i64
+        (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size as i64
+            * i64::from((*ptr.cast::<PyLongObject>()).ob_digit)
     }
 }
