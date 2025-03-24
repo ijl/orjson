@@ -230,12 +230,6 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
     }
 }
 
-macro_rules! add_to_dict {
-    ($dict:expr, $pykey:expr, $pyval:expr) => {
-        unsafe { pyo3_ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey)) }
-    };
-}
-
 #[inline(never)]
 fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
     unsafe {
@@ -257,17 +251,13 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
                     let pyval = ffi!(PyList_New(unsafe_yyjson_get_len(val) as isize));
-                    add_to_dict!(dict, pykey, pyval);
-                    reverse_pydict_incref!(pykey);
-                    reverse_pydict_incref!(pyval);
+                    pydict_setitem!(dict, pykey, pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
                         populate_yy_array(pyval, val);
                     }
                 } else {
                     let pyval = ffi!(_PyDict_NewPresized(unsafe_yyjson_get_len(val) as isize));
-                    add_to_dict!(dict, pykey, pyval);
-                    reverse_pydict_incref!(pykey);
-                    reverse_pydict_incref!(pyval);
+                    pydict_setitem!(dict, pykey, pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
                         populate_yy_object(pyval, val);
                     }
@@ -286,9 +276,7 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::Array => unreachable_unchecked!(),
                     ElementType::Object => unreachable_unchecked!(),
                 };
-                add_to_dict!(dict, pykey, pyval.as_ptr());
-                reverse_pydict_incref!(pykey);
-                reverse_pydict_incref!(pyval.as_ptr());
+                pydict_setitem!(dict, pykey, pyval.as_ptr());
             }
         }
     }

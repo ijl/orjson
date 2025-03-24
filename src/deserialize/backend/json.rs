@@ -128,16 +128,7 @@ impl<'de> Visitor<'de> for JsonValue {
         while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey = get_unicode_key(&key);
             let pyval = map.next_value_seed(self)?;
-            let _ = unsafe {
-                pyo3_ffi::_PyDict_SetItem_KnownHash(
-                    dict_ptr,
-                    pykey,
-                    pyval.as_ptr(),
-                    str_hash!(pykey),
-                )
-            };
-            reverse_pydict_incref!(pykey);
-            reverse_pydict_incref!(pyval.as_ptr());
+            pydict_setitem!(dict_ptr, pykey, pyval.as_ptr());
         }
         Ok(nonnull!(dict_ptr))
     }

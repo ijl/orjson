@@ -254,6 +254,28 @@ macro_rules! pydict_next {
     };
 }
 
+macro_rules! pydict_setitem {
+    ($dict:expr, $pykey:expr, $pyval:expr) => {
+        debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
+        debug_assert!(str_hash!($pykey) != -1);
+        #[cfg(not(Py_3_13))]
+        unsafe {
+            let _ = pyo3_ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey));
+        }
+        #[cfg(Py_3_13)]
+        unsafe {
+            let _ = pyo3_ffi::_PyDict_SetItem_KnownHash_LockHeld(
+                $dict.cast::<pyo3_ffi::PyDictObject>(),
+                $pykey,
+                $pyval,
+                str_hash!($pykey),
+            );
+        }
+        reverse_pydict_incref!($pykey);
+        reverse_pydict_incref!($pyval);
+    };
+}
+
 macro_rules! reserve_minimum {
     ($writer:expr) => {
         $writer.reserve(64);
