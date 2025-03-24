@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 3.10.16
+
+### Changed
+
+- Improve performance of serialization on amd64 machines with AVX-512.
+- ABI compatibility with CPython 3.14 alpha 6.
+- Drop support for Python 3.8.
+- Publish additional PyPI wheels for macOS that target only aarch64, macOS 15,
+and recent Python.
+
+
 ## 3.10.15
 
 ### Changed
