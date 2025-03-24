@@ -119,8 +119,11 @@ where
 
 #[cfg(not(GraalPy))]
 const STATE_INTERNED_INDEX: usize = 0;
-#[cfg(not(GraalPy))]
+#[cfg(all(not(GraalPy), not(Py_3_14)))]
 const STATE_INTERNED_WIDTH: u8 = 2;
+
+#[cfg(all(not(GraalPy), Py_3_14))]
+const STATE_INTERNED_WIDTH: u8 = 16;
 
 #[cfg(not(GraalPy))]
 const STATE_KIND_INDEX: usize = STATE_INTERNED_WIDTH as usize;
