@@ -19,7 +19,6 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_12)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_13)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_8)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
 
@@ -27,6 +26,9 @@ fn main() {
     for cfg in python_config.build_script_outputs() {
         println!("{cfg}");
     }
+
+    #[allow(unused_variables)]
+    let is_64_bit_python = matches!(python_config.pointer_width, Some(64));
 
     if let Some(true) = version_check::supports_feature("core_intrinsics") {
         println!("cargo:rustc-cfg=feature=\"intrinsics\"");
@@ -42,9 +44,14 @@ fn main() {
         if let Some(true) = version_check::supports_feature("portable_simd") {
             println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
         }
-        // auto build AVX512 on x86-64-v4 or supporting native targets
+
         #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
-        if let Some(true) = version_check::supports_feature("stdarch_x86_avx512") {
+        let supports_avx512 =
+            version_check::supports_feature("stdarch_x86_avx512").unwrap_or(false);
+
+        // auto build AVX512 on amd64 nightly linux
+        #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
+        if supports_avx512 && is_64_bit_python {
             if env::var("ORJSON_DISABLE_AVX512").is_err() {
                 println!("cargo:rustc-cfg=feature=\"avx512\"");
             }
@@ -52,7 +59,7 @@ fn main() {
     }
 
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if matches!(python_config.pointer_width, Some(64)) {
+    if is_64_bit_python {
         println!("cargo:rustc-cfg=feature=\"inline_int\"");
     }
 

@@ -1,26 +1,27 @@
-name: debug
+name: unusual
 on: push
+env:
+  CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 jobs:
 
-  debug:
-    runs-on: ubuntu-22.04
+  unusual:
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         profile: [
           { rust: "1.82", features: "" },
-          { rust: "1.82", features: "--features=yyjson" },
-          { rust: "nightly-2025-01-07", features: "--features=avx512,yyjson,unstable-simd" },
+          { rust: "nightly-2025-03-15", features: "--features=unstable-simd" },
         ]
         python: [
           { version: '3.13' },
           { version: '3.12' },
-          { version: '3.8' },
+          { version: '3.9' },
         ]
     env:
-      CC: "gcc"
-      CFLAGS: "-Os -fstrict-aliasing"
-      LDFLAGS: "-Wl,--as-needed"
+      ORJSON_DISABLE_YYJSON: "1"
       CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
       UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
     steps:
@@ -54,7 +55,6 @@ jobs:
       timeout-minutes: 2
 
     - run: ./integration/run http
-      if: matrix.python.version != '3.13'  # alpha 5 httpx type issue
       timeout-minutes: 2
 
     - run: ./integration/run init

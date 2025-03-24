@@ -1,14 +1,17 @@
 name: lint
 on: push
+env:
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.13"
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
-    - run: pip install -U ruff==0.7.1 mypy==1.13.0
+    - run: pip install -U "ruff>=0.11,<0.12" "mypy==1.15.0"
 
     - uses: actions/checkout@v4
 

@@ -33,6 +33,8 @@ runs:
         export TARGET="${{ inputs.arch }}-unknown-linux-gnu"
         export PATH="$PWD/.venv:$HOME/.cargo/bin:$PATH"
 
+        dnf copr enable -y @fedora-llvm-team/llvm20
+
         ./script/install-fedora
 
         source "${VENV}/bin/activate"
@@ -45,6 +47,7 @@ runs:
 
         uv pip install ${CARGO_TARGET_DIR}/wheels/orjson*.whl
 
+        export PYTHONMALLOC="debug"
         pytest -v test
         ./integration/run thread
         ./integration/run http

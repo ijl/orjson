@@ -2,5 +2,5 @@
 -r integration/requirements.txt
 -r test/requirements.txt
 maturin>=1,<2
-mypy==1.13.0
-ruff>=0.8,<9
+mypy==1.15.0
+ruff>=0.11,<0.12

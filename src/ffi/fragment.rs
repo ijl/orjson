@@ -151,8 +151,6 @@ pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
             tp_vectorcall: None,
             tp_version_tag: 0,
             tp_weaklist: null_mut(),
-            #[cfg(not(Py_3_9))]
-            tp_print: None,
             tp_vectorcall_offset: 0,
             tp_getattr: None,
             tp_setattr: None,

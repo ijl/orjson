@@ -4,9 +4,9 @@ use crate::opt::*;
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{DateTimeError, DateTimeLike, Offset};
-#[cfg(Py_3_9)]
-use crate::typeref::ZONEINFO_TYPE;
-use crate::typeref::{CONVERT_METHOD_STR, DST_STR, NORMALIZE_METHOD_STR, UTCOFFSET_METHOD_STR};
+use crate::typeref::{
+    CONVERT_METHOD_STR, DST_STR, NORMALIZE_METHOD_STR, UTCOFFSET_METHOD_STR, ZONEINFO_TYPE,
+};
 use serde::ser::{Serialize, Serializer};
 
 macro_rules! write_double_digit {
@@ -166,6 +166,7 @@ impl DateTimeLike for DateTime {
         unsafe { (*(self.ptr as *mut pyo3_ffi::PyDateTime_DateTime)).hastzinfo == 1 }
     }
 
+    #[inline(never)]
     fn slow_offset(&self) -> Result<Offset, DateTimeError> {
         let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
         if ffi!(PyObject_HasAttr(tzinfo, CONVERT_METHOD_STR)) == 1 {
@@ -202,7 +203,7 @@ impl DateTimeLike for DateTime {
         }
     }
 
-    #[cfg(Py_3_9)]
+    #[inline]
     fn offset(&self) -> Result<Offset, DateTimeError> {
         if !self.has_tz() {
             Ok(Offset::default())
@@ -220,15 +221,6 @@ impl DateTimeLike for DateTime {
             } else {
                 self.slow_offset()
             }
-        }
-    }
-
-    #[cfg(not(Py_3_9))]
-    fn offset(&self) -> Result<Offset, DateTimeError> {
-        if !self.has_tz() {
-            Ok(Offset::default())
-        } else {
-            self.slow_offset()
         }
     }
 }

@@ -21,7 +21,7 @@ RFC 8259 ("The JavaScript Object Notation (JSON) Data Interchange Format").
 Reading from and writing to files, line-delimited JSON files, and so on is
 not provided by the library.
 
-orjson supports CPython 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14.
+orjson supports CPython 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14.
 
 It distributes amd64/x86_64, i686/x86, aarch64/armv8, arm7, POWER/ppc64le,
 and s390x wheels for Linux, amd64 and aarch64 wheels for macOS, and amd64
@@ -29,6 +29,8 @@ and i686/x86 wheels for Windows.
 
 orjson does not and will not support PyPy, embedded Python builds for
 Android/iOS, or PEP 554 subinterpreters.
+
+orjson may support PEP 703 free-threading when it is stable.
 
 Releases follow semantic versioning and serializing a new object type
 without an opt-in flag is considered a breaking change.
@@ -1078,7 +1080,7 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2025-01-07` and stable 1.72. It
+The project's own CI tests against `nightly-2025-03-15` and stable 1.72. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.

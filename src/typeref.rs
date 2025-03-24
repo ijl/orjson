@@ -58,7 +58,6 @@ pub static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();
 
 pub static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
 
-#[cfg(Py_3_9)]
 pub static mut ZONEINFO_TYPE: *mut PyTypeObject = null_mut();
 
 pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = null_mut();
@@ -172,11 +171,7 @@ fn _init_typerefs_impl() -> bool {
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
         FIELD_TYPE = look_up_field_type();
-
-        #[cfg(Py_3_9)]
-        {
-            ZONEINFO_TYPE = look_up_zoneinfo_type();
-        }
+        ZONEINFO_TYPE = look_up_zoneinfo_type();
 
         INT_ATTR_STR = PyUnicode_InternFromString("int\0".as_ptr() as *const c_char);
         UTCOFFSET_METHOD_STR = PyUnicode_InternFromString("utcoffset\0".as_ptr() as *const c_char);
@@ -353,7 +348,6 @@ unsafe fn look_up_time_type() -> *mut PyTypeObject {
     }
 }
 
-#[cfg(Py_3_9)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_zoneinfo_type() -> *mut PyTypeObject {

@@ -1,6 +1,7 @@
 [unstable]
 build-std = ["core", "std", "alloc", "proc_macro", "panic_abort"]
 build-std-features = ["panic_immediate_abort"]
+trim-paths = true
 
 [target.x86_64-apple-darwin]
 linker = "clang"
@@ -8,4 +9,4 @@ rustflags = ["-C", "target-cpu=x86-64-v2", "-Z", "tune-cpu=generic"]
 
 [target.aarch64-apple-darwin]
 linker = "clang"
-rustflags = ["-C", "target-cpu=apple-m1"]
+rustflags = ["-C", "target-cpu=apple-m1", "-Z", "tune-cpu=generic"]

@@ -24,7 +24,7 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
 
 #[cfg(target_arch = "aarch64")]
 fn is_valid_utf8(buf: &[u8]) -> bool {
-    simdutf8::basic::from_utf8(buf).is_ok()
+    unsafe { simdutf8::basic::imp::aarch64::neon::validate_utf8(buf).is_ok() }
 }
 
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]

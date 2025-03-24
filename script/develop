@@ -12,7 +12,7 @@ export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
 
 echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 
-export CFLAGS="-Os -fstrict-aliasing -fno-plt -flto=full -emit-llvm"
+export CFLAGS="-O2 -fstrict-aliasing -fno-plt -emit-llvm"
 export LDFLAGS="-fuse-ld=${LD} -Wl,-plugin-opt=also-emit-llvm -Wl,--as-needed -Wl,-zrelro,-znow"
 export RUSTFLAGS="-C linker=${CC} -C link-arg=-fuse-ld=${LD} -C linker-plugin-lto -C lto=fat -C link-arg=-Wl,-zrelro,-znow -Z mir-opt-level=4 -Z threads=8"
 
