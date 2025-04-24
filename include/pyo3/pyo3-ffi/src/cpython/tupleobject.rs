@@ -5,6 +5,8 @@ use crate::pyport::Py_ssize_t;
 #[repr(C)]
 pub struct PyTupleObject {
     pub ob_base: PyVarObject,
+    #[cfg(Py_3_14)]
+    pub ob_hash: crate::Py_hash_t,
     pub ob_item: [*mut PyObject; 1],
 }
 
