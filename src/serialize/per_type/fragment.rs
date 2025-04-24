@@ -31,12 +31,12 @@ impl Serialize for FragmentSerializer {
         unsafe {
             let fragment: *mut Fragment = self.ptr.cast::<Fragment>();
             let ob_type = ob_type!((*fragment).contents);
-            if ob_type == BYTES_TYPE {
+            if core::ptr::eq(ob_type, BYTES_TYPE) {
                 buffer = core::slice::from_raw_parts(
                     PyBytes_AS_STRING((*fragment).contents).cast::<u8>(),
                     isize_to_usize(PyBytes_GET_SIZE((*fragment).contents)),
                 );
-            } else if ob_type == STR_TYPE {
+            } else if core::ptr::eq(ob_type, STR_TYPE) {
                 let uni = unicode_to_str((*fragment).contents);
                 if unlikely!(uni.is_none()) {
                     err!(SerializeError::InvalidStr)

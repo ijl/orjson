@@ -219,7 +219,7 @@ impl DateTimeLike for DateTime {
             Ok(Offset::default())
         } else {
             let tzinfo = ffi!(PyDateTime_DATE_GET_TZINFO(self.ptr));
-            if unsafe { ob_type!(tzinfo) == ZONEINFO_TYPE } {
+            if unsafe { core::ptr::eq(ob_type!(tzinfo), ZONEINFO_TYPE) } {
                 // zoneinfo
                 let py_offset = call_method!(tzinfo, UTCOFFSET_METHOD_STR, self.ptr);
                 let offset = Offset {

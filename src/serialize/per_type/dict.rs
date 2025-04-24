@@ -285,7 +285,7 @@ impl Serialize for DictSortedKey {
 
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-            if unlikely!(unsafe { ob_type!(key) != STR_TYPE }) {
+            if unlikely!(unsafe { !core::ptr::eq(ob_type!(key), STR_TYPE) }) {
                 err!(SerializeError::KeyMustBeStr)
             }
             let data = unicode_to_str(key);
@@ -423,7 +423,7 @@ impl DictNonStrKey {
         match pyobject_to_obtype(key, opts) {
             ObType::None => Ok(CompactString::const_new("null")),
             ObType::Bool => {
-                if unsafe { key == TRUE } {
+                if unsafe { core::ptr::eq(key, TRUE) } {
                     Ok(CompactString::const_new("true"))
                 } else {
                     Ok(CompactString::const_new("false"))

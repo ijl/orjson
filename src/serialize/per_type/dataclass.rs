@@ -180,7 +180,7 @@ impl Serialize for DataclassFallbackSerializer {
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);
             ffi!(Py_DECREF(field_type));
-            if unsafe { field_type.cast::<pyo3_ffi::PyTypeObject>() != FIELD_TYPE } {
+            if unsafe { !core::ptr::eq(field_type.cast::<pyo3_ffi::PyTypeObject>(), FIELD_TYPE) } {
                 continue;
             }
 

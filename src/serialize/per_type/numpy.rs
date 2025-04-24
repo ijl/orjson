@@ -69,19 +69,19 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
         false
     } else {
         let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
-        ob_type == scalar_types.float64
-            || ob_type == scalar_types.float32
-            || ob_type == scalar_types.float16
-            || ob_type == scalar_types.int64
-            || ob_type == scalar_types.int16
-            || ob_type == scalar_types.int32
-            || ob_type == scalar_types.int8
-            || ob_type == scalar_types.uint64
-            || ob_type == scalar_types.uint32
-            || ob_type == scalar_types.uint8
-            || ob_type == scalar_types.uint16
-            || ob_type == scalar_types.bool_
-            || ob_type == scalar_types.datetime64
+        core::ptr::eq(ob_type, scalar_types.float64)
+            || core::ptr::eq(ob_type, scalar_types.float32)
+            || core::ptr::eq(ob_type, scalar_types.float16)
+            || core::ptr::eq(ob_type, scalar_types.int64)
+            || core::ptr::eq(ob_type, scalar_types.int16)
+            || core::ptr::eq(ob_type, scalar_types.int32)
+            || core::ptr::eq(ob_type, scalar_types.int8)
+            || core::ptr::eq(ob_type, scalar_types.uint64)
+            || core::ptr::eq(ob_type, scalar_types.uint32)
+            || core::ptr::eq(ob_type, scalar_types.uint8)
+            || core::ptr::eq(ob_type, scalar_types.uint16)
+            || core::ptr::eq(ob_type, scalar_types.bool_)
+            || core::ptr::eq(ob_type, scalar_types.datetime64)
     }
 }
 
@@ -92,7 +92,7 @@ pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
         false
     } else {
         let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
-        unsafe { ob_type == scalar_types.array }
+        unsafe { core::ptr::eq(ob_type, scalar_types.array) }
     }
 }
 
@@ -907,31 +907,31 @@ impl Serialize for NumpyScalar {
             let ob_type = ob_type!(self.ptr);
             let scalar_types =
                 unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
-            if ob_type == scalar_types.float64 {
+            if core::ptr::eq(ob_type, scalar_types.float64) {
                 (*(self.ptr.cast::<NumpyFloat64>())).serialize(serializer)
-            } else if ob_type == scalar_types.float32 {
+            } else if core::ptr::eq(ob_type, scalar_types.float32) {
                 (*(self.ptr.cast::<NumpyFloat32>())).serialize(serializer)
-            } else if ob_type == scalar_types.float16 {
+            } else if core::ptr::eq(ob_type, scalar_types.float16) {
                 (*(self.ptr.cast::<NumpyFloat16>())).serialize(serializer)
-            } else if ob_type == scalar_types.int64 {
+            } else if core::ptr::eq(ob_type, scalar_types.int64) {
                 (*(self.ptr.cast::<NumpyInt64>())).serialize(serializer)
-            } else if ob_type == scalar_types.int32 {
+            } else if core::ptr::eq(ob_type, scalar_types.int32) {
                 (*(self.ptr.cast::<NumpyInt32>())).serialize(serializer)
-            } else if ob_type == scalar_types.int16 {
+            } else if core::ptr::eq(ob_type, scalar_types.int16) {
                 (*(self.ptr.cast::<NumpyInt16>())).serialize(serializer)
-            } else if ob_type == scalar_types.int8 {
+            } else if core::ptr::eq(ob_type, scalar_types.int8) {
                 (*(self.ptr.cast::<NumpyInt8>())).serialize(serializer)
-            } else if ob_type == scalar_types.uint64 {
+            } else if core::ptr::eq(ob_type, scalar_types.uint64) {
                 (*(self.ptr.cast::<NumpyUint64>())).serialize(serializer)
-            } else if ob_type == scalar_types.uint32 {
+            } else if core::ptr::eq(ob_type, scalar_types.uint32) {
                 (*(self.ptr.cast::<NumpyUint32>())).serialize(serializer)
-            } else if ob_type == scalar_types.uint16 {
+            } else if core::ptr::eq(ob_type, scalar_types.uint16) {
                 (*(self.ptr.cast::<NumpyUint16>())).serialize(serializer)
-            } else if ob_type == scalar_types.uint8 {
+            } else if core::ptr::eq(ob_type, scalar_types.uint8) {
                 (*(self.ptr.cast::<NumpyUint8>())).serialize(serializer)
-            } else if ob_type == scalar_types.bool_ {
+            } else if core::ptr::eq(ob_type, scalar_types.bool_) {
                 (*(self.ptr.cast::<NumpyBool>())).serialize(serializer)
-            } else if ob_type == scalar_types.datetime64 {
+            } else if core::ptr::eq(ob_type, scalar_types.datetime64) {
                 let unit = NumpyDatetimeUnit::from_pyobject(self.ptr);
                 let obj = &*self.ptr.cast::<NumpyDatetime64>();
                 let dt = unit

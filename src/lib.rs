@@ -40,6 +40,7 @@
 #![warn(clippy::ptr_arg)]
 #![warn(clippy::ptr_as_ptr)]
 #![warn(clippy::ptr_cast_constness)]
+#![warn(clippy::ptr_eq)]
 #![warn(clippy::redundant_allocation)]
 #![warn(clippy::redundant_clone)]
 #![warn(clippy::redundant_locals)]
@@ -384,14 +385,14 @@ pub unsafe extern "C" fn dumps(
         if unlikely!(!kwnames.is_null()) {
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
                 let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
-                if arg == typeref::DEFAULT {
+                if core::ptr::eq(arg, typeref::DEFAULT) {
                     if unlikely!(num_args & 2 == 2) {
                         return raise_dumps_exception_fixed(
                             "dumps() got multiple values for argument: 'default'",
                         );
                     }
                     default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
-                } else if arg == typeref::OPTION {
+                } else if core::ptr::eq(arg, typeref::OPTION) {
                     if unlikely!(num_args & 3 == 3) {
                         return raise_dumps_exception_fixed(
                             "dumps() got multiple values for argument: 'option'",
@@ -409,14 +410,14 @@ pub unsafe extern "C" fn dumps(
         let mut optsbits: i32 = 0;
         if unlikely!(optsptr.is_some()) {
             let opts = optsptr.unwrap();
-            if (*opts.as_ptr()).ob_type == typeref::INT_TYPE {
+            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
                 #[allow(clippy::cast_possible_truncation)]
                 let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
                 optsbits = tmp;
                 if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
                     return raise_dumps_exception_fixed("Invalid opts");
                 }
-            } else if unlikely!(opts.as_ptr() != typeref::NONE) {
+            } else if unlikely!(!core::ptr::eq(opts.as_ptr(), typeref::NONE)) {
                 return raise_dumps_exception_fixed("Invalid opts");
             }
         }
