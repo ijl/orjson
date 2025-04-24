@@ -1096,10 +1096,11 @@ The source distribution on PyPI contains all dependencies' source and can be
 built without network access. The file can be downloaded from
 `https://files.pythonhosted.org/packages/source/o/orjson/orjson-${version}.tar.gz`.
 
-orjson's tests are included in the source distribution on PyPI. The
-requirements to run the tests are specified in `test/requirements.txt`. The
-tests should be run as part of the build. It can be run with
-`pytest -q test`.
+orjson's tests are included in the source distribution on PyPI. The tests
+require only `pytest`. There are optional packages such as `pytz` and `numpy`
+listed in `test/requirements.txt` and used in ~10% of tests. Not having these
+dependencies causes the tests needing them to skip. Tests can be run
+with `pytest -q test`.
 
 ## License
 
