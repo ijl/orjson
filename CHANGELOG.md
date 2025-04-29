@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.10.18
+
+### Fixed
+
+- Fix incorrect escaping of the vertical tabulation character. This was
+introduced in 3.10.17.
+
 
 ## 3.10.17
 
