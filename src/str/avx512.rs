@@ -3,7 +3,7 @@
 use crate::str::pyunicode_new::*;
 
 use core::arch::x86_64::{
-    __m256i, _mm256_and_si256, _mm256_cmpgt_epu8_mask, _mm256_cmpneq_epi8_mask, _mm256_loadu_si256,
+    _mm256_and_si256, _mm256_cmpgt_epu8_mask, _mm256_cmpneq_epi8_mask, _mm256_loadu_epi8,
     _mm256_mask_cmpneq_epi8_mask, _mm256_maskz_loadu_epi8, _mm256_max_epu8, _mm256_set1_epi8,
 };
 
@@ -31,7 +31,7 @@ macro_rules! impl_kind_simd_avx512vl {
             for i in 0..num_loops {
                 str_vec = _mm256_max_epu8(
                     str_vec,
-                    _mm256_loadu_si256(sptr.add(STRIDE * i).cast::<__m256i>()),
+                    _mm256_loadu_epi8(sptr.add(STRIDE * i).cast::<i8>()),
                 );
             }
 
@@ -59,7 +59,7 @@ macro_rules! impl_kind_simd_avx512vl {
                 for i in 0..num_loops {
                     num_chars += popcnt!(_mm256_cmpneq_epi8_mask(
                         _mm256_and_si256(
-                            _mm256_loadu_si256(sptr.add(STRIDE * i).cast::<__m256i>()),
+                            _mm256_loadu_epi8(sptr.add(STRIDE * i).cast::<i8>()),
                             multibyte
                         ),
                         vec_128,
@@ -79,10 +79,7 @@ macro_rules! impl_kind_simd_avx512vl {
 }
 
 #[inline(never)]
-#[cfg_attr(
-    feature = "avx512",
-    target_feature(enable = "avx512f,avx512bw,avx512vl,bmi2")
-)]
+#[target_feature(enable = "avx512f,avx512bw,avx512vl,bmi2")]
 pub unsafe fn create_str_impl_avx512vl(buf: &str) -> *mut pyo3_ffi::PyObject {
     impl_kind_simd_avx512vl!(buf)
 }

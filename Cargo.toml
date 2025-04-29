@@ -30,10 +30,7 @@ crate-type = ["cdylib"]
 [features]
 default = []
 
-# Use SIMD intrinsics. This requires Rust on the nightly channel.
-unstable-simd = []
-
-# Include runtime-detected functions that use AVX512VL. Requires unstable-simd and amd64.
+# Include runtime-detected functions that use AVX512VL.
 avx512 = []
 
 # Avoid bundling libgcc on musl.
@@ -44,6 +41,7 @@ unwind = ["unwinding"]
 yyjson = []
 
 # Features detected by build.rs. Do not specify.
+generic_simd = []
 inline_int = []
 intrinsics = []
 optimize = []

@@ -107,7 +107,7 @@ jobs:
         with:
           arch: "x86_64"
           interpreter: "${{ matrix.python.interpreter }}"
-          features: "avx512,unstable-simd,yyjson"
+          features: "avx512,yyjson"
           compatibility: "${{ matrix.python.compatibility }}"
           publish: "${{ matrix.python.publish }}"
 
@@ -123,7 +123,7 @@ jobs:
       - name: Debug
         env:
           CARGO_TARGET_DIR: "/tmp/orjson"
-          ORJSON_FEATURES: "avx512,unstable-simd,yyjson"
+          ORJSON_FEATURES: "avx512,yyjson"
           PYTHON: "${{ matrix.python.interpreter }}"
           TARGET: "x86_64-unknown-linux-gnu"
         run: |
@@ -168,7 +168,7 @@ jobs:
         with:
           arch: "aarch64"
           interpreter: "${{ matrix.python.interpreter }}"
-          features: "unstable-simd,yyjson"
+          features: "generic_simd,yyjson"
           compatibility: "${{ matrix.python.compatibility }}"
           publish: "${{ matrix.python.publish }}"
 
@@ -184,7 +184,7 @@ jobs:
       - name: Debug
         env:
           CARGO_TARGET_DIR: "/tmp/orjson"
-          ORJSON_FEATURES: "unstable-simd,yyjson"
+          ORJSON_FEATURES: "generic_simd,yyjson"
           PYTHON: "${{ matrix.python.interpreter }}"
           TARGET: "aarch64-unknown-linux-gnu"
         run: |
@@ -209,7 +209,7 @@ jobs:
           {
             arch: 'i686',
             cflags: '-Os -fstrict-aliasing',
-            features: 'unstable-simd,yyjson',
+            features: 'yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'i686-unknown-linux-gnu',
           },
@@ -223,7 +223,7 @@ jobs:
           {
             arch: 'ppc64le',
             cflags: '-Os -fstrict-aliasing',
-            features: 'unstable-simd,yyjson',
+            features: 'generic_simd,yyjson',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
           },
@@ -284,11 +284,11 @@ jobs:
           - target: x86_64-unknown-linux-musl
             arch: x86_64
             platform: linux/amd64
-            features: avx512,unstable-simd,unwind,yyjson
+            features: avx512,unwind,yyjson
           - target: i686-unknown-linux-musl
             arch: i686
             platform: linux/386
-            features: unstable-simd,unwind,yyjson
+            features: unwind,yyjson
     steps:
     - uses: actions/checkout@v4
 
@@ -358,11 +358,11 @@ jobs:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
             platform: linux/arm64
-            features: unstable-simd,unwind,yyjson
+            features: generic_simd,unwind,yyjson
           - target: armv7-unknown-linux-musleabihf
             arch: armv7l
             platform: linux/arm/v7
-            features: unstable-simd,yyjson
+            features: yyjson
     steps:
     - uses: actions/checkout@v4
 
@@ -465,7 +465,7 @@ jobs:
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
         maturin build --release --strip \
-          --features=unstable-simd,yyjson \
+          --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=aarch64-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -545,7 +545,7 @@ jobs:
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
         maturin build --release --strip \
-          --features=unstable-simd,yyjson \
+          --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -622,7 +622,7 @@ jobs:
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
         maturin build --release --strip \
-          --features=unstable-simd,yyjson \
+          --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -659,8 +659,8 @@ jobs:
           { version: '3.9' },
         ]
         platform: [
-          { arch: "x64", target: "x86_64-pc-windows-msvc" },
-          { arch: "x86", target: "i686-pc-windows-msvc" },
+          { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512,yyjson" },
+          { arch: "x86", target: "i686-pc-windows-msvc", features: "yyjson" },
         ]
     env:
       CFLAGS: "-O2"
@@ -697,7 +697,7 @@ jobs:
 
     - name: maturin
       run: |
-        maturin.exe build --release --strip --features=unstable-simd,yyjson --target="${{ matrix.platform.target }}"
+        maturin.exe build --release --strip --features="${{ matrix.platform.features }}" --target="${{ matrix.platform.target }}"
         python.exe -m pip install orjson --no-index --find-links target\wheels
 
     - run: python.exe -m pytest -s -rxX -v test

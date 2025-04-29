@@ -39,26 +39,6 @@ fn main() {
     }
 
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if env::var("ORJSON_DISABLE_SIMD").is_err() {
-        // auto build unstable SIMD on nightly
-        if let Some(true) = version_check::supports_feature("portable_simd") {
-            println!("cargo:rustc-cfg=feature=\"unstable-simd\"");
-        }
-
-        #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
-        let supports_avx512 =
-            version_check::supports_feature("stdarch_x86_avx512").unwrap_or(false);
-
-        // auto build AVX512 on amd64 nightly linux
-        #[cfg(all(target_arch = "x86_64", target_feature = "avx512vl"))]
-        if supports_avx512 && is_64_bit_python {
-            if env::var("ORJSON_DISABLE_AVX512").is_err() {
-                println!("cargo:rustc-cfg=feature=\"avx512\"");
-            }
-        }
-    }
-
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     if is_64_bit_python {
         println!("cargo:rustc-cfg=feature=\"inline_int\"");
     }

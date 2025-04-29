@@ -3,7 +3,7 @@
 #![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512, avx512_target_feature))]
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
-#![cfg_attr(feature = "unstable-simd", feature(portable_simd))]
+#![cfg_attr(feature = "generic_simd", feature(portable_simd))]
 #![allow(internal_features)] // core_intrinsics
 #![allow(non_camel_case_types)]
 #![allow(static_mut_refs)]

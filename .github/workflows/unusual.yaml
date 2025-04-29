@@ -13,7 +13,7 @@ jobs:
       matrix:
         profile: [
           { rust: "1.82", features: "" },
-          { rust: "nightly-2025-03-15", features: "--features=unstable-simd" },
+          { rust: "nightly-2025-03-15", features: "--features=generic_simd" },
         ]
         python: [
           { version: '3.13' },

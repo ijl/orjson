@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#[cfg(all(not(feature = "unstable-simd"), not(target_arch = "x86_64")))]
-use super::escape::{NEED_ESCAPED, QUOTE_TAB};
-
 macro_rules! impl_format_scalar {
     ($dst:expr, $src:expr, $value_len:expr) => {
         unsafe {
@@ -10,17 +7,16 @@ macro_rules! impl_format_scalar {
                 core::ptr::write($dst, *($src));
                 $src = $src.add(1);
                 $dst = $dst.add(1);
-                if unlikely!(NEED_ESCAPED[*($src.sub(1)) as usize] > 0) {
-                    let escape = QUOTE_TAB[*($src.sub(1)) as usize];
-                    write_escape!(escape, $dst.sub(1));
-                    $dst = $dst.add(escape.1 as usize - 1);
+                if *super::escape::NEED_ESCAPED.get_unchecked(*($src.sub(1)) as usize) != 0 {
+                    $dst = $dst.sub(1);
+                    write_escape!(*($src.sub(1)), $dst);
                 }
             }
         }
     };
 }
 
-#[cfg(all(not(feature = "unstable-simd"), not(target_arch = "x86_64")))]
+#[cfg(all(not(target_arch = "x86_64"), not(feature = "generic_simd")))]
 pub unsafe fn format_escaped_str_scalar(
     odst: *mut u8,
     value_ptr: *const u8,
