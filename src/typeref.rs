@@ -6,7 +6,7 @@ use core::ffi::c_void;
 use core::ffi::CStr;
 #[cfg(feature = "yyjson")]
 use core::mem::MaybeUninit;
-use core::ptr::{null, null_mut, NonNull};
+use core::ptr::{null_mut, NonNull};
 use once_cell::race::{OnceBool, OnceBox};
 
 #[cfg(feature = "yyjson")]
@@ -144,37 +144,33 @@ fn _init_typerefs_impl() -> bool {
         crate::serialize::writer::set_str_formatter_fn();
         crate::str::set_str_create_fn();
 
-        FRAGMENT_TYPE = orjson_fragmenttype_new();
-        PyDateTime_IMPORT();
         NONE = Py_None();
         TRUE = Py_True();
         FALSE = Py_False();
         EMPTY_UNICODE = PyUnicode_New(0, 255);
-        STR_TYPE = (*EMPTY_UNICODE).ob_type;
-        BYTES_TYPE = (*PyBytes_FromStringAndSize(null(), 0)).ob_type;
 
-        {
-            let bytearray = PyByteArray_FromStringAndSize(null(), 0);
-            BYTEARRAY_TYPE = (*bytearray).ob_type;
-
-            let memoryview = PyMemoryView_FromObject(bytearray);
-            MEMORYVIEW_TYPE = (*memoryview).ob_type;
-            Py_DECREF(memoryview);
-            Py_DECREF(bytearray);
-        }
-
-        DICT_TYPE = (*PyDict_New()).ob_type;
-        LIST_TYPE = (*PyList_New(0)).ob_type;
-        TUPLE_TYPE = (*PyTuple_New(0)).ob_type;
+        STR_TYPE = &raw mut PyUnicode_Type;
+        BYTES_TYPE = &raw mut PyBytes_Type;
+        DICT_TYPE = &raw mut PyDict_Type;
+        LIST_TYPE = &raw mut PyList_Type;
+        TUPLE_TYPE = &raw mut PyTuple_Type;
         NONE_TYPE = (*NONE).ob_type;
-        BOOL_TYPE = (*TRUE).ob_type;
-        INT_TYPE = (*PyLong_FromLongLong(0)).ob_type;
-        FLOAT_TYPE = (*PyFloat_FromDouble(0.0)).ob_type;
+        BOOL_TYPE = &raw mut PyBool_Type;
+        INT_TYPE = &raw mut PyLong_Type;
+        FLOAT_TYPE = &raw mut PyFloat_Type;
+        BYTEARRAY_TYPE = &raw mut PyByteArray_Type;
+        MEMORYVIEW_TYPE = &raw mut PyMemoryView_Type;
+
+        PyDateTime_IMPORT();
+
         DATETIME_TYPE = look_up_datetime_type();
         DATE_TYPE = look_up_date_type();
         TIME_TYPE = look_up_time_type();
         UUID_TYPE = look_up_uuid_type();
         ENUM_TYPE = look_up_enum_type();
+
+        FRAGMENT_TYPE = orjson_fragmenttype_new();
+
         FIELD_TYPE = look_up_field_type();
         ZONEINFO_TYPE = look_up_zoneinfo_type();
 
