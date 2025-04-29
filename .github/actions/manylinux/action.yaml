@@ -33,8 +33,6 @@ runs:
         export TARGET="${{ inputs.arch }}-unknown-linux-gnu"
         export PATH="$PWD/.venv:$HOME/.cargo/bin:$PATH"
 
-        dnf copr enable -y @fedora-llvm-team/llvm20
-
         ./script/install-fedora
 
         source "${VENV}/bin/activate"

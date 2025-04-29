@@ -45,6 +45,7 @@ for abi in abis:
         wheels_matrix.add(f"{prefix}-{abi}-{tag}.whl")
 
 wheels_unique = {
+    f"{prefix}-cp311-cp311-macosx_15_0_arm64.whl",
     f"{prefix}-cp311-cp311-win_arm64.whl",
     f"{prefix}-cp312-cp312-macosx_15_0_arm64.whl",
     f"{prefix}-cp312-cp312-win_arm64.whl",

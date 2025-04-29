@@ -4,13 +4,11 @@
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
-#![allow(internal_features)] // core_intrinsics
-#![allow(non_camel_case_types)]
-#![allow(static_mut_refs)]
-#![allow(unknown_lints)] // internal_features
-#![allow(unused_unsafe)]
 #![allow(clippy::absolute_paths)]
+#![allow(clippy::allow_attributes)]
+#![allow(clippy::allow_attributes_without_reason)]
 #![allow(clippy::arbitrary_source_item_ordering)]
+#![allow(clippy::decimal_literal_representation)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::explicit_iter_loop)]
 #![allow(clippy::if_not_else)]
@@ -37,6 +35,11 @@
 #![allow(clippy::unwrap_in_result)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
+#![allow(internal_features)] // core_intrinsics
+#![allow(non_camel_case_types)]
+#![allow(static_mut_refs)]
+#![allow(unknown_lints)] // internal_features
+#![allow(unused_unsafe)]
 #![warn(clippy::ptr_arg)]
 #![warn(clippy::ptr_as_ptr)]
 #![warn(clippy::ptr_cast_constness)]
