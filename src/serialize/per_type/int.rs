@@ -44,6 +44,8 @@ impl Serialize for IntSerializer {
                 }
             } else {
                 let mut buffer: [u8; 8] = [0; 8];
+
+                #[cfg(not(Py_3_13))]
                 let ret = pyo3_ffi::_PyLong_AsByteArray(
                     self.ptr.cast::<pyo3_ffi::PyLongObject>(),
                     buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
@@ -51,12 +53,22 @@ impl Serialize for IntSerializer {
                     1,
                     is_signed,
                 );
+                #[cfg(Py_3_13)]
+                let ret = pyo3_ffi::_PyLong_AsByteArray(
+                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
+                    buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
+                    8,
+                    1,
+                    is_signed,
+                    0,
+                );
                 if unlikely!(ret == -1) {
+                    #[cfg(not(Py_3_13))]
                     ffi!(PyErr_Clear());
                     err!(SerializeError::Integer64Bits)
                 }
                 if is_signed == 0 {
-                    let val = core::mem::transmute::<[u8; 8], u64>(buffer);
+                    let val = u64::from_ne_bytes(buffer);
                     if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                         && val > STRICT_INT_MAX as u64
                     {
@@ -64,7 +76,7 @@ impl Serialize for IntSerializer {
                     }
                     serializer.serialize_u64(val)
                 } else {
-                    let val = core::mem::transmute::<[u8; 8], i64>(buffer);
+                    let val = i64::from_ne_bytes(buffer);
                     if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                         && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
                     {

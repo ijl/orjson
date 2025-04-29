@@ -22,16 +22,26 @@ impl UUID {
             // test_uuid_immutable, test_uuid_int
             let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
             ffi!(Py_DECREF(py_int));
-            let buffer: [c_uchar; 16] = [0; 16];
+            let mut buffer: [c_uchar; 16] = [0; 16];
             unsafe {
                 // test_uuid_overflow
+                #[cfg(not(Py_3_13))]
                 pyo3_ffi::_PyLong_AsByteArray(
                     py_int.cast::<pyo3_ffi::PyLongObject>(),
-                    buffer.as_ptr().cast_mut(),
+                    buffer.as_mut_ptr(),
                     16,
                     1, // little_endian
                     0, // is_signed
-                )
+                );
+                #[cfg(Py_3_13)]
+                pyo3_ffi::_PyLong_AsByteArray(
+                    py_int.cast::<pyo3_ffi::PyLongObject>(),
+                    buffer.as_mut_ptr(),
+                    16,
+                    1, // little_endian
+                    0, // is_signed
+                    0,
+                );
             };
             value = u128::from_le_bytes(buffer);
         }
