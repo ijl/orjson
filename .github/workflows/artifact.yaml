@@ -412,7 +412,7 @@ jobs:
         if-no-files-found: "error"
         compression-level: 0
 
-  macos_arm64:
+  macos_aarch64:
     runs-on: macos-15
     timeout-minutes: 10
     strategy:
@@ -481,7 +481,7 @@ jobs:
     - name: Store wheels
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_arm64_${{ matrix.python.version }}
+        name: orjson_macos_aarch64_${{ matrix.python.version }}
         path: target/wheels
         overwrite: true
         retention-days: 1
@@ -561,7 +561,7 @@ jobs:
     - name: Store wheels
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_arm64_aarch64_${{ matrix.python.version }}
+        name: orjson_universal2_aarch64_${{ matrix.python.version }}
         path: target/wheels
         overwrite: true
         retention-days: 1
@@ -690,7 +690,7 @@ jobs:
         cargo fetch --target "${{ matrix.platform.target }}" &
 
         python.exe -m pip install --upgrade pip "maturin>=1,<2" wheel
-        python.exe -m pip install -r test\requirements.txt -r integration\requirements.txt
+        python.exe -m pip install -r test\requirements.txt
 
         mkdir .cargo
         cp ci\config.toml .cargo\config.toml
@@ -714,12 +714,79 @@ jobs:
         if-no-files-found: "error"
         compression-level: 0
 
+  windows_aarch64:
+    runs-on: windows-11-arm
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: [
+          { version: '3.13' },
+          { version: '3.12' },
+          { version: '3.11' },
+        ]
+    env:
+      CFLAGS: "-O2"
+      LDFLAGS: "-Wl,--as-needed"
+      RUSTFLAGS: "-Z mir-opt-level=4 -D warnings"
+      TARGET: "aarch64-pc-windows-msvc"
+    steps:
+
+    - name: CPU info
+      shell: pwsh
+      run: Get-WmiObject -Class Win32_Processor -ComputerName. | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
+
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "${{ matrix.python.version }}"
+        architecture: "arm64"
+
+    # from maturin
+    - shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri "https://static.rust-lang.org/rustup/dist/$env:TARGET/rustup-init.exe" -OutFile rustup-init.exe
+        .\rustup-init.exe --default-toolchain "$env:RUST_TOOLCHAIN-$env:TARGET" --profile minimal --component rust-src -y
+        "$env:USERPROFILE\.cargo\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+        "CARGO_HOME=$env:USERPROFILE\.cargo" | Out-File -Append -Encoding ascii $env:GITHUB_ENV
+
+    - name: Build environment
+      run: |
+        cargo fetch --target "$" &
+
+        python.exe -m sysconfig
+        python.exe -m pip install --upgrade pip "maturin>=1,<2" wheel
+        python.exe -m pip install -r test\requirements.txt
+
+        mkdir .cargo
+        cp ci\config.toml .cargo\config.toml
+
+    - name: maturin
+      run: |
+        maturin.exe build --release --strip --features=generic_simd --target="$env:TARGET"
+        python.exe -m pip install orjson --no-index --find-links target\wheels
+
+    - run: python.exe -m pytest -s -rxX -v test
+      env:
+        PYTHONMALLOC: "debug"
+
+    - name: Store wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: orjson_windows_aarch64_${{ matrix.python.version }}
+        path: target\wheels
+        overwrite: true
+        retention-days: 1
+        if-no-files-found: "error"
+        compression-level: 0
+
   pypi:
     name: PyPI
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [
-      macos_arm64,
+      macos_aarch64,
       macos_universal2_aarch64,
       macos_universal2_amd64,
       manylinux_aarch64,
@@ -728,6 +795,7 @@ jobs:
       musllinux_aarch64,
       musllinux_amd64,
       sdist,
+      windows_aarch64,
       windows_amd64,
     ]
     environment:
