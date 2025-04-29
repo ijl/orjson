@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.10.17
+
+### Changed
+
+- Publish PyPI Windows aarch64/arm64 wheels.
+- ABI compatibility with CPython 3.14 alpha 7.
+- Fix incompatibility running on Python 3.13 using WASM.
+
+
 ## 3.10.16
 
 ### Changed
