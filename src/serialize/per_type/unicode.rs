@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::serialize::error::SerializeError;
-use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
+use crate::str::unicode_to_str;
 
 use serde::ser::{Serialize, Serializer};
 
@@ -50,7 +50,7 @@ impl Serialize for StrSubclassSerializer {
     where
         S: Serializer,
     {
-        let uni = unicode_to_str_via_ffi(self.ptr);
+        let uni = unicode_to_str(self.ptr);
         if unlikely!(uni.is_none()) {
             err!(SerializeError::InvalidStr)
         }

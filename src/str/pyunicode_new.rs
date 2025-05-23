@@ -8,7 +8,9 @@ macro_rules! validate_str {
         #[cfg(not(Py_3_12))]
         debug_assert!((*($ptr.cast::<PyASCIIObject>())).ready() == 1);
 
+        #[cfg(not(Py_3_14))]
         debug_assert!((*($ptr.cast::<PyASCIIObject>())).compact() == 1);
+        #[cfg(not(Py_3_14))]
         debug_assert!((*($ptr.cast::<PyASCIIObject>())).interned() == 0);
 
         debug_assert!(ffi!(_PyUnicode_CheckConsistency($ptr.cast::<PyObject>(), 1)) == 1);
@@ -22,6 +24,7 @@ pub fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut pyo3_ffi::PyObj
         let data_ptr = ptr.cast::<PyASCIIObject>().offset(1).cast::<u8>();
         core::ptr::copy_nonoverlapping(buf, data_ptr, num_chars);
         core::ptr::write(data_ptr.add(num_chars), 0);
+        #[cfg(not(Py_3_14))]
         debug_assert!((*(ptr.cast::<PyASCIIObject>())).ascii() == 1);
         validate_str!(ptr);
         ptr.cast::<PyObject>()
