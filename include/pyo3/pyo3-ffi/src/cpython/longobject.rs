@@ -61,6 +61,18 @@ extern "C" {
         is_signed: c_int,
     ) -> *mut PyObject;
 
+    #[cfg(Py_3_13)]
+    #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
+    pub fn _PyLong_AsByteArray(
+        v: *mut PyLongObject,
+        bytes: *mut c_uchar,
+        n: size_t,
+        little_endian: c_int,
+        is_signed: c_int,
+        with_exceptions: c_int,
+    ) -> c_int;
+
+    #[cfg(not(Py_3_13))]
     #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
     pub fn _PyLong_AsByteArray(
         v: *mut PyLongObject,
