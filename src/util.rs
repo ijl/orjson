@@ -120,10 +120,8 @@ macro_rules! str_from_slice {
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
-            if pyo3_ffi::_Py_IsImmortal($op) == 0 {
-                debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
-                (*$op).ob_refcnt.ob_refcnt -= 1;
-            }
+            debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
+            (*$op).ob_refcnt.ob_refcnt -= 1;
         }
     };
 }
@@ -258,18 +256,8 @@ macro_rules! pydict_setitem {
     ($dict:expr, $pykey:expr, $pyval:expr) => {
         debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
         debug_assert!(str_hash!($pykey) != -1);
-        #[cfg(not(Py_3_13))]
         unsafe {
             let _ = pyo3_ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey));
-        }
-        #[cfg(Py_3_13)]
-        unsafe {
-            let _ = pyo3_ffi::_PyDict_SetItem_KnownHash_LockHeld(
-                $dict.cast::<pyo3_ffi::PyDictObject>(),
-                $pykey,
-                $pyval,
-                str_hash!($pykey),
-            );
         }
         reverse_pydict_incref!($pykey);
         reverse_pydict_incref!($pyval);

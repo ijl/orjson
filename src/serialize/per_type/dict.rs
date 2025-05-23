@@ -13,7 +13,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
+use crate::str::unicode_to_str;
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use crate::util::isize_to_usize;
 use compact_str::CompactString;
@@ -321,7 +321,7 @@ fn non_str_str(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeE
 #[cold]
 #[inline(never)]
 fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
-    let uni = unicode_to_str_via_ffi(key);
+    let uni = unicode_to_str(key);
     if unlikely!(uni.is_none()) {
         Err(SerializeError::InvalidStr)
     } else {

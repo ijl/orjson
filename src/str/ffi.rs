@@ -1,25 +1,19 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::util::isize_to_usize;
-use core::ffi::c_void;
-use pyo3_ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject, Py_hash_t};
+#[cfg(not(Py_3_14))]
+use pyo3_ffi::PyCompactUnicodeObject;
+use pyo3_ffi::{
+    PyASCIIObject, PyObject, PyUnicode_DATA, PyUnicode_GET_LENGTH, PyUnicode_KIND, Py_hash_t,
+};
 
 // see unicodeobject.h for documentation
 
 #[inline]
 pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
     unsafe {
-        let data_ptr: *mut c_void = if (*op.cast::<PyASCIIObject>()).compact() == 1
-            && (*op.cast::<PyASCIIObject>()).ascii() == 1
-        {
-            op.cast::<PyASCIIObject>().offset(1).cast::<c_void>()
-        } else {
-            op.cast::<PyCompactUnicodeObject>()
-                .offset(1)
-                .cast::<c_void>()
-        };
-        let num_bytes =
-            (*op.cast::<PyASCIIObject>()).length * ((*op.cast::<PyASCIIObject>()).kind()) as isize;
+        let data_ptr = PyUnicode_DATA(op);
+        let num_bytes = PyUnicode_GET_LENGTH(op) * PyUnicode_KIND(op) as isize;
         #[cfg(Py_3_14)]
         let hash = pyo3_ffi::Py_HashBuffer(data_ptr, num_bytes);
         #[cfg(not(Py_3_14))]
@@ -30,7 +24,7 @@ pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
 }
 
 #[inline(never)]
-pub fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
+fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     let mut str_size: pyo3_ffi::Py_ssize_t = 0;
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)).cast::<u8>();
     if unlikely!(ptr.is_null()) {
@@ -40,6 +34,7 @@ pub fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     }
 }
 
+#[cfg(not(Py_3_14))]
 #[inline]
 pub fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
     unsafe {
@@ -57,4 +52,10 @@ pub fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
             unicode_to_str_via_ffi(op)
         }
     }
+}
+
+#[cfg(Py_3_14)]
+#[inline]
+pub fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
+    unicode_to_str_via_ffi(op)
 }
