@@ -37,12 +37,7 @@ extern "C" {
     // skipped Py_VaBuildValue
 
     #[cfg(Py_3_13)]
-    pub fn PyModule_Add(
-        module: *mut PyObject,
-        name: *const c_char,
-        value: *mut PyObject,
-    ) -> core::ffi::c_int;
-
+    pub fn PyModule_Add(module: *mut PyObject, name: *const c_char, value: *mut PyObject) -> c_int;
     #[cfg(Py_3_10)]
     #[cfg_attr(PyPy, link_name = "PyPyModule_AddObjectRef")]
     pub fn PyModule_AddObjectRef(

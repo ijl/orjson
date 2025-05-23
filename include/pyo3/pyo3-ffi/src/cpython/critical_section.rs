@@ -9,16 +9,6 @@ pub struct PyCriticalSection {
     _cs_mutex: *mut PyMutex,
 }
 
-#[cfg(Py_GIL_DISABLED)]
-impl Default for PyCriticalSection {
-    fn default() -> Self {
-        PyCriticalSection {
-            _cs_prev: 0,
-            _cs_mutex: core::ptr::null_mut(),
-        }
-    }
-}
-
 #[repr(C)]
 #[cfg(Py_GIL_DISABLED)]
 pub struct PyCriticalSection2 {
@@ -27,10 +17,10 @@ pub struct PyCriticalSection2 {
 }
 
 #[cfg(not(Py_GIL_DISABLED))]
-opaque_struct!(PyCriticalSection);
+opaque_struct!(pub PyCriticalSection);
 
 #[cfg(not(Py_GIL_DISABLED))]
-opaque_struct!(PyCriticalSection2);
+opaque_struct!(pub PyCriticalSection2);
 
 extern "C" {
     pub fn PyCriticalSection_Begin(c: *mut PyCriticalSection, op: *mut PyObject);
