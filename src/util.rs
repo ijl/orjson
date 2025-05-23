@@ -120,10 +120,8 @@ macro_rules! str_from_slice {
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
-            if pyo3_ffi::_Py_IsImmortal($op) == 0 {
-                debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
-                (*$op).ob_refcnt.ob_refcnt -= 1;
-            }
+            debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
+            (*$op).ob_refcnt.ob_refcnt -= 1;
         }
     };
 }
