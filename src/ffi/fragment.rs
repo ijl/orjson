@@ -120,8 +120,10 @@ pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
                 ob_base: PyObject {
                     #[cfg(Py_GIL_DISABLED)]
                     ob_tid: 0,
-                    #[cfg(Py_GIL_DISABLED)]
+                    #[cfg(all(Py_GIL_DISABLED, not(Py_3_14)))]
                     _padding: 0,
+                    #[cfg(all(Py_GIL_DISABLED, Py_3_14))]
+                    ob_flags: 0,
                     #[cfg(Py_GIL_DISABLED)]
                     ob_mutex: pyo3_ffi::PyMutex::new(),
                     #[cfg(Py_GIL_DISABLED)]
