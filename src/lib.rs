@@ -191,6 +191,7 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         opt!(mptr, c"OPT_SERIALIZE_UUID", opt::SERIALIZE_UUID);
         opt!(mptr, c"OPT_SORT_KEYS", opt::SORT_KEYS);
         opt!(mptr, c"OPT_STRICT_INTEGER", opt::STRICT_INTEGER);
+        opt!(mptr, c"OPT_BIG_INTEGER", opt::BIG_INTEGER);
         opt!(mptr, c"OPT_UTC_Z", opt::UTC_Z);
 
         add!(mptr, c"JSONDecodeError", typeref::JsonDecodeError);
