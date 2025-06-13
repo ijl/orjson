@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::opt::{Opt, BIG_INTEGER};
+
 use crate::deserialize::pyobject::{
-    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
+    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64, parse_big_int,
 };
 use crate::deserialize::DeserializeError;
 use crate::ffi::yyjson::{
@@ -19,6 +21,7 @@ const YYJSON_TAG_BIT: u8 = 8;
 
 const YYJSON_VAL_SIZE: usize = core::mem::size_of::<yyjson_val>();
 
+const TAG_RAW: u8 = 0b00000001;
 const TAG_ARRAY: u8 = 0b00000110;
 const TAG_DOUBLE: u8 = 0b00010100;
 const TAG_FALSE: u8 = 0b00000011;
@@ -28,6 +31,8 @@ const TAG_OBJECT: u8 = 0b00000111;
 const TAG_STRING: u8 = 0b00000101;
 const TAG_TRUE: u8 = 0b00001011;
 const TAG_UINT64: u8 = 0b00000100;
+
+const YYJSON_READ_BIGNUM_AS_RAW: u32 = 1 << 7;
 
 macro_rules! is_yyjson_tag {
     ($elem:expr, $tag:expr) => {
@@ -67,35 +72,26 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
 
 pub(crate) fn deserialize(
     data: &'static str,
+    opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     let mut err = yyjson_read_err {
         code: YYJSON_READ_SUCCESS,
         msg: null(),
         pos: 0,
     };
+
     let doc = if yyjson_read_max_memory_usage(data.len()) < YYJSON_BUFFER_SIZE {
-        read_doc_with_buffer(data, &mut err)
+        read_doc_with_buffer(data, &mut err, opts)
     } else {
-        read_doc_default(data, &mut err)
+        read_doc_default(data, &mut err, opts)
     };
     if unlikely!(doc.is_null()) {
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         Err(DeserializeError::from_yyjson(msg, err.pos as i64, data))
     } else {
         let val = yyjson_doc_get_root(doc);
-
         if unlikely!(!unsafe_yyjson_is_ctn(val)) {
-            let pyval = match ElementType::from_tag(val) {
-                ElementType::String => parse_yy_string(val),
-                ElementType::Uint64 => parse_yy_u64(val),
-                ElementType::Int64 => parse_yy_i64(val),
-                ElementType::Double => parse_yy_f64(val),
-                ElementType::Null => parse_none(),
-                ElementType::True => parse_true(),
-                ElementType::False => parse_false(),
-                ElementType::Array => unreachable_unchecked!(),
-                ElementType::Object => unreachable_unchecked!(),
-            };
+            let pyval = parse_element_non_container(val);
             unsafe { yyjson_doc_free(doc) };
             Ok(pyval)
         } else if is_yyjson_tag!(val, TAG_ARRAY) {
@@ -118,15 +114,34 @@ pub(crate) fn deserialize(
     }
 }
 
-fn read_doc_default(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjson_doc {
-    unsafe { yyjson_read_opts(data.as_ptr() as *mut c_char, data.len(), null_mut(), err) }
-}
-
-fn read_doc_with_buffer(data: &'static str, err: &mut yyjson_read_err) -> *mut yyjson_doc {
+fn read_doc_default(data: &'static str, err: &mut yyjson_read_err, opts: Opt) -> *mut yyjson_doc {
     unsafe {
+        let flag = if opt_enabled!(opts, BIG_INTEGER) {
+            YYJSON_READ_BIGNUM_AS_RAW
+        } else {
+            0 // no big integer support
+        };
         yyjson_read_opts(
             data.as_ptr() as *mut c_char,
             data.len(),
+            flag,
+            null_mut(),
+            err,
+        )
+    }
+}
+
+fn read_doc_with_buffer(data: &'static str, err: &mut yyjson_read_err, opts: Opt) -> *mut yyjson_doc {
+    unsafe {
+        let flag = if opt_enabled!(opts, BIG_INTEGER) {
+            YYJSON_READ_BIGNUM_AS_RAW
+        } else {
+            0 // no big integer support
+        };
+        yyjson_read_opts(
+            data.as_ptr() as *mut c_char,
+            data.len(),
+            flag,
             &YYJSON_ALLOC.get_or_init(yyjson_init).alloc,
             err,
         )
@@ -143,6 +158,7 @@ enum ElementType {
     False,
     Array,
     Object,
+    Raw
 }
 
 impl ElementType {
@@ -157,6 +173,7 @@ impl ElementType {
             TAG_FALSE => Self::False,
             TAG_ARRAY => Self::Array,
             TAG_OBJECT => Self::Object,
+            TAG_RAW => Self::Raw,
             _ => unreachable_unchecked!(),
         }
     }
@@ -169,6 +186,13 @@ fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
         unsafe_yyjson_get_len(elem)
     )))
 }
+
+
+#[inline(always)]
+fn parse_yy_raw(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+    parse_big_int(unsafe { (*elem).uni.str_.cast::<i8>() })
+}
+
 
 #[inline(always)]
 fn parse_yy_u64(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
@@ -222,18 +246,9 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     }
                 }
             } else {
+                
                 next = unsafe_yyjson_get_next_non_container(val);
-                let pyval = match ElementType::from_tag(val) {
-                    ElementType::String => parse_yy_string(val),
-                    ElementType::Uint64 => parse_yy_u64(val),
-                    ElementType::Int64 => parse_yy_i64(val),
-                    ElementType::Double => parse_yy_f64(val),
-                    ElementType::Null => parse_none(),
-                    ElementType::True => parse_true(),
-                    ElementType::False => parse_false(),
-                    ElementType::Array => unreachable_unchecked!(),
-                    ElementType::Object => unreachable_unchecked!(),
-                };
+                let pyval = parse_element_non_container(val);
                 append_to_list!(dptr, pyval.as_ptr());
             }
         }
@@ -277,19 +292,26 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
             } else {
                 next_key = unsafe_yyjson_get_next_non_container(val);
                 next_val = next_key.add(1);
-                let pyval = match ElementType::from_tag(val) {
-                    ElementType::String => parse_yy_string(val),
-                    ElementType::Uint64 => parse_yy_u64(val),
-                    ElementType::Int64 => parse_yy_i64(val),
-                    ElementType::Double => parse_yy_f64(val),
-                    ElementType::Null => parse_none(),
-                    ElementType::True => parse_true(),
-                    ElementType::False => parse_false(),
-                    ElementType::Array => unreachable_unchecked!(),
-                    ElementType::Object => unreachable_unchecked!(),
-                };
+                let pyval = parse_element_non_container(val);
                 pydict_setitem!(dict, pykey, pyval.as_ptr());
             }
         }
     }
 }
+
+#[inline(always)]
+fn parse_element_non_container(val: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+    match ElementType::from_tag(val) {
+        ElementType::Raw => parse_yy_raw(val),
+        ElementType::String => parse_yy_string(val),
+        ElementType::Uint64 => parse_yy_u64(val),
+        ElementType::Int64 => parse_yy_i64(val),
+        ElementType::Double => parse_yy_f64(val),
+        ElementType::Null => parse_none(),
+        ElementType::True => parse_true(),
+        ElementType::False => parse_false(),
+        ElementType::Array => unreachable_unchecked!(),
+        ElementType::Object => unreachable_unchecked!(),
+    }
+}
+

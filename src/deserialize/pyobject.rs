@@ -70,3 +70,11 @@ pub fn parse_f64(val: f64) -> NonNull<pyo3_ffi::PyObject> {
 pub fn parse_none() -> NonNull<pyo3_ffi::PyObject> {
     nonnull!(use_immortal!(NONE))
 }
+
+#[inline(always)]
+pub fn parse_big_int(val: *const i8) -> NonNull<pyo3_ffi::PyObject> {
+    unsafe {
+        let py_int = ffi!(PyLong_FromString(val, std::ptr::null_mut(), 10));
+        nonnull!(py_int)
+    }
+}

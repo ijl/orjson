@@ -380,7 +380,7 @@ uint32_t yyjson_version(void) {
 #define constcast(type) (type)(void *)(size_t)(const void *)
 
 /* flag test */
-#define has_read_flag(_flag) false
+#define has_read_flag(_flag) unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))
 #define has_write_flag(_flag) unlikely(write_flag_eq(flg, YYJSON_WRITE_##_flag))
 
 static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
@@ -1997,7 +1997,7 @@ static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
     yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr; /* last (tail) */
     usize num = unsafe_yyjson_get_len(arr), idx;
     if (last) *last = false;
-    if (false) *pre = NULL;
+    if (pre) *pre = NULL;
     if (unlikely(num == 0)) {
         if (last && len == 1 && (*token == '0' || *token == '-')) *last = true;
         return NULL;
@@ -2025,7 +2025,7 @@ static_inline yyjson_mut_val *ptr_mut_obj_get(yyjson_mut_val *obj,
                                               yyjson_mut_val **pre) {
     yyjson_mut_val *pre_key = (yyjson_mut_val *)obj->uni.ptr, *key;
     usize num = unsafe_yyjson_get_len(obj);
-    if (false) *pre = NULL;
+    if (pre) *pre = NULL;
     if (unlikely(num == 0)) return NULL;
     for (; num > 0; num--, pre_key = key) {
         key = pre_key->next->next;
@@ -3806,7 +3806,7 @@ static_inline bool read_inf(bool sign, u8 **ptr, u8 **pre, yyjson_val *val) {
             cur += 3;
         }
         *end = cur;
-        if (false) {
+        if (pre) {
             /* add null-terminator for previous raw string */
             if (*pre) **pre = '\0';
             *pre = cur;
@@ -3831,7 +3831,7 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre, yyjson_val *val) {
         (cur[2] == 'N' || cur[2] == 'n')) {
         cur += 3;
         *end = cur;
-        if (false) {
+        if (pre) {
             /* add null-terminator for previous raw string */
             if (*pre) **pre = '\0';
             *pre = cur;
@@ -3986,7 +3986,8 @@ static_inline bool is_truncated_str(u8 *cur, u8 *end,
  Returns true if the input is valid but truncated.
  */
 static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
-                                      yyjson_read_code code) {
+                                      yyjson_read_code code,
+                                      yyjson_read_flag flg) {
     if (cur >= end) return true;
     if (code == YYJSON_READ_ERROR_LITERAL) {
         if (is_truncated_str(cur, end, "true", true) ||
@@ -4356,6 +4357,8 @@ static const f64 f64_pow10_table[] = {
  3. This function (with inline attribute) may generate a lot of instructions.
  */
 static_inline bool read_number(u8 **ptr,
+                               u8 **pre,
+                               yyjson_read_flag flg,
                                yyjson_val *val,
                                const char **msg) {
     
@@ -4390,8 +4393,15 @@ static_inline bool read_number(u8 **ptr,
 } while (false)
     
 #define return_inf() do { \
-    if (false) return_f64_bin(F64_RAW_INF); \
+    if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
     else return_err(hdr, "number is infinity when parsed as double"); \
+} while (false)
+    
+#define return_raw() do { \
+    if (*pre) **pre = '\0'; /* add null-terminator for previous raw string */ \
+    val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW; \
+    val->uni.str = (const char *)hdr; \
+    *pre = cur; *end = cur; return true; \
 } while (false)
     
     u8 *sig_cut = NULL; /* significant part cutting position for long number */
@@ -4411,6 +4421,11 @@ static_inline bool read_number(u8 **ptr,
     u8 *cur = *ptr;
     u8 **end = ptr;
     bool sign;
+    
+    /* read number as raw string if has `YYJSON_READ_NUMBER_AS_RAW` flag */
+    if (unlikely(pre && !has_read_flag(BIGNUM_AS_RAW))) {
+        return read_number_raw(ptr, pre, flg, val, msg);
+    }
     
     sign = (*hdr == '-');
     cur += sign;
@@ -4471,6 +4486,7 @@ static_inline bool read_number(u8 **ptr,
     if (!digi_is_digit_or_fp(*cur)) {
         /* this number is an integer consisting of 19 digits */
         if (sign && (sig > ((u64)1 << 63))) { /* overflow */
+            if (has_read_flag(BIGNUM_AS_RAW)) return_raw();
             return_f64(normalized_u64_to_f64(sig));
         }
         return_i64(sig);
@@ -4524,6 +4540,7 @@ digi_intg_more:
                 cur++;
                 /* convert to double if overflow */
                 if (sign) {
+                    if (has_read_flag(BIGNUM_AS_RAW)) return_raw();
                     return_f64(normalized_u64_to_f64(sig));
                 }
                 return_i64(sig);
@@ -4550,6 +4567,9 @@ digi_frac_more:
     sig += (*cur >= '5'); /* round */
     while (digi_is_digit(*++cur));
     if (!dot_pos) {
+        if (!digi_is_fp(*cur) && has_read_flag(BIGNUM_AS_RAW)) {
+            return_raw(); /* it's a large integer */
+        }
         dot_pos = cur;
         if (*cur == '.') {
             if (!digi_is_digit(*++cur)) {
@@ -4942,6 +4962,8 @@ digi_finish:
  This function use libc's strtod() to read floating-point number.
  */
 static_inline bool read_number(u8 **ptr,
+                               u8 **pre,
+                               yyjson_read_flag flg,
                                yyjson_val *val,
                                const char **msg) {
     
@@ -4976,8 +4998,15 @@ static_inline bool read_number(u8 **ptr,
 } while (false)
     
 #define return_inf() do { \
-    if (false) return_f64_bin(F64_RAW_INF); \
+    if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
     else return_err(hdr, "number is infinity when parsed as double"); \
+} while (false)
+    
+#define return_raw() do { \
+    if (*pre) **pre = '\0'; /* add null-terminator for previous raw string */ \
+    val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW; \
+    val->uni.str = (const char *)hdr; \
+    *pre = cur; *end = cur; return true; \
 } while (false)
     
     u64 sig, num;
@@ -4989,7 +5018,7 @@ static_inline bool read_number(u8 **ptr,
     bool sign;
     
     /* read number as raw string if has `YYJSON_READ_NUMBER_AS_RAW` flag */
-    if (unlikely(false)) {
+    if (unlikely(pre && !has_read_flag(BIGNUM_AS_RAW))) {
         return read_number_raw(ptr, pre, flg, val, msg);
     }
     
@@ -5027,7 +5056,7 @@ static_inline bool read_number(u8 **ptr,
             sig = num + sig * 10;
             cur++;
             if (sign) {
-                if (false) return_raw();
+                if (has_read_flag(BIGNUM_AS_RAW)) return_raw();
                 return_f64(normalized_u64_to_f64(sig));
             }
             return_i64(sig);
@@ -5039,7 +5068,7 @@ intg_end:
     if (!digi_is_digit_or_fp(*cur)) {
         /* this number is an integer consisting of 1 to 19 digits */
         if (sign && (sig > ((u64)1 << 63))) {
-            if (false) return_raw();
+            if (has_read_flag(BIGNUM_AS_RAW)) return_raw();
             return_f64(normalized_u64_to_f64(sig));
         }
         return_i64(sig);
@@ -5048,6 +5077,9 @@ intg_end:
 read_double:
     /* this number should be read as double */
     while (digi_is_digit(*cur)) cur++;
+    if (!digi_is_fp(*cur) && has_read_flag(BIGNUM_AS_RAW)) {
+        return_raw(); /* it's a large integer */
+    }
     if (*cur == '.') {
         /* skip fraction part */
         dot = cur;
@@ -5623,10 +5655,11 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
                                              u8 *cur,
                                              u8 *end,
                                              yyjson_alc alc,
+                                             yyjson_read_flag flg,
                                              yyjson_read_err *err) {
     
 #define return_err(_pos, _code, _msg) do { \
-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
@@ -5646,6 +5679,10 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
     
+    bool raw; /* read number as raw */
+    u8 *raw_end; /* raw end for null-terminator */
+    u8 **pre; /* previous raw end pointer */
+    
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
     alc_num = hdr_len + 1; /* single value */
@@ -5653,9 +5690,12 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
     if (unlikely(!val_hdr)) goto fail_alloc;
     val = val_hdr + hdr_len;
+    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
     
     if (char_is_number(*cur)) {
-        if (likely(read_number(&cur, val, &msg))) goto doc_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto doc_end;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -5673,7 +5713,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     if (*cur == 'n') {
         if (likely(read_null(&cur, val))) goto doc_end;
         if (false) {
-            if (read_nan(false, &cur, 0, val)) goto doc_end;
+            if (read_nan(false, &cur, pre, val)) goto doc_end;
         }
         goto fail_literal;
     }
@@ -5692,6 +5732,7 @@ doc_end:
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
+    if (pre && *pre) **pre = '\0';
     doc = (yyjson_doc *)val_hdr;
     doc->root = val_hdr + hdr_len;
     doc->alc = alc;
@@ -5715,9 +5756,9 @@ fail_character:
 fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
 fail_recursion:
-    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
-    
-#undef return_err
+    return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");    
+
+    #undef return_err
 }
 
 /** Read JSON document (accept all style, but optimized for minify). */
@@ -5725,10 +5766,11 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
                                            u8 *cur,
                                            u8 *end,
                                            yyjson_alc alc,
+                                           yyjson_read_flag flg,
                                            yyjson_read_err *err) {
     
 #define return_err(_pos, _code, _msg) do { \
-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
@@ -5771,10 +5813,12 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     yyjson_val *ctn_parent; /* parent of current container */
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
-
+    
     u32 container_depth = 0; /* limit on number of open array and map */
     bool raw; /* read number as raw */
     bool inv; /* allow invalid unicode */
+    u8 *raw_end; /* raw end for null-terminator */
+    u8 **pre; /* previous raw end pointer */
     
     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
@@ -5789,7 +5833,10 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-
+    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
+    
     if (*cur++ == '{') {
         ctn->tag = YYJSON_TYPE_OBJ;
         ctn->uni.ofs = 0;
@@ -5831,7 +5878,7 @@ arr_val_begin:
     if (char_is_number(*cur)) {
         val_incr();
         ctn_len++;
-        if (likely(read_number(&cur, val, &msg))) goto arr_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -5973,7 +6020,7 @@ obj_val_begin:
     if (char_is_number(*cur)) {
         val++;
         ctn_len++;
-        if (likely(read_number(&cur, val, &msg))) goto obj_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
         goto fail_number;
     }
     if (*cur == '{') {
@@ -6056,6 +6103,7 @@ doc_end:
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
+    if (pre && *pre) **pre = '\0';
     doc = (yyjson_doc *)val_hdr;
     doc->root = val_hdr + hdr_len;
     doc->alc = alc;
@@ -6082,7 +6130,7 @@ fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
 fail_recursion:
     return_err(cur, RECURSION_DEPTH, "array and object recursion depth exceeded");
-    
+
 #undef val_incr
 #undef return_err
 }
@@ -6092,10 +6140,11 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
                                            u8 *cur,
                                            u8 *end,
                                            yyjson_alc alc,
+                                           yyjson_read_flag flg,
                                            yyjson_read_err *err) {
     
 #define return_err(_pos, _code, _msg) do { \
-    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code)) { \
+    if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
@@ -6138,8 +6187,12 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     yyjson_val *ctn_parent; /* parent of current container */
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
-
+    
     u32 container_depth = 0; /* limit on number of open array and map */
+    bool raw; /* read number as raw */
+
+    u8 *raw_end; /* raw end for null-terminator */
+    u8 **pre; /* previous raw end pointer */
     
     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
@@ -6154,6 +6207,9 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
+    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
     
     if (*cur++ == '{') {
         ctn->tag = YYJSON_TYPE_OBJ;
@@ -6211,7 +6267,7 @@ arr_val_begin:
     if (char_is_number(*cur)) {
         val_incr();
         ctn_len++;
-        if (likely(read_number(&cur, val, &msg))) goto arr_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -6237,7 +6293,7 @@ arr_val_begin:
         ctn_len++;
         if (likely(read_null(&cur, val))) goto arr_val_end;
         if (false) {
-            if (read_nan(false, &cur, 0, val)) goto arr_val_end;
+            if (read_nan(false, &cur, pre, val)) goto arr_val_end;
         }
         goto fail_literal;
     }
@@ -6373,7 +6429,7 @@ obj_val_begin:
     if (char_is_number(*cur)) {
         val++;
         ctn_len++;
-        if (likely(read_number(&cur, val, &msg))) goto obj_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
         goto fail_number;
     }
     if (*cur == '{') {
@@ -6429,7 +6485,6 @@ obj_val_end:
     
 obj_end:
     container_depth--;
-
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -6457,6 +6512,7 @@ doc_end:
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
+    if (pre && *pre) **pre = '\0';
     doc = (yyjson_doc *)val_hdr;
     doc->root = val_hdr + hdr_len;
     doc->alc = alc;
@@ -6496,6 +6552,7 @@ fail_recursion:
 
 yyjson_doc *yyjson_read_opts(char *dat,
                              usize len,
+                             yyjson_read_flag flg,
                              const yyjson_alc *alc_ptr,
                              yyjson_read_err *err) {
     
@@ -6506,10 +6563,11 @@ yyjson_doc *yyjson_read_opts(char *dat,
     if (!has_read_flag(INSITU) && hdr) alc.free(alc.ctx, (void *)hdr); \
     return NULL; \
 } while (false)
+    
     yyjson_alc alc;
     yyjson_doc *doc;
     u8 *hdr = NULL, *end, *cur;
-
+    
     if (!alc_ptr) {
         alc = YYJSON_DEFAULT_ALC;
     } else {
@@ -6535,12 +6593,12 @@ yyjson_doc *yyjson_read_opts(char *dat,
     /* read json document */
     if (likely(char_is_container(*cur))) {
         if (char_is_space(cur[1]) && char_is_space(cur[2])) {
-            doc = read_root_pretty(hdr, cur, end, alc, err);
+            doc = read_root_pretty(hdr, cur, end, alc, flg, err);
         } else {
-            doc = read_root_minify(hdr, cur, end, alc, err);
+            doc = read_root_minify(hdr, cur, end, alc, flg, err);
         }
     } else {
-        doc = read_root_single(hdr, cur, end, alc, err);
+        doc = read_root_single(hdr, cur, end, alc, flg, err);
     }
     
     /* check result */
@@ -6562,7 +6620,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     err->code = YYJSON_READ_ERROR_##_code; \
     return NULL; \
 } while (false)
-    
+
 
     yyjson_doc *doc;
     FILE *file;
@@ -6661,7 +6719,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
     /* read JSON */
     memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
     flg |= YYJSON_READ_INSITU;
-    doc = yyjson_read_opts((char *)buf, (usize)file_size, &alc, err);
+    doc = yyjson_read_opts((char *)buf, (usize)file_size, flg, &alc, err);
     if (doc) {
         doc->str_pool = (char *)buf;
         return doc;
@@ -6696,7 +6754,7 @@ const char *yyjson_read_number(const char *dat,
     u8 buf[128];
     usize dat_len;
 #endif
-    
+
 
     if (unlikely(!dat)) {
         return_err(cur, INVALID_PARAMETER, "input data is NULL");
@@ -6723,8 +6781,12 @@ const char *yyjson_read_number(const char *dat,
     hdr[dat_len] = 0;
 #endif
     
+    raw = (flg & (YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_BIGNUM_AS_RAW)) != 0;
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
+    
 #if !YYJSON_HAS_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV
-    if (!read_number(&cur, val, &msg)) {
+    if (!read_number(&cur, pre, flg, val, &msg)) {
         if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
         return_err(cur, INVALID_NUMBER, msg);
     }
@@ -6732,7 +6794,7 @@ const char *yyjson_read_number(const char *dat,
     if (yyjson_is_raw(val)) val->uni.str = dat;
     return dat + (cur - hdr);
 #else
-    if (!read_number(&cur, val, &msg)) {
+    if (!read_number(&cur, pre, flg, val, &msg)) {
         return_err(cur, INVALID_NUMBER, msg);
     }
     return (const char *)cur;
