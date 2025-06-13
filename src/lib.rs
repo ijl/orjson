@@ -185,6 +185,7 @@ pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
             opt::PASSTHROUGH_DATACLASS
         );
         opt!(mptr, c"OPT_PASSTHROUGH_DATETIME", opt::PASSTHROUGH_DATETIME);
+        opt!(mptr, c"OPT_PASSTHROUGH_ENUM", opt::PASSTHROUGH_ENUM);
         opt!(mptr, c"OPT_PASSTHROUGH_SUBCLASS", opt::PASSTHROUGH_SUBCLASS);
         opt!(mptr, c"OPT_SERIALIZE_DATACLASS", opt::SERIALIZE_DATACLASS);
         opt!(mptr, c"OPT_SERIALIZE_NUMPY", opt::SERIALIZE_NUMPY);

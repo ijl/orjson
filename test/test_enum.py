@@ -118,3 +118,82 @@ class TestEnum:
         assert (
             orjson.dumps({IntEnum.ONE: 1}, option=orjson.OPT_NON_STR_KEYS) == b'{"1":1}'
         )
+
+
+class TestEnumPassthrough:
+    def test_enum_passthrough_str(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(StrEnum.AAA, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_int(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(IntEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_intenum(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(IntEnumEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_flag(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(FlagEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_intflag(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(IntFlagEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_float(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(FloatEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_unspecified(self):
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(UnspecifiedEnum.A, option=orjson.OPT_PASSTHROUGH_ENUM)
+
+    def test_enum_passthrough_default(self):
+        """
+        dumps() enum passes to default with OPT_PASSTHROUGH_ENUM
+        """
+
+        def default(obj):
+            if isinstance(obj, StrEnum):
+                return f"custom_{obj.value}"
+            elif isinstance(obj, IntEnum):
+                return obj.value * 10
+            raise TypeError
+
+        assert (
+            orjson.dumps(
+                StrEnum.AAA, option=orjson.OPT_PASSTHROUGH_ENUM, default=default
+            )
+            == b'"custom_aaa"'
+        )
+        assert (
+            orjson.dumps(
+                IntEnum.ONE, option=orjson.OPT_PASSTHROUGH_ENUM, default=default
+            )
+            == b"10"
+        )
+
+    def test_enum_passthrough_non_str_keys(self):
+        """
+        OPT_PASSTHROUGH_ENUM does not affect OPT_NON_STR_KEYS
+        """
+        assert (
+            orjson.dumps(
+                {StrEnum.AAA: 1},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_PASSTHROUGH_ENUM,
+            )
+            == b'{"aaa":1}'
+        )
+
+    def test_enum_passthrough_non_str_keys_int(self):
+        """
+        OPT_PASSTHROUGH_ENUM does not affect OPT_NON_STR_KEYS for IntEnum
+        """
+        assert (
+            orjson.dumps(
+                {IntEnum.ONE: 1},
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_PASSTHROUGH_ENUM,
+            )
+            == b'{"1":1}'
+        )

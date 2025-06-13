@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.10.19
+
+### Added
+
+- `orjson.OPT_PASSTHROUGH_ENUM` causes `orjson.dumps()` to pass
+`enum.Enum` instances to `default` so the caller can customize the
+output.
+
 ## 3.10.18
 
 ### Fixed

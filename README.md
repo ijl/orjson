@@ -153,6 +153,7 @@ serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
 of `tuple` to avoid serializing `namedtuple` objects as arrays. To avoid
 serializing subclasses, specify the option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
+To avoid serializing enums, specify the option `orjson.OPT_PASSTHROUGH_ENUM`.
 
 The output is a `bytes` object containing UTF-8.
 
@@ -486,6 +487,37 @@ b'"******"'
 This does not affect serializing subclasses as `dict` keys if using
 OPT_NON_STR_KEYS.
 
+##### OPT_PASSTHROUGH_ENUM
+
+Passthrough `enum.Enum` instances to `default`.
+
+```python
+>>> import enum, orjson
+>>>
+class Color(enum.Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+def default(obj):
+    if isinstance(obj, Color):
+        return f"color_{obj.name}"
+    raise TypeError
+
+>>> orjson.dumps(Color.RED)
+b'1'
+>>> orjson.dumps(Color.RED, option=orjson.OPT_PASSTHROUGH_ENUM)
+TypeError: Type is not JSON serializable: Color
+>>> orjson.dumps(Color.RED, option=orjson.OPT_PASSTHROUGH_ENUM, default=default)
+b'"color_RED"'
+```
+
+For `enum.StrEnum` and other enum subclasses, this option takes precedence
+over `OPT_PASSTHROUGH_SUBCLASS`.
+
+This does not affect serializing enums as `dict` keys if using
+OPT_NON_STR_KEYS.
+
 ##### OPT_SERIALIZE_DATACLASS
 
 This is deprecated and has no effect in version 3. In version 2 this was
@@ -754,6 +786,9 @@ class CustomEnum(enum.Enum):
 >>> orjson.dumps(CustomEnum.ONE, default=default)
 b'1'
 ```
+
+To customize the serialization of all enums, use `orjson.OPT_PASSTHROUGH_ENUM`
+to pass enum instances to `default`.
 
 ### float
 

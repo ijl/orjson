@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::opt::{
-    Opt, PASSTHROUGH_DATACLASS, PASSTHROUGH_DATETIME, PASSTHROUGH_SUBCLASS, SERIALIZE_NUMPY,
+    Opt, PASSTHROUGH_DATACLASS, PASSTHROUGH_DATETIME, PASSTHROUGH_ENUM, PASSTHROUGH_SUBCLASS, SERIALIZE_NUMPY,
 };
 use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar};
 use crate::typeref::{
@@ -75,6 +75,10 @@ pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: O
         }
     }
 
+    if is_subclass_by_type!(ob_type, ENUM_TYPE) && opt_disabled!(opts, PASSTHROUGH_ENUM) {
+        return ObType::Enum;
+    }
+
     let tp_flags = tp_flags!(ob_type);
 
     if opt_disabled!(opts, PASSTHROUGH_SUBCLASS) {
@@ -87,10 +91,6 @@ pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: O
         } else if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_DICT_SUBCLASS) {
             return ObType::Dict;
         }
-    }
-
-    if is_subclass_by_type!(ob_type, ENUM_TYPE) {
-        return ObType::Enum;
     }
 
     if opt_disabled!(opts, PASSTHROUGH_DATACLASS) && pydict_contains!(ob_type, DATACLASS_FIELDS_STR)

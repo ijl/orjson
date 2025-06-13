@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import datetime
+import enum
 import sys
 import uuid
 
@@ -314,6 +315,41 @@ class TestType:
         refcount = sys.getrefcount(ref)
         orjson.dumps(
             ref, option=orjson.OPT_PASSTHROUGH_DATETIME, default=lambda val: str(val)
+        )
+        assert sys.getrefcount(ref) == refcount
+
+    def test_reference_cleanup_default_enum(self):
+        """
+        references to encoded enum objects are cleaned up
+        """
+
+        class TestEnum(enum.Enum):
+            VALUE = "test"
+
+        ref = TestEnum.VALUE
+
+        def default(obj):
+            if isinstance(obj, TestEnum):
+                return obj.value
+            raise TypeError
+
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(ref, option=orjson.OPT_PASSTHROUGH_ENUM, default=default)
+        assert sys.getrefcount(ref) == refcount
+
+    def test_reference_cleanup_default_enum_lambda(self):
+        """
+        references to encoded enum objects are cleaned up with lambda
+        """
+
+        class TestEnum(enum.Enum):
+            VALUE = "test"
+
+        ref = TestEnum.VALUE
+
+        refcount = sys.getrefcount(ref)
+        orjson.dumps(
+            ref, option=orjson.OPT_PASSTHROUGH_ENUM, default=lambda val: val.value
         )
         assert sys.getrefcount(ref) == refcount
 
