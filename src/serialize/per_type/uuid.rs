@@ -6,7 +6,7 @@ use core::ffi::c_uchar;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
-pub struct UUID {
+pub(crate) struct UUID {
     ptr: *mut pyo3_ffi::PyObject,
 }
 

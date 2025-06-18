@@ -7,6 +7,6 @@ mod error;
 mod pyobject;
 mod utf8;
 
-pub use cache::{KeyMap, KEY_MAP};
-pub use deserializer::deserialize;
-pub use error::DeserializeError;
+pub(crate) use cache::{KeyMap, KEY_MAP};
+pub(crate) use deserializer::deserialize;
+pub(crate) use error::DeserializeError;

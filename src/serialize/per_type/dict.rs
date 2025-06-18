@@ -21,7 +21,7 @@ use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
 
-pub struct ZeroDictSerializer;
+pub(crate) struct ZeroDictSerializer;
 
 impl ZeroDictSerializer {
     pub const fn new() -> Self {
@@ -39,7 +39,7 @@ impl Serialize for ZeroDictSerializer {
     }
 }
 
-pub struct DictGenericSerializer {
+pub(crate) struct DictGenericSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     #[allow(dead_code)]
@@ -205,7 +205,7 @@ macro_rules! impl_serialize_entry {
     };
 }
 
-pub struct Dict {
+pub(crate) struct Dict {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
@@ -255,7 +255,7 @@ impl Serialize for Dict {
     }
 }
 
-pub struct DictSortedKey {
+pub(crate) struct DictSortedKey {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
@@ -409,7 +409,7 @@ fn sort_non_str_dict_items(items: &mut SmallVec<[(CompactString, *mut pyo3_ffi::
     items.sort_unstable_by(|a, b| a.0.cmp(&b.0));
 }
 
-pub struct DictNonStrKey {
+pub(crate) struct DictNonStrKey {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,

@@ -2,7 +2,7 @@
 
 use std::borrow::Cow;
 
-pub struct DeserializeError<'a> {
+pub(crate) struct DeserializeError<'a> {
     pub message: Cow<'a, str>,
     #[cfg(not(feature = "yyjson"))]
     pub line: usize, // start at 1

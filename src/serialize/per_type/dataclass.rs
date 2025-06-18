@@ -15,7 +15,7 @@ use serde::ser::{Serialize, SerializeMap, Serializer};
 use core::ptr::NonNull;
 
 #[repr(transparent)]
-pub struct DataclassGenericSerializer<'a> {
+pub(crate) struct DataclassGenericSerializer<'a> {
     previous: &'a PyObjectSerializer,
 }
 
@@ -25,7 +25,7 @@ impl<'a> DataclassGenericSerializer<'a> {
     }
 }
 
-impl<'a> Serialize for DataclassGenericSerializer<'a> {
+impl Serialize for DataclassGenericSerializer<'_> {
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -63,7 +63,7 @@ impl<'a> Serialize for DataclassGenericSerializer<'a> {
     }
 }
 
-pub struct DataclassFastSerializer {
+pub(crate) struct DataclassFastSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
@@ -129,7 +129,7 @@ impl Serialize for DataclassFastSerializer {
     }
 }
 
-pub struct DataclassFallbackSerializer {
+pub(crate) struct DataclassFallbackSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,

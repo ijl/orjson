@@ -9,7 +9,7 @@ use serde::ser::{Serialize, Serializer};
 const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
-pub struct IntSerializer {
+pub(crate) struct IntSerializer {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }

@@ -19,7 +19,7 @@ use pyo3_ffi::{
 const _Py_IMMORTAL_REFCNT_LOCAL: u32 = u32::MAX;
 
 #[repr(C)]
-pub struct Fragment {
+pub(crate) struct Fragment {
     #[cfg(Py_GIL_DISABLED)]
     pub ob_tid: usize,
     #[cfg(Py_GIL_DISABLED)]
@@ -54,7 +54,7 @@ fn raise_args_exception() {
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragment_tp_new(
+pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
     _subtype: *mut PyTypeObject,
     args: *mut PyObject,
     kwds: *mut PyObject,
@@ -92,7 +92,7 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
+pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     unsafe {
         Py_DECREF((*object.cast::<Fragment>()).contents);
         std::alloc::dealloc(object.cast::<u8>(), core::alloc::Layout::new::<Fragment>());
@@ -113,7 +113,7 @@ const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
+pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
     unsafe {
         let ob = Box::new(PyTypeObject {
             ob_base: PyVarObject {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-pub const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
+pub(crate) const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
 macro_rules! is_type {
     ($obj_ptr:expr, $type_ptr:expr) => {
@@ -314,22 +314,6 @@ macro_rules! trailing_zeros {
     };
 }
 
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! popcnt {
-    ($val:expr) => {
-        core::intrinsics::ctpop(core::mem::transmute::<u32, i32>($val)) as usize
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! popcnt {
-    ($val:expr) => {
-        core::mem::transmute::<u32, i32>($val).count_ones() as usize
-    };
-}
-
 macro_rules! unreachable_unchecked {
     () => {
         unsafe { core::hint::unreachable_unchecked() }
@@ -338,14 +322,14 @@ macro_rules! unreachable_unchecked {
 
 #[inline(always)]
 #[allow(clippy::cast_possible_wrap)]
-pub fn usize_to_isize(val: usize) -> isize {
+pub(crate) fn usize_to_isize(val: usize) -> isize {
     debug_assert!(val < (isize::MAX as usize));
     val as isize
 }
 
 #[inline(always)]
 #[allow(clippy::cast_sign_loss)]
-pub fn isize_to_usize(val: isize) -> usize {
+pub(crate) fn isize_to_usize(val: isize) -> usize {
     debug_assert!(val >= 0);
     val as usize
 }

@@ -5,7 +5,7 @@ use crate::deserialize::DeserializeError;
 use crate::typeref::EMPTY_UNICODE;
 use core::ptr::NonNull;
 
-pub fn deserialize(
+pub(crate) fn deserialize(
     ptr: *mut pyo3_ffi::PyObject,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);

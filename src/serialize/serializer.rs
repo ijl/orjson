@@ -14,7 +14,7 @@ use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
 
-pub fn serialize(
+pub(crate) fn serialize(
     ptr: *mut pyo3_ffi::PyObject,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
@@ -40,7 +40,7 @@ pub fn serialize(
     }
 }
 
-pub struct PyObjectSerializer {
+pub(crate) struct PyObjectSerializer {
     pub ptr: *mut pyo3_ffi::PyObject,
     pub state: SerializerState,
     pub default: Option<NonNull<pyo3_ffi::PyObject>>,

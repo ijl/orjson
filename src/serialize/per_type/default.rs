@@ -6,7 +6,7 @@ use crate::serialize::serializer::PyObjectSerializer;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
-pub struct DefaultSerializer<'a> {
+pub(crate) struct DefaultSerializer<'a> {
     previous: &'a PyObjectSerializer,
 }
 
@@ -16,7 +16,7 @@ impl<'a> DefaultSerializer<'a> {
     }
 }
 
-impl<'a> Serialize for DefaultSerializer<'a> {
+impl Serialize for DefaultSerializer<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -32,7 +32,7 @@ impl<'a> Serialize for DefaultSerializer<'a> {
                 let default_obj = ffi!(PyObject_CallFunctionObjArgs(
                     callable.as_ptr(),
                     self.previous.ptr,
-                    core::ptr::null_mut() as *mut pyo3_ffi::PyObject
+                    core::ptr::null_mut::<pyo3_ffi::PyObject>()
                 ));
                 #[cfg(Py_3_10)]
                 #[allow(clippy::cast_sign_loss)]

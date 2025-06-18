@@ -10,7 +10,7 @@ const DEFAULT_MASK: u32 = 255 << DEFAULT_SHIFT;
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
-pub struct SerializerState {
+pub(crate) struct SerializerState {
     // recursion: u8,
     // default_calls: u8,
     // opts: u16,

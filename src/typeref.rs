@@ -7,54 +7,54 @@ use once_cell::race::{OnceBool, OnceBox};
 
 use pyo3_ffi::*;
 
-pub static mut DEFAULT: *mut PyObject = null_mut();
-pub static mut OPTION: *mut PyObject = null_mut();
+pub(crate) static mut DEFAULT: *mut PyObject = null_mut();
+pub(crate) static mut OPTION: *mut PyObject = null_mut();
 
-pub static mut NONE: *mut PyObject = null_mut();
-pub static mut TRUE: *mut PyObject = null_mut();
-pub static mut FALSE: *mut PyObject = null_mut();
-pub static mut EMPTY_UNICODE: *mut PyObject = null_mut();
+pub(crate) static mut NONE: *mut PyObject = null_mut();
+pub(crate) static mut TRUE: *mut PyObject = null_mut();
+pub(crate) static mut FALSE: *mut PyObject = null_mut();
+pub(crate) static mut EMPTY_UNICODE: *mut PyObject = null_mut();
 
-pub static mut BYTES_TYPE: *mut PyTypeObject = null_mut();
-pub static mut BYTEARRAY_TYPE: *mut PyTypeObject = null_mut();
-pub static mut MEMORYVIEW_TYPE: *mut PyTypeObject = null_mut();
-pub static mut STR_TYPE: *mut PyTypeObject = null_mut();
-pub static mut INT_TYPE: *mut PyTypeObject = null_mut();
-pub static mut BOOL_TYPE: *mut PyTypeObject = null_mut();
-pub static mut NONE_TYPE: *mut PyTypeObject = null_mut();
-pub static mut FLOAT_TYPE: *mut PyTypeObject = null_mut();
-pub static mut LIST_TYPE: *mut PyTypeObject = null_mut();
-pub static mut DICT_TYPE: *mut PyTypeObject = null_mut();
-pub static mut DATETIME_TYPE: *mut PyTypeObject = null_mut();
-pub static mut DATE_TYPE: *mut PyTypeObject = null_mut();
-pub static mut TIME_TYPE: *mut PyTypeObject = null_mut();
-pub static mut TUPLE_TYPE: *mut PyTypeObject = null_mut();
-pub static mut UUID_TYPE: *mut PyTypeObject = null_mut();
-pub static mut ENUM_TYPE: *mut PyTypeObject = null_mut();
-pub static mut FIELD_TYPE: *mut PyTypeObject = null_mut();
-pub static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut BYTES_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut BYTEARRAY_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut MEMORYVIEW_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut STR_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut INT_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut BOOL_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut NONE_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut FLOAT_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut LIST_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut DICT_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut DATETIME_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut DATE_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut TIME_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut TUPLE_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut UUID_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut ENUM_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut FIELD_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut FRAGMENT_TYPE: *mut PyTypeObject = null_mut();
 
-pub static mut ZONEINFO_TYPE: *mut PyTypeObject = null_mut();
+pub(crate) static mut ZONEINFO_TYPE: *mut PyTypeObject = null_mut();
 
-pub static mut UTCOFFSET_METHOD_STR: *mut PyObject = null_mut();
-pub static mut NORMALIZE_METHOD_STR: *mut PyObject = null_mut();
-pub static mut CONVERT_METHOD_STR: *mut PyObject = null_mut();
-pub static mut DST_STR: *mut PyObject = null_mut();
+pub(crate) static mut UTCOFFSET_METHOD_STR: *mut PyObject = null_mut();
+pub(crate) static mut NORMALIZE_METHOD_STR: *mut PyObject = null_mut();
+pub(crate) static mut CONVERT_METHOD_STR: *mut PyObject = null_mut();
+pub(crate) static mut DST_STR: *mut PyObject = null_mut();
 
-pub static mut DICT_STR: *mut PyObject = null_mut();
-pub static mut DATACLASS_FIELDS_STR: *mut PyObject = null_mut();
-pub static mut SLOTS_STR: *mut PyObject = null_mut();
-pub static mut FIELD_TYPE_STR: *mut PyObject = null_mut();
-pub static mut ARRAY_STRUCT_STR: *mut PyObject = null_mut();
-pub static mut DTYPE_STR: *mut PyObject = null_mut();
-pub static mut DESCR_STR: *mut PyObject = null_mut();
-pub static mut VALUE_STR: *mut PyObject = null_mut();
-pub static mut INT_ATTR_STR: *mut PyObject = null_mut();
+pub(crate) static mut DICT_STR: *mut PyObject = null_mut();
+pub(crate) static mut DATACLASS_FIELDS_STR: *mut PyObject = null_mut();
+pub(crate) static mut SLOTS_STR: *mut PyObject = null_mut();
+pub(crate) static mut FIELD_TYPE_STR: *mut PyObject = null_mut();
+pub(crate) static mut ARRAY_STRUCT_STR: *mut PyObject = null_mut();
+pub(crate) static mut DTYPE_STR: *mut PyObject = null_mut();
+pub(crate) static mut DESCR_STR: *mut PyObject = null_mut();
+pub(crate) static mut VALUE_STR: *mut PyObject = null_mut();
+pub(crate) static mut INT_ATTR_STR: *mut PyObject = null_mut();
 
 #[allow(non_upper_case_globals)]
-pub static mut JsonEncodeError: *mut PyObject = null_mut();
+pub(crate) static mut JsonEncodeError: *mut PyObject = null_mut();
 #[allow(non_upper_case_globals)]
-pub static mut JsonDecodeError: *mut PyObject = null_mut();
+pub(crate) static mut JsonDecodeError: *mut PyObject = null_mut();
 
 unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut PyTypeObject {
     unsafe {
@@ -69,7 +69,7 @@ unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut Py
 
 static INIT: OnceBool = OnceBool::new();
 
-pub fn init_typerefs() {
+pub(crate) fn init_typerefs() {
     INIT.get_or_init(_init_typerefs_impl);
 }
 
@@ -150,7 +150,7 @@ fn _init_typerefs_impl() -> bool {
     true
 }
 
-pub struct NumpyTypes {
+pub(crate) struct NumpyTypes {
     pub array: *mut PyTypeObject,
     pub float64: *mut PyTypeObject,
     pub float32: *mut PyTypeObject,
@@ -167,7 +167,7 @@ pub struct NumpyTypes {
     pub datetime64: *mut PyTypeObject,
 }
 
-pub static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
+pub(crate) static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
 
 unsafe fn look_up_numpy_type(
     numpy_module_dict: *mut PyObject,
@@ -182,7 +182,7 @@ unsafe fn look_up_numpy_type(
 
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub fn load_numpy_types() -> Box<Option<NonNull<NumpyTypes>>> {
+pub(crate) fn load_numpy_types() -> Box<Option<NonNull<NumpyTypes>>> {
     unsafe {
         let numpy = PyImport_ImportModule(c"numpy".as_ptr());
         if numpy.is_null() {

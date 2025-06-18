@@ -16,7 +16,7 @@ macro_rules! validate_str {
 }
 
 #[inline(never)]
-pub fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+pub(crate) fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut pyo3_ffi::PyObject {
     unsafe {
         let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 127));
         let data_ptr = ptr.cast::<PyASCIIObject>().offset(1).cast::<u8>();
@@ -30,7 +30,7 @@ pub fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut pyo3_ffi::PyObj
 
 #[cold]
 #[inline(never)]
-pub fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+pub(crate) fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
     unsafe {
         let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 255));
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u8>();
@@ -45,7 +45,7 @@ pub fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject
 }
 
 #[inline(never)]
-pub fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+pub(crate) fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
     unsafe {
         let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 65535));
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u16>();
@@ -60,7 +60,7 @@ pub fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject
 }
 
 #[inline(never)]
-pub fn pyunicode_fourbyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
+pub(crate) fn pyunicode_fourbyte(buf: &str, num_chars: usize) -> *mut pyo3_ffi::PyObject {
     unsafe {
         let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 1114111));
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u32>();

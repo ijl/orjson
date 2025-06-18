@@ -4,7 +4,7 @@ use core::ffi::c_int;
 use pyo3_ffi::{PyObject, PyVarObject, Py_buffer, Py_hash_t, Py_ssize_t};
 
 #[repr(C)]
-pub struct _PyManagedBufferObject {
+pub(crate) struct _PyManagedBufferObject {
     pub ob_base: *mut pyo3_ffi::PyObject,
     pub flags: c_int,
     pub exports: Py_ssize_t,
@@ -12,7 +12,7 @@ pub struct _PyManagedBufferObject {
 }
 
 #[repr(C)]
-pub struct PyMemoryViewObject {
+pub(crate) struct PyMemoryViewObject {
     pub ob_base: PyVarObject,
     pub mbuf: *mut _PyManagedBufferObject,
     pub hash: Py_hash_t,
@@ -25,6 +25,6 @@ pub struct PyMemoryViewObject {
 
 #[allow(non_snake_case)]
 #[inline(always)]
-pub unsafe fn PyMemoryView_GET_BUFFER(op: *mut PyObject) -> *const Py_buffer {
+pub(crate) unsafe fn PyMemoryView_GET_BUFFER(op: *mut PyObject) -> *const Py_buffer {
     unsafe { &(*op.cast::<PyMemoryViewObject>()).view }
 }

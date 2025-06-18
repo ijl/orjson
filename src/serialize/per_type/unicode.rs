@@ -6,7 +6,7 @@ use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
-pub struct StrSerializer {
+pub(crate) struct StrSerializer {
     ptr: *mut pyo3_ffi::PyObject,
 }
 
@@ -34,7 +34,7 @@ impl Serialize for StrSerializer {
 }
 
 #[repr(transparent)]
-pub struct StrSubclassSerializer {
+pub(crate) struct StrSubclassSerializer {
     ptr: *mut pyo3_ffi::PyObject,
 }
 

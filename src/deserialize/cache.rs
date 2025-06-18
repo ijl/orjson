@@ -5,7 +5,7 @@ use core::ffi::c_void;
 use once_cell::unsync::OnceCell;
 
 #[repr(transparent)]
-pub struct CachedKey {
+pub(crate) struct CachedKey {
     ptr: *mut c_void,
 }
 
@@ -32,7 +32,7 @@ impl Drop for CachedKey {
     }
 }
 
-pub type KeyMap =
+pub(crate) type KeyMap =
     AssociativeCache<u64, CachedKey, Capacity2048, HashDirectMapped, RoundRobinReplacement>;
 
-pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
+pub(crate) static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();

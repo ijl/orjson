@@ -9,7 +9,7 @@ use crate::util::isize_to_usize;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
-pub struct FragmentSerializer {
+pub(crate) struct FragmentSerializer {
     ptr: *mut pyo3_ffi::PyObject,
 }
 

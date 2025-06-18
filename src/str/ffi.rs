@@ -7,7 +7,7 @@ use pyo3_ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject, Py_hash_t};
 // see unicodeobject.h for documentation
 
 #[inline]
-pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
+pub(crate) fn hash_str(op: *mut PyObject) -> Py_hash_t {
     unsafe {
         let data_ptr: *mut c_void = if (*op.cast::<PyASCIIObject>()).compact() == 1
             && (*op.cast::<PyASCIIObject>()).ascii() == 1
@@ -30,7 +30,7 @@ pub fn hash_str(op: *mut PyObject) -> Py_hash_t {
 }
 
 #[inline(never)]
-pub fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
+pub(crate) fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     let mut str_size: pyo3_ffi::Py_ssize_t = 0;
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)).cast::<u8>();
     if unlikely!(ptr.is_null()) {
@@ -41,16 +41,23 @@ pub fn unicode_to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
 }
 
 #[inline]
-pub fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
+pub(crate) fn unicode_to_str(op: *mut PyObject) -> Option<&'static str> {
     unsafe {
         if unlikely!((*op.cast::<PyASCIIObject>()).compact() == 0) {
             unicode_to_str_via_ffi(op)
         } else if (*op.cast::<PyASCIIObject>()).ascii() == 1 {
-            let ptr = op.cast::<PyASCIIObject>().offset(1) as *const u8;
+            let ptr = op
+                .cast::<PyASCIIObject>()
+                .offset(1)
+                .cast::<u8>()
+                .cast_const();
             let len = isize_to_usize((*op.cast::<PyASCIIObject>()).length);
             Some(str_from_slice!(ptr, len))
         } else if (*op.cast::<PyCompactUnicodeObject>()).utf8_length != 0 {
-            let ptr = (*op.cast::<PyCompactUnicodeObject>()).utf8 as *const u8;
+            let ptr = (*op.cast::<PyCompactUnicodeObject>())
+                .utf8
+                .cast::<u8>()
+                .cast_const();
             let len = isize_to_usize((*op.cast::<PyCompactUnicodeObject>()).utf8_length);
             Some(str_from_slice!(ptr, len))
         } else {

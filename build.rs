@@ -8,8 +8,6 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CC");
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
-    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_AVX512");
-    println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_SIMD");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
     println!("cargo:rustc-check-cfg=cfg(intrinsics)");
@@ -19,6 +17,7 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_12)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_13)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
+    println!("cargo:rustc-check-cfg=cfg(Py_3_15)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
 
@@ -30,11 +29,11 @@ fn main() {
     #[allow(unused_variables)]
     let is_64_bit_python = matches!(python_config.pointer_width, Some(64));
 
-    if let Some(true) = version_check::supports_feature("core_intrinsics") {
+    if version_check::supports_feature("core_intrinsics").unwrap_or(false) {
         println!("cargo:rustc-cfg=feature=\"intrinsics\"");
     }
 
-    if let Some(true) = version_check::supports_feature("optimize_attribute") {
+    if version_check::supports_feature("optimize_attribute").unwrap_or(false) {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 

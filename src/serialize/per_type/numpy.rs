@@ -17,7 +17,7 @@ use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::fmt;
 
 #[repr(transparent)]
-pub struct NumpySerializer<'a> {
+pub(crate) struct NumpySerializer<'a> {
     previous: &'a PyObjectSerializer,
 }
 
@@ -27,7 +27,7 @@ impl<'a> NumpySerializer<'a> {
     }
 }
 
-impl<'a> Serialize for NumpySerializer<'a> {
+impl Serialize for NumpySerializer<'_> {
     #[cold]
     #[inline(never)]
     #[cfg_attr(feature = "optimize", optimize(size))]
@@ -63,7 +63,7 @@ macro_rules! slice {
 }
 
 #[cold]
-pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
+pub(crate) fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
         false
@@ -86,7 +86,7 @@ pub fn is_numpy_scalar(ob_type: *mut PyTypeObject) -> bool {
 }
 
 #[cold]
-pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
+pub(crate) fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
     let numpy_types = unsafe { NUMPY_TYPES.get_or_init(load_numpy_types) };
     if numpy_types.is_none() {
         false
@@ -97,7 +97,7 @@ pub fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
 }
 
 #[repr(C)]
-pub struct PyCapsule {
+pub(crate) struct PyCapsule {
     pub ob_refcnt: Py_ssize_t,
     pub ob_type: *mut PyTypeObject,
     pub pointer: *mut c_void,
@@ -112,7 +112,7 @@ const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x1;
 const NPY_ARRAY_NOTSWAPPED: c_int = 0x200;
 
 #[repr(C)]
-pub struct PyArrayInterface {
+pub(crate) struct PyArrayInterface {
     pub two: c_int,
     pub nd: c_int,
     pub typekind: c_char,
@@ -125,7 +125,7 @@ pub struct PyArrayInterface {
 }
 
 #[derive(Clone, Copy)]
-pub enum ItemType {
+pub(crate) enum ItemType {
     BOOL,
     DATETIME64(NumpyDatetimeUnit),
     F16,
@@ -165,7 +165,7 @@ impl ItemType {
     }
 }
 
-pub enum PyArrayError {
+pub(crate) enum PyArrayError {
     Malformed,
     NotContiguous,
     NotNativeEndian,
@@ -179,7 +179,7 @@ pub enum PyArrayError {
 // (2, 2, 2)
 // >>> arr.strides
 // (16, 8, 4)
-pub struct NumpyArray {
+pub(crate) struct NumpyArray {
     array: *mut PyArrayInterface,
     position: Vec<isize>,
     children: Vec<NumpyArray>,
@@ -402,7 +402,7 @@ impl<'a> NumpyF64Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyF64Array<'a> {
+impl Serialize for NumpyF64Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -418,7 +418,7 @@ impl<'a> Serialize for NumpyF64Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeF64 {
+pub(crate) struct DataTypeF64 {
     obj: f64,
 }
 
@@ -443,7 +443,7 @@ impl<'a> NumpyF32Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyF32Array<'a> {
+impl Serialize for NumpyF32Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -484,7 +484,7 @@ impl<'a> NumpyF16Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyF16Array<'a> {
+impl Serialize for NumpyF16Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -527,7 +527,7 @@ impl<'a> NumpyU64Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyU64Array<'a> {
+impl Serialize for NumpyU64Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -543,7 +543,7 @@ impl<'a> Serialize for NumpyU64Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeU64 {
+pub(crate) struct DataTypeU64 {
     obj: u64,
 }
 
@@ -568,7 +568,7 @@ impl<'a> NumpyU32Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyU32Array<'a> {
+impl Serialize for NumpyU32Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -584,7 +584,7 @@ impl<'a> Serialize for NumpyU32Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeU32 {
+pub(crate) struct DataTypeU32 {
     obj: u32,
 }
 
@@ -609,7 +609,7 @@ impl<'a> NumpyU16Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyU16Array<'a> {
+impl Serialize for NumpyU16Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -625,7 +625,7 @@ impl<'a> Serialize for NumpyU16Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeU16 {
+pub(crate) struct DataTypeU16 {
     obj: u16,
 }
 
@@ -650,7 +650,7 @@ impl<'a> NumpyI64Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyI64Array<'a> {
+impl Serialize for NumpyI64Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -666,7 +666,7 @@ impl<'a> Serialize for NumpyI64Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeI64 {
+pub(crate) struct DataTypeI64 {
     obj: i64,
 }
 
@@ -691,7 +691,7 @@ impl<'a> NumpyI32Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyI32Array<'a> {
+impl Serialize for NumpyI32Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -707,7 +707,7 @@ impl<'a> Serialize for NumpyI32Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeI32 {
+pub(crate) struct DataTypeI32 {
     obj: i32,
 }
 
@@ -732,7 +732,7 @@ impl<'a> NumpyI16Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyI16Array<'a> {
+impl Serialize for NumpyI16Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -748,7 +748,7 @@ impl<'a> Serialize for NumpyI16Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeI16 {
+pub(crate) struct DataTypeI16 {
     obj: i16,
 }
 
@@ -773,7 +773,7 @@ impl<'a> NumpyI8Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyI8Array<'a> {
+impl Serialize for NumpyI8Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -789,7 +789,7 @@ impl<'a> Serialize for NumpyI8Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeI8 {
+pub(crate) struct DataTypeI8 {
     obj: i8,
 }
 
@@ -814,7 +814,7 @@ impl<'a> NumpyU8Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyU8Array<'a> {
+impl Serialize for NumpyU8Array<'_> {
     #[cold]
     #[inline(never)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -830,7 +830,7 @@ impl<'a> Serialize for NumpyU8Array<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeU8 {
+pub(crate) struct DataTypeU8 {
     obj: u8,
 }
 
@@ -855,7 +855,7 @@ impl<'a> NumpyBoolArray<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyBoolArray<'a> {
+impl Serialize for NumpyBoolArray<'_> {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -870,7 +870,7 @@ impl<'a> Serialize for NumpyBoolArray<'a> {
 }
 
 #[repr(transparent)]
-pub struct DataTypeBool {
+pub(crate) struct DataTypeBool {
     obj: u8,
 }
 
@@ -884,7 +884,7 @@ impl Serialize for DataTypeBool {
     }
 }
 
-pub struct NumpyScalar {
+pub(crate) struct NumpyScalar {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }
@@ -946,7 +946,7 @@ impl Serialize for NumpyScalar {
 }
 
 #[repr(C)]
-pub struct NumpyInt8 {
+pub(crate) struct NumpyInt8 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: i8,
@@ -963,7 +963,7 @@ impl Serialize for NumpyInt8 {
 }
 
 #[repr(C)]
-pub struct NumpyInt16 {
+pub(crate) struct NumpyInt16 {
     pub ob_refcnt: Py_ssize_t,
     pub ob_type: *mut PyTypeObject,
     pub value: i16,
@@ -980,7 +980,7 @@ impl Serialize for NumpyInt16 {
 }
 
 #[repr(C)]
-pub struct NumpyInt32 {
+pub(crate) struct NumpyInt32 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: i32,
@@ -997,7 +997,7 @@ impl Serialize for NumpyInt32 {
 }
 
 #[repr(C)]
-pub struct NumpyInt64 {
+pub(crate) struct NumpyInt64 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: i64,
@@ -1014,7 +1014,7 @@ impl Serialize for NumpyInt64 {
 }
 
 #[repr(C)]
-pub struct NumpyUint8 {
+pub(crate) struct NumpyUint8 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: u8,
@@ -1031,7 +1031,7 @@ impl Serialize for NumpyUint8 {
 }
 
 #[repr(C)]
-pub struct NumpyUint16 {
+pub(crate) struct NumpyUint16 {
     pub ob_refcnt: Py_ssize_t,
     pub ob_type: *mut PyTypeObject,
     pub value: u16,
@@ -1048,7 +1048,7 @@ impl Serialize for NumpyUint16 {
 }
 
 #[repr(C)]
-pub struct NumpyUint32 {
+pub(crate) struct NumpyUint32 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: u32,
@@ -1065,7 +1065,7 @@ impl Serialize for NumpyUint32 {
 }
 
 #[repr(C)]
-pub struct NumpyUint64 {
+pub(crate) struct NumpyUint64 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: u64,
@@ -1082,7 +1082,7 @@ impl Serialize for NumpyUint64 {
 }
 
 #[repr(C)]
-pub struct NumpyFloat16 {
+pub(crate) struct NumpyFloat16 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: u16,
@@ -1100,7 +1100,7 @@ impl Serialize for NumpyFloat16 {
 }
 
 #[repr(C)]
-pub struct NumpyFloat32 {
+pub(crate) struct NumpyFloat32 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: f32,
@@ -1117,7 +1117,7 @@ impl Serialize for NumpyFloat32 {
 }
 
 #[repr(C)]
-pub struct NumpyFloat64 {
+pub(crate) struct NumpyFloat64 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: f64,
@@ -1134,7 +1134,7 @@ impl Serialize for NumpyFloat64 {
 }
 
 #[repr(C)]
-pub struct NumpyBool {
+pub(crate) struct NumpyBool {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: bool,
@@ -1155,7 +1155,7 @@ impl Serialize for NumpyBool {
 /// See
 /// https://github.com/numpy/numpy/blob/fc8e3bbe419748ac5c6b7f3d0845e4bafa74644b/numpy/core/include/numpy/ndarraytypes.h#L268-L282.
 #[derive(Clone, Copy)]
-pub enum NumpyDatetimeUnit {
+pub(crate) enum NumpyDatetimeUnit {
     NaT,
     Years,
     Months,
@@ -1337,7 +1337,7 @@ impl<'a> NumpyDatetime64Array<'a> {
     }
 }
 
-impl<'a> Serialize for NumpyDatetime64Array<'a> {
+impl Serialize for NumpyDatetime64Array<'_> {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1356,7 +1356,7 @@ impl<'a> Serialize for NumpyDatetime64Array<'a> {
 }
 
 #[repr(C)]
-pub struct NumpyDatetime64 {
+pub(crate) struct NumpyDatetime64 {
     ob_refcnt: Py_ssize_t,
     ob_type: *mut PyTypeObject,
     value: i64,

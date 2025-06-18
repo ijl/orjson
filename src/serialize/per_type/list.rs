@@ -15,7 +15,7 @@ use crate::util::isize_to_usize;
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
-pub struct ZeroListSerializer;
+pub(crate) struct ZeroListSerializer;
 
 impl ZeroListSerializer {
     pub const fn new() -> Self {
@@ -33,7 +33,7 @@ impl Serialize for ZeroListSerializer {
     }
 }
 
-pub struct ListTupleSerializer {
+pub(crate) struct ListTupleSerializer {
     data_ptr: *const *mut pyo3_ffi::PyObject,
     state: SerializerState,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
