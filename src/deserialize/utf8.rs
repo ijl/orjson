@@ -2,7 +2,7 @@
 
 use crate::deserialize::DeserializeError;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
-use crate::str::unicode_to_str;
+use crate::str::PyStr;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
 use crate::util::isize_to_usize;
 use crate::util::INVALID_STR;
@@ -49,7 +49,8 @@ pub(crate) fn read_input_to_buf(
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
     } else if is_type!(obj_type_ptr, STR_TYPE) {
-        let uni = unicode_to_str(ptr);
+        let pystr = unsafe { PyStr::from_ptr_unchecked(ptr) };
+        let uni = pystr.to_str();
         if unlikely!(uni.is_none()) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }

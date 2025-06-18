@@ -7,6 +7,7 @@ use crate::serialize::per_type::{
     DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
 };
 use crate::serialize::serializer::PyObjectSerializer;
+use crate::str::PyStr;
 use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
 use crate::util::isize_to_usize;
 use core::ffi::{c_char, c_int, c_void};
@@ -1246,7 +1247,7 @@ impl NumpyDatetimeUnit {
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let uni = crate::str::unicode_to_str(descr_str).unwrap();
+        let uni = unsafe { PyStr::from_ptr_unchecked(descr_str).to_str().unwrap() };
         if uni.len() < 5 {
             return Self::NaT;
         }

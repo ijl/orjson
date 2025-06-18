@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::deserialize::cache::{CachedKey, KEY_MAP};
-use crate::str::{hash_str, unicode_from_str};
+use crate::str::PyStr;
 use crate::typeref::{FALSE, NONE, TRUE};
 use core::ptr::NonNull;
 
 #[inline(always)]
-pub(crate) fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
+pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
     if unlikely!(key_str.len() > 64) {
-        let pyob = unicode_from_str(key_str);
-        hash_str(pyob);
-        pyob
+        PyStr::from_str_with_hash(key_str)
     } else {
         assume!(key_str.len() <= 64);
         let hash = xxhash_rust::xxh3::xxh3_64(key_str.as_bytes());
@@ -21,13 +19,9 @@ pub(crate) fn get_unicode_key(key_str: &str) -> *mut pyo3_ffi::PyObject {
                 .entry(&hash)
                 .or_insert_with(
                     || hash,
-                    || {
-                        let pyob = unicode_from_str(key_str);
-                        hash_str(pyob);
-                        CachedKey::new(pyob)
-                    },
+                    || CachedKey::new(PyStr::from_str_with_hash(key_str)),
                 );
-            entry.get()
+            unsafe { entry.get() }
         }
     }
 }

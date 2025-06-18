@@ -13,7 +13,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::str::{unicode_to_str, unicode_to_str_via_ffi};
+use crate::str::{PyStr, PyStrSubclass};
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use crate::util::isize_to_usize;
 use compact_str::CompactString;
@@ -235,17 +235,16 @@ impl Serialize for Dict {
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             // key
-            let key_as_str = {
-                let key_ob_type = ob_type!(key);
-                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
-                    err!(SerializeError::KeyMustBeStr)
-                }
-                let tmp = unicode_to_str(key);
-                if unlikely!(tmp.is_none()) {
-                    err!(SerializeError::InvalidStr)
-                }
-                tmp.unwrap()
-            };
+            let key_ob_type = ob_type!(key);
+            if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                err!(SerializeError::KeyMustBeStr)
+            }
+            let pystr = unsafe { PyStr::from_ptr_unchecked(key) };
+            let uni = pystr.to_str();
+            if unlikely!(uni.is_none()) {
+                err!(SerializeError::InvalidStr)
+            }
+            let key_as_str = uni.unwrap();
 
             // value
             impl_serialize_entry!(map, self, key_as_str, value);
@@ -288,11 +287,14 @@ impl Serialize for DictSortedKey {
             if unlikely!(unsafe { !core::ptr::eq(ob_type!(key), STR_TYPE) }) {
                 err!(SerializeError::KeyMustBeStr)
             }
-            let data = unicode_to_str(key);
-            if unlikely!(data.is_none()) {
+            let pystr = unsafe { PyStr::from_ptr_unchecked(key) };
+            let uni = pystr.to_str();
+            if unlikely!(uni.is_none()) {
                 err!(SerializeError::InvalidStr)
             }
-            items.push((data.unwrap(), value));
+            let key_as_str = uni.unwrap();
+
+            items.push((key_as_str, value));
         }
 
         items.sort_unstable_by(|a, b| a.0.cmp(b.0));
@@ -310,7 +312,7 @@ impl Serialize for DictSortedKey {
 #[inline(never)]
 fn non_str_str(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
     // because of ObType::Enum
-    let uni = unicode_to_str(key);
+    let uni = unsafe { PyStr::from_ptr_unchecked(key).to_str() };
     if unlikely!(uni.is_none()) {
         Err(SerializeError::InvalidStr)
     } else {
@@ -321,7 +323,7 @@ fn non_str_str(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeE
 #[cold]
 #[inline(never)]
 fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<CompactString, SerializeError> {
-    let uni = unicode_to_str_via_ffi(key);
+    let uni = unsafe { PyStrSubclass::from_ptr_unchecked(key).to_str() };
     if unlikely!(uni.is_none()) {
         Err(SerializeError::InvalidStr)
     } else {
@@ -483,11 +485,12 @@ impl Serialize for DictNonStrKey {
             pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
             if is_type!(ob_type!(key), STR_TYPE) {
-                let uni = unicode_to_str(key);
-                if unlikely!(uni.is_none()) {
-                    err!(SerializeError::InvalidStr)
+                match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
+                    Some(uni) => {
+                        items.push((CompactString::from(uni), value));
+                    }
+                    None => err!(SerializeError::InvalidStr),
                 }
-                items.push((CompactString::from(uni.unwrap()), value));
             } else {
                 match Self::pyobject_to_string(key, opts) {
                     Ok(key_as_str) => items.push((key_as_str, value)),

@@ -4,7 +4,7 @@ use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::dict::ZeroDictSerializer;
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::str::unicode_to_str;
+use crate::str::PyStr;
 use crate::typeref::{
     DATACLASS_FIELDS_STR, DICT_STR, FIELD_TYPE, FIELD_TYPE_STR, SLOTS_STR, STR_TYPE,
 };
@@ -112,11 +112,10 @@ impl Serialize for DataclassFastSerializer {
                 if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
                     err!(SerializeError::KeyMustBeStr)
                 }
-                let tmp = unicode_to_str(key);
-                if unlikely!(tmp.is_none()) {
-                    err!(SerializeError::InvalidStr)
+                match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
+                    Some(uni) => uni,
+                    None => err!(SerializeError::InvalidStr),
                 }
-                tmp.unwrap()
             };
             if unlikely!(key_as_str.as_bytes()[0] == b'_') {
                 continue;
@@ -184,12 +183,9 @@ impl Serialize for DataclassFallbackSerializer {
                 continue;
             }
 
-            let key_as_str = {
-                let tmp = unicode_to_str(attr);
-                if unlikely!(tmp.is_none()) {
-                    err!(SerializeError::InvalidStr)
-                }
-                tmp.unwrap()
+            let key_as_str = match unsafe { PyStr::from_ptr_unchecked(attr).to_str() } {
+                Some(uni) => uni,
+                None => err!(SerializeError::InvalidStr),
             };
             if key_as_str.as_bytes()[0] == b'_' {
                 continue;

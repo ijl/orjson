@@ -8,7 +8,7 @@ use crate::ffi::yyjson::{
     yyjson_alc_pool_init, yyjson_doc, yyjson_read_err, yyjson_read_opts, yyjson_val,
     YYJSON_READ_SUCCESS,
 };
-use crate::str::unicode_from_str;
+use crate::str::PyStr;
 use crate::util::usize_to_isize;
 use core::ffi::c_char;
 use core::ptr::{null, null_mut, NonNull};
@@ -166,10 +166,11 @@ impl ElementType {
 
 #[inline(always)]
 fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
-    nonnull!(unicode_from_str(str_from_slice!(
+    PyStr::from_str(str_from_slice!(
         (*elem).uni.str_.cast::<u8>(),
         unsafe_yyjson_get_len(elem)
-    )))
+    ))
+    .as_non_null_ptr()
 }
 
 #[inline(always)]
@@ -262,7 +263,7 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
                     let pyval = ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val))));
-                    pydict_setitem!(dict, pykey, pyval);
+                    pydict_setitem!(dict, pykey.as_ptr(), pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
                         populate_yy_array(pyval, val);
                     }
@@ -270,7 +271,7 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     let pyval = ffi!(_PyDict_NewPresized(usize_to_isize(unsafe_yyjson_get_len(
                         val
                     ))));
-                    pydict_setitem!(dict, pykey, pyval);
+                    pydict_setitem!(dict, pykey.as_ptr(), pyval);
                     if unsafe_yyjson_get_len(val) > 0 {
                         populate_yy_object(pyval, val);
                     }
@@ -288,7 +289,7 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::False => parse_false(),
                     ElementType::Array | ElementType::Object => unreachable_unchecked!(),
                 };
-                pydict_setitem!(dict, pykey, pyval.as_ptr());
+                pydict_setitem!(dict, pykey.as_ptr(), pyval.as_ptr());
             }
         }
     }
