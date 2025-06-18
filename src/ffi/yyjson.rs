@@ -57,8 +57,6 @@ unsafe extern "C" {
         err: *mut yyjson_read_err,
     ) -> *mut yyjson_doc;
 
-    pub fn yyjson_doc_free(doc: *mut yyjson_doc);
-
     pub fn yyjson_alc_pool_init(
         alc: *mut yyjson_alc,
         buf: *mut ::core::ffi::c_void,

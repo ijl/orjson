@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::orjson_fragmenttype_new;
-#[cfg(feature = "yyjson")]
-use core::ffi::c_void;
 use core::ffi::CStr;
-#[cfg(feature = "yyjson")]
-use core::mem::MaybeUninit;
 use core::ptr::{null_mut, NonNull};
 use once_cell::race::{OnceBool, OnceBox};
 
-#[cfg(feature = "yyjson")]
-use core::cell::UnsafeCell;
 use pyo3_ffi::*;
 
 pub static mut DEFAULT: *mut PyObject = null_mut();
@@ -56,48 +50,6 @@ pub static mut DTYPE_STR: *mut PyObject = null_mut();
 pub static mut DESCR_STR: *mut PyObject = null_mut();
 pub static mut VALUE_STR: *mut PyObject = null_mut();
 pub static mut INT_ATTR_STR: *mut PyObject = null_mut();
-
-#[cfg(feature = "yyjson")]
-pub const YYJSON_BUFFER_SIZE: usize = 1024 * 1024 * 8;
-
-#[cfg(feature = "yyjson")]
-#[repr(align(64))]
-struct YYJSONBuffer(UnsafeCell<MaybeUninit<[u8; YYJSON_BUFFER_SIZE]>>);
-
-#[cfg(feature = "yyjson")]
-pub struct YYJSONAlloc {
-    pub alloc: crate::ffi::yyjson::yyjson_alc,
-    _buffer: Box<YYJSONBuffer>,
-}
-
-#[cfg(feature = "yyjson")]
-pub static mut YYJSON_ALLOC: OnceBox<YYJSONAlloc> = OnceBox::new();
-
-#[cfg(feature = "yyjson")]
-pub fn yyjson_init() -> Box<YYJSONAlloc> {
-    // Using unsafe to ensure allocation happens on the heap without going through the stack
-    // so we don't stack overflow in debug mode. Once rust-lang/rust#63291 is stable (Box::new_uninit)
-    // we can use that instead.
-    let layout = core::alloc::Layout::new::<YYJSONBuffer>();
-    let buffer = unsafe { Box::from_raw(std::alloc::alloc(layout).cast::<YYJSONBuffer>()) };
-    let mut alloc = crate::ffi::yyjson::yyjson_alc {
-        malloc: None,
-        realloc: None,
-        free: None,
-        ctx: null_mut(),
-    };
-    unsafe {
-        crate::ffi::yyjson::yyjson_alc_pool_init(
-            &mut alloc,
-            buffer.0.get().cast::<c_void>(),
-            YYJSON_BUFFER_SIZE,
-        );
-    }
-    Box::new(YYJSONAlloc {
-        alloc,
-        _buffer: buffer,
-    })
-}
 
 #[allow(non_upper_case_globals)]
 pub static mut JsonEncodeError: *mut PyObject = null_mut();
