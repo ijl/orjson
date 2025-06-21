@@ -1,0 +1,23 @@
+diff --git a/include/pyo3/pyo3-ffi/src/cpython/longobject.rs b/include/pyo3/pyo3-ffi/src/cpython/longobject.rs
+index 45acaae..6063575 100644
+--- a/include/pyo3/pyo3-ffi/src/cpython/longobject.rs
++++ b/include/pyo3/pyo3-ffi/src/cpython/longobject.rs
+@@ -61,6 +61,18 @@ extern "C" {
+         is_signed: c_int,
+     ) -> *mut PyObject;
+ 
++    #[cfg(Py_3_13)]
++    #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
++    pub fn _PyLong_AsByteArray(
++        v: *mut PyLongObject,
++        bytes: *mut c_uchar,
++        n: size_t,
++        little_endian: c_int,
++        is_signed: c_int,
++        with_exceptions: c_int,
++    ) -> c_int;
++
++    #[cfg(not(Py_3_13))]
+     #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
+     pub fn _PyLong_AsByteArray(
+         v: *mut PyLongObject,

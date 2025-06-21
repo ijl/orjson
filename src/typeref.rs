@@ -112,8 +112,6 @@ fn _init_typerefs_impl() -> bool {
         TIME_TYPE = (*datetime_capsule).TimeType;
         ZONEINFO_TYPE = (*datetime_capsule).TZInfoType;
 
-        Py_XDECREF(datetime_capsule.cast::<PyObject>());
-
         UUID_TYPE = look_up_type_object(c"uuid", c"UUID");
         ENUM_TYPE = look_up_type_object(c"enum", c"EnumMeta");
         FIELD_TYPE = look_up_type_object(c"dataclasses", c"_FIELD");
