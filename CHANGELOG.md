@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.14-post4
+
+- fix handling for MagicMocks by checking torch tensor module name 
+ 
 ## 3.10.14-post3
 
 - Defer importing torch. Use heuristics to check torch tensor.

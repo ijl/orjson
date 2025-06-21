@@ -53,10 +53,10 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     {
         ObType::Datetime
     } else {
-        // Special case for PyTorch tensors - detect by object methods
+        // PyTorch tensor detection
         if unlikely!(opt_enabled!(opts, SERIALIZE_NUMPY)) {
             unsafe {
-                // Simple and effective check - PyTorch tensors have these methods
+                // Check for PyTorch tensor methods
                 let has_numpy = pyo3_ffi::PyObject_HasAttrString(
                     obj,
                     "numpy\0".as_ptr() as *const core::ffi::c_char,
@@ -70,9 +70,27 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
                     "detach\0".as_ptr() as *const core::ffi::c_char,
                 ) == 1;
 
-                // If it has the key PyTorch tensor methods, treat it as a tensor
                 if has_numpy && has_cpu && has_detach {
-                    return ObType::PyTorchTensor;
+                    // Verify the type is from torch module
+                    let module = pyo3_ffi::PyObject_GetAttrString(
+                        ob_type as *mut pyo3_ffi::PyObject,
+                        "__module__\0".as_ptr() as *const core::ffi::c_char
+                    );
+
+                    if !module.is_null() {
+                        let module_str = pyo3_ffi::PyUnicode_AsUTF8(module);
+                        if !module_str.is_null() {
+                            let module_name = std::ffi::CStr::from_ptr(module_str).to_bytes();
+                            let is_torch = module_name.starts_with(b"torch");
+                            pyo3_ffi::Py_DECREF(module);
+
+                            if is_torch {
+                                return ObType::PyTorchTensor;
+                            }
+                        } else {
+                            pyo3_ffi::Py_DECREF(module);
+                        }
+                    }
                 }
             }
         }
