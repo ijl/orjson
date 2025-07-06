@@ -10,6 +10,7 @@ use std::io;
 pub(crate) struct Serializer<W, F = CompactFormatter> {
     writer: W,
     formatter: F,
+    ensure_ascii: bool,
 }
 
 impl<W> Serializer<W>
@@ -18,7 +19,12 @@ where
 {
     #[inline]
     pub fn new(writer: W) -> Self {
-        Serializer::with_formatter(writer, CompactFormatter)
+        Serializer::with_formatter(writer, CompactFormatter, false)
+    }
+
+    #[inline]
+    pub fn with_ascii(writer: W) -> Self {
+        Serializer::with_formatter(writer, CompactFormatter, true)
     }
 }
 
@@ -28,7 +34,12 @@ where
 {
     #[inline]
     pub fn pretty(writer: W) -> Self {
-        Serializer::with_formatter(writer, PrettyFormatter::new())
+        Serializer::with_formatter(writer, PrettyFormatter::new(), false)
+    }
+
+    #[inline]
+    pub fn pretty_ascii(writer: W) -> Self {
+        Serializer::with_formatter(writer, PrettyFormatter::new(), true)
     }
 }
 
@@ -38,8 +49,12 @@ where
     F: Formatter,
 {
     #[inline]
-    pub fn with_formatter(writer: W, formatter: F) -> Self {
-        Serializer { writer, formatter }
+    pub fn with_formatter(writer: W, formatter: F, ensure_ascii: bool) -> Self {
+        Serializer {
+            writer,
+            formatter,
+            ensure_ascii,
+        }
     }
 }
 
@@ -145,7 +160,11 @@ where
 
     #[inline(always)]
     fn serialize_str(self, value: &str) -> Result<()> {
-        format_escaped_str(&mut self.writer, value);
+        if self.ensure_ascii {
+            format_escaped_str_ascii(&mut self.writer, value);
+        } else {
+            format_escaped_str(&mut self.writer, value);
+        }
         Ok(())
     }
 
@@ -664,6 +683,41 @@ where
     }
 }
 
+fn format_escaped_str_ascii<W>(writer: &mut W, value: &str)
+where
+    W: ?Sized + io::Write + WriteExt,
+{
+    format_escaped_str(writer, value); // FIXME: Implement this still.
+
+    // writer.reserve(value.len() * 6 + 2); // worst case: every char becomes \uXXXX
+
+    // unsafe {
+    //     writer.write_reserved_punctuation(b'"').unwrap();
+    //     for c in value.chars() {
+    //         match c {
+    //             '"' => writer.write_reserved_str("\\\"").unwrap(),
+    //             '\\' => writer.write_reserved_str("\\\\").unwrap(),
+    //             '\u{08}' => writer.write_reserved_str("\\b").unwrap(),
+    //             '\u{0C}' => writer.write_reserved_str("\\f").unwrap(),
+    //             '\n' => writer.write_reserved_str("\\n").unwrap(),
+    //             '\r' => writer.write_reserved_str("\\r").unwrap(),
+    //             '\t' => writer.write_reserved_str("\\t").unwrap(),
+    //             c if c.is_ascii() => {
+    //                 let mut buf = [0u8; 4];
+    //                 let s = c.encode_utf8(&mut buf);
+    //                 writer.write_reserved_str(s).unwrap();
+    //             }
+    //             c => {
+    //                 let mut buf = [0u8; 6];
+    //                 let encoded = format!("\\u{:04X}", c as u32);
+    //                 writer.write_reserved_str(&encoded).unwrap();
+    //             }
+    //         }
+    //     }
+    //     writer.write_reserved_punctuation(b'"').unwrap();
+    // }
+}
+
 #[inline]
 pub(crate) fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
 where
@@ -675,11 +729,31 @@ where
 }
 
 #[inline]
+pub(crate) fn to_writer_ascii<W, T>(writer: W, value: &T) -> Result<()>
+where
+    W: io::Write + WriteExt,
+    T: ?Sized + Serialize,
+{
+    let mut ser = Serializer::with_ascii(writer);
+    value.serialize(&mut ser)
+}
+
+#[inline]
 pub(crate) fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: io::Write + WriteExt,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::pretty(writer);
+    value.serialize(&mut ser)
+}
+
+#[inline]
+pub(crate) fn to_writer_pretty_ascii<W, T>(writer: W, value: &T) -> Result<()>
+where
+    W: io::Write + WriteExt,
+    T: ?Sized + Serialize,
+{
+    let mut ser = Serializer::pretty_ascii(writer);
     value.serialize(&mut ser)
 }
