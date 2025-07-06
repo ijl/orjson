@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2};
+use crate::opt::{Opt, APPEND_NEWLINE, ENSURE_ASCII, INDENT_2};
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
