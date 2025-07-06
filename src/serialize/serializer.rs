@@ -9,7 +9,9 @@ use crate::serialize::per_type::{
     StrSubclassSerializer, Time, ZeroListSerializer, UUID,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
+use crate::serialize::writer::{
+    to_writer, to_writer_ascii, to_writer_pretty, to_writer_pretty_ascii, BytesWriter,
+};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 use std::io::Write;
@@ -21,11 +23,16 @@ pub(crate) fn serialize(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
-    let res = if opt_disabled!(opts, INDENT_2) {
-        to_writer(&mut buf, &obj)
-    } else {
-        to_writer_pretty(&mut buf, &obj)
+    let res = match (
+        opt_enabled!(opts, INDENT_2),
+        opt_enabled!(opts, ENSURE_ASCII),
+    ) {
+        (false, false) => to_writer(&mut buf, &obj),
+        (true, false) => to_writer_pretty(&mut buf, &obj),
+        (false, true) => to_writer_ascii(&mut buf, &obj),
+        (true, true) => to_writer_pretty_ascii(&mut buf, &obj),
     };
+
     match res {
         Ok(()) => {
             if opt_enabled!(opts, APPEND_NEWLINE) {
