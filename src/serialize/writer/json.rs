@@ -684,35 +684,52 @@ fn format_escaped_str_ascii<W>(writer: &mut W, value: &str)
 where
     W: ?Sized + io::Write + WriteExt,
 {
-    format_escaped_str(writer, value); // FIXME: Implement this still.
+    // Worst case: every char becomes \uXXXX plus quotes.
+    writer.reserve(value.len() * 6 + 2);
 
-    // writer.reserve(value.len() * 6 + 2); // worst case: every char becomes \uXXXX
+    unsafe {
+        writer.write_reserved_punctuation(b'"').unwrap();
 
-    // unsafe {
-    //     writer.write_reserved_punctuation(b'"').unwrap();
-    //     for c in value.chars() {
-    //         match c {
-    //             '"' => writer.write_reserved_str("\\\"").unwrap(),
-    //             '\\' => writer.write_reserved_str("\\\\").unwrap(),
-    //             '\u{08}' => writer.write_reserved_str("\\b").unwrap(),
-    //             '\u{0C}' => writer.write_reserved_str("\\f").unwrap(),
-    //             '\n' => writer.write_reserved_str("\\n").unwrap(),
-    //             '\r' => writer.write_reserved_str("\\r").unwrap(),
-    //             '\t' => writer.write_reserved_str("\\t").unwrap(),
-    //             c if c.is_ascii() => {
-    //                 let mut buf = [0u8; 4];
-    //                 let s = c.encode_utf8(&mut buf);
-    //                 writer.write_reserved_str(s).unwrap();
-    //             }
-    //             c => {
-    //                 let mut buf = [0u8; 6];
-    //                 let encoded = format!("\\u{:04X}", c as u32);
-    //                 writer.write_reserved_str(&encoded).unwrap();
-    //             }
-    //         }
-    //     }
-    //     writer.write_reserved_punctuation(b'"').unwrap();
-    // }
+        for c in value.chars() {
+            match c {
+                '"' => writer.write_reserved_fragment(b"\\\"").unwrap(),
+                '\\' => writer.write_reserved_fragment(b"\\\\").unwrap(),
+                '\u{08}' => writer.write_reserved_fragment(b"\\b").unwrap(),
+                '\u{0C}' => writer.write_reserved_fragment(b"\\f").unwrap(),
+                '\n' => writer.write_reserved_fragment(b"\\n").unwrap(),
+                '\r' => writer.write_reserved_fragment(b"\\r").unwrap(),
+                '\t' => writer.write_reserved_fragment(b"\\t").unwrap(),
+                c if c.is_ascii() => {
+                    // Write ASCII character directly.
+                    let mut buf = [0u8; 4];
+                    let s = c.encode_utf8(&mut buf);
+                    writer.write_reserved_fragment(s.as_bytes()).unwrap();
+                }
+                c => {
+                    // Write as \uXXXX.
+                    let code = c as u32;
+                    let buf = match code {
+                        0x0000..=0xFFFF => {
+                            // Basic Multilingual Plane
+                            let s = format!("\\u{:04x}", code);
+                            debug_assert_eq!(s.len(), 6);
+                            s
+                        }
+                        _ => {
+                            // Encode surrogate pairs.
+                            let code = code - 0x1_0000;
+                            let high = 0xD800 | ((code >> 10) & 0x3FF);
+                            let low = 0xDC00 | (code & 0x3FF);
+                            format!("\\u{:04x}\\u{:04x}", high, low)
+                        }
+                    };
+                    writer.write_reserved_fragment(buf.as_bytes()).unwrap();
+                }
+            }
+        }
+
+        writer.write_reserved_punctuation(b'"').unwrap();
+    }
 }
 
 #[inline]
