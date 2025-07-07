@@ -129,8 +129,7 @@ Users with `dict` objects using non-`str` keys should specify `option=orjson.OPT
 `indent` is replaced by `option=orjson.OPT_INDENT_2` and other levels of indentation are not
 supported.
 
-`ensure_ascii` is probably not relevant today and UTF-8 characters cannot be
-escaped to ASCII.
+`ensure_ascii` is replaced by `option=orjson.OPT_ENSURE_ASCII`.
 
 ### Serialize
 
@@ -247,6 +246,23 @@ pattern copies the original contents.
 b"[]"
 >>> orjson.dumps([], option=orjson.OPT_APPEND_NEWLINE)
 b"[]\n"
+```
+
+##### OPT_ENSURE_ASCII
+
+Escape all incoming non-ASCII characters in strings to ASCII equivalent.
+
+Per the JSON specification, decoding this serialization variant still
+results in the original input value, as expected.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"你_好": "🍉"})
+b'{"\xe4\xbd\xa0_\xe5\xa5\xbd":"\xf0\x9f\x8d\x89"}'
+>>> orjson.dumps({"你_好": "🍉"}, option=orjson.OPT_ENSURE_ASCII)
+b'{"\\u4f60_\\u597d":"\\ud83c\\udf49"}'
+>>> orjson.loads(b'{"\\u4f60_\\u597d":"\\ud83c\\udf49"}')
+{'你_好': '🍉'}
 ```
 
 ##### OPT_INDENT_2
