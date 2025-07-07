@@ -27,6 +27,30 @@ class TestEnsureAsciiOutput:
             == b'{"a":"b","\\ud83e\\udd28":{"d":true},"e":[1,2]}'
         )
 
+    def test_equivalent_non_emoji_value(self):
+        """
+        Test a lower code-point character that is not an emoji.
+
+        Characters with code points in range 0x0000 to 0xFFFF are handled
+        differently than characters beyond.
+        """
+        obj = {"ni_hao": "你_好"}
+        assert (
+            orjson.dumps(obj, option=orjson.OPT_ENSURE_ASCII)
+            == b'{"ni_hao":"\\u4f60_\\u597d"}'
+        )
+
+    def test_round_trip(self):
+        """
+        Test that the output can be loaded and dumped again.
+        """
+        obj = {"ni_hao": "你_好", "emoji": "🍉"}
+        dumped = orjson.dumps(obj, option=orjson.OPT_ENSURE_ASCII)
+        assert dumped == b'{"ni_hao":"\\u4f60_\\u597d","emoji":"\\ud83c\\udf49"}'
+        loaded = orjson.loads(dumped)
+        assert loaded == obj
+        assert orjson.dumps(loaded, option=orjson.OPT_ENSURE_ASCII) == dumped
+
     def test_sort(self):
         obj = {"b": 1, "a": 2, "c🤨": "d🔥"}
         assert (
