@@ -684,7 +684,7 @@ fn format_escaped_str_ascii<W>(writer: &mut W, value: &str)
 where
     W: ?Sized + io::Write + WriteExt,
 {
-    // Worst case: every char becomes \uXXXX plus quotes.
+    // Worst case: every char becomes \uXXXX (6 bytes), plus surrounding quotes (2 bytes)
     writer.reserve(value.len() * 6 + 2);
 
     unsafe {
@@ -700,36 +700,54 @@ where
                 '\r' => writer.write_reserved_fragment(b"\\r").unwrap(),
                 '\t' => writer.write_reserved_fragment(b"\\t").unwrap(),
                 c if c.is_ascii() => {
-                    // Write ASCII character directly.
                     let mut buf = [0u8; 4];
                     let s = c.encode_utf8(&mut buf);
                     writer.write_reserved_fragment(s.as_bytes()).unwrap();
                 }
                 c => {
-                    // Write as \uXXXX.
                     let code = c as u32;
-                    let buf = match code {
-                        0x0000..=0xFFFF => {
-                            // Basic Multilingual Plane
-                            let s = format!("\\u{:04x}", code);
-                            debug_assert_eq!(s.len(), 6);
-                            s
-                        }
-                        _ => {
-                            // Encode surrogate pairs.
-                            let code = code - 0x1_0000;
-                            let high = 0xD800 | ((code >> 10) & 0x3FF);
-                            let low = 0xDC00 | (code & 0x3FF);
-                            format!("\\u{:04x}\\u{:04x}", high, low)
-                        }
+                    let mut buf = [0u8; 12]; // 12 is enough for "\\uXXXX\\uXXXX".
+                    let written = if code <= 0xFFFF {
+                        // Encode "basic multilingual plane" value: "\\uXXXX".
+                        write_u_escape(&mut buf[..], code);
+                        6
+                    } else {
+                        // Encode surrogate pair: "\\uXXXX\\uXXXX".
+                        let code = code - 0x1_0000;
+                        let high = 0xD800 | ((code >> 10) & 0x3FF);
+                        let low = 0xDC00 | (code & 0x3FF);
+                        write_u_escape(&mut buf[..], high);
+                        write_u_escape(&mut buf[6..], low);
+                        12
                     };
-                    writer.write_reserved_fragment(buf.as_bytes()).unwrap();
+                    writer.write_reserved_fragment(&buf[..written]).unwrap();
                 }
             }
         }
 
         writer.write_reserved_punctuation(b'"').unwrap();
     }
+}
+
+/// Writes a `\uXXXX` escape into the buffer. Always writes exactly 6 bytes.
+fn write_u_escape(buf: &mut [u8], code: u32) -> () {
+    // Always writes exactly 6 bytes: \uXXXX
+    debug_assert!(code <= 0xFFFF);
+    buf[0] = b'\\';
+    buf[1] = b'u';
+
+    fn hex_digit(n: u8) -> u8 {
+        match n {
+            0..=9 => b'0' + n,
+            10..=15 => b'a' + (n - 10),
+            _ => unreachable!(),
+        }
+    }
+
+    buf[2] = hex_digit(((code >> 12) & 0xF) as u8);
+    buf[3] = hex_digit(((code >> 8) & 0xF) as u8);
+    buf[4] = hex_digit(((code >> 4) & 0xF) as u8);
+    buf[5] = hex_digit((code & 0xF) as u8);
 }
 
 #[inline]
