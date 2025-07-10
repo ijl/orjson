@@ -49,7 +49,6 @@ optimize = []
 [dependencies]
 associative-cache = { version = "2", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
-compact_str = { version = "0.9", default-features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default-features = false }
 half = { version = "2", default-features = false, features = ["std"] }
 itoa = { version = "1", default-features = false }
