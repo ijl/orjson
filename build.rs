@@ -10,6 +10,8 @@ fn main() {
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=ORJSON_DISABLE_YYJSON");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
+    println!("cargo:rustc-check-cfg=cfg(CPython)");
+    println!("cargo:rustc-check-cfg=cfg(GraalPy)");
     println!("cargo:rustc-check-cfg=cfg(intrinsics)");
     println!("cargo:rustc-check-cfg=cfg(optimize)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_10)");
@@ -20,10 +22,17 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_15)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
+    println!("cargo:rustc-check-cfg=cfg(PyPy)");
 
     let python_config = pyo3_build_config::get();
     for cfg in python_config.build_script_outputs() {
         println!("{cfg}");
+    }
+
+    if python_config.implementation == pyo3_build_config::PythonImplementation::CPython {
+        println!("cargo:rustc-cfg=CPython");
+    } else {
+        panic!("orjson only supports CPython")
     }
 
     #[allow(unused_variables)]

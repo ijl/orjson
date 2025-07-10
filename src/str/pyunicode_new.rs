@@ -5,6 +5,7 @@ use pyo3_ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject};
 
 macro_rules! validate_str {
     ($ptr:expr) => {
+        #[cfg(CPython)]
         debug_assert!(ffi!(_PyUnicode_CheckConsistency($ptr.cast::<PyObject>(), 1)) == 1);
     };
 }
