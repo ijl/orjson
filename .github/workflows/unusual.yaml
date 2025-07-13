@@ -16,6 +16,7 @@ jobs:
           { rust: "nightly-2025-04-15", features: "--features=generic_simd" },
         ]
         python: [
+          { version: '3.14' },
           { version: '3.13' },
           { version: '3.12' },
           { version: '3.9' },

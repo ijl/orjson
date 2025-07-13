@@ -79,6 +79,8 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: false },
           { interpreter: 'python3.13t', compatibility: "manylinux_2_34", publish: false },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
@@ -140,6 +142,8 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.13t', compatibility: "manylinux_2_34", publish: false },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
@@ -199,6 +203,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { interpreter: 'python3.14', abi: 'cp313-cp314' },
           { interpreter: 'python3.13', abi: 'cp313-cp313' },
           { interpreter: 'python3.12', abi: 'cp312-cp312' },
           { interpreter: 'python3.11', abi: 'cp311-cp311' },
@@ -274,6 +279,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', pytest: '1' },
           { version: '3.13', pytest: '1' },
           { version: '3.12', pytest: '1' },
           { version: '3.11', pytest: '0' },
@@ -348,6 +354,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14' },
           { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
@@ -419,6 +426,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', macosx_target: "15.0" },
           { version: '3.13', macosx_target: "15.0" },
           { version: '3.12', macosx_target: "15.0" },
           { version: '3.11', macosx_target: "15.0" },
@@ -496,6 +504,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', macosx_target: "10.15" },
           { version: '3.13', macosx_target: "10.15" },
           { version: '3.12', macosx_target: "10.15" },
           { version: '3.11', macosx_target: "10.15" },
@@ -653,6 +662,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14' },
           { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
@@ -722,6 +732,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14' },
           { version: '3.13' },
           { version: '3.12' },
           { version: '3.11' },
