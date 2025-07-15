@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 3.11.0 - 2025-07-15
+
+### Changed
+
+- Use a deserialization buffer allocated per request instead of a shared
+buffer allocated on import.
+- ABI compatibility with CPython 3.14 beta 4.
+
+
 ## 3.10.18 - 2025-04-29
 
 ### Fixed
