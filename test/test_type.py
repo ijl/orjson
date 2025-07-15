@@ -240,7 +240,9 @@ class TestType:
         pytest.raises(orjson.JSONDecodeError, orjson.loads, '"\ud83d\ude80"')
         pytest.raises(orjson.JSONDecodeError, orjson.loads, '"\udcff"')
         pytest.raises(
-            orjson.JSONDecodeError, orjson.loads, b'"\xed\xa0\xbd\xed\xba\x80"'
+            orjson.JSONDecodeError,
+            orjson.loads,
+            b'"\xed\xa0\xbd\xed\xba\x80"',
         )  # \ud83d\ude80
 
     def test_str_surrogates_dumps(self):
@@ -252,7 +254,9 @@ class TestType:
         pytest.raises(orjson.JSONEncodeError, orjson.dumps, "\udcff")
         pytest.raises(orjson.JSONEncodeError, orjson.dumps, {"\ud83d\ude80": None})
         pytest.raises(
-            orjson.JSONEncodeError, orjson.dumps, b"\xed\xa0\xbd\xed\xba\x80"
+            orjson.JSONEncodeError,
+            orjson.dumps,
+            b"\xed\xa0\xbd\xed\xba\x80",
         )  # \ud83d\ude80
 
     def test_bytes_dumps(self):
@@ -385,7 +389,7 @@ class TestType:
         for val in (9007199254740991, -9007199254740991):
             assert orjson.loads(str(val)) == val
             assert orjson.dumps(val, option=orjson.OPT_STRICT_INTEGER) == str(
-                val
+                val,
             ).encode("utf-8")
 
     def test_int_53_exc(self):
@@ -506,7 +510,7 @@ class TestType:
         for val in ("1.337E40", "1.337e+40", "1337e40", "1.337E-4"):
             obj = orjson.loads(val)
             assert obj == float(val)
-            assert orjson.dumps(val) == ('"%s"' % val).encode("utf-8")
+            assert orjson.dumps(val) == (f'"{val}"').encode("utf-8")
 
     def test_list(self):
         """

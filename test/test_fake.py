@@ -33,18 +33,18 @@ class TestFaker:
     def test_faker(self):
         fake = Faker(FAKER_LOCALES)
         profile_keys = list(
-            set(fake.profile().keys()) - {"birthdate", "current_location"}
+            set(fake.profile().keys()) - {"birthdate", "current_location"},
         )
-        for _ in range(0, NUM_LOOPS):
+        for _ in range(NUM_LOOPS):
             data = [
                 {
                     "person": fake.profile(profile_keys),
                     "emoji": fake.emoji(),
                     "text": fake.paragraphs(),
                 }
-                for _ in range(0, NUM_ENTRIES)
+                for _ in range(NUM_ENTRIES)
             ]
-            for _ in range(0, NUM_SHUFFLES):
+            for _ in range(NUM_SHUFFLES):
                 random.shuffle(data)
                 output = orjson.dumps(data)
                 assert orjson.loads(output) == data

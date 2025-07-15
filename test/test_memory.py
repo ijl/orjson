@@ -4,7 +4,8 @@ import dataclasses
 import datetime
 import gc
 import random
-from typing import List
+
+from .util import numpy, pandas
 
 try:
     import pytz
@@ -15,19 +16,10 @@ try:
     import psutil
 except ImportError:
     psutil = None  # type: ignore
+
 import pytest
 
 import orjson
-
-try:
-    import numpy
-except ImportError:
-    numpy = None  # type: ignore
-
-try:
-    import pandas
-except ImportError:
-    pandas = None  # type: ignore
 
 FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 
@@ -47,7 +39,7 @@ class Object:
     id: int
     updated_at: datetime.datetime
     name: str
-    members: List[Member]
+    members: list[Member]
 
 
 DATACLASS_FIXTURE = [
@@ -56,7 +48,7 @@ DATACLASS_FIXTURE = [
         datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(seconds=random.randint(0, 10000)),
         str(i) * 3,
-        [Member(j, True) for j in range(0, 10)],
+        [Member(j, True) for j in range(10)],
     )
     for i in range(100000, 101000)
 ]
@@ -229,7 +221,7 @@ class TestMemory:
         """
         proc = psutil.Process()
         gc.collect()
-        fixture = {"key_%s" % idx: "value" for idx in range(1024)}
+        fixture = {f"key_{idx}": "value" for idx in range(1024)}
         assert len(fixture) == 1024
         val = orjson.dumps(fixture)
         loaded = orjson.loads(val)
@@ -249,7 +241,7 @@ class TestMemory:
         """
         proc = psutil.Process()
         gc.collect()
-        fixture = numpy.random.rand(4, 4, 4)
+        fixture = numpy.random.rand(4, 4, 4)  # type: ignore
         val = orjson.dumps(fixture, option=orjson.OPT_SERIALIZE_NUMPY)
         assert val
         mem = proc.memory_info().rss
@@ -268,8 +260,8 @@ class TestMemory:
         """
         proc = psutil.Process()
         gc.collect()
-        numpy.random.rand(4, 4, 4)
-        df = pandas.Series(numpy.random.rand(4, 4, 4).tolist())
+        numpy.random.rand(4, 4, 4)  # type: ignore
+        df = pandas.Series(numpy.random.rand(4, 4, 4).tolist())  # type: ignore
         val = df.map(orjson.dumps)
         assert not val.empty
         mem = proc.memory_info().rss

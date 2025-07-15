@@ -10,7 +10,8 @@ ORJSON_RUNNER_MEMORY_GIB = os.getenv("ORJSON_RUNNER_MEMORY_GIB", "")
 
 
 @pytest.mark.skipif(
-    not ORJSON_RUNNER_MEMORY_GIB, reason="ORJSON_RUNNER_MEMORY_GIB not defined"
+    not ORJSON_RUNNER_MEMORY_GIB,
+    reason="ORJSON_RUNNER_MEMORY_GIB not defined",
 )
 def test_memory_loads():
     buffer_factor = 12
@@ -20,7 +21,7 @@ def test_memory_loads():
         // buffer_factor
         // len(segment)
     )
-    doc = "".join((segment for _ in range(0, size)))
+    doc = "".join(segment for _ in range(size))
     with pytest.raises(orjson.JSONDecodeError) as exc_info:
         _ = orjson.loads(doc)
     assert (

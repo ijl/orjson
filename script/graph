@@ -7,8 +7,8 @@ import math
 import os
 
 import pandas as pd
-import seaborn
-from matplotlib import pyplot
+import seaborn as sns
+from matplotlib import pyplot as plt
 from tabulate import tabulate
 
 import orjson
@@ -20,7 +20,7 @@ def aggregate():
     benchmarks_dir = os.path.join(".benchmarks", os.listdir(".benchmarks")[0])
     res = collections.defaultdict(dict)
     for filename in os.listdir(benchmarks_dir):
-        with open(os.path.join(benchmarks_dir, filename), "r") as fileh:
+        with open(os.path.join(benchmarks_dir, filename)) as fileh:
             data = orjson.loads(fileh.read())
 
         for each in data["benchmarks"]:
@@ -42,8 +42,8 @@ def tab(obj):
         "Relative (latency)",
     )
 
-    seaborn.set(rc={"figure.facecolor": (0, 0, 0, 0)})
-    seaborn.set_style("darkgrid")
+    sns.set(rc={"figure.facecolor": (0, 0, 0, 0)})
+    sns.set_style("darkgrid")
 
     barplot_data = []
     for group, val in sorted(obj.items(), reverse=True):
@@ -57,7 +57,7 @@ def tab(obj):
                     val[lib]["median"] if correct else None,
                     int(val[lib]["ops"]) if correct else None,
                     0,
-                ]
+                ],
             )
             barplot_data.append(
                 {
@@ -70,7 +70,7 @@ def tab(obj):
                     "library": lib,
                     "latency": val[lib]["median"],
                     "operations": int(val[lib]["ops"]) if correct else None,
-                }
+                },
             )
 
         orjson_baseline = table[0][1]
@@ -81,15 +81,15 @@ def tab(obj):
                 else None
             )
             if group.startswith("github"):
-                each[1] = "%.2f" % each[1] if isinstance(each[1], float) else None
+                each[1] = f"{each[1]:.2f}" if isinstance(each[1], float) else None
             else:
-                each[1] = "%.1f" % each[1] if isinstance(each[1], float) else None
+                each[1] = f"{each[1]:.1f}" if isinstance(each[1], float) else None
 
         buf.write(tabulate(table, headers, tablefmt="github") + "\n")
 
     for operation in ("deserialization", "serialization"):
         per_op_data = list(
-            (each for each in barplot_data if each["operation"] == operation)
+            each for each in barplot_data if each["operation"] == operation
         )
         if not per_op_data:
             continue
@@ -111,7 +111,7 @@ def tab(obj):
         p = pd.DataFrame.from_dict(per_op_data)
         p.groupby("group")
 
-        graph = seaborn.barplot(
+        graph = sns.barplot(
             p,
             x="group",
             y="relative",
@@ -123,28 +123,28 @@ def tab(obj):
         graph.set_xlabel("Document")
         graph.set_ylabel("Operations/second relative to stdlib json")
 
-        pyplot.title(operation)
+        plt.title(operation)
 
         # ensure Y range
-        max_y = int(math.ceil(max_y))
+        max_y = math.ceil(max_y)
         if max_y > 10 and max_y % 2 > 0:
             max_y = max_y + 1
-        pyplot.gca().set_yticks(
+        plt.gca().set_yticks(
             list(
                 {1, max_y}.union(
-                    set(int(y) for y in pyplot.gca().get_yticks() if int(y) <= max_y)
-                )
-            )
+                    set(int(y) for y in plt.gca().get_yticks() if int(y) <= max_y),
+                ),
+            ),
         )
 
         # print Y as percent
-        pyplot.gca().set_yticklabels([f"{x}x" for x in pyplot.gca().get_yticks()])
+        plt.gca().set_yticklabels([f"{x}x" for x in plt.gca().get_yticks()])
 
         # reference for stdlib
-        pyplot.axhline(y=1, color="#999", linestyle="dashed")
+        plt.axhline(y=1, color="#999", linestyle="dashed")
 
-        pyplot.savefig(fname=f"doc/{operation}", dpi=300)
-        pyplot.close()
+        plt.savefig(fname=f"doc/{operation}", dpi=300)
+        plt.close()
 
     print(buf.getvalue())
 

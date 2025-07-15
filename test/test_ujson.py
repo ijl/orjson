@@ -333,14 +333,14 @@ class TestUltraJSON:
         assert orjson.loads(val) == json.loads(val)
 
     def test_decodeEscape(self):
-        base = "\u00e5".encode()
+        base = "\u00e5".encode("utf-8")
         quote = b'"'
         val = quote + base + quote
         assert json.loads(val) == orjson.loads(val)
 
     def test_decodeBigEscape(self):
         for _ in range(10):
-            base = "\u00e5".encode()
+            base = "\u00e5".encode("utf-8")
             quote = b'"'
             val = quote + (base * 1024 * 1024 * 2) + quote
             assert json.loads(val) == orjson.loads(val)

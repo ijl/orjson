@@ -26,7 +26,7 @@ class TestUUID:
         assert isinstance(val.int, int)
         assert val.int >= 2**64
         assert val.int < 2**128
-        assert val.int, 151546616840194781678008611711208857294
+        assert val.int == 151546616840194781678008611711208857294
 
     def test_uuid_overflow(self):
         """
@@ -76,20 +76,19 @@ class TestUUID:
             uuid.UUID("urn:uuid:12345678-1234-5678-1234-567812345678"),
             uuid.UUID(bytes=b"\x12\x34\x56\x78" * 4),
             uuid.UUID(
-                bytes_le=b"\x78\x56\x34\x12\x34\x12\x78\x56"
-                + b"\x12\x34\x56\x78\x12\x34\x56\x78"
+                bytes_le=b"\x78\x56\x34\x12\x34\x12\x78\x56\x12\x34\x56\x78\x12\x34\x56\x78",
             ),
             uuid.UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678)),
             uuid.UUID(int=0x12345678123456781234567812345678),
         ]
         result = orjson.dumps(uuids)
-        canonical_uuids = ['"%s"' % str(u) for u in uuids]
-        serialized = ("[%s]" % ",".join(canonical_uuids)).encode("utf8")
+        canonical_uuids = [f'"{u!s}"' for u in uuids]
+        serialized = ("[{}]".format(",".join(canonical_uuids))).encode("utf8")
         assert result == serialized
 
     def test_serializes_correctly_with_leading_zeroes(self):
         instance = uuid.UUID(int=0x00345678123456781234567812345678)
-        assert orjson.dumps(instance) == ('"%s"' % str(instance)).encode("utf8")
+        assert orjson.dumps(instance) == (f'"{instance!s}"').encode("utf-8")
 
     def test_all_uuid_creation_functions_create_serializable_uuids(self):
         uuids = (

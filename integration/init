@@ -28,7 +28,7 @@ def main():
     sys.stdout.write(TEST_MESSAGE)
     sys.stdout.flush()
     with multiprocessing.pool.ThreadPool(processes=NUM_PROC) as pool:
-        pool.map(func, (i for i in range(0, NUM_PROC)))
+        pool.map(func, (i for i in range(NUM_PROC)))
     sys.stdout.write(f"\r{TEST_MESSAGE} ok\n")
     sys.stdout.flush()
 

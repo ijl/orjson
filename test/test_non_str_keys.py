@@ -13,10 +13,7 @@ try:
 except ImportError:
     pytz = None  # type: ignore
 
-try:
-    import numpy
-except ImportError:
-    numpy = None  # type: ignore
+from .util import numpy
 
 
 class SubStr(str):
@@ -203,7 +200,8 @@ class TestNonStrKeyTests:
     def test_dict_keys_date(self):
         assert (
             orjson.dumps(
-                {datetime.date(1970, 1, 1): True}, option=orjson.OPT_NON_STR_KEYS
+                {datetime.date(1970, 1, 1): True},
+                option=orjson.OPT_NON_STR_KEYS,
             )
             == b'{"1970-01-01":true}'
         )
@@ -255,7 +253,7 @@ class TestNonStrKeyTests:
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_dict_keys_array(self):
         with pytest.raises(TypeError):
-            {numpy.array([1, 2]): True}
+            _ = {numpy.array([1, 2]): True}  # type: ignore
 
     def test_dict_keys_dataclass(self):
         @dataclasses.dataclass
@@ -263,7 +261,7 @@ class TestNonStrKeyTests:
             a: str
 
         with pytest.raises(TypeError):
-            {Dataclass("a"): True}
+            _ = {Dataclass("a"): True}
 
     def test_dict_keys_dataclass_hash(self):
         @dataclasses.dataclass
@@ -279,11 +277,11 @@ class TestNonStrKeyTests:
 
     def test_dict_keys_list(self):
         with pytest.raises(TypeError):
-            {[]: True}
+            _ = {[]: True}
 
     def test_dict_keys_dict(self):
         with pytest.raises(TypeError):
-            {{}: True}
+            _ = {{}: True}
 
     def test_dict_keys_tuple(self):
         obj = {(): True}

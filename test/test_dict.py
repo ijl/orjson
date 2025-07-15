@@ -26,7 +26,7 @@ class TestDict:
         """
         dict with >512 keys
         """
-        obj = {"key_%s" % idx: [{}, {"a": [{}, {}, {}]}, {}] for idx in range(513)}  # type: ignore
+        obj = {f"key_{idx}": [{}, {"a": [{}, {}, {}]}, {}] for idx in range(513)}  # type: ignore
         assert len(obj) == 513
         assert orjson.loads(orjson.dumps(obj)) == obj
 
@@ -34,7 +34,7 @@ class TestDict:
         """
         dict with >4096 keys
         """
-        obj = {"key_%s" % idx: "value_%s" % idx for idx in range(4097)}
+        obj = {f"key_{idx}": f"value_{idx}" for idx in range(4097)}
         assert len(obj) == 4097
         assert orjson.loads(orjson.dumps(obj)) == obj
 
@@ -42,7 +42,7 @@ class TestDict:
         """
         dict with >65536 keys
         """
-        obj = {"key_%s" % idx: "value_%s" % idx for idx in range(65537)}
+        obj = {f"key_{idx}": f"value_{idx}" for idx in range(65537)}
         assert len(obj) == 65537
         assert orjson.loads(orjson.dumps(obj)) == obj
 
@@ -51,7 +51,7 @@ class TestDict:
         dict with keys too large to cache
         """
         obj = {
-            "keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey": "value"
+            "keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey": "value",
         }
         ref = '{"keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeey":"value"}'
         assert orjson.dumps(obj) == ref.encode("utf-8")
@@ -93,7 +93,7 @@ class TestDict:
         the implementation in wy instead of wyhash.
         """
         assert orjson.loads(
-            '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}'
+            '{"cf_status_firefox67": "---", "cf_status_firefox57": "verified"}',
         ) == {"cf_status_firefox57": "verified", "cf_status_firefox67": "---"}
 
     def test_dict_pop_replace_first(self):
@@ -128,7 +128,7 @@ class TestDict:
 
     def test_dict_0xff(self):
         "dk_size <= 0xff"
-        data = {str(idx): idx for idx in range(0, 0xFF)}
+        data = {str(idx): idx for idx in range(0xFF)}
         data.pop("112")
         data["112"] = 1
         data["113"] = 2
@@ -136,8 +136,8 @@ class TestDict:
 
     def test_dict_0xff_repeated(self):
         "dk_size <= 0xff repeated"
-        for _ in range(0, 100):
-            data = {str(idx): idx for idx in range(0, 0xFF)}
+        for _ in range(100):
+            data = {str(idx): idx for idx in range(0xFF)}
             data.pop("112")
             data["112"] = 1
             data["113"] = 2
@@ -145,7 +145,7 @@ class TestDict:
 
     def test_dict_0xffff(self):
         "dk_size <= 0xffff"
-        data = {str(idx): idx for idx in range(0, 0xFFFF)}
+        data = {str(idx): idx for idx in range(0xFFFF)}
         data.pop("112")
         data["112"] = 1
         data["113"] = 2
@@ -153,8 +153,8 @@ class TestDict:
 
     def test_dict_0xffff_repeated(self):
         "dk_size <= 0xffff repeated"
-        for _ in range(0, 100):
-            data = {str(idx): idx for idx in range(0, 0xFFFF)}
+        for _ in range(100):
+            data = {str(idx): idx for idx in range(0xFFFF)}
             data.pop("112")
             data["112"] = 1
             data["113"] = 2

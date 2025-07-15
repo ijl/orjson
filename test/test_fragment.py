@@ -5,9 +5,9 @@ import pytest
 import orjson
 
 try:
-    import pandas
+    import pandas as pd
 except ImportError:
-    pandas = None  # type: ignore
+    pd = None  # type: ignore
 
 from .util import needs_data, read_fixture_bytes
 
@@ -49,7 +49,7 @@ class TestFragment:
     def test_fragment_fragment_str_array(self):
         n = 8096
         obj = [orjson.Fragment('"🐈"')] * n
-        ref = b"[" + b",".join((b'"\xf0\x9f\x90\x88"' for _ in range(0, n))) + b"]"
+        ref = b"[" + b",".join(b'"\xf0\x9f\x90\x88"' for _ in range(n)) + b"]"
         assert orjson.dumps(obj) == ref
 
     def test_fragment_fragment_str_invalid(self):
@@ -80,7 +80,7 @@ class TestFragment:
             orjson.dumps(orjson.Fragment(b"{}", contents=b"{}"))  # type: ignore
 
 
-@pytest.mark.skipif(pandas is None, reason="pandas is not installed")
+@pytest.mark.skipif(pd is None, reason="pandas is not installed")
 class TestFragmentPandas:
     def test_fragment_pandas(self):
         """
@@ -88,11 +88,11 @@ class TestFragmentPandas:
         """
 
         def default(value):
-            if isinstance(value, pandas.DataFrame):
+            if isinstance(value, pd.DataFrame):
                 return orjson.Fragment(value.to_json(orient="records"))
             raise TypeError
 
-        val = pandas.DataFrame({"foo": [1, 2, 3], "bar": [4, 5, 6]})
+        val = pd.DataFrame({"foo": [1, 2, 3], "bar": [4, 5, 6]})
         assert (
             orjson.dumps({"data": val}, default=default)
             == b'{"data":[{"foo":1,"bar":4},{"foo":2,"bar":5},{"foo":3,"bar":6}]}'

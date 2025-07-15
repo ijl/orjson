@@ -204,7 +204,7 @@ class TestApi:
         """
         dumps() empty kwarg
         """
-        assert orjson.dumps(None, **{}) == b"null"
+        assert orjson.dumps(None) == b"null"
 
     def test_default_twice(self):
         """
