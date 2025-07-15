@@ -616,6 +616,9 @@ which the standard library allows, but is not valid JSON.
 It raises `JSONDecodeError` if a combination of array or object recurses
 1024 levels deep.
 
+It raises `JSONDecodeError` if unable to allocate a buffer large enough
+to parse the document.
+
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
 

@@ -50,7 +50,7 @@ const MINIMUM_BUFFER_CAPACITY: usize = 4096;
 
 fn buffer_capacity_to_allocate(len: usize) -> usize {
     // The max memory size is (json_size / 2 * 16 * 1.5 + padding).
-    (((len / 2) * 32) + 256 + (MINIMUM_BUFFER_CAPACITY - 1)) & !(MINIMUM_BUFFER_CAPACITY - 1)
+    (((len / 2) * 24) + 256 + (MINIMUM_BUFFER_CAPACITY - 1)) & !(MINIMUM_BUFFER_CAPACITY - 1)
 }
 
 fn unsafe_yyjson_is_ctn(val: *mut yyjson_val) -> bool {
@@ -73,6 +73,13 @@ pub(crate) fn deserialize(
     assume!(!data.is_empty());
     let buffer_capacity = buffer_capacity_to_allocate(data.len());
     let buffer_ptr = ffi!(PyMem_Malloc(buffer_capacity));
+    if unlikely!(buffer_ptr.is_null()) {
+        return Err(DeserializeError::from_yyjson(
+            Cow::Borrowed("Not enough memory to allocate buffer for parsing"),
+            0,
+            data,
+        ));
+    }
     let mut alloc = crate::ffi::yyjson::yyjson_alc {
         malloc: None,
         realloc: None,
