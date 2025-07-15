@@ -1,1 +1,0 @@
-opaque_struct!(PyArena);

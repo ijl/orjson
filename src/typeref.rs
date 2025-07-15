@@ -79,6 +79,7 @@ fn _init_typerefs_impl() -> bool {
     unsafe {
         debug_assert!(crate::opt::MAX_OPT < i32::from(u16::MAX));
 
+        #[cfg(not(Py_GIL_DISABLED))]
         assert!(crate::deserialize::KEY_MAP
             .set(crate::deserialize::KeyMap::default())
             .is_ok());

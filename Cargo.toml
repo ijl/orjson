@@ -12,7 +12,6 @@ keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
-    "include/pyo3",
     "include/yyjson",
     "LICENSE-APACHE",
     "LICENSE-MIT",
@@ -53,7 +52,7 @@ itoa = { version = "1", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false, features = ["alloc"] }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { path = "include/pyo3/pyo3-ffi", default-features = false, features = ["extension-module"]}
+pyo3-ffi = { version = "0.25", default-features = false, features = ["extension-module"] }
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
@@ -65,7 +64,7 @@ xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] 
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { path = "include/pyo3/pyo3-build-config" }
+pyo3-build-config = { version = "0.25" }
 version_check = { version = "0.9" }
 
 [profile.dev]

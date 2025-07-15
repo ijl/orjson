@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+#[cfg(not(Py_GIL_DISABLED))]
 use crate::deserialize::cache::{CachedKey, KEY_MAP};
 use crate::str::PyStr;
 use crate::typeref::{FALSE, NONE, TRUE};
 use core::ptr::NonNull;
 
+#[cfg(not(Py_GIL_DISABLED))]
 #[inline(always)]
 pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
     if unlikely!(key_str.len() > 64) {
@@ -24,6 +26,12 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
             unsafe { entry.get() }
         }
     }
+}
+
+#[cfg(Py_GIL_DISABLED)]
+#[inline(always)]
+pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
+    PyStr::from_str_with_hash(key_str)
 }
 
 #[allow(dead_code)]

@@ -2,6 +2,7 @@
 
 mod buffer;
 mod bytes;
+pub(crate) mod compat;
 mod fragment;
 mod long;
 #[cfg(feature = "yyjson")]
@@ -9,6 +10,8 @@ pub(crate) mod yyjson;
 
 pub(crate) use buffer::*;
 pub(crate) use bytes::*;
+pub(crate) use compat::*;
+
 pub(crate) use fragment::{orjson_fragmenttype_new, Fragment};
 pub(crate) use long::pylong_is_unsigned;
 #[cfg(feature = "inline_int")]

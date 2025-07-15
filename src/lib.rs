@@ -86,9 +86,8 @@ use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::{
     PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
     PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyTuple_GET_ITEM, PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS,
-    METH_O,
+    PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
+    PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -131,6 +130,7 @@ macro_rules! opt {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 #[cold]
+#[cfg_attr(not(Py_3_10), allow(deprecated))] // _PyCFunctionFastWithKeywords
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     unsafe {
@@ -401,7 +401,7 @@ pub(crate) unsafe extern "C" fn dumps(
         }
         if unlikely!(!kwnames.is_null()) {
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
-                let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+                let arg = ffi!(PyTuple_GET_ITEM(kwnames, i as Py_ssize_t));
                 if core::ptr::eq(arg, typeref::DEFAULT) {
                     if unlikely!(num_args & 2 == 2) {
                         return raise_dumps_exception_fixed(

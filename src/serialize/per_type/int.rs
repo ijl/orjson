@@ -46,7 +46,7 @@ impl Serialize for IntSerializer {
                 let mut buffer: [u8; 8] = [0; 8];
 
                 #[cfg(not(Py_3_13))]
-                let ret = pyo3_ffi::_PyLong_AsByteArray(
+                let ret = crate::ffi::_PyLong_AsByteArray(
                     self.ptr.cast::<pyo3_ffi::PyLongObject>(),
                     buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
                     8,
@@ -54,7 +54,7 @@ impl Serialize for IntSerializer {
                     is_signed,
                 );
                 #[cfg(Py_3_13)]
-                let ret = pyo3_ffi::_PyLong_AsByteArray(
+                let ret = crate::ffi::_PyLong_AsByteArray(
                     self.ptr.cast::<pyo3_ffi::PyLongObject>(),
                     buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
                     8,

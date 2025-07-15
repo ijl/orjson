@@ -26,7 +26,7 @@ impl UUID {
             unsafe {
                 // test_uuid_overflow
                 #[cfg(not(Py_3_13))]
-                pyo3_ffi::_PyLong_AsByteArray(
+                crate::ffi::_PyLong_AsByteArray(
                     py_int.cast::<pyo3_ffi::PyLongObject>(),
                     buffer.as_mut_ptr(),
                     16,
@@ -34,7 +34,7 @@ impl UUID {
                     0, // is_signed
                 );
                 #[cfg(Py_3_13)]
-                pyo3_ffi::_PyLong_AsByteArray(
+                crate::ffi::_PyLong_AsByteArray(
                     py_int.cast::<pyo3_ffi::PyLongObject>(),
                     buffer.as_mut_ptr(),
                     16,

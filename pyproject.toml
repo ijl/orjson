@@ -40,7 +40,6 @@ include = [
     { format = "sdist", path = "build.rs" },
     { format = "sdist", path = "Cargo.lock" },
     { format = "sdist", path = "include/cargo/**/*" },
-    { format = "sdist", path = "include/pyo3/**/*" },
     { format = "sdist", path = "include/yyjson/**/*" },
 ]
 
