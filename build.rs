@@ -38,7 +38,7 @@ fn main() {
     #[allow(unused_variables)]
     let is_64_bit_python = matches!(python_config.pointer_width, Some(64));
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", not(target_os = "macos")))]
     if version_check::is_min_version("1.89.0").unwrap_or(false) && is_64_bit_python {
         println!("cargo:rustc-cfg=feature=\"avx512\"");
     }

@@ -28,9 +28,12 @@ impl BytesWriter {
     pub fn bytes_ptr(&mut self) -> NonNull<PyObject> {
         unsafe { NonNull::new_unchecked(self.bytes.cast::<PyObject>()) }
     }
-
-    pub fn finish(&mut self) -> NonNull<PyObject> {
+    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
         unsafe {
+            if append {
+                core::ptr::write(self.buffer_ptr(), b'\n');
+                self.len += 1;
+            }
             core::ptr::write(self.buffer_ptr(), 0);
             (*self.bytes.cast::<PyVarObject>()).ob_size = usize_to_isize(self.len);
             self.resize(self.len);
@@ -65,21 +68,11 @@ impl BytesWriter {
 }
 
 impl std::io::Write for BytesWriter {
-    fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
-        let _ = self.write_all(buf);
-        Ok(buf.len())
+    fn write(&mut self, _buf: &[u8]) -> Result<usize, Error> {
+        Ok(0)
     }
 
-    fn write_all(&mut self, buf: &[u8]) -> Result<(), Error> {
-        let to_write = buf.len();
-        let end_length = self.len + to_write;
-        if unlikely!(end_length >= self.cap) {
-            self.grow(end_length);
-        }
-        unsafe {
-            core::ptr::copy_nonoverlapping(buf.as_ptr(), self.buffer_ptr(), to_write);
-        };
-        self.len = end_length;
+    fn write_all(&mut self, _buf: &[u8]) -> Result<(), Error> {
         Ok(())
     }
 

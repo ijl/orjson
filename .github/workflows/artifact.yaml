@@ -79,7 +79,8 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { interpreter: 'python3.13t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: false },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.11', compatibility: "manylinux_2_17", publish: true },
@@ -140,7 +141,8 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { interpreter: 'python3.13t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: false },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.11', compatibility: "manylinux_2_17", publish: true },
@@ -314,7 +316,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.04.19-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.09-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -388,7 +390,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.04.19-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.09-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -419,9 +421,9 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13', macosx_target: "15.0" },
-          { version: '3.12', macosx_target: "15.0" },
-          { version: '3.11', macosx_target: "15.0" },
+          { version: '3.13', macosx_target: "15.0", publish: true },
+          { version: '3.12', macosx_target: "15.0", publish: true },
+          { version: '3.11', macosx_target: "15.0", publish: true },
         ]
     env:
       CC: "clang"
@@ -465,7 +467,9 @@ jobs:
 
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-        maturin build --release --strip \
+        maturin build \
+          --release \
+          --strip \
           --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=aarch64-apple-darwin
@@ -480,6 +484,7 @@ jobs:
     - run: source .venv/bin/activate && ./integration/run init
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_macos_aarch64_${{ matrix.python.version }}
@@ -496,10 +501,10 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13', macosx_target: "10.15" },
-          { version: '3.12', macosx_target: "10.15" },
-          { version: '3.11', macosx_target: "10.15" },
-          { version: '3.10', macosx_target: "10.15" },
+          { version: '3.13', macosx_target: "10.15", publish: true },
+          { version: '3.12', macosx_target: "10.15", publish: true },
+          { version: '3.11', macosx_target: "10.15", publish: true },
+          { version: '3.10', macosx_target: "10.15", publish: true },
         ]
     env:
       CC: "clang"
@@ -545,7 +550,9 @@ jobs:
 
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-        maturin build --release --strip \
+        maturin build \
+          --release \
+          --strip \
           --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
@@ -560,6 +567,7 @@ jobs:
     - run: source .venv/bin/activate && ./integration/run init
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_universal2_aarch64_${{ matrix.python.version }}
@@ -622,7 +630,9 @@ jobs:
 
         MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
         PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-        maturin build --release --strip \
+        maturin build \
+          --release \
+          --strip \
           --features=generic_simd,yyjson \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
@@ -653,11 +663,11 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13' },
-          { version: '3.12' },
-          { version: '3.11' },
-          { version: '3.10' },
-          { version: '3.9' },
+          { version: '3.13', publish: true },
+          { version: '3.12', publish: true },
+          { version: '3.11', publish: true },
+          { version: '3.10', publish: true },
+          { version: '3.9', publish: true },
         ]
         platform: [
           { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512,yyjson" },
@@ -706,6 +716,7 @@ jobs:
         PYTHONMALLOC: "debug"
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_windows_amd64_${{ matrix.platform.arch }}_${{ matrix.python.version }}
@@ -722,9 +733,9 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13' },
-          { version: '3.12' },
-          { version: '3.11' },
+          { version: '3.13', publish: true },
+          { version: '3.12', publish: true },
+          { version: '3.11', publish: true },
         ]
     env:
       CFLAGS: "-O2"
@@ -773,6 +784,7 @@ jobs:
         PYTHONMALLOC: "debug"
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_windows_aarch64_${{ matrix.python.version }}

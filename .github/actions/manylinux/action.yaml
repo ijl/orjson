@@ -37,7 +37,9 @@ runs:
 
         source "${VENV}/bin/activate"
 
-        maturin build --release --strip \
+        maturin build \
+          --release \
+          --strip \
           --features="${{ inputs.features }}" \
           --compatibility="${{ inputs.compatibility }}" \
           --interpreter="${PYTHON}" \

@@ -292,9 +292,8 @@ macro_rules! reserve_pretty {
 macro_rules! assume {
     ($expr:expr) => {
         debug_assert!($expr);
-        #[cfg(feature = "intrinsics")]
         unsafe {
-            core::intrinsics::assume($expr);
+            core::hint::assert_unchecked($expr);
         };
     };
 }
