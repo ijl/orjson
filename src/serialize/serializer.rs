@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2};
+use crate::opt::{Opt, APPEND_NEWLINE, ENSURE_ASCII, INDENT_2};
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
@@ -9,7 +9,9 @@ use crate::serialize::per_type::{
     StrSubclassSerializer, Time, ZeroListSerializer, UUID,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
+use crate::serialize::writer::{
+    to_writer, to_writer_ascii, to_writer_pretty, to_writer_pretty_ascii, BytesWriter,
+};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 
@@ -20,11 +22,16 @@ pub(crate) fn serialize(
 ) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
-    let res = if opt_disabled!(opts, INDENT_2) {
-        to_writer(&mut buf, &obj)
-    } else {
-        to_writer_pretty(&mut buf, &obj)
+    let res = match (
+        opt_enabled!(opts, INDENT_2),
+        opt_enabled!(opts, ENSURE_ASCII),
+    ) {
+        (false, false) => to_writer(&mut buf, &obj),
+        (true, false) => to_writer_pretty(&mut buf, &obj),
+        (false, true) => to_writer_ascii(&mut buf, &obj),
+        (true, true) => to_writer_pretty_ascii(&mut buf, &obj),
     };
+
     match res {
         Ok(()) => Ok(buf.finish(opt_enabled!(opts, APPEND_NEWLINE))),
         Err(err) => {
