@@ -9,8 +9,8 @@ def dumps(
     option: Optional[int] = ...,
 ) -> bytes: ...
 def loads(
-        __obj: Union[bytes, bytearray, memoryview, str],
-        option: Optional[int] = ...,
+    __obj: Union[bytes, bytearray, memoryview, str],
+    option: Optional[int] = ...,
 ) -> Any: ...
 
 class JSONDecodeError(json.JSONDecodeError): ...
