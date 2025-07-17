@@ -5,19 +5,19 @@ __version__: str
 
 def dumps(
     __obj: Any,
-    default: Optional[Callable[[Any], Any]] = ...,
-    option: Optional[int] = ...,
+    default: Callable[[Any], Any] | None = ...,
+    option: int | None = ...,
 ) -> bytes: ...
 def loads(
-    __obj: Union[bytes, bytearray, memoryview, str],
-    option: Optional[int] = ...,
+    __obj: bytes | bytearray | memoryview | str,
+    option: int | None = ...,
 ) -> Any: ...
 
 class JSONDecodeError(json.JSONDecodeError): ...
 class JSONEncodeError(TypeError): ...
 
 class Fragment(tuple):
-    contents: Union[bytes, str]
+    contents: bytes | str
 
 OPT_APPEND_NEWLINE: int
 OPT_INDENT_2: int
