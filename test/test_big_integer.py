@@ -3,12 +3,13 @@
 
 from datetime import datetime, timezone
 import uuid
-import numpy as np
 import zoneinfo
 
 import pytest
 import orjson
 import dataclasses
+
+from .util import numpy as np
 
 
 class TestBigIntegerTests:
