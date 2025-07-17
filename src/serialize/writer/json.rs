@@ -7,7 +7,7 @@ use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
 use std::io;
 
-pub struct Serializer<W, F = CompactFormatter> {
+pub(crate) struct Serializer<W, F = CompactFormatter> {
     writer: W,
     formatter: F,
 }
@@ -40,11 +40,6 @@ where
     #[inline]
     pub fn with_formatter(writer: W, formatter: F) -> Self {
         Serializer { writer, formatter }
-    }
-
-    #[inline]
-    pub fn into_inner(self) -> W {
-        self.writer
     }
 }
 
@@ -157,7 +152,9 @@ where
     #[inline(always)]
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
         self.writer.reserve(value.len() + 32);
-        unsafe { self.writer.write_reserved_fragment(value).unwrap() };
+        unsafe {
+            self.writer.write_reserved_fragment(value).unwrap();
+        }
         Ok(())
     }
 
@@ -284,17 +281,17 @@ where
 }
 
 #[derive(Eq, PartialEq)]
-pub enum State {
+pub(crate) enum State {
     First,
     Rest,
 }
 
-pub struct Compound<'a, W: 'a, F: 'a> {
+pub(crate) struct Compound<'a, W: 'a, F: 'a> {
     ser: &'a mut Serializer<W, F>,
     state: State,
 }
 
-impl<'a, W, F> ser::SerializeSeq for Compound<'a, W, F>
+impl<W, F> ser::SerializeSeq for Compound<'_, W, F>
 where
     W: io::Write + WriteExt,
     F: Formatter,
@@ -328,7 +325,7 @@ where
     }
 }
 
-impl<'a, W, F> ser::SerializeMap for Compound<'a, W, F>
+impl<W, F> ser::SerializeMap for Compound<'_, W, F>
 where
     W: io::Write + WriteExt,
     F: Formatter,
@@ -393,7 +390,7 @@ struct MapKeySerializer<'a, W: 'a, F: 'a> {
     ser: &'a mut Serializer<W, F>,
 }
 
-impl<'a, W, F> ser::Serializer for MapKeySerializer<'a, W, F>
+impl<W, F> ser::Serializer for MapKeySerializer<'_, W, F>
 where
     W: io::Write + WriteExt,
     F: Formatter,
@@ -578,7 +575,7 @@ type StrFormatter = unsafe fn(*mut u8, *const u8, usize) -> usize;
 static mut STR_FORMATTER_FN: StrFormatter =
     crate::serialize::writer::str::format_escaped_str_impl_sse2_128;
 
-pub fn set_str_formatter_fn() {
+pub(crate) fn set_str_formatter_fn() {
     unsafe {
         #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
         if std::is_x86_feature_detected!("avx512vl") {
@@ -668,7 +665,7 @@ where
 }
 
 #[inline]
-pub fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
+pub(crate) fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: io::Write + WriteExt,
     T: ?Sized + Serialize,
@@ -678,7 +675,7 @@ where
 }
 
 #[inline]
-pub fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
+pub(crate) fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: io::Write + WriteExt,
     T: ?Sized + Serialize,

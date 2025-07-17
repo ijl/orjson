@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         profile: [
-          { rust: "1.82", features: "" },
+          { rust: "1.82", features: "" }, # MSRV
           { rust: "nightly-2025-04-15", features: "--features=generic_simd" },
         ]
         python: [

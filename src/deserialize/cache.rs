@@ -1,38 +1,36 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::str::PyStr;
 use associative_cache::{AssociativeCache, Capacity2048, HashDirectMapped, RoundRobinReplacement};
-use core::ffi::c_void;
 use once_cell::unsync::OnceCell;
 
 #[repr(transparent)]
-pub struct CachedKey {
-    ptr: *mut c_void,
+pub(crate) struct CachedKey {
+    ptr: PyStr,
 }
 
 unsafe impl Send for CachedKey {}
 unsafe impl Sync for CachedKey {}
 
 impl CachedKey {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> CachedKey {
-        CachedKey {
-            ptr: ptr.cast::<c_void>(),
-        }
+    pub fn new(ptr: PyStr) -> CachedKey {
+        CachedKey { ptr: ptr }
     }
-    pub fn get(&mut self) -> *mut pyo3_ffi::PyObject {
-        let ptr = self.ptr.cast::<pyo3_ffi::PyObject>();
+    pub fn get(&mut self) -> PyStr {
+        let ptr = self.ptr.as_ptr();
         debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
         ffi!(Py_INCREF(ptr));
-        ptr
+        self.ptr
     }
 }
 
 impl Drop for CachedKey {
     fn drop(&mut self) {
-        ffi!(Py_DECREF(self.ptr.cast::<pyo3_ffi::PyObject>()));
+        ffi!(Py_DECREF(self.ptr.as_ptr().cast::<pyo3_ffi::PyObject>()));
     }
 }
 
-pub type KeyMap =
+pub(crate) type KeyMap =
     AssociativeCache<u64, CachedKey, Capacity2048, HashDirectMapped, RoundRobinReplacement>;
 
-pub static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();
+pub(crate) static mut KEY_MAP: OnceCell<KeyMap> = OnceCell::new();

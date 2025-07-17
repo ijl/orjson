@@ -10,7 +10,7 @@ macro_rules! debug_assert_has_capacity {
     };
 }
 
-pub trait Formatter {
+pub(crate) trait Formatter {
     #[inline]
     fn write_null<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
@@ -34,20 +34,6 @@ pub trait Formatter {
         };
         reserve_minimum!(writer);
         unsafe { writer.write_reserved_fragment(s) }
-    }
-
-    fn write_i8<W>(&mut self, _writer: &mut W, _value: i8) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
-    fn write_i16<W>(&mut self, _writer: &mut W, _value: i16) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
     }
 
     #[inline]
@@ -76,27 +62,6 @@ pub trait Formatter {
         Ok(())
     }
 
-    fn write_i128<W>(&mut self, _writer: &mut W, _value: i128) -> io::Result<()>
-    where
-        W: ?Sized + io::Write,
-    {
-        unreachable!();
-    }
-
-    fn write_u8<W>(&mut self, _writer: &mut W, _value: u8) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
-    fn write_u16<W>(&mut self, _writer: &mut W, _value: u16) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
     #[inline]
     fn write_u32<W>(&mut self, writer: &mut W, value: u32) -> io::Result<()>
     where
@@ -121,13 +86,6 @@ pub trait Formatter {
             writer.set_written(len);
         }
         Ok(())
-    }
-
-    fn write_u128<W>(&mut self, _writer: &mut W, _value: u128) -> io::Result<()>
-    where
-        W: ?Sized + io::Write,
-    {
-        unreachable!();
     }
 
     #[inline]
@@ -156,44 +114,15 @@ pub trait Formatter {
         Ok(())
     }
 
-    fn write_number_str<W>(&mut self, _writer: &mut W, _value: &str) -> io::Result<()>
-    where
-        W: ?Sized + io::Write,
-    {
-        unreachable!();
-    }
-
-    #[inline]
-    fn begin_string<W>(&mut self, _writer: &mut W) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
-    #[inline]
-    fn end_string<W>(&mut self, _writer: &mut W) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
-    #[inline]
-    fn write_string_fragment<W>(&mut self, _writer: &mut W, _fragment: &str) -> io::Result<()>
-    where
-        W: ?Sized + io::Write + WriteExt,
-    {
-        unreachable!();
-    }
-
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
         W: ?Sized + io::Write + WriteExt,
     {
         reserve_minimum!(writer);
-        unsafe { writer.write_reserved_punctuation(b'[').unwrap() };
+        unsafe {
+            writer.write_reserved_punctuation(b'[').unwrap();
+        }
         Ok(())
     }
 
@@ -203,7 +132,9 @@ pub trait Formatter {
         W: ?Sized + io::Write + WriteExt,
     {
         debug_assert_has_capacity!(writer);
-        unsafe { writer.write_reserved_punctuation(b']').unwrap() };
+        unsafe {
+            writer.write_reserved_punctuation(b']').unwrap();
+        }
         Ok(())
     }
 
@@ -291,11 +222,11 @@ pub trait Formatter {
     }
 }
 
-pub struct CompactFormatter;
+pub(crate) struct CompactFormatter;
 
 impl Formatter for CompactFormatter {}
 
-pub struct PrettyFormatter {
+pub(crate) struct PrettyFormatter {
     current_indent: usize,
     has_value: bool,
 }
@@ -415,7 +346,9 @@ impl Formatter for PrettyFormatter {
         W: ?Sized + io::Write + WriteExt,
     {
         reserve_minimum!(writer);
-        unsafe { writer.write_reserved_fragment(b": ").unwrap() };
+        unsafe {
+            writer.write_reserved_fragment(b": ").unwrap();
+        }
         Ok(())
     }
 

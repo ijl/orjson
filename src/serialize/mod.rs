@@ -6,6 +6,6 @@ mod obtype;
 mod per_type;
 mod serializer;
 mod state;
-pub mod writer;
+pub(crate) mod writer;
 
-pub use serializer::serialize;
+pub(crate) use serializer::serialize;

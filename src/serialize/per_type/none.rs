@@ -2,7 +2,7 @@
 
 use serde::ser::{Serialize, Serializer};
 
-pub struct NoneSerializer;
+pub(crate) struct NoneSerializer;
 
 impl NoneSerializer {
     pub const fn new() -> Self {

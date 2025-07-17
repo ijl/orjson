@@ -6,7 +6,7 @@ const BUFFER_LENGTH: usize = 64 - core::mem::size_of::<usize>();
 
 /// For use to serialize fixed-size UUIDs and DateTime.
 #[repr(align(64))]
-pub struct SmallFixedBuffer {
+pub(crate) struct SmallFixedBuffer {
     idx: usize,
     bytes: [MaybeUninit<u8>; BUFFER_LENGTH],
 }

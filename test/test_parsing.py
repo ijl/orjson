@@ -1135,7 +1135,7 @@ class TestJSONTestSuiteParsing:
         n_object_lone_continuation_byte_in_key_and_trailing_comma.json
         """
         self._run_fail_json(
-            "n_object_lone_continuation_byte_in_key_and_trailing_comma.json"
+            "n_object_lone_continuation_byte_in_key_and_trailing_comma.json",
         )
 
     def test_n_object_missing_col(self):

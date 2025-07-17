@@ -3,7 +3,7 @@
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
-pub struct FloatSerializer {
+pub(crate) struct FloatSerializer {
     ptr: *mut pyo3_ffi::PyObject,
 }
 

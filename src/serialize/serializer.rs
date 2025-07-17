@@ -12,9 +12,8 @@ use crate::serialize::state::SerializerState;
 use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
-use std::io::Write;
 
-pub fn serialize(
+pub(crate) fn serialize(
     ptr: *mut pyo3_ffi::PyObject,
     default: Option<NonNull<pyo3_ffi::PyObject>>,
     opts: Opt,
@@ -27,12 +26,7 @@ pub fn serialize(
         to_writer_pretty(&mut buf, &obj)
     };
     match res {
-        Ok(()) => {
-            if opt_enabled!(opts, APPEND_NEWLINE) {
-                let _ = buf.write(b"\n");
-            }
-            Ok(buf.finish())
-        }
+        Ok(()) => Ok(buf.finish(opt_enabled!(opts, APPEND_NEWLINE))),
         Err(err) => {
             ffi!(Py_DECREF(buf.bytes_ptr().as_ptr()));
             Err(err.to_string())
@@ -40,7 +34,7 @@ pub fn serialize(
     }
 }
 
-pub struct PyObjectSerializer {
+pub(crate) struct PyObjectSerializer {
     pub ptr: *mut pyo3_ffi::PyObject,
     pub state: SerializerState,
     pub default: Option<NonNull<pyo3_ffi::PyObject>>,

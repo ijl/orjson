@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-pub const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
+pub(crate) const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
 macro_rules! is_type {
     ($obj_ptr:expr, $type_ptr:expr) => {
@@ -120,7 +120,7 @@ macro_rules! str_from_slice {
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
-            if pyo3_ffi::_Py_IsImmortal($op) == 0 {
+            if crate::ffi::_Py_IsImmortal($op) == 0 {
                 debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
                 (*$op).ob_refcnt.ob_refcnt -= 1;
             }
@@ -194,7 +194,7 @@ macro_rules! pydict_contains {
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
-            pyo3_ffi::_PyDict_Contains_KnownHash(
+            crate::ffi::_PyDict_Contains_KnownHash(
                 pyo3_ffi::PyType_GetDict($obj1),
                 $obj2,
                 (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
@@ -207,7 +207,7 @@ macro_rules! pydict_contains {
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
-            pyo3_ffi::_PyDict_Contains_KnownHash(
+            crate::ffi::_PyDict_Contains_KnownHash(
                 (*$obj1).tp_dict,
                 $obj2,
                 (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
@@ -243,7 +243,7 @@ macro_rules! use_immortal {
 #[cfg(not(Py_3_13))]
 macro_rules! pydict_next {
     ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { pyo3_ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, core::ptr::null_mut()) }
+        unsafe { crate::ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, core::ptr::null_mut()) }
     };
 }
 
@@ -260,17 +260,18 @@ macro_rules! pydict_setitem {
         debug_assert!(str_hash!($pykey) != -1);
         #[cfg(not(Py_3_13))]
         unsafe {
-            let _ = pyo3_ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey));
+            let _ = crate::ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey));
         }
         #[cfg(Py_3_13)]
         unsafe {
-            let _ = pyo3_ffi::_PyDict_SetItem_KnownHash_LockHeld(
+            let _ = crate::ffi::_PyDict_SetItem_KnownHash_LockHeld(
                 $dict.cast::<pyo3_ffi::PyDictObject>(),
                 $pykey,
                 $pyval,
                 str_hash!($pykey),
             );
         }
+        #[cfg(not(Py_GIL_DISABLED))]
         reverse_pydict_incref!($pykey);
         reverse_pydict_incref!($pyval);
     };
@@ -291,9 +292,8 @@ macro_rules! reserve_pretty {
 macro_rules! assume {
     ($expr:expr) => {
         debug_assert!($expr);
-        #[cfg(feature = "intrinsics")]
         unsafe {
-            core::intrinsics::assume($expr);
+            core::hint::assert_unchecked($expr);
         };
     };
 }
@@ -314,22 +314,6 @@ macro_rules! trailing_zeros {
     };
 }
 
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! popcnt {
-    ($val:expr) => {
-        core::intrinsics::ctpop(core::mem::transmute::<u32, i32>($val)) as usize
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! popcnt {
-    ($val:expr) => {
-        core::mem::transmute::<u32, i32>($val).count_ones() as usize
-    };
-}
-
 macro_rules! unreachable_unchecked {
     () => {
         unsafe { core::hint::unreachable_unchecked() }
@@ -338,14 +322,14 @@ macro_rules! unreachable_unchecked {
 
 #[inline(always)]
 #[allow(clippy::cast_possible_wrap)]
-pub fn usize_to_isize(val: usize) -> isize {
+pub(crate) fn usize_to_isize(val: usize) -> isize {
     debug_assert!(val < (isize::MAX as usize));
     val as isize
 }
 
 #[inline(always)]
 #[allow(clippy::cast_sign_loss)]
-pub fn isize_to_usize(val: isize) -> usize {
+pub(crate) fn isize_to_usize(val: isize) -> usize {
     debug_assert!(val >= 0);
     val as usize
 }

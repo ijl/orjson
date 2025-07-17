@@ -20,24 +20,59 @@ FIXTURE_ISSUE_335 = {
             "rccgrkom": "fbt",
             "xulnoryigkhtoybq": "hubxdjrnaq",
             "vdwriwvlgu": datetime.datetime(
-                2023, 1, 15, 15, 23, 38, 686000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                15,
+                15,
+                23,
+                38,
+                686000,
+                tzinfo=datetime.timezone.utc,
             ),
             "fhmjsszqmxwfruiq": "fzghfrbjxqccf",
             "dyiurstuzhu": None,
             "tdovgfimofmclc": datetime.datetime(
-                2023, 1, 15, 15, 23, 38, 686000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                15,
+                15,
+                23,
+                38,
+                686000,
+                tzinfo=datetime.timezone.utc,
             ),
             "iyxkgbwxdlrdc": datetime.datetime(
-                2023, 1, 17, 11, 19, 55, 761000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                55,
+                761000,
+                tzinfo=datetime.timezone.utc,
             ),
             "jnjtckehsrtwhgzuhksmclk": ["tlejijcpbjzygepptbxgrugcbufncyupnivbljzhxe"],
             "zewoojzsiykjf": datetime.datetime(
-                2023, 1, 17, 11, 17, 46, 140960, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                17,
+                46,
+                140960,
+                tzinfo=datetime.timezone.utc,
             ),
             "muzabbfnxptvqwzbeilkz": False,
             "wdiuepootdqyniogblxgwkgcqezutcesb": None,
             "lzkthufcerqnxdypdts": datetime.datetime(
-                2023, 1, 17, 11, 19, 56, 73000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                56,
+                73000,
+                tzinfo=datetime.timezone.utc,
             ),
             "epukgzafaubmn": 50000.0,
             "cdpeessdedncodoajdqsos": 50000.0,
@@ -48,26 +83,61 @@ FIXTURE_ISSUE_335 = {
             "cwlcgx": -1272.22,
             "oniptvyaub": -1275.75,
             "hqsfeelokxlwnha": datetime.datetime(
-                2023, 1, 17, 11, 19, 55, 886000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                55,
+                886000,
+                tzinfo=datetime.timezone.utc,
             ),
             "nuidlcyrxcrkyytgrnmc": -733.5,
             "wmofdeftonjcdnkg": -737.03,
             "bnsttxjfxxgxphfiguqew": datetime.datetime(
-                2023, 1, 17, 11, 19, 55, 886000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                55,
+                886000,
+                tzinfo=datetime.timezone.utc,
             ),
             "audhoqqxjliwnsqttwsadmwwv": -737.03,
             "badwwjzugwtdkbsamckoljfrrumtrt": datetime.datetime(
-                2023, 1, 17, 11, 19, 55, 886000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                55,
+                886000,
+                tzinfo=datetime.timezone.utc,
             ),
             "zlbggbbjgsugkgkqjycxwdx": -1241.28,
             "fxueeffryeafcxtkfzdmlmgu": -538.72,
             "yjmapfqummrsyujkosmixumjgfkwd": datetime.datetime(
-                2023, 1, 16, 22, 59, 59, 999999, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                16,
+                22,
+                59,
+                59,
+                999999,
+                tzinfo=datetime.timezone.utc,
             ),
             "qepdxlodjetleseyminybdvitcgd": None,
             "ltokvpltajwbn": datetime.date(2023, 1, 17),
             "ifzhionnrpeoorsupiniwbljek": datetime.datetime(
-                2023, 1, 17, 11, 19, 49, 113000, tzinfo=datetime.timezone.utc
+                2023,
+                1,
+                17,
+                11,
+                19,
+                49,
+                113000,
+                tzinfo=datetime.timezone.utc,
             ),
             "ljmmehacdawrlbhlhthm": -1241.28,
             "jnwffrtloedorwctsclshnpwjq": -702.56,
@@ -114,7 +184,14 @@ FIXTURE_ISSUE_335 = {
                     "uvtlmdrk": 0.92028,
                     "dquzguej": None,
                     "guudreveynvhvhihegoybqrmejkj": datetime.datetime(
-                        2023, 1, 17, 11, 19, 56, 73000, tzinfo=datetime.timezone.utc
+                        2023,
+                        1,
+                        17,
+                        11,
+                        19,
+                        56,
+                        73000,
+                        tzinfo=datetime.timezone.utc,
                     ),
                     "agvnijfztpbpatej": "zym",
                     "mqsozcvnuvueixszfz": [
@@ -142,7 +219,7 @@ FIXTURE_ISSUE_335 = {
                                 "icginezbybhcs": 1673954396073,
                                 "gfamgxmknxirghgmtxl": 1673954411.5492423,
                             },
-                        }
+                        },
                     ],
                     "dqiabsyky": {
                         "hxzdtwunrr": "fozhshbmijhujcznqykxtlaxfbtdpzvwvjtyuqzlyw",
@@ -169,7 +246,7 @@ FIXTURE_ISSUE_335 = {
                             "bzrjh": 0.92065,
                             "izmljcvqinm": 3.25,
                             "legczrbxlrmcep": None,
-                        }
+                        },
                     ],
                     "eqg": [
                         {
@@ -202,7 +279,7 @@ FIXTURE_ISSUE_335 = {
                                 "rblubytyjuvbeurwrqmz": 0.0,
                                 "xpscrgcnratymu": None,
                             },
-                        }
+                        },
                     ],
                     "kpmgmiqgmswzebawzciss": -0.7,
                     "ktggnjdemtfxhnultritqokgbjucktdiooic": 0.92058,
@@ -230,7 +307,7 @@ FIXTURE_ISSUE_335 = {
                         tzinfo=datetime.timezone.utc,
                     ),
                     "auhxrvhvvtszkkkpyhbhvpjlypjoyz": "vqdxfdvgxqcu",
-                }
+                },
             },
         },
         "qbov": "vylhkevwf",
@@ -247,7 +324,7 @@ FIXTURE_ISSUE_335 = {
                     "onmhbvy": 0,
                     "cbhmp": "vqrkzbg",
                 },
-            }
+            },
         },
     },
 }

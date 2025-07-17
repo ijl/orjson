@@ -51,7 +51,7 @@ class UnspecifiedEnum(enum.Enum):
     A = "a"
     B = 1
     C = FloatEnum.ONE
-    D = {"d": IntEnum.ONE}
+    D = {"d": IntEnum.ONE}  # noqa: RUF012
     E = Custom("c")
     F = datetime.datetime(1970, 1, 1)
 

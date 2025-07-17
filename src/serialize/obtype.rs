@@ -10,7 +10,7 @@ use crate::typeref::{
 };
 
 #[repr(u32)]
-pub enum ObType {
+pub(crate) enum ObType {
     Str,
     Int,
     Bool,
@@ -32,7 +32,7 @@ pub enum ObType {
     Unknown,
 }
 
-pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
+pub(crate) fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
     let ob_type = ob_type!(obj);
     if is_class_by_type!(ob_type, STR_TYPE) {
         ObType::Str
@@ -58,7 +58,10 @@ pub fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
 
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
-pub fn pyobject_to_obtype_unlikely(ob_type: *mut pyo3_ffi::PyTypeObject, opts: Opt) -> ObType {
+pub(crate) fn pyobject_to_obtype_unlikely(
+    ob_type: *mut pyo3_ffi::PyTypeObject,
+    opts: Opt,
+) -> ObType {
     if is_class_by_type!(ob_type, UUID_TYPE) {
         return ObType::Uuid;
     } else if is_class_by_type!(ob_type, TUPLE_TYPE) {

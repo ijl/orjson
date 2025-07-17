@@ -1,5 +1,5 @@
 #[repr(C)]
-pub struct yyjson_alc {
+pub(crate) struct yyjson_alc {
     pub malloc: ::core::option::Option<
         unsafe extern "C" fn(
             ctx: *mut ::core::ffi::c_void,
@@ -18,16 +18,16 @@ pub struct yyjson_alc {
     >,
     pub ctx: *mut ::core::ffi::c_void,
 }
-pub type yyjson_read_code = u32;
-pub const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
+pub(crate) type yyjson_read_code = u32;
+pub(crate) const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
 #[repr(C)]
-pub struct yyjson_read_err {
+pub(crate) struct yyjson_read_err {
     pub code: yyjson_read_code,
     pub msg: *const ::core::ffi::c_char,
     pub pos: usize,
 }
 #[repr(C)]
-pub union yyjson_val_uni {
+pub(crate) union yyjson_val_uni {
     pub u64_: u64,
     pub i64_: i64,
     pub f64_: f64,
@@ -36,12 +36,12 @@ pub union yyjson_val_uni {
     pub ofs: usize,
 }
 #[repr(C)]
-pub struct yyjson_val {
+pub(crate) struct yyjson_val {
     pub tag: u64,
     pub uni: yyjson_val_uni,
 }
 #[repr(C)]
-pub struct yyjson_doc {
+pub(crate) struct yyjson_doc {
     pub root: *mut yyjson_val,
     pub alc: yyjson_alc,
     pub dat_read: usize,
@@ -56,8 +56,6 @@ unsafe extern "C" {
         alc: *const yyjson_alc,
         err: *mut yyjson_read_err,
     ) -> *mut yyjson_doc;
-
-    pub fn yyjson_doc_free(doc: *mut yyjson_doc);
 
     pub fn yyjson_alc_pool_init(
         alc: *mut yyjson_alc,

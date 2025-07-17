@@ -8,10 +8,7 @@ import pytest
 
 import orjson
 
-try:
-    import numpy
-except ImportError:
-    numpy = None  # type: ignore
+from .util import numpy
 
 
 class Custom:
@@ -147,7 +144,7 @@ class TestType:
             return str(obj)
 
         assert orjson.dumps({"a": ref}, default=default) == b'{"a":"%s"}' % str(
-            ref
+            ref,
         ).encode("utf-8")
 
     def test_default_func_list(self):
@@ -161,7 +158,7 @@ class TestType:
                 return [str(obj)]
 
         assert orjson.dumps({"a": ref}, default=default) == b'{"a":["%s"]}' % str(
-            ref
+            ref,
         ).encode("utf-8")
 
     def test_default_func_nested_list(self):
@@ -216,7 +213,7 @@ class TestType:
         """
         ref = Custom()
         assert orjson.dumps(ref, default=lambda x: str(x)) == b'"%s"' % str(ref).encode(
-            "utf-8"
+            "utf-8",
         )
 
     def test_default_callable_ok(self):
@@ -313,16 +310,20 @@ class TestType:
 
         refcount = sys.getrefcount(ref)
         orjson.dumps(
-            ref, option=orjson.OPT_PASSTHROUGH_DATETIME, default=lambda val: str(val)
+            ref,
+            option=orjson.OPT_PASSTHROUGH_DATETIME,
+            default=lambda val: str(val),
         )
         assert sys.getrefcount(ref) == refcount
 
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_default_numpy(self):
-        ref = numpy.array([""] * 100)
+        ref = numpy.array([""] * 100)  # type: ignore
         refcount = sys.getrefcount(ref)
         orjson.dumps(
-            ref, option=orjson.OPT_SERIALIZE_NUMPY, default=lambda val: val.tolist()
+            ref,
+            option=orjson.OPT_SERIALIZE_NUMPY,
+            default=lambda val: val.tolist(),
         )
         assert sys.getrefcount(ref) == refcount
 

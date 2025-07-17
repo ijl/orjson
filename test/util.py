@@ -2,8 +2,25 @@
 
 import lzma
 import os
+import sysconfig
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
+IS_FREETHREADING = sysconfig.get_config_var("Py_GIL_DISABLED")
+
+numpy = None  # type: ignore
+if not IS_FREETHREADING:
+    try:
+        import numpy  # type: ignore # noqa: F401
+    except ImportError:
+        pass
+
+pandas = None  # type: ignore
+if not IS_FREETHREADING:
+    try:
+        import pandas  # type: ignore # noqa: F401
+    except ImportError:
+        pass
 
 import pytest
 
@@ -11,9 +28,9 @@ import orjson
 
 data_dir = os.path.join(os.path.dirname(__file__), "../data")
 
-STR_CACHE: Dict[str, str] = {}
+STR_CACHE: dict[str, str] = {}
 
-OBJ_CACHE: Dict[str, Any] = {}
+OBJ_CACHE: dict[str, Any] = {}
 
 
 def read_fixture_bytes(filename, subdir=None):

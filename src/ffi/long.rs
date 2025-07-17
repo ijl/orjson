@@ -17,14 +17,14 @@ const NON_SIZE_BITS: usize = 3;
 
 #[cfg(Py_3_12)]
 #[repr(C)]
-pub struct _PyLongValue {
+pub(crate) struct _PyLongValue {
     pub lv_tag: usize,
     pub ob_digit: u32,
 }
 
 #[cfg(Py_3_12)]
 #[repr(C)]
-pub struct PyLongObject {
+pub(crate) struct PyLongObject {
     pub ob_base: pyo3_ffi::PyObject,
     pub long_value: _PyLongValue,
 }
@@ -32,50 +32,50 @@ pub struct PyLongObject {
 #[allow(dead_code)]
 #[cfg(not(Py_3_12))]
 #[repr(C)]
-pub struct PyLongObject {
+pub(crate) struct PyLongObject {
     pub ob_base: pyo3_ffi::PyVarObject,
     pub ob_digit: u32,
 }
 
 #[cfg(Py_3_12)]
 #[inline(always)]
-pub fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag & SIGN_MASK == 0 }
 }
 
 #[cfg(not(Py_3_12))]
 #[inline(always)]
-pub fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_is_unsigned(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size > 0 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag < (2 << NON_SIZE_BITS) }
 }
 
 #[cfg(all(not(Py_3_12), feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_fits_in_i32(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { isize::abs((*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size) == 1 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { (*ptr.cast::<PyLongObject>()).long_value.lv_tag & SIGN_MASK == SIGN_ZERO }
 }
 
 #[cfg(all(not(Py_3_12), feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
+pub(crate) fn pylong_is_zero(ptr: *mut pyo3_ffi::PyObject) -> bool {
     unsafe { (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size == 0 }
 }
 
 #[cfg(all(Py_3_12, feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
+pub(crate) fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
     unsafe {
         if pylong_is_unsigned(ptr) {
             i64::from((*ptr.cast::<PyLongObject>()).long_value.ob_digit)
@@ -87,7 +87,7 @@ pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
 
 #[cfg(all(not(Py_3_12), feature = "inline_int"))]
 #[inline(always)]
-pub fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
+pub(crate) fn pylong_get_inline_value(ptr: *mut pyo3_ffi::PyObject) -> i64 {
     unsafe {
         (*ptr.cast::<pyo3_ffi::PyVarObject>()).ob_size as i64
             * i64::from((*ptr.cast::<PyLongObject>()).ob_digit)

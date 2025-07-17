@@ -1,6 +1,16 @@
 # Changelog
 
-## 3.10.18
+
+## 3.11.0 - 2025-07-15
+
+### Changed
+
+- Use a deserialization buffer allocated per request instead of a shared
+buffer allocated on import.
+- ABI compatibility with CPython 3.14 beta 4.
+
+
+## 3.10.18 - 2025-04-29
 
 ### Fixed
 
@@ -8,7 +18,7 @@
 introduced in 3.10.17.
 
 
-## 3.10.17
+## 3.10.17 - 2025-04-29
 
 ### Changed
 
@@ -17,7 +27,7 @@ introduced in 3.10.17.
 - Fix incompatibility running on Python 3.13 using WASM.
 
 
-## 3.10.16
+## 3.10.16 - 2025-03-24
 
 ### Changed
 
@@ -28,7 +38,7 @@ introduced in 3.10.17.
 and recent Python.
 
 
-## 3.10.15
+## 3.10.15 - 2025-01-08
 
 ### Changed
 
@@ -37,7 +47,7 @@ and recent Python.
 - Publish PyPI manylinux Python 3.13 wheels for i686, arm7l, ppc64le, and s390x.
 
 
-## 3.10.14
+## 3.10.14 - 2024-12-29
 
 ### Changed
 
@@ -49,7 +59,7 @@ tests skip if fixtures are not present.
 - Build now depends on Rust 1.82 or later instead of 1.72.
 
 
-## 3.10.13
+## 3.10.13 - 2024-12-29
 
 ### Changed
 
@@ -59,7 +69,7 @@ being buildable from source by end users (via PEP 517) must upgrade to at
 least this version.
 
 
-## 3.10.12
+## 3.10.12 - 2024-11-23
 
 ### Changed
 
@@ -69,7 +79,7 @@ least this version.
 - Publish PyPI Windows wheels using trusted publishing.
 
 
-## 3.10.11
+## 3.10.11 - 2024-11-01
 
 ### Changed
 
@@ -78,7 +88,7 @@ least this version.
 - Include text of licenses for vendored dependencies.
 
 
-## 3.10.10
+## 3.10.10 - 2024-10-22
 
 ### Fixed
 
@@ -89,7 +99,7 @@ least this version.
 - Publish aarch64 manylinux_2_17 wheel for 3.13 to PyPI.
 
 
-## 3.10.9
+## 3.10.9 - 2024-10-19
 
 ### Fixed
 
@@ -97,7 +107,7 @@ least this version.
 introduced in 3.10.8.
 
 
-## 3.10.8
+## 3.10.8 - 2024-10-19
 
 ### Changed
 

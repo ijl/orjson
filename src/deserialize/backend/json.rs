@@ -2,7 +2,7 @@
 
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
-use crate::str::unicode_from_str;
+use crate::str::PyStr;
 use core::ptr::NonNull;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
 use smallvec::SmallVec;
@@ -87,14 +87,14 @@ impl<'de> Visitor<'de> for JsonValue {
     where
         E: de::Error,
     {
-        Ok(nonnull!(unicode_from_str(value)))
+        Ok(PyStr::from_str(value).as_non_null_ptr())
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(nonnull!(unicode_from_str(value)))
+        Ok(PyStr::from_str(value).as_non_null_ptr())
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -128,7 +128,7 @@ impl<'de> Visitor<'de> for JsonValue {
         while let Some(key) = map.next_key::<Cow<str>>()? {
             let pykey = get_unicode_key(&key);
             let pyval = map.next_value_seed(self)?;
-            pydict_setitem!(dict_ptr, pykey, pyval.as_ptr());
+            pydict_setitem!(dict_ptr, pykey.as_ptr(), pyval.as_ptr());
         }
         Ok(nonnull!(dict_ptr))
     }

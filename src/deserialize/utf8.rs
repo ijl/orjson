@@ -2,7 +2,7 @@
 
 use crate::deserialize::DeserializeError;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
-use crate::str::unicode_to_str;
+use crate::str::PyStr;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
 use crate::util::isize_to_usize;
 use crate::util::INVALID_STR;
@@ -33,7 +33,7 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
     std::str::from_utf8(buf).is_ok()
 }
 
-pub fn read_input_to_buf(
+pub(crate) fn read_input_to_buf(
     ptr: *mut pyo3_ffi::PyObject,
 ) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
@@ -49,7 +49,8 @@ pub fn read_input_to_buf(
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
     } else if is_type!(obj_type_ptr, STR_TYPE) {
-        let uni = unicode_to_str(ptr);
+        let pystr = unsafe { PyStr::from_ptr_unchecked(ptr) };
+        let uni = pystr.to_str();
         if unlikely!(uni.is_none()) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
@@ -63,7 +64,10 @@ pub fn read_input_to_buf(
             )));
         }
         buffer = unsafe {
-            core::slice::from_raw_parts((*membuf).buf as *const u8, isize_to_usize((*membuf).len))
+            core::slice::from_raw_parts(
+                (*membuf).buf.cast::<u8>().cast_const(),
+                isize_to_usize((*membuf).len),
+            )
         };
         if !is_valid_utf8(buffer) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
@@ -71,7 +75,7 @@ pub fn read_input_to_buf(
     } else if unlikely!(is_type!(obj_type_ptr, BYTEARRAY_TYPE)) {
         buffer = unsafe {
             core::slice::from_raw_parts(
-                ffi!(PyByteArray_AsString(ptr)) as *const u8,
+                ffi!(PyByteArray_AsString(ptr)).cast::<u8>().cast_const(),
                 isize_to_usize(ffi!(PyByteArray_Size(ptr))),
             )
         };

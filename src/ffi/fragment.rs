@@ -7,22 +7,26 @@ use std::sync::atomic::{AtomicIsize, AtomicU32, AtomicU64};
 
 use core::ptr::null_mut;
 use pyo3_ffi::{
-    PyErr_SetObject, PyExc_TypeError, PyObject, PyTuple_GET_ITEM, PyTypeObject, PyType_Ready,
-    PyType_Type, PyUnicode_FromStringAndSize, PyVarObject, Py_DECREF, Py_INCREF, Py_SIZE,
-    Py_TPFLAGS_DEFAULT,
+    PyErr_SetObject, PyExc_TypeError, PyObject, PyTypeObject, PyType_Ready, PyType_Type,
+    PyUnicode_FromStringAndSize, PyVarObject, Py_DECREF, Py_INCREF, Py_SIZE, Py_TPFLAGS_DEFAULT,
 };
 
 // https://docs.python.org/3/c-api/typeobj.html#typedef-examples
 
 #[cfg(Py_GIL_DISABLED)]
-#[allow(non_upper_case_globals)]
-const _Py_IMMORTAL_REFCNT_LOCAL: u32 = u32::MAX;
+macro_rules! pymutex_new {
+    () => {
+        unsafe { std::mem::zeroed() }
+    };
+}
 
 #[repr(C)]
-pub struct Fragment {
+pub(crate) struct Fragment {
     #[cfg(Py_GIL_DISABLED)]
     pub ob_tid: usize,
-    #[cfg(Py_GIL_DISABLED)]
+    #[cfg(all(Py_GIL_DISABLED, Py_3_14))]
+    pub ob_flags: u16,
+    #[cfg(all(Py_GIL_DISABLED, not(Py_3_14)))]
     pub _padding: u16,
     #[cfg(Py_GIL_DISABLED)]
     pub ob_mutex: pyo3_ffi::PyMutex,
@@ -54,7 +58,7 @@ fn raise_args_exception() {
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragment_tp_new(
+pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
     _subtype: *mut PyTypeObject,
     args: *mut PyObject,
     kwds: *mut PyObject,
@@ -64,15 +68,17 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
             raise_args_exception();
             null_mut()
         } else {
-            let contents = PyTuple_GET_ITEM(args, 0);
+            let contents = ffi!(PyTuple_GET_ITEM(args, 0));
             Py_INCREF(contents);
             let obj = Box::new(Fragment {
                 #[cfg(Py_GIL_DISABLED)]
                 ob_tid: 0,
-                #[cfg(Py_GIL_DISABLED)]
+                #[cfg(all(Py_GIL_DISABLED, Py_3_14))]
+                ob_flags: 0,
+                #[cfg(all(Py_GIL_DISABLED, not(Py_3_14)))]
                 _padding: 0,
                 #[cfg(Py_GIL_DISABLED)]
-                ob_mutex: pyo3_ffi::PyMutex::new(),
+                ob_mutex: pymutex_new!(),
                 #[cfg(Py_GIL_DISABLED)]
                 ob_gc_bits: 0,
                 #[cfg(Py_GIL_DISABLED)]
@@ -92,7 +98,7 @@ pub unsafe extern "C" fn orjson_fragment_tp_new(
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
+pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     unsafe {
         Py_DECREF((*object.cast::<Fragment>()).contents);
         std::alloc::dealloc(object.cast::<u8>(), core::alloc::Layout::new::<Fragment>());
@@ -113,21 +119,23 @@ const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
+pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
     unsafe {
         let ob = Box::new(PyTypeObject {
             ob_base: PyVarObject {
                 ob_base: PyObject {
                     #[cfg(Py_GIL_DISABLED)]
                     ob_tid: 0,
-                    #[cfg(Py_GIL_DISABLED)]
+                    #[cfg(all(Py_GIL_DISABLED, Py_3_14))]
+                    ob_flags: 0,
+                    #[cfg(all(Py_GIL_DISABLED, not(Py_3_14)))]
                     _padding: 0,
                     #[cfg(Py_GIL_DISABLED)]
-                    ob_mutex: pyo3_ffi::PyMutex::new(),
+                    ob_mutex: pymutex_new!(),
                     #[cfg(Py_GIL_DISABLED)]
                     ob_gc_bits: 0,
                     #[cfg(Py_GIL_DISABLED)]
-                    ob_ref_local: AtomicU32::new(_Py_IMMORTAL_REFCNT_LOCAL),
+                    ob_ref_local: AtomicU32::new(crate::ffi::compat::_Py_IMMORTAL_REFCNT_LOCAL),
                     #[cfg(Py_GIL_DISABLED)]
                     ob_ref_shared: AtomicIsize::new(0),
                     #[cfg(all(Py_3_12, not(Py_GIL_DISABLED)))]

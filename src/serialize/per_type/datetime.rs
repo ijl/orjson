@@ -32,7 +32,7 @@ macro_rules! write_microsecond {
 }
 
 #[repr(transparent)]
-pub struct Date {
+pub(crate) struct Date {
     ptr: *mut pyo3_ffi::PyObject,
 }
 
@@ -82,11 +82,11 @@ impl Serialize for Date {
     }
 }
 
-pub enum TimeError {
+pub(crate) enum TimeError {
     HasTimezone,
 }
 
-pub struct Time {
+pub(crate) struct Time {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }
@@ -133,7 +133,7 @@ impl Serialize for Time {
     }
 }
 
-pub struct DateTime {
+pub(crate) struct DateTime {
     ptr: *mut pyo3_ffi::PyObject,
     opts: Opt,
 }

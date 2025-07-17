@@ -1,6 +1,6 @@
 [package]
 name = "orjson"
-version = "3.10.18"
+version = "3.11.0"
 authors = ["ijl <ijl@mailbox.org>"]
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
@@ -12,7 +12,6 @@ keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259
 include = [
     "Cargo.toml",
     "CHANGELOG.md",
-    "include/pyo3",
     "include/yyjson",
     "LICENSE-APACHE",
     "LICENSE-MIT",
@@ -30,9 +29,6 @@ crate-type = ["cdylib"]
 [features]
 default = []
 
-# Include runtime-detected functions that use AVX512VL.
-avx512 = []
-
 # Avoid bundling libgcc on musl.
 unwind = ["unwinding"]
 
@@ -41,6 +37,7 @@ unwind = ["unwinding"]
 yyjson = []
 
 # Features detected by build.rs. Do not specify.
+avx512 = []
 generic_simd = []
 inline_int = []
 intrinsics = []
@@ -49,14 +46,13 @@ optimize = []
 [dependencies]
 associative-cache = { version = "2", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
-compact_str = { version = "0.9", default-features = false, features = ["serde"] }
 encoding_rs = { version = "0.8", default-features = false }
 half = { version = "2", default-features = false, features = ["std"] }
 itoa = { version = "1", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
-jiff = { version = "^0.2", default-features = false, features = ["alloc"] }
+jiff = { version = "^0.2", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { path = "include/pyo3/pyo3-ffi", default-features = false, features = ["extension-module"]}
+pyo3-ffi = { version = "0.25", default-features = false, features = ["extension-module"] }
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
@@ -68,7 +64,7 @@ xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] 
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { path = "include/pyo3/pyo3-build-config" }
+pyo3-build-config = { version = "0.25" }
 version_check = { version = "0.9" }
 
 [profile.dev]

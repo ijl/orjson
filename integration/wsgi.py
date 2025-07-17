@@ -20,7 +20,8 @@ def root():
         "data": [1, 2.2, None, True, False, orjson.Fragment(b"{}")],
     }
     payload = orjson.dumps(
-        data, option=orjson.OPT_NAIVE_UTC | orjson.OPT_OMIT_MICROSECONDS
+        data,
+        option=orjson.OPT_NAIVE_UTC | orjson.OPT_OMIT_MICROSECONDS,
     )
     return app.response_class(
         response=payload,

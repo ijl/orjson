@@ -16,7 +16,8 @@ class TestIndentedOutput:
         """
         obj = {"a": "b", "c": {"d": True}, "e": [1, 2]}
         assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == json.dumps(
-            obj, indent=2
+            obj,
+            indent=2,
         ).encode("utf-8")
 
     def test_sort(self):
@@ -61,7 +62,9 @@ class TestIndentedOutput:
         """
         obj = read_fixture_obj("twitter.json.xz")
         assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == json.dumps(
-            obj, indent=2, ensure_ascii=False
+            obj,
+            indent=2,
+            ensure_ascii=False,
         ).encode("utf-8")
 
     def test_github_pretty(self):
@@ -70,7 +73,9 @@ class TestIndentedOutput:
         """
         obj = read_fixture_obj("github.json.xz")
         assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == json.dumps(
-            obj, indent=2, ensure_ascii=False
+            obj,
+            indent=2,
+            ensure_ascii=False,
         ).encode("utf-8")
 
     def test_canada_pretty(self):
@@ -79,7 +84,9 @@ class TestIndentedOutput:
         """
         obj = read_fixture_obj("canada.json.xz")
         assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == json.dumps(
-            obj, indent=2, ensure_ascii=False
+            obj,
+            indent=2,
+            ensure_ascii=False,
         ).encode("utf-8")
 
     def test_citm_catalog_pretty(self):
@@ -88,5 +95,7 @@ class TestIndentedOutput:
         """
         obj = read_fixture_obj("citm_catalog.json.xz")
         assert orjson.dumps(obj, option=orjson.OPT_INDENT_2) == json.dumps(
-            obj, indent=2, ensure_ascii=False
+            obj,
+            indent=2,
+            ensure_ascii=False,
         ).encode("utf-8")

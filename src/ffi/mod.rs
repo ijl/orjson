@@ -2,14 +2,17 @@
 
 mod buffer;
 mod bytes;
+pub(crate) mod compat;
 mod fragment;
 mod long;
 #[cfg(feature = "yyjson")]
-pub mod yyjson;
+pub(crate) mod yyjson;
 
-pub use buffer::*;
-pub use bytes::*;
-pub use fragment::{orjson_fragmenttype_new, Fragment};
-pub use long::pylong_is_unsigned;
+pub(crate) use buffer::*;
+pub(crate) use bytes::*;
+pub(crate) use compat::*;
+
+pub(crate) use fragment::{orjson_fragmenttype_new, Fragment};
+pub(crate) use long::pylong_is_unsigned;
 #[cfg(feature = "inline_int")]
-pub use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};
+pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};

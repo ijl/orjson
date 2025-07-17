@@ -5,16 +5,10 @@ use core::arch::x86_64::{
     _mm_setzero_si128, _mm_storeu_si128, _mm_subs_epu8,
 };
 
-macro_rules! splat_mm128 {
-    ($val:expr) => {
-        _mm_set1_epi8(core::mem::transmute::<u8, i8>($val))
-    };
-}
-
 #[allow(dead_code)]
 #[expect(clippy::cast_ptr_alignment)]
 #[inline(never)]
-pub unsafe fn format_escaped_str_impl_sse2_128(
+pub(crate) unsafe fn format_escaped_str_impl_sse2_128(
     odst: *mut u8,
     value_ptr: *const u8,
     value_len: usize,
@@ -31,9 +25,9 @@ pub unsafe fn format_escaped_str_impl_sse2_128(
         if value_len < STRIDE {
             impl_format_scalar!(dst, src, value_len);
         } else {
-            let blash = splat_mm128!(b'\\');
-            let quote = splat_mm128!(b'"');
-            let x20 = splat_mm128!(31);
+            let blash = _mm_set1_epi8(0b01011100i8);
+            let quote = _mm_set1_epi8(0b00100010i8);
+            let x20 = _mm_set1_epi8(0b00011111i8);
             let v0 = _mm_setzero_si128();
 
             let last_stride_src = src.add(value_len).sub(STRIDE);

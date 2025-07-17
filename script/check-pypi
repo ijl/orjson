@@ -56,7 +56,7 @@ wheels_unique = {
 wheels_expected = wheels_matrix | wheels_unique
 
 wheels_queued = set(
-    (str(each).replace(f"{dist}/", "") for each in Path(dist).glob("*.whl"))
+    str(each).replace(f"{dist}/", "") for each in Path(dist).glob("*.whl")
 )
 
 exit_code = 0
@@ -64,7 +64,7 @@ exit_code = 0
 # sdist
 sdist_path = Path(f"{dist}/{prefix}.tar.gz")
 if sdist_path.exists():
-    print(f"sdist present\n")
+    print("sdist present\n")
 else:
     exit_code = 1
     print(f"Missing sdist:\n{sdist_path}\n")

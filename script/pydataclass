@@ -6,7 +6,6 @@ import io
 import json
 import os
 from timeit import timeit
-from typing import List
 
 from tabulate import tabulate
 
@@ -25,11 +24,11 @@ class Member:
 class Object:
     id: int
     name: str
-    members: List[Member]
+    members: list[Member]
 
 
 objects_as_dataclass = [
-    Object(i, str(i) * 3, [Member(j, True) for j in range(0, 10)])
+    Object(i, str(i) * 3, [Member(j, True) for j in range(10)])
     for i in range(100000, 102000)
 ]
 
@@ -73,7 +72,9 @@ for lib_name in LIBRARIES:
         as_dict = timeit(lambda: orjson.dumps(objects_as_dict), number=ITERATIONS)
         as_dataclass = timeit(
             lambda: orjson.dumps(
-                objects_as_dataclass, None, orjson.OPT_SERIALIZE_DATACLASS
+                objects_as_dataclass,
+                None,
+                orjson.OPT_SERIALIZE_DATACLASS,
             ),
             number=ITERATIONS,
         )
@@ -97,7 +98,7 @@ for lib_name in LIBRARIES:
             f"{as_dict:,.2f}" if as_dict else "",
             f"{as_dataclass:,.2f}" if as_dataclass else "",
             f"{compared_to_orjson:d}" if compared_to_orjson else "",
-        )
+        ),
     )
 
 buf = io.StringIO()

@@ -79,7 +79,7 @@ for lib_name in LIBRARIES:
             f"{time_unsorted:,.2f}" if time_unsorted else "",
             f"{time_sorted:,.2f}" if time_sorted else "",
             f"{compared_to_orjson:,.1f}" if compared_to_orjson else "",
-        )
+        ),
     )
 
 buf = io.StringIO()

@@ -4,7 +4,7 @@ use crate::opt::{Opt, NAIVE_UTC, OMIT_MICROSECONDS, UTC_Z};
 
 use crate::serialize::buffer::SmallFixedBuffer;
 
-pub enum DateTimeError {
+pub(crate) enum DateTimeError {
     LibraryUnsupported,
 }
 
@@ -30,7 +30,7 @@ macro_rules! write_triple_digit {
 }
 
 #[derive(Default)]
-pub struct Offset {
+pub(crate) struct Offset {
     pub day: i32,
     pub second: i32,
 }
@@ -39,7 +39,7 @@ pub struct Offset {
 ///
 /// The provided `write_buf` method does not allocate, and is faster
 /// than writing to a heap-allocated string.
-pub trait DateTimeLike {
+pub(crate) trait DateTimeLike {
     /// Returns the year component of the datetime.
     fn year(&self) -> i32;
     /// Returns the month component of the datetime.

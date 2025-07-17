@@ -27,6 +27,11 @@ It distributes amd64/x86_64/x64, i686/x86, aarch64/arm64/armv8, arm7,
 ppc64le/POWER8, and s390x wheels for Linux, amd64 and aarch64 wheels
 for macOS, and amd64, i686, and aarch64 wheels for Windows.
 
+Wheels published to PyPI for amd64 run on x86-64-v1 (2003)
+or later, but will at runtime use AVX-512 if available for a
+significant performance benefit; aarch64 wheels run on ARMv8-A (2011) or
+later.
+
 orjson does not and will not support PyPy, embedded Python builds for
 Android/iOS, or PEP 554 subinterpreters.
 
@@ -616,6 +621,9 @@ which the standard library allows, but is not valid JSON.
 It raises `JSONDecodeError` if a combination of array or object recurses
 1024 levels deep.
 
+It raises `JSONDecodeError` if unable to allocate a buffer large enough
+to parse the document.
+
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
 
@@ -1037,17 +1045,6 @@ artifact on PyPI. The latency results can be reproduced using the `pybench` scri
 
 ## Questions
 
-### Why can't I install it from PyPI?
-
-Probably `pip` needs to be upgraded to version 20.3 or later to support
-the latest manylinux_x_y or universal2 wheel formats.
-
-### "Cargo, the Rust package manager, is not installed or is not on PATH."
-
-This happens when there are no binary wheels (like manylinux) for your
-platform on PyPI. You can install [Rust](https://www.rust-lang.org/) through
-`rustup` or a package manager and then it will compile.
-
 ### Will it deserialize to dataclasses, UUIDs, decimals, etc or support object_hook?
 
 No. This requires a schema specifying what types are expected and how to
@@ -1065,6 +1062,12 @@ No. [orjsonl](https://github.com/umarbutler/orjsonl) may be appropriate.
 ### Will it support JSON5 or RJSON?
 
 No, it supports RFC 8259.
+
+### How do I depend on orjson in a Rust project?
+
+orjson is only shipped as a Python module. The project should depend on
+`orjson` in its own Python requirements and should obtain pointers to
+functions and objects using the normal `PyImport_*` APIs.
 
 ## Packaging
 

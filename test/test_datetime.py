@@ -119,8 +119,15 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 1, 1, 2, 3, 4, 0, tzinfo=tz.gettz("Asia/Shanghai")
-                    )
+                        2018,
+                        1,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=tz.gettz("Asia/Shanghai"),
+                    ),
                 ],
                 option=orjson.OPT_NAIVE_UTC,
             )
@@ -135,9 +142,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 6, 1, 2, 3, 4, 0, tzinfo=datetime.timezone.utc
-                    )
-                ]
+                        2018,
+                        6,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=datetime.timezone.utc,
+                    ),
+                ],
             )
             == b'["2018-06-01T02:03:04+00:00"]'
         )
@@ -161,9 +175,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 6, 1, 2, 3, 4, 0, tzinfo=zoneinfo.ZoneInfo("UTC")
-                    )
-                ]
+                        2018,
+                        6,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=zoneinfo.ZoneInfo("UTC"),
+                    ),
+                ],
             )
             == b'["2018-06-01T02:03:04+00:00"]'
         )
@@ -182,8 +203,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=zoneinfo.ZoneInfo("Asia/Shanghai"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-01-01T02:03:04+08:00"]'
         )
@@ -202,8 +223,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=zoneinfo.ZoneInfo("America/New_York"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-06-01T02:03:04-04:00"]'
         )
@@ -215,7 +236,7 @@ class TestDatetime:
         """
         assert (
             orjson.dumps(
-                [datetime.datetime(2018, 6, 1, 2, 3, 4, 0, tzinfo=pendulum.UTC)]
+                [datetime.datetime(2018, 6, 1, 2, 3, 4, 0, tzinfo=pendulum.UTC)],
             )
             == b'["2018-06-01T02:03:04+00:00"]'
         )
@@ -229,9 +250,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 1, 1, 2, 3, 4, 0, tzinfo=tz.gettz("Asia/Shanghai")
-                    )
-                ]
+                        2018,
+                        1,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=tz.gettz("Asia/Shanghai"),
+                    ),
+                ],
             )
             == b'["2018-01-01T02:03:04+08:00"]'
         )
@@ -245,9 +273,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 1, 1, 2, 3, 4, 0, tzinfo=pytz.timezone("Asia/Shanghai")
-                    )
-                ]
+                        2018,
+                        1,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=pytz.timezone("Asia/Shanghai"),
+                    ),
+                ],
             )
             == b'["2018-01-01T02:03:04+08:00"]'
         )
@@ -269,8 +304,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pendulum.timezone("Asia/Shanghai"),  # type: ignore
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-01-01T02:03:04+08:00"]'
         )
@@ -284,9 +319,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2018, 6, 1, 2, 3, 4, 0, tzinfo=pytz.timezone("America/New_York")
-                    )
-                ]
+                        2018,
+                        6,
+                        1,
+                        2,
+                        3,
+                        4,
+                        0,
+                        tzinfo=pytz.timezone("America/New_York"),
+                    ),
+                ],
             )
             == b'["2018-06-01T02:03:04-04:00"]'
         )
@@ -308,8 +350,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pendulum.timezone("America/New_York"),  # type: ignore
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-06-01T02:03:04-04:00"]'
         )
@@ -331,8 +373,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=zoneinfo.ZoneInfo("America/New_York"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04-05:00"]'
         )
@@ -354,8 +396,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pytz.timezone("America/New_York"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04-05:00"]'
         )
@@ -377,8 +419,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pendulum.timezone("America/New_York"),  # type: ignore
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04-05:00"]'
         )
@@ -400,8 +442,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=zoneinfo.ZoneInfo("Australia/Adelaide"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04+10:30"]'
         )
@@ -423,8 +465,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pytz.timezone("Australia/Adelaide"),
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04+10:30"]'
         )
@@ -446,8 +488,8 @@ class TestDatetime:
                         4,
                         0,
                         tzinfo=pendulum.timezone("Australia/Adelaide"),  # type: ignore
-                    )
-                ]
+                    ),
+                ],
             )
             == b'["2018-12-01T02:03:04+10:30"]'
         )
@@ -471,8 +513,8 @@ class TestDatetime:
                         27,
                         87,
                         tzinfo=pendulum.timezone("Europe/Amsterdam"),  # type: ignore
-                    )
-                ]
+                    ),
+                ],
             )
             in AMSTERDAM_1937_DATETIMES
         )
@@ -496,8 +538,8 @@ class TestDatetime:
                         27,
                         87,
                         tzinfo=zoneinfo.ZoneInfo("Europe/Amsterdam"),
-                    )
-                ]
+                    ),
+                ],
             )
             in AMSTERDAM_1937_DATETIMES
         )
@@ -521,8 +563,8 @@ class TestDatetime:
                         27,
                         87,
                         tzinfo=pytz.timezone("Europe/Amsterdam"),
-                    )
-                ]
+                    ),
+                ],
             )
             in AMSTERDAM_1937_DATETIMES
         )
@@ -538,9 +580,16 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        1937, 1, 1, 12, 0, 27, 87, tzinfo=tz.gettz("Europe/Amsterdam")
-                    )
-                ]
+                        1937,
+                        1,
+                        1,
+                        12,
+                        0,
+                        27,
+                        87,
+                        tzinfo=tz.gettz("Europe/Amsterdam"),
+                    ),
+                ],
             )
             in AMSTERDAM_1937_DATETIMES
         )
@@ -593,7 +642,8 @@ class TestDatetime:
         """
         assert (
             orjson.dumps(
-                [datetime.time(2, 3, 4, 123)], option=orjson.OPT_OMIT_MICROSECONDS
+                [datetime.time(2, 3, 4, 123)],
+                option=orjson.OPT_OMIT_MICROSECONDS,
             )
             == b'["02:03:04"]'
         )
@@ -630,7 +680,8 @@ class TestDatetime:
         """
         assert (
             orjson.dumps(
-                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)], option=orjson.OPT_UTC_Z
+                [datetime.datetime(2000, 1, 1, 2, 3, 4, 123)],
+                option=orjson.OPT_UTC_Z,
             )
             == b'["2000-01-01T02:03:04.000123"]'
         )
@@ -644,8 +695,15 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        2000, 1, 1, 0, 0, 0, 1, tzinfo=datetime.timezone.utc
-                    )
+                        2000,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        1,
+                        tzinfo=datetime.timezone.utc,
+                    ),
                 ],
                 option=orjson.OPT_UTC_Z,
             )
@@ -655,8 +713,15 @@ class TestDatetime:
             orjson.dumps(
                 [
                     datetime.datetime(
-                        1937, 1, 1, 12, 0, 27, 87, tzinfo=tz.gettz("Europe/Amsterdam")
-                    )
+                        1937,
+                        1,
+                        1,
+                        12,
+                        0,
+                        27,
+                        87,
+                        tzinfo=tz.gettz("Europe/Amsterdam"),
+                    ),
                 ],
                 option=orjson.OPT_UTC_Z,
             )
@@ -738,9 +803,13 @@ class TestTime:
             orjson.dumps(
                 [
                     datetime.time(
-                        12, 15, 59, 111, tzinfo=zoneinfo.ZoneInfo("Asia/Shanghai")
-                    )
-                ]
+                        12,
+                        15,
+                        59,
+                        111,
+                        tzinfo=zoneinfo.ZoneInfo("Asia/Shanghai"),
+                    ),
+                ],
             )
 
     def test_time_microsecond_max(self):
@@ -760,19 +829,22 @@ class TestDateclassPassthrough:
     def test_passthrough_datetime(self):
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(
-                datetime.datetime(1970, 1, 1), option=orjson.OPT_PASSTHROUGH_DATETIME
+                datetime.datetime(1970, 1, 1),
+                option=orjson.OPT_PASSTHROUGH_DATETIME,
             )
 
     def test_passthrough_date(self):
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(
-                datetime.date(1970, 1, 1), option=orjson.OPT_PASSTHROUGH_DATETIME
+                datetime.date(1970, 1, 1),
+                option=orjson.OPT_PASSTHROUGH_DATETIME,
             )
 
     def test_passthrough_time(self):
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(
-                datetime.time(12, 0, 0), option=orjson.OPT_PASSTHROUGH_DATETIME
+                datetime.time(12, 0, 0),
+                option=orjson.OPT_PASSTHROUGH_DATETIME,
             )
 
     def test_passthrough_datetime_default(self):

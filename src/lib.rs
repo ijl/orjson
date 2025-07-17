@@ -1,16 +1,30 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512, avx512_target_feature))]
+#![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512, avx512_target_feature))] // MSRV 1.89
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
+#![allow(internal_features)] // core_intrinsics
+#![allow(non_camel_case_types)]
+#![allow(stable_features)] // MSRV
+#![allow(static_mut_refs)]
+#![allow(unknown_lints)] // internal_features
+#![allow(unused_unsafe)]
+#![warn(clippy::correctness)]
+#![warn(clippy::suspicious)]
+#![warn(clippy::complexity)]
+#![warn(clippy::perf)]
+#![warn(clippy::style)]
 #![allow(clippy::absolute_paths)]
 #![allow(clippy::allow_attributes)]
 #![allow(clippy::allow_attributes_without_reason)]
 #![allow(clippy::arbitrary_source_item_ordering)]
+#![allow(clippy::arithmetic_side_effects)]
 #![allow(clippy::decimal_literal_representation)]
+#![allow(clippy::default_numeric_fallback)]
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::explicit_iter_loop)]
+#![allow(clippy::host_endian_bytes)]
 #![allow(clippy::if_not_else)]
 #![allow(clippy::implicit_return)]
 #![allow(clippy::inline_always)]
@@ -20,6 +34,7 @@
 #![allow(clippy::missing_inline_in_public_items)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::missing_safety_doc)]
+#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::multiple_unsafe_ops_per_block)]
 #![allow(clippy::needless_lifetimes)]
 #![allow(clippy::question_mark_used)]
@@ -33,13 +48,10 @@
 #![allow(clippy::unreadable_literal)]
 #![allow(clippy::unusual_byte_groupings)]
 #![allow(clippy::unwrap_in_result)]
+#![allow(clippy::unwrap_used)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
-#![allow(internal_features)] // core_intrinsics
-#![allow(non_camel_case_types)]
-#![allow(static_mut_refs)]
-#![allow(unknown_lints)] // internal_features
-#![allow(unused_unsafe)]
+#![warn(clippy::elidable_lifetime_names)]
 #![warn(clippy::ptr_arg)]
 #![warn(clippy::ptr_as_ptr)]
 #![warn(clippy::ptr_cast_constness)]
@@ -48,6 +60,7 @@
 #![warn(clippy::redundant_clone)]
 #![warn(clippy::redundant_locals)]
 #![warn(clippy::redundant_slicing)]
+#![warn(clippy::semicolon_inside_block)]
 #![warn(clippy::size_of_ref)]
 #![warn(clippy::std_instead_of_core)]
 #![warn(clippy::trivially_copy_pass_by_ref)]
@@ -73,9 +86,8 @@ use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::{
     PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
     PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyTuple_GET_ITEM, PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS,
-    METH_O,
+    PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
+    PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -118,8 +130,9 @@ macro_rules! opt {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 #[cold]
+#[cfg_attr(not(Py_3_10), allow(deprecated))] // _PyCFunctionFastWithKeywords
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
+pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     unsafe {
         typeref::init_typerefs();
 
@@ -211,11 +224,12 @@ const PYMODULEDEF_LEN: usize = 4;
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
-pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
+pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
     unsafe {
         let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
             PyModuleDef_Slot {
                 slot: pyo3_ffi::Py_mod_exec,
+                #[allow(clippy::fn_to_numeric_cast_any, clippy::as_conversions)]
                 value: orjson_init_exec as *mut c_void,
             },
             #[cfg(Py_3_12)]
@@ -256,7 +270,7 @@ pub unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 #[cfg_attr(feature = "optimize", optimize(size))]
 fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     unsafe {
-        let pos = err.pos();
+        let err_pos = err.pos();
         let msg = err.message;
         let doc = match err.data {
             Some(as_str) => PyUnicode_FromStringAndSize(
@@ -270,7 +284,7 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
         let err_msg =
             PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
         let args = PyTuple_New(3);
-        let pos = PyLong_FromLongLong(pos);
+        let pos = PyLong_FromLongLong(err_pos);
         PyTuple_SET_ITEM(args, 0, err_msg);
         PyTuple_SET_ITEM(args, 1, doc);
         PyTuple_SET_ITEM(args, 2, pos);
@@ -355,7 +369,7 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
+pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
     match crate::deserialize::deserialize(obj) {
         Ok(val) => val.as_ptr(),
         Err(err) => raise_loads_exception(err),
@@ -363,7 +377,7 @@ pub unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn dumps(
+pub(crate) unsafe extern "C" fn dumps(
     _self: *mut PyObject,
     args: *const *mut PyObject,
     nargs: Py_ssize_t,
@@ -387,7 +401,7 @@ pub unsafe extern "C" fn dumps(
         }
         if unlikely!(!kwnames.is_null()) {
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
-                let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+                let arg = ffi!(PyTuple_GET_ITEM(kwnames, i as Py_ssize_t));
                 if core::ptr::eq(arg, typeref::DEFAULT) {
                     if unlikely!(num_args & 2 == 2) {
                         return raise_dumps_exception_fixed(

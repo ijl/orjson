@@ -3,7 +3,7 @@
 use core::ffi::CStr;
 use core::ptr::NonNull;
 
-pub enum SerializeError {
+pub(crate) enum SerializeError {
     DatetimeLibraryUnsupported,
     DefaultRecursionLimit,
     Integer53Bits,
