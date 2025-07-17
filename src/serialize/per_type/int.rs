@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, STRICT_INTEGER};
+use crate::opt::{Opt, STRICT_INTEGER, BIG_INTEGER};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
+use std::ffi::CStr;
 
 // https://tools.ietf.org/html/rfc7159#section-6
 // "[-(2**53)+1, (2**53)-1]"
@@ -65,7 +66,25 @@ impl Serialize for IntSerializer {
                 if unlikely!(ret == -1) {
                     #[cfg(not(Py_3_13))]
                     ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
+
+                    if unlikely!(opt_disabled!(self.opts, BIG_INTEGER)) {
+                        err!(SerializeError::Integer64Bits)
+                    } else {
+                        let py_str = ffi!(PyObject_Str(self.ptr));
+                        if py_str.is_null() {
+                            ffi!(PyErr_Clear());
+                            err!(SerializeError::Integer64Bits)
+                        }
+                        let c_str = ffi!(PyUnicode_AsUTF8(py_str));
+                        if c_str.is_null() {
+                            ffi!(PyErr_Clear());
+                            err!(SerializeError::Integer64Bits)
+                        }
+                        let num_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
+                        ffi!(Py_DecRef(py_str));
+                        // Serialize as raw bytes to avoid adding double quotes
+                        return serializer.serialize_bytes(num_str.as_bytes());
+                    }
                 }
                 if is_signed == 0 {
                     let val = u64::from_ne_bytes(buffer);

@@ -1,20 +1,20 @@
 import json
-from typing import Any, Callable
+from typing import Any, Callable, Optional, Union
 
 __version__: str
 
 def dumps(
     __obj: Any,
-    default: Callable[[Any], Any] | None = ...,
-    option: int | None = ...,
+    default: Optional[Callable[[Any], Any]] = ...,
+    option: Optional[int] = ...,
 ) -> bytes: ...
-def loads(__obj: bytes | bytearray | memoryview | str) -> Any: ...
+def loads(__obj: Union[bytes, bytearray, memoryview, str]) -> Any: ...
 
 class JSONDecodeError(json.JSONDecodeError): ...
 class JSONEncodeError(TypeError): ...
 
 class Fragment(tuple):
-    contents: bytes | str
+    contents: Union[bytes, str]
 
 OPT_APPEND_NEWLINE: int
 OPT_INDENT_2: int
@@ -29,4 +29,6 @@ OPT_SERIALIZE_NUMPY: int
 OPT_SERIALIZE_UUID: int
 OPT_SORT_KEYS: int
 OPT_STRICT_INTEGER: int
+OPT_BIG_INTEGER: int
+OPT_NAN_AS_NULL: int
 OPT_UTC_Z: int

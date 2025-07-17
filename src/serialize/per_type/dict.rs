@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
+use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS, BIG_INTEGER};
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
@@ -19,6 +19,7 @@ use crate::util::isize_to_usize;
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
 use smallvec::SmallVec;
+use std::ffi::CStr;
 
 pub(crate) struct ZeroDictSerializer;
 
@@ -389,19 +390,42 @@ fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError>
     }
 }
 
+
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
-fn non_str_int(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
-    let ival = ffi!(PyLong_AsLongLong(key));
-    if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
-        ffi!(PyErr_Clear());
-        let uval = ffi!(PyLong_AsUnsignedLongLong(key));
-        if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
-            return Err(SerializeError::DictIntegerKey64Bit);
+fn non_str_int(
+    key: *mut pyo3_ffi::PyObject,
+    opts: crate::opt::Opt,
+) -> Result<String, SerializeError> {
+    if unlikely!(opt_disabled!(opts, BIG_INTEGER)) {
+        let ival = ffi!(PyLong_AsLongLong(key));
+        if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
+            ffi!(PyErr_Clear());
+            let uval = ffi!(PyLong_AsUnsignedLongLong(key));
+            if unlikely!(uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null()) {
+                return Err(SerializeError::DictIntegerKey64Bit);
+            }
+            Ok(String::from(itoa::Buffer::new().format(uval)))
+        } else {
+            Ok(String::from(itoa::Buffer::new().format(ival)))
         }
-        Ok(String::from(itoa::Buffer::new().format(uval)))
+
     } else {
-        Ok(String::from(itoa::Buffer::new().format(ival)))
+        unsafe {
+            let py_str = ffi!(PyObject_Str(key));
+            if py_str.is_null() {
+                ffi!(PyErr_Clear());
+                return Err(SerializeError::DictIntegerKey64Bit);
+            }
+            let c_str = ffi!(PyUnicode_AsUTF8(py_str));
+            if c_str.is_null() {
+                ffi!(PyErr_Clear());
+                return Err(SerializeError::DictIntegerKey64Bit);
+            }
+            let num_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
+            ffi!(Py_DecRef(py_str));
+            Ok(num_str.into())
+        }
     }
 }
 
@@ -430,7 +454,7 @@ impl DictNonStrKey {
                     Ok(String::from("false"))
                 }
             }
-            ObType::Int => non_str_int(key),
+            ObType::Int => non_str_int(key, opts),
             ObType::Float => non_str_float(key),
             ObType::Datetime => non_str_datetime(key, opts),
             ObType::Date => non_str_date(key),

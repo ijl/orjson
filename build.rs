@@ -64,7 +64,7 @@ fn main() {
         match cc::Build::new()
             .file("include/yyjson/yyjson.c")
             .include("include/yyjson")
-            .define("YYJSON_DISABLE_NON_STANDARD", "1")
+            .define("YYJSON_DISABLE_NON_STANDARD", "0") // need YYJSON_READ_ALLOW_INF_AND_NAN
             .define("YYJSON_DISABLE_UTF8_VALIDATION", "1")
             .define("YYJSON_DISABLE_UTILS", "1")
             .define("YYJSON_DISABLE_WRITER", "1")

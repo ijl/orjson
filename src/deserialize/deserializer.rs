@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::opt::Opt;
 use crate::deserialize::utf8::read_input_to_buf;
 use crate::deserialize::DeserializeError;
 use crate::typeref::EMPTY_UNICODE;
@@ -7,6 +8,7 @@ use core::ptr::NonNull;
 
 pub(crate) fn deserialize(
     ptr: *mut pyo3_ffi::PyObject,
+    opt: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
     debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
     let buffer = read_input_to_buf(ptr)?;
@@ -24,5 +26,5 @@ pub(crate) fn deserialize(
 
     let buffer_str = unsafe { core::str::from_utf8_unchecked(buffer) };
 
-    crate::deserialize::backend::deserialize(buffer_str)
+    crate::deserialize::backend::deserialize(buffer_str, opt)
 }

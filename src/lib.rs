@@ -86,8 +86,8 @@ use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::{
     PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
     PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
-    PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
+    PyTuple_GET_ITEM, PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize,
+    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -169,12 +169,17 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         }
 
         {
-            let loads_doc = c"loads(obj, /)\n--\n\nDeserialize JSON to Python objects.";
+            let loads_doc = c"loads(obj, /, option=None)\n--\n\nDeserialize JSON to Python objects.";
 
             let wrapped_loads = PyMethodDef {
                 ml_name: c"loads".as_ptr(),
-                ml_meth: PyMethodDefPointer { PyCFunction: loads },
-                ml_flags: METH_O,
+                ml_meth: PyMethodDefPointer { 
+                    #[cfg(Py_3_10)]
+                    PyCFunctionFastWithKeywords: loads,
+                    #[cfg(not(Py_3_10))]
+                    _PyCFunctionFastWithKeywords: loads,
+                },
+                ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
                 ml_doc: loads_doc.as_ptr(),
             };
             let func = PyCFunction_NewEx(
@@ -204,6 +209,8 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         opt!(mptr, c"OPT_SERIALIZE_UUID", opt::SERIALIZE_UUID);
         opt!(mptr, c"OPT_SORT_KEYS", opt::SORT_KEYS);
         opt!(mptr, c"OPT_STRICT_INTEGER", opt::STRICT_INTEGER);
+        opt!(mptr, c"OPT_BIG_INTEGER", opt::BIG_INTEGER);
+        opt!(mptr, c"OPT_NAN_AS_NULL", opt::NAN_AS_NULL);
         opt!(mptr, c"OPT_UTC_Z", opt::UTC_Z);
 
         add!(mptr, c"JSONDecodeError", typeref::JsonDecodeError);
@@ -369,8 +376,65 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 }
 
 #[unsafe(no_mangle)]
-pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
-    match crate::deserialize::deserialize(obj) {
+pub unsafe extern "C" fn loads(
+    _self: *mut PyObject,
+    args: *const *mut PyObject,
+    nargs: Py_ssize_t,
+    kwnames: *mut PyObject,
+) -> *mut PyObject {
+    let num_args = PyVectorcall_NARGS(isize_to_usize(nargs));
+    if unlikely!(num_args == 0) {
+        return raise_dumps_exception_fixed(
+            "loads() missing 1 required positional argument: 'obj'",
+        );
+    }
+
+    let json_str = *args;
+    let mut optsbits: i32 = 0;
+
+    if num_args > 1 {
+        let opts = *args.offset(1);
+        if core::ptr::eq((*opts).ob_type, typeref::INT_TYPE) {
+            #[allow(clippy::cast_possible_truncation)]
+            let tmp = PyLong_AsLong(opts) as i32;
+            optsbits = tmp;
+            if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
+                return raise_dumps_exception_fixed("Invalid opts");
+            }
+        } else if unlikely!(!core::ptr::eq(opts, typeref::NONE)) {
+            return raise_dumps_exception_fixed("Invalid opts");
+        }
+    }
+
+    if unlikely!(!kwnames.is_null()) {
+        for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
+            let arg = PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+            if core::ptr::eq(arg, typeref::OPTION) {
+                if num_args > 1 {
+                    return raise_dumps_exception_fixed(
+                        "loads() got multiple values for argument: 'option'",
+                    );
+                }
+                let opts = *args.offset(num_args + i);
+                if core::ptr::eq((*opts).ob_type, typeref::INT_TYPE) {
+                    #[allow(clippy::cast_possible_truncation)]
+                    let tmp = PyLong_AsLong(opts) as i32;
+                    optsbits = tmp;
+                    if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
+                        return raise_dumps_exception_fixed("Invalid opts");
+                    }
+                } else if unlikely!(!core::ptr::eq(opts, typeref::NONE)) {
+                    return raise_dumps_exception_fixed("Invalid opts");
+                }
+            } else {
+                return raise_dumps_exception_fixed(
+                    "loads() got an unexpected keyword argument",
+                );
+            }
+        }
+    }
+
+    match crate::deserialize::deserialize(json_str, optsbits as opt::Opt) {
         Ok(val) => val.as_ptr(),
         Err(err) => raise_loads_exception(err),
     }
