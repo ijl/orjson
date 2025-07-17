@@ -68,9 +68,9 @@ class TestBigIntegerTests:
             orjson.loads(b'{10000000000000000000:true}')
 
 
-    def test_big_integer_flag_combination(self):
+    def test_big_integer_flag_combination_1(self):
         """
-        OPT_BIG_INTEGER can be combined with other options
+        OPT_BIG_INTEGER can be combined with other options 1
         """
         
         # OPT_INDENT_2
@@ -110,6 +110,11 @@ class TestBigIntegerTests:
         assert orjson.dumps([100000000000000000001], option=orjson.OPT_BIG_INTEGER | orjson.OPT_APPEND_NEWLINE) == b'[100000000000000000001]\n'
         assert orjson.dumps([-100000000000000000001], option=orjson.OPT_BIG_INTEGER | orjson.OPT_APPEND_NEWLINE) == b'[-100000000000000000001]\n'
 
+    def test_big_integer_flag_combination_2(self):
+        """
+        OPT_BIG_INTEGER can be combined with other options 2
+        """
+
         # OPT_NAIVE_UTC
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_NAIVE_UTC) == b'100000000000000000001'
         assert orjson.dumps(-100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_NAIVE_UTC) == b'-100000000000000000001'
@@ -135,6 +140,11 @@ class TestBigIntegerTests:
                 return obj.strftime("%a, %d %b %Y %H:%M:%S GMT")
             raise TypeError        
         assert orjson.dumps(datetime(1970, 1, 1), option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATETIME, default=default) == b'"Thu, 01 Jan 1970 00:00:00 GMT"'
+
+    def test_big_integer_flag_combination_3(self):
+        """
+        OPT_BIG_INTEGER can be combined with other options 3
+        """
 
         # OPT_UTC_Z
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_UTC_Z) == b'100000000000000000001'
@@ -167,6 +177,11 @@ class TestBigIntegerTests:
                 return {"id": obj.id, "name": obj.name}
             raise TypeError
         assert orjson.dumps(User("3b1", "asd", "zxc"), option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATACLASS, default=default) == b'{"id":"3b1","name":"asd"}'
+
+    def test_big_integer_flag_combination_4(self):
+        """
+        OPT_BIG_INTEGER can be combined with other options 4
+        """
 
         # OPT_SERIALIZE_DATACLASS
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_DATACLASS) == b'100000000000000000001'
