@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::opt::{Opt, BIG_INTEGER, NAN_AS_NULL};
+
 use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
 use crate::str::PyStr;
@@ -11,7 +13,20 @@ use std::fmt;
 
 pub(crate) fn deserialize(
     data: &'static str,
+    opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+
+    if opt_enabled!(opts, BIG_INTEGER) {
+        return Err(DeserializeError::invalid(Cow::Borrowed(
+            "OPT_BIG_INTEGER option is not supported for JSON backend",
+        )));
+    }
+    if opt_enabled!(opts, NAN_AS_NULL) {
+        return Err(DeserializeError::invalid(Cow::Borrowed(
+            "OPT_NAN_AS_NULL option is not supported for JSON backend",
+        )));
+    }
+
     let mut deserializer = serde_json::Deserializer::from_str(data);
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
