@@ -3,7 +3,12 @@
 use crate::opt::{Opt, STRICT_INTEGER, BIG_INTEGER};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
+
+#[cfg(feature = "inline_int")]
 use std::ffi::CStr;
+
+#[cfg(feature = "inline_int")]
+use crate::opt::{BIG_INTEGER};
 
 // https://tools.ietf.org/html/rfc7159#section-6
 // "[-(2**53)+1, (2**53)-1]"
@@ -64,7 +69,7 @@ impl Serialize for IntSerializer {
                     0,
                 );
                 if unlikely!(ret == -1) {
-                    // #[cfg(not(Py_3_13))]
+                    #[cfg(not(Py_3_13))]
                     ffi!(PyErr_Clear());
 
                     if unlikely!(opt_disabled!(self.opts, BIG_INTEGER)) {

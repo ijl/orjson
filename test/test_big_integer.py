@@ -155,6 +155,7 @@ class TestBigIntegerTests:
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_SUBCLASS) == b'100000000000000000001'
         assert orjson.dumps(-100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_SUBCLASS) == b'-100000000000000000001'
 
+    def test_big_integer_flag_combination_4(self):
         class Secret(str):
             pass
         def default(obj):
@@ -178,7 +179,7 @@ class TestBigIntegerTests:
             raise TypeError
         assert orjson.dumps(User("3b1", "asd", "zxc"), option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATACLASS, default=default) == b'{"id":"3b1","name":"asd"}'
 
-    def test_big_integer_flag_combination_4(self):
+    def test_big_integer_flag_combination_5(self):
         """
         OPT_BIG_INTEGER can be combined with other options 4
         """
