@@ -192,7 +192,7 @@ fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
 
 #[inline(always)]
 fn parse_yy_raw(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
-    parse_big_int(unsafe { (*elem).uni.str_.cast::<i8>() })
+    parse_big_int(unsafe { (*elem).uni.str_.cast::<std::os::raw::c_char>() })
 }
 
 #[inline(always)]
