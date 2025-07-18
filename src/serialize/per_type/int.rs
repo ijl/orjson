@@ -153,8 +153,6 @@ impl Serialize for IntSerializer {
     }
 }
 
-// Refactored: serialize_big_integer is now a standalone function
-#[cfg(feature = "inline_int")]
 pub(crate) fn serialize_big_integer<S>(
     ptr: *mut pyo3_ffi::PyObject,
     serializer: S,
