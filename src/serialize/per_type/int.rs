@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, STRICT_INTEGER};
+use crate::opt::{Opt, STRICT_INTEGER, BIG_INTEGER};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
-
-#[cfg(feature = "inline_int")]
 use std::ffi::CStr;
-
-#[cfg(feature = "inline_int")]
-use crate::opt::{BIG_INTEGER};
 
 // https://tools.ietf.org/html/rfc7159#section-6
 // "[-(2**53)+1, (2**53)-1]"
