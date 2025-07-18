@@ -168,6 +168,7 @@ class TestBigIntegerTests:
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATACLASS) == b'100000000000000000001'
         assert orjson.dumps(-100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATACLASS) == b'-100000000000000000001'
 
+    def test_big_integer_flag_combination_5(self):
         @dataclasses.dataclass
         class User:
             id: str
@@ -179,7 +180,7 @@ class TestBigIntegerTests:
             raise TypeError
         assert orjson.dumps(User("3b1", "asd", "zxc"), option=orjson.OPT_BIG_INTEGER | orjson.OPT_PASSTHROUGH_DATACLASS, default=default) == b'{"id":"3b1","name":"asd"}'
 
-    def test_big_integer_flag_combination_5(self):
+    def test_big_integer_flag_combination_6(self):
         """
         OPT_BIG_INTEGER can be combined with other options 4
         """
@@ -200,7 +201,7 @@ class TestBigIntegerTests:
         # OPT_STRICT_INTEGER
         assert orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER | orjson.OPT_STRICT_INTEGER) == b'100000000000000000001'
 
-    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")        
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_big_integer_flag_combination_numpy(self):
         """
         OPT_BIG_INTEGER can be combined with numpy serialization options
