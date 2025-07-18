@@ -57,10 +57,15 @@ fn main() {
     }
 
     if env::var("ORJSON_DISABLE_YYJSON").is_ok() {
+        println!("\x1b[31mORJSON_DISABLE_YYJSON is set\x1b[0m");
+
         if env::var("CARGO_FEATURE_YYJSON").is_ok() {
             panic!("ORJSON_DISABLE_YYJSON and --features=yyjson both enabled.")
         }
     } else {
+        
+        println!("\x1b[32mORJSON_DISABLE_YYJSON is not set\x1b[0m");
+
         match cc::Build::new()
             .file("include/yyjson/yyjson.c")
             .include("include/yyjson")
