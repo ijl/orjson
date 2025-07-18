@@ -72,23 +72,10 @@ impl Serialize for IntSerializer {
                     #[cfg(not(Py_3_13))]
                     ffi!(PyErr_Clear());
 
-                    if unlikely!(opt_disabled!(self.opts, BIG_INTEGER)) {
-                        err!(SerializeError::Integer64Bits)
+                    if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
+                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
                     } else {
-                        let py_str = ffi!(PyObject_Str(self.ptr));
-                        if py_str.is_null() {
-                            ffi!(PyErr_Clear());
-                            err!(SerializeError::Integer64Bits)
-                        }
-                        let c_str = ffi!(PyUnicode_AsUTF8(py_str));
-                        if c_str.is_null() {
-                            ffi!(PyErr_Clear());
-                            err!(SerializeError::Integer64Bits)
-                        }
-                        let num_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
-                        ffi!(Py_DecRef(py_str));
-                        // Serialize as raw bytes to avoid adding double quotes
-                        return serializer.serialize_bytes(num_str.as_bytes());
+                        err!(SerializeError::Integer64Bits)
                     }
                 }
                 if is_signed == 0 {
@@ -123,11 +110,20 @@ impl Serialize for IntSerializer {
                 let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
                 if unlikely!(val == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
                     ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
+
+                    if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
+                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
+                    } else {
+                        err!(SerializeError::Integer64Bits)
+                    }                    
                 } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                     && val > STRICT_INT_MAX as u64
                 {
-                    err!(SerializeError::Integer53Bits)
+                    if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
+                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer53Bits);
+                    } else {
+                        err!(SerializeError::Integer53Bits)
+                    }                    
                 } else {
                     serializer.serialize_u64(val)
                 }
@@ -135,15 +131,52 @@ impl Serialize for IntSerializer {
                 let val = ffi!(PyLong_AsLongLong(self.ptr));
                 if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
                     ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
+                    
+                    if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
+                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
+                    } else {
+                        err!(SerializeError::Integer64Bits)
+                    } 
                 } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                     && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
                 {
-                    err!(SerializeError::Integer53Bits)
+                    if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
+                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer53Bits);
+                    } else {
+                        err!(SerializeError::Integer53Bits)
+                    }
                 } else {
                     serializer.serialize_i64(val)
                 }
             }
         }
+    }
+}
+
+// Refactored: serialize_big_integer is now a standalone function
+#[cfg(feature = "inline_int")]
+pub(crate) fn serialize_big_integer<S>(
+    ptr: *mut pyo3_ffi::PyObject,
+    serializer: S,
+    error: SerializeError,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    unsafe {
+        let py_str = ffi!(PyObject_Str(ptr));
+        if py_str.is_null() {
+            ffi!(PyErr_Clear());
+            err!(error)
+        }
+        let c_str = ffi!(PyUnicode_AsUTF8(py_str));
+        if c_str.is_null() {
+            ffi!(PyErr_Clear());
+            err!(error)
+        }
+        let num_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
+        ffi!(Py_DecRef(py_str));
+        // Serialize as raw bytes to avoid adding double quotes
+        serializer.serialize_bytes(num_str.as_bytes())
     }
 }
