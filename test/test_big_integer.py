@@ -206,9 +206,9 @@ class TestBigIntegerTests:
         OPT_BIG_INTEGER can be combined with numpy serialization options
         """
         # OPT_SERIALIZE_NUMPY with numpy.float64
-        assert orjson.dumps(numpy.float64(100000000000000000001), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'1e20'
-        assert orjson.dumps(numpy.float64(-100000000000000000001), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'-1e20'
+        assert orjson.dumps(numpy.float64(100000000000000000001), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'1e20' # type: ignore
+        assert orjson.dumps(numpy.float64(-100000000000000000001), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'-1e20' # type: ignore
 
         # OPT_SERIALIZE_NUMPY with numpy.ndarray
-        assert orjson.dumps(numpy.array([100000000000000000001, 123], dtype=numpy.float64), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'[1e20,123.0]'
-        assert orjson.dumps(numpy.array([-100000000000000000001, 321], dtype=numpy.float64), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'[-1e20,321.0]'
+        assert orjson.dumps(numpy.array([100000000000000000001, 123], dtype=numpy.float64), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'[1e20,123.0]' # type: ignore
+        assert orjson.dumps(numpy.array([-100000000000000000001, 321], dtype=numpy.float64), option=orjson.OPT_BIG_INTEGER | orjson.OPT_SERIALIZE_NUMPY) == b'[-1e20,321.0]' # type: ignore
