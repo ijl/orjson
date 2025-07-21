@@ -3,8 +3,8 @@
 
 import orjson
 
-class TestLoadNanAsNoneTests:
 
+class TestLoadNanAsNoneTests:
     def test_nan_inf_in_object(self):
         """
         Test that NaN, Infinity, and -Infinity are loaded as None in dict values with OPT_NAN_AS_NULL.
@@ -17,7 +17,7 @@ class TestLoadNanAsNoneTests:
         """
         Test that NaN, Infinity, and -Infinity are loaded as None in nested lists with OPT_NAN_AS_NULL.
         """
-        data = b'[1, [nan, 2, [Infinity, -Infinity, NaN]], 3]'
+        data = b"[1, [nan, 2, [Infinity, -Infinity, NaN]], 3]"
         result = orjson.loads(data, option=orjson.OPT_NAN_AS_NULL)
         assert result == [1, [None, 2, [None, None, None]], 3]
 
