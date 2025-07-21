@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+mod atomic;
 mod buffer;
 mod bytes;
 pub(crate) mod compat;

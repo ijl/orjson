@@ -3,7 +3,9 @@
 use core::ffi::c_char;
 
 #[cfg(Py_GIL_DISABLED)]
-use std::sync::atomic::{AtomicIsize, AtomicU32, AtomicU64};
+use crate::ffi::atomic::AtomicCULong;
+#[cfg(Py_GIL_DISABLED)]
+use std::sync::atomic::{AtomicIsize, AtomicU32};
 
 use core::ptr::null_mut;
 use pyo3_ffi::{
@@ -106,8 +108,8 @@ pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
 }
 
 #[cfg(Py_GIL_DISABLED)]
-const FRAGMENT_TP_FLAGS: AtomicU64 =
-    AtomicU64::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
+const FRAGMENT_TP_FLAGS: AtomicCULong =
+    AtomicCULong::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
 
 #[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
 const FRAGMENT_TP_FLAGS: core::ffi::c_ulong =
