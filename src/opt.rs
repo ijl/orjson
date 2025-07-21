@@ -14,6 +14,8 @@ pub(crate) const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
 pub(crate) const PASSTHROUGH_DATETIME: Opt = 1 << 9;
 pub(crate) const APPEND_NEWLINE: Opt = 1 << 10;
 pub(crate) const PASSTHROUGH_DATACLASS: Opt = 1 << 11;
+pub(crate) const BIG_INTEGER: Opt = 1 << 12;
+pub(crate) const NAN_AS_NULL: Opt = 1 << 13;
 
 // deprecated
 pub(crate) const SERIALIZE_DATACLASS: Opt = 0;
@@ -38,4 +40,6 @@ pub(crate) const MAX_OPT: i32 = (APPEND_NEWLINE
     | SERIALIZE_UUID
     | SORT_KEYS
     | STRICT_INTEGER
+    | BIG_INTEGER
+    | NAN_AS_NULL
     | UTC_Z) as i32;

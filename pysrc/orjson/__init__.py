@@ -23,5 +23,7 @@ __all__ = (
     "OPT_SERIALIZE_UUID",
     "OPT_SORT_KEYS",
     "OPT_STRICT_INTEGER",
+    "OPT_BIG_INTEGER",
+    "OPT_NAN_AS_NULL",
     "OPT_UTC_Z",
 )

@@ -1,0 +1,52 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.224.2/containers/python-3
+{
+	"name": "orjson - everysk",
+	"build": {
+		"dockerfile": "${localWorkspaceFolder}/.devcontainer/Dockerfile",
+		"context": "${localWorkspaceFolder}",
+		"target": "platform_vscode"
+	},
+	// Script to Auth in Github Container Registry and pull the base image.
+	"initializeCommand": "${localWorkspaceFolder}/.devcontainer/setup.sh",
+	// Wait to build the auth to build the container.
+	"waitFor": "initializeCommand",
+	// Set the container WORKDIR as safe in git.
+	"onCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+	// Use non-root user to ensure security best practices.
+	"remoteUser": "everysk", // https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user
+
+    "customizations": {
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			// "extensions": [
+
+			// ],
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python3",
+				// https://github.com/microsoft/vscode/issues/207813#issuecomment-2020656014
+				"extensions.verifySignature": false
+			}
+		}
+	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/var/app,type=bind,consistency=cached",
+	"workspaceFolder": "/var/app",
+
+	// An array of Docker CLI arguments that should be used when running the container. Defaults to [].
+	// --rm: will delete the container after exit.
+	"runArgs": [
+		"--rm",
+		// "--add-host=api.openfigi.com:69.191.255.166",
+		// "--add-host=connection-dot-prod-platform-service-1.uc.r.appspot.com:142.250.219.52",
+		// "--add-host=connection.everysk.com:34.160.28.223",
+		// "--add-host=datastore.googleapis.com:172.217.162.138",
+		// "--add-host=dev-marketdata-b64yf7mmdq-uc.a.run.app:216.239.34.53",
+		// "--add-host=dev-securitysearch-b64yf7mmdq-uc.a.run.app:216.239.32.53",
+		// "--add-host=dev-server-b64yf7mmdq-uc.a.run.app:216.239.38.53",
+		// "--add-host=oauth2.googleapis.com:172.217.28.10",
+		// "--add-host=secretmanager.googleapis.com:142.251.132.42"
+	],
+	// Start Redis server when open the container, fix for test extension
+	"postStartCommand": "sudo pip install -r requirements.txt && curl -sSf https://sh.rustup.rs | sh -s -- -y && bash -c 'source $HOME/.cargo/env'"
+}

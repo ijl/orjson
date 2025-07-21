@@ -53,6 +53,7 @@ unsafe extern "C" {
     pub fn yyjson_read_opts(
         dat: *mut ::core::ffi::c_char,
         len: usize,
+        flg: u32,
         alc: *const yyjson_alc,
         err: *mut yyjson_read_err,
     ) -> *mut yyjson_doc;
