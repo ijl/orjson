@@ -10,6 +10,9 @@
     ```python
     import orjson
 
+    result = orjson.dumps(100000000000000000001, option=orjson.OPT_BIG_INTEGER)
+    print(result) # b'100000000000000000001'
+
     result = orjson.loads(b'100000000000000000001', option=orjson.OPT_BIG_INTEGER)
     print(result)  # 100000000000000000001
     ```
