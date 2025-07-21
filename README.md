@@ -1,6 +1,6 @@
-# e-json
+# everysk-json
 
-`e-json` is a high-performance JSON library for Python, forked from [`orjson`](https://github.com/ijl/orjson). It provides fast serialization and deserialization, with additional features for handling big integers and special floating-point values.
+`everysk-json` is a high-performance JSON library for Python, forked from [`orjson`](https://github.com/ijl/orjson). It provides fast serialization and deserialization, with additional features for handling big integers and special floating-point values.
 
 ## Features
 
@@ -27,13 +27,17 @@
 ## Installation
 
 ```bash
-pip install e-json
+pip install everysk-json
 ```
 
 ## Usage
 
-`e-json` is a drop-in replacement for `orjson`. Simply import and use the additional options as needed.
+`everysk-json` is a drop-in replacement for `orjson`. Simply import and use the additional options as needed.
 
 ## License
 
-See [LICENSE](./LICENSE) for details.
+Available to you under either the Apache 2 license or MIT license at your choice.
+See [LICENSE-APACHE](./LICENSE-APACHE) or [LICENSE-MIT](./LICENSE-MIT) for details.
+
+
+[![artifact](https://github.com/Everysk/orjson/actions/workflows/artifact.yaml/badge.svg?branch=master)](https://github.com/Everysk/orjson/actions/workflows/artifact.yaml)
