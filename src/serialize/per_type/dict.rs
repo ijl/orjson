@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS, BIG_INTEGER};
+use crate::opt::{BIG_INTEGER, NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{pyobject_to_obtype, ObType};
@@ -390,7 +390,6 @@ fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError>
     }
 }
 
-
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_int(
@@ -409,7 +408,6 @@ fn non_str_int(
         } else {
             Ok(String::from(itoa::Buffer::new().format(ival)))
         }
-
     } else {
         unsafe {
             let py_str = ffi!(PyObject_Str(key));

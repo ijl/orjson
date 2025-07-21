@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::Opt;
 use crate::deserialize::utf8::read_input_to_buf;
 use crate::deserialize::DeserializeError;
+use crate::opt::Opt;
 use crate::typeref::EMPTY_UNICODE;
 use core::ptr::NonNull;
 

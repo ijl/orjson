@@ -15,7 +15,6 @@ pub(crate) fn deserialize(
     data: &'static str,
     opts: Opt,
 ) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
-
     if opt_enabled!(opts, BIG_INTEGER) {
         return Err(DeserializeError::invalid(Cow::Borrowed(
             "OPT_BIG_INTEGER option is not supported for JSON backend",

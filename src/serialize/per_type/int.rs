@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, STRICT_INTEGER, BIG_INTEGER};
+use crate::opt::{Opt, BIG_INTEGER, STRICT_INTEGER};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
 use std::ffi::CStr;
@@ -68,7 +68,11 @@ impl Serialize for IntSerializer {
                     ffi!(PyErr_Clear());
 
                     if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
-                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
+                        return serialize_big_integer(
+                            self.ptr,
+                            serializer,
+                            SerializeError::Integer64Bits,
+                        );
                     } else {
                         err!(SerializeError::Integer64Bits)
                     }
@@ -107,18 +111,26 @@ impl Serialize for IntSerializer {
                     ffi!(PyErr_Clear());
 
                     if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
-                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
+                        return serialize_big_integer(
+                            self.ptr,
+                            serializer,
+                            SerializeError::Integer64Bits,
+                        );
                     } else {
                         err!(SerializeError::Integer64Bits)
-                    }                    
+                    }
                 } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                     && val > STRICT_INT_MAX as u64
                 {
                     if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
-                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer53Bits);
+                        return serialize_big_integer(
+                            self.ptr,
+                            serializer,
+                            SerializeError::Integer53Bits,
+                        );
                     } else {
                         err!(SerializeError::Integer53Bits)
-                    }                    
+                    }
                 } else {
                     serializer.serialize_u64(val)
                 }
@@ -126,17 +138,25 @@ impl Serialize for IntSerializer {
                 let val = ffi!(PyLong_AsLongLong(self.ptr));
                 if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
                     ffi!(PyErr_Clear());
-                    
+
                     if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
-                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer64Bits);
+                        return serialize_big_integer(
+                            self.ptr,
+                            serializer,
+                            SerializeError::Integer64Bits,
+                        );
                     } else {
                         err!(SerializeError::Integer64Bits)
-                    } 
+                    }
                 } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
                     && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
                 {
                     if unlikely!(opt_enabled!(self.opts, BIG_INTEGER)) {
-                        return serialize_big_integer(self.ptr, serializer, SerializeError::Integer53Bits);
+                        return serialize_big_integer(
+                            self.ptr,
+                            serializer,
+                            SerializeError::Integer53Bits,
+                        );
                     } else {
                         err!(SerializeError::Integer53Bits)
                     }

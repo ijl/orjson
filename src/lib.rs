@@ -87,7 +87,7 @@ use pyo3_ffi::{
     PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
     PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
     PyTuple_GET_ITEM, PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS
+    PyUnicode_InternFromString, PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS,
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -169,11 +169,12 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         }
 
         {
-            let loads_doc = c"loads(obj, /, option=None)\n--\n\nDeserialize JSON to Python objects.";
+            let loads_doc =
+                c"loads(obj, /, option=None)\n--\n\nDeserialize JSON to Python objects.";
 
             let wrapped_loads = PyMethodDef {
                 ml_name: c"loads".as_ptr(),
-                ml_meth: PyMethodDefPointer { 
+                ml_meth: PyMethodDefPointer {
                     #[cfg(Py_3_10)]
                     PyCFunctionFastWithKeywords: loads,
                     #[cfg(not(Py_3_10))]
@@ -427,9 +428,7 @@ pub unsafe extern "C" fn loads(
                     return raise_dumps_exception_fixed("Invalid opts");
                 }
             } else {
-                return raise_dumps_exception_fixed(
-                    "loads() got an unexpected keyword argument",
-                );
+                return raise_dumps_exception_fixed("loads() got an unexpected keyword argument");
             }
         }
     }

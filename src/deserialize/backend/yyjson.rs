@@ -3,7 +3,8 @@
 use crate::opt::{Opt, BIG_INTEGER, NAN_AS_NULL};
 
 use crate::deserialize::pyobject::{
-    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64, parse_big_int
+    get_unicode_key, parse_big_int, parse_f64, parse_false, parse_i64, parse_none, parse_true,
+    parse_u64,
 };
 use crate::deserialize::DeserializeError;
 use crate::ffi::yyjson::{
@@ -109,7 +110,7 @@ pub(crate) fn deserialize(
     }
     if opt_enabled!(opts, NAN_AS_NULL) {
         flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
-    }    
+    }
 
     let doc = unsafe {
         yyjson_read_opts(
@@ -160,7 +161,7 @@ enum ElementType {
     False,
     Array,
     Object,
-    Raw
+    Raw,
 }
 
 impl ElementType {
