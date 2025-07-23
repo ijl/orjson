@@ -1088,8 +1088,9 @@ is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.
 
-orjson is tested for amd64, aarch64, and i686 on Linux and cross-compiles for
-arm7, ppc64le, and s390x. It is tested for either aarch64 or amd64 on macOS and
+orjson is tested on native hardware for amd64, aarch64, and i686 on Linux and
+for arm7, ppc64le, and s390x is cross-compiled and may be tested via
+emulation. It is tested for either aarch64 or amd64 on macOS and
 cross-compiles for the other, depending on version. For Windows it is
 tested on amd64 and i686.
 

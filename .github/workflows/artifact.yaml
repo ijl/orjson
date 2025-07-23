@@ -269,6 +269,35 @@ jobs:
         if-no-files-found: "error"
         compression-level: 0
 
+    - name: setup-qemu-container
+      if: "matrix.target.arch == 's390x'"
+      uses: sandervocke/setup-qemu-container@v1
+      with:
+        container: registry.fedoraproject.org/fedora:42
+        arch: ${{ matrix.target.arch }}
+        podman_args: "-v .:/orjson -v /tmp:/tmp --workdir /orjson"
+
+    - name: setup-shell-wrapper
+      uses: sandervocke/setup-shell-wrapper@v1
+
+    - name: Emulated Test
+      if: "matrix.target.arch == 's390x'"
+      shell: wrap-shell {0}
+      env:
+        WRAP_SHELL: run-in-container.sh
+      run: |
+        set -eou pipefail
+
+        dnf install --setopt=install_weak_deps=false -y ${{ matrix.python.interpreter }} python3-uv
+
+        uv venv --python ${{ matrix.python.interpreter }}
+        source .venv/bin/activate
+
+        uv pip install -r test/requirements.txt
+        uv pip install dist/orjson*.whl
+
+        pytest -v test
+
   musllinux_amd64:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

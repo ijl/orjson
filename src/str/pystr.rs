@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::typeref::{EMPTY_UNICODE, STR_TYPE};
+#[cfg(target_endian = "little")]
 use crate::util::isize_to_usize;
-
+#[cfg(target_endian = "little")]
 use core::ffi::c_void;
 use core::ptr::NonNull;
-use pyo3_ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject};
+#[cfg(target_endian = "little")]
+use pyo3_ffi::PyCompactUnicodeObject;
+use pyo3_ffi::{PyASCIIObject, PyObject};
 
 fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     let mut str_size: pyo3_ffi::Py_ssize_t = 0;
@@ -32,29 +35,21 @@ pub fn set_str_create_fn() {
     }
 }
 
-#[cfg(all(Py_3_14, Py_GIL_DISABLED))]
-const STATE_COMPACT_ASCII: u32 = u32::from_le(0b000000000000000000_0_1_1_001_00000000);
-
-#[cfg(not(all(Py_3_14, Py_GIL_DISABLED)))]
-const STATE_COMPACT_ASCII: u32 = u32::from_le(0b000000000000000000000000_0_1_1_001_00);
-
-#[cfg(all(Py_3_14, Py_GIL_DISABLED))]
-const STATE_COMPACT: u32 = u32::from_le(0b000000000000000000_0_0_1_000_00000000);
-
-#[cfg(not(all(Py_3_14, Py_GIL_DISABLED)))]
-const STATE_COMPACT: u32 = u32::from_le(0b000000000000000000000000_0_0_1_000_00);
-
-#[cfg(all(Py_3_14, Py_GIL_DISABLED))]
-const STATE_KIND_MASK: u32 = u32::from_le(0b111_00000000);
-
-#[cfg(all(Py_3_14, Py_GIL_DISABLED))]
+#[cfg(all(target_endian = "little", Py_3_14, Py_GIL_DISABLED))]
 const STATE_KIND_SHIFT: usize = 8;
 
-#[cfg(not(all(Py_3_14, Py_GIL_DISABLED)))]
-const STATE_KIND_MASK: u32 = u32::from_le(0b111_00);
-
-#[cfg(not(all(Py_3_14, Py_GIL_DISABLED)))]
+#[cfg(all(target_endian = "little", not(all(Py_3_14, Py_GIL_DISABLED))))]
 const STATE_KIND_SHIFT: usize = 2;
+
+#[cfg(target_endian = "little")]
+const STATE_KIND_MASK: u32 = 7 << STATE_KIND_SHIFT;
+
+#[cfg(target_endian = "little")]
+const STATE_COMPACT_ASCII: u32 =
+    1 << STATE_KIND_SHIFT | 1 << (STATE_KIND_SHIFT + 3) | 1 << (STATE_KIND_SHIFT + 4);
+
+#[cfg(target_endian = "little")]
+const STATE_COMPACT: u32 = 1 << (STATE_KIND_SHIFT + 3);
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
@@ -96,6 +91,7 @@ impl PyStr {
         }
     }
 
+    #[cfg(target_endian = "little")]
     pub fn hash(&mut self) {
         unsafe {
             let ptr = self.ptr.as_ptr().cast::<PyASCIIObject>();
@@ -118,7 +114,24 @@ impl PyStr {
         }
     }
 
+    #[cfg(not(target_endian = "little"))]
+    pub fn hash(&mut self) {
+        unsafe {
+            let data_ptr = ffi!(PyUnicode_DATA(self.ptr.as_ptr()));
+            #[allow(clippy::cast_possible_wrap)]
+            let num_bytes =
+                ffi!(PyUnicode_KIND(self.ptr.as_ptr())) as isize * ffi!(Py_SIZE(self.ptr.as_ptr()));
+            #[cfg(Py_3_14)]
+            let hash = pyo3_ffi::Py_HashBuffer(data_ptr, num_bytes);
+            #[cfg(not(Py_3_14))]
+            let hash = pyo3_ffi::_Py_HashBytes(data_ptr, num_bytes);
+            (*self.ptr.as_ptr().cast::<PyASCIIObject>()).hash = hash;
+            debug_assert!((*self.ptr.as_ptr().cast::<PyASCIIObject>()).hash != -1);
+        }
+    }
+
     #[inline(always)]
+    #[cfg(target_endian = "little")]
     pub fn to_str(self) -> Option<&'static str> {
         unsafe {
             let op = self.ptr.as_ptr();
@@ -138,6 +151,12 @@ impl PyStr {
                 to_str_via_ffi(op)
             }
         }
+    }
+
+    #[inline(always)]
+    #[cfg(not(target_endian = "little"))]
+    pub fn to_str(self) -> Option<&'static str> {
+        to_str_via_ffi(self.ptr.as_ptr())
     }
 
     pub fn as_ptr(self) -> *mut PyObject {
