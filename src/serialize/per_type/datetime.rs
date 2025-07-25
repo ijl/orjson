@@ -12,9 +12,9 @@ use serde::ser::{Serialize, Serializer};
 macro_rules! write_double_digit {
     ($buf:ident, $value:ident) => {
         if $value < 10 {
-            $buf.push(b'0');
+            $buf.put_u8(b'0');
         }
-        $buf.extend_from_slice(itoa::Buffer::new().format($value).as_bytes());
+        $buf.put_slice(itoa::Buffer::new().format($value).as_bytes());
     };
 }
 
@@ -23,10 +23,8 @@ macro_rules! write_microsecond {
         if $microsecond != 0 {
             let mut buf = itoa::Buffer::new();
             let formatted = buf.format($microsecond);
-            $buf.extend_from_slice(
-                &[b'.', b'0', b'0', b'0', b'0', b'0', b'0'][..(7 - formatted.len())],
-            );
-            $buf.extend_from_slice(formatted.as_bytes());
+            $buf.put_slice(&[b'.', b'0', b'0', b'0', b'0', b'0', b'0'][..(7 - formatted.len())]);
+            $buf.put_slice(formatted.as_bytes());
         }
     };
 }
@@ -42,18 +40,21 @@ impl Date {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) {
+    pub fn write_buf<B>(&self, buf: &mut B)
+    where
+        B: bytes::BufMut,
+    {
         {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
             let mut yearbuf = itoa::Buffer::new();
             let formatted = yearbuf.format(year);
             if unlikely!(year < 1000) {
                 // date-fullyear   = 4DIGIT
-                buf.extend_from_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
+                buf.put_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
             }
-            buf.extend_from_slice(formatted.as_bytes());
+            buf.put_slice(formatted.as_bytes());
         }
-        buf.push(b'-');
+        buf.put_u8(b'-');
         {
             let val_py = ffi!(PyDateTime_GET_MONTH(self.ptr));
             debug_assert!(val_py >= 0);
@@ -61,7 +62,7 @@ impl Date {
             let val = val_py as u32;
             write_double_digit!(buf, val);
         }
-        buf.push(b'-');
+        buf.put_u8(b'-');
         {
             let val_py = ffi!(PyDateTime_GET_DAY(self.ptr));
             debug_assert!(val_py >= 0);
@@ -100,16 +101,19 @@ impl Time {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) -> Result<(), TimeError> {
+    pub fn write_buf<B>(&self, buf: &mut B) -> Result<(), TimeError>
+    where
+        B: bytes::BufMut,
+    {
         if unsafe { (*self.ptr.cast::<pyo3_ffi::PyDateTime_Time>()).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
         write_double_digit!(buf, hour);
-        buf.push(b':');
+        buf.put_u8(b':');
         let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
         write_double_digit!(buf, minute);
-        buf.push(b':');
+        buf.put_u8(b':');
         let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
         write_double_digit!(buf, second);
         if opt_disabled!(self.opts, OMIT_MICROSECONDS) {

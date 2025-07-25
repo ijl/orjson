@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::util::usize_to_isize;
+use bytes::{buf::UninitSlice, BufMut};
+use core::mem::MaybeUninit;
 use core::ptr::NonNull;
 use pyo3_ffi::{PyBytesObject, PyBytes_FromStringAndSize, PyObject, PyVarObject, _PyBytes_Resize};
-use std::io::Error;
 
 const BUFFER_LENGTH: usize = 1024;
 
@@ -14,6 +15,7 @@ pub(crate) struct BytesWriter {
 }
 
 impl BytesWriter {
+    #[inline]
     pub fn default() -> Self {
         BytesWriter {
             cap: BUFFER_LENGTH,
@@ -25,9 +27,12 @@ impl BytesWriter {
         }
     }
 
+    #[inline]
     pub fn bytes_ptr(&mut self) -> NonNull<PyObject> {
         unsafe { NonNull::new_unchecked(self.bytes.cast::<PyObject>()) }
     }
+
+    #[inline]
     pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
         unsafe {
             if append {
@@ -41,6 +46,7 @@ impl BytesWriter {
         }
     }
 
+    #[inline]
     fn buffer_ptr(&self) -> *mut u8 {
         unsafe { (&raw mut (*self.bytes).ob_sval).cast::<u8>().add(self.len) }
     }
@@ -67,22 +73,57 @@ impl BytesWriter {
     }
 }
 
-impl std::io::Write for BytesWriter {
-    fn write(&mut self, _buf: &[u8]) -> Result<usize, Error> {
-        Ok(0)
+unsafe impl BufMut for BytesWriter {
+    #[inline]
+    unsafe fn advance_mut(&mut self, cnt: usize) {
+        self.len += cnt;
     }
 
-    fn write_all(&mut self, _buf: &[u8]) -> Result<(), Error> {
-        Ok(())
+    #[inline]
+    fn chunk_mut(&mut self) -> &mut UninitSlice {
+        unsafe {
+            UninitSlice::uninit(core::slice::from_raw_parts_mut(
+                self.buffer_ptr().cast::<MaybeUninit<u8>>(),
+                self.remaining_mut(),
+            ))
+        }
     }
 
-    fn flush(&mut self) -> Result<(), Error> {
-        Ok(())
+    #[inline]
+    fn remaining_mut(&self) -> usize {
+        self.cap - self.len
+    }
+
+    #[inline]
+    fn put_u8(&mut self, value: u8) {
+        debug_assert!(self.remaining_mut() > 1);
+        unsafe {
+            core::ptr::write(self.buffer_ptr(), value);
+            self.advance_mut(1);
+        }
+    }
+
+    #[inline]
+    fn put_bytes(&mut self, val: u8, cnt: usize) {
+        debug_assert!(self.remaining_mut() > cnt);
+        unsafe {
+            core::ptr::write_bytes(self.buffer_ptr(), val, cnt);
+            self.advance_mut(cnt);
+        };
+    }
+
+    #[inline]
+    fn put_slice(&mut self, src: &[u8]) {
+        debug_assert!(self.remaining_mut() > src.len());
+        unsafe {
+            core::ptr::copy_nonoverlapping(src.as_ptr(), self.buffer_ptr(), src.len());
+            self.advance_mut(src.len());
+        }
     }
 }
 
 // hack based on saethlin's research and patch in https://github.com/serde-rs/json/issues/766
-pub(crate) trait WriteExt: std::io::Write {
+pub(crate) trait WriteExt {
     #[inline]
     fn as_mut_buffer_ptr(&mut self) -> *mut u8 {
         core::ptr::null_mut()
@@ -91,34 +132,6 @@ pub(crate) trait WriteExt: std::io::Write {
     #[inline]
     fn reserve(&mut self, len: usize) {
         let _ = len;
-    }
-
-    #[inline]
-    fn has_capacity(&mut self, _len: usize) -> bool {
-        false
-    }
-
-    #[inline]
-    fn set_written(&mut self, len: usize) {
-        let _ = len;
-    }
-
-    #[inline]
-    unsafe fn write_reserved_fragment(&mut self, val: &[u8]) -> Result<(), Error> {
-        let _ = val;
-        Ok(())
-    }
-
-    #[inline]
-    unsafe fn write_reserved_punctuation(&mut self, val: u8) -> Result<(), Error> {
-        let _ = val;
-        Ok(())
-    }
-
-    #[inline]
-    unsafe fn write_reserved_indent(&mut self, len: usize) -> Result<(), Error> {
-        let _ = len;
-        Ok(())
     }
 }
 
@@ -134,42 +147,5 @@ impl WriteExt for &mut BytesWriter {
         if unlikely!(end_length >= self.cap) {
             self.grow(end_length);
         }
-    }
-
-    #[inline]
-    fn has_capacity(&mut self, len: usize) -> bool {
-        self.len + len <= self.cap
-    }
-
-    #[inline(always)]
-    fn set_written(&mut self, len: usize) {
-        self.len += len;
-    }
-
-    unsafe fn write_reserved_fragment(&mut self, val: &[u8]) -> Result<(), Error> {
-        let to_write = val.len();
-        unsafe {
-            core::ptr::copy_nonoverlapping(val.as_ptr(), self.buffer_ptr(), to_write);
-        };
-        self.len += to_write;
-        Ok(())
-    }
-
-    #[inline(always)]
-    unsafe fn write_reserved_punctuation(&mut self, val: u8) -> Result<(), Error> {
-        unsafe {
-            core::ptr::write(self.buffer_ptr(), val);
-        }
-        self.len += 1;
-        Ok(())
-    }
-
-    #[inline(always)]
-    unsafe fn write_reserved_indent(&mut self, len: usize) -> Result<(), Error> {
-        unsafe {
-            core::ptr::write_bytes(self.buffer_ptr(), b' ', len);
-        };
-        self.len += len;
-        Ok(())
     }
 }

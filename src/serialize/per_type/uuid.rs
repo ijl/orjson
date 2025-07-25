@@ -16,7 +16,10 @@ impl UUID {
     }
 
     #[inline(never)]
-    pub fn write_buf(&self, buf: &mut SmallFixedBuffer) {
+    pub fn write_buf<B>(&self, buf: &mut B)
+    where
+        B: bytes::BufMut,
+    {
         let value: u128;
         {
             // test_uuid_immutable, test_uuid_int
@@ -46,13 +49,16 @@ impl UUID {
             value = u128::from_le_bytes(buffer);
         }
         unsafe {
-            debug_assert!(buf.len() == 0);
+            let buffer_length: usize = 40;
+            debug_assert!(buf.remaining_mut() >= buffer_length);
             let len = uuid::Uuid::from_u128(value)
                 .hyphenated()
-                .encode_lower(buf.as_mut_slice())
+                .encode_lower(core::slice::from_raw_parts_mut(
+                    buf.chunk_mut().as_mut_ptr(),
+                    buffer_length,
+                ))
                 .len();
-            buf.set_written(len);
-            debug_assert!(buf.len() == len);
+            buf.advance_mut(len);
         }
     }
 }

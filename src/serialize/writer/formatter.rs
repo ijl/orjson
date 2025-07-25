@@ -6,7 +6,7 @@ use std::io;
 
 macro_rules! debug_assert_has_capacity {
     ($writer:expr) => {
-        debug_assert!($writer.has_capacity(4))
+        debug_assert!($writer.remaining_mut() > 4)
     };
 }
 
@@ -14,37 +14,36 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_null<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
-            writer.write_reserved_fragment(b"null")
+            writer.put_slice(b"null");
+            Ok(())
         }
     }
 
     #[inline]
     fn write_bool<W>(&mut self, writer: &mut W, value: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
-        let s = if value {
-            b"true" as &[u8]
-        } else {
-            b"false" as &[u8]
-        };
         reserve_minimum!(writer);
-        unsafe { writer.write_reserved_fragment(s) }
+        unsafe {
+            writer.put_slice(if value { b"true" } else { b"false" });
+        }
+        Ok(())
     }
 
     #[inline]
     fn write_i32<W>(&mut self, writer: &mut W, value: i32) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -52,12 +51,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_i64<W>(&mut self, writer: &mut W, value: i64) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -65,12 +64,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_u32<W>(&mut self, writer: &mut W, value: u32) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -78,12 +77,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_u64<W>(&mut self, writer: &mut W, value: u64) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -91,12 +90,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_f32<W>(&mut self, writer: &mut W, value: f32) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = ryu::raw::format32(value, writer.as_mut_buffer_ptr());
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -104,12 +103,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn write_f64<W>(&mut self, writer: &mut W, value: f64) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         unsafe {
             reserve_minimum!(writer);
             let len = ryu::raw::format64(value, writer.as_mut_buffer_ptr());
-            writer.set_written(len);
+            writer.advance_mut(len);
         }
         Ok(())
     }
@@ -117,11 +116,11 @@ pub(crate) trait Formatter {
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         reserve_minimum!(writer);
         unsafe {
-            writer.write_reserved_punctuation(b'[').unwrap();
+            writer.put_u8(b'[');
         }
         Ok(())
     }
@@ -129,11 +128,11 @@ pub(crate) trait Formatter {
     #[inline]
     fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
         unsafe {
-            writer.write_reserved_punctuation(b']').unwrap();
+            writer.put_u8(b']');
         }
         Ok(())
     }
@@ -141,11 +140,11 @@ pub(crate) trait Formatter {
     #[inline]
     fn begin_array_value<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
         if !first {
-            unsafe { writer.write_reserved_punctuation(b',').unwrap() }
+            unsafe { writer.put_u8(b',') }
         }
         Ok(())
     }
@@ -153,7 +152,7 @@ pub(crate) trait Formatter {
     #[inline]
     fn end_array_value<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized,
     {
         Ok(())
     }
@@ -161,11 +160,11 @@ pub(crate) trait Formatter {
     #[inline]
     fn begin_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         reserve_minimum!(writer);
         unsafe {
-            writer.write_reserved_punctuation(b'{').unwrap();
+            writer.put_u8(b'{');
         }
         Ok(())
     }
@@ -173,11 +172,11 @@ pub(crate) trait Formatter {
     #[inline]
     fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
         unsafe {
-            writer.write_reserved_punctuation(b'}').unwrap();
+            writer.put_u8(b'}');
         }
         Ok(())
     }
@@ -185,12 +184,12 @@ pub(crate) trait Formatter {
     #[inline]
     fn begin_object_key<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
         if !first {
             unsafe {
-                writer.write_reserved_punctuation(b',').unwrap();
+                writer.put_u8(b',');
             }
         }
         Ok(())
@@ -199,7 +198,7 @@ pub(crate) trait Formatter {
     #[inline]
     fn end_object_key<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized,
     {
         Ok(())
     }
@@ -207,16 +206,19 @@ pub(crate) trait Formatter {
     #[inline]
     fn begin_object_value<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
-        unsafe { writer.write_reserved_punctuation(b':') }
+        unsafe {
+            writer.put_u8(b':');
+        }
+        Ok(())
     }
 
     #[inline]
     fn end_object_value<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized,
     {
         Ok(())
     }
@@ -245,18 +247,21 @@ impl Formatter for PrettyFormatter {
     #[inline]
     fn begin_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         self.current_indent += 1;
         self.has_value = false;
         reserve_minimum!(writer);
-        unsafe { writer.write_reserved_punctuation(b'[') }
+        unsafe {
+            writer.put_u8(b'[');
+        }
+        Ok(())
     }
 
     #[inline]
     fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
@@ -264,24 +269,25 @@ impl Formatter for PrettyFormatter {
 
         unsafe {
             if self.has_value {
-                writer.write_reserved_punctuation(b'\n')?;
-                writer.write_reserved_indent(num_spaces)?;
+                writer.put_u8(b'\n');
+                writer.put_bytes(b' ', num_spaces);
             }
-            writer.write_reserved_punctuation(b']')
+            writer.put_u8(b']');
+            Ok(())
         }
     }
 
     #[inline]
     fn begin_array_value<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         let num_spaces = self.current_indent * 2;
         reserve_pretty!(writer, num_spaces);
 
         unsafe {
-            writer.write_reserved_fragment(if first { b"\n" } else { b",\n" })?;
-            writer.write_reserved_indent(num_spaces)?;
+            writer.put_slice(if first { b"\n" } else { b",\n" });
+            writer.put_bytes(b' ', num_spaces);
         };
         Ok(())
     }
@@ -289,7 +295,7 @@ impl Formatter for PrettyFormatter {
     #[inline]
     fn end_array_value<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized,
     {
         self.has_value = true;
         Ok(())
@@ -298,19 +304,22 @@ impl Formatter for PrettyFormatter {
     #[inline]
     fn begin_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         self.current_indent += 1;
         self.has_value = false;
 
         reserve_minimum!(writer);
-        unsafe { writer.write_reserved_punctuation(b'{') }
+        unsafe {
+            writer.put_u8(b'{');
+        }
+        Ok(())
     }
 
     #[inline]
     fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
@@ -318,24 +327,25 @@ impl Formatter for PrettyFormatter {
 
         unsafe {
             if self.has_value {
-                writer.write_reserved_punctuation(b'\n')?;
-                writer.write_reserved_indent(num_spaces)?;
+                writer.put_u8(b'\n');
+                writer.put_bytes(b' ', num_spaces);
             }
 
-            writer.write_reserved_punctuation(b'}')
+            writer.put_u8(b'}');
+            Ok(())
         }
     }
 
     #[inline]
     fn begin_object_key<W>(&mut self, writer: &mut W, first: bool) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         let num_spaces = self.current_indent * 2;
         reserve_pretty!(writer, num_spaces);
         unsafe {
-            writer.write_reserved_fragment(if first { b"\n" } else { b",\n" })?;
-            writer.write_reserved_indent(num_spaces)?;
+            writer.put_slice(if first { b"\n" } else { b",\n" });
+            writer.put_bytes(b' ', num_spaces);
         }
         Ok(())
     }
@@ -343,11 +353,11 @@ impl Formatter for PrettyFormatter {
     #[inline]
     fn begin_object_value<W>(&mut self, writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write + WriteExt,
+        W: ?Sized + WriteExt + bytes::BufMut,
     {
         reserve_minimum!(writer);
         unsafe {
-            writer.write_reserved_fragment(b": ").unwrap();
+            writer.put_slice(b": ");
         }
         Ok(())
     }
@@ -355,7 +365,7 @@ impl Formatter for PrettyFormatter {
     #[inline]
     fn end_object_value<W>(&mut self, _writer: &mut W) -> io::Result<()>
     where
-        W: ?Sized + io::Write,
+        W: ?Sized,
     {
         self.has_value = true;
         Ok(())

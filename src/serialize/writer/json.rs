@@ -5,7 +5,6 @@ use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFor
 use crate::serialize::writer::WriteExt;
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
-use std::io;
 
 pub(crate) struct Serializer<W, F = CompactFormatter> {
     writer: W,
@@ -14,7 +13,7 @@ pub(crate) struct Serializer<W, F = CompactFormatter> {
 
 impl<W> Serializer<W>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
 {
     #[inline]
     pub fn new(writer: W) -> Self {
@@ -24,7 +23,7 @@ where
 
 impl<W> Serializer<W, PrettyFormatter>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
 {
     #[inline]
     pub fn pretty(writer: W) -> Self {
@@ -34,7 +33,7 @@ where
 
 impl<W, F> Serializer<W, F>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     F: Formatter,
 {
     #[inline]
@@ -45,7 +44,7 @@ where
 
 impl<'a, W, F> ser::Serializer for &'a mut Serializer<W, F>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     F: Formatter,
 {
     type Ok = ();
@@ -153,7 +152,7 @@ where
     fn serialize_bytes(self, value: &[u8]) -> Result<()> {
         self.writer.reserve(value.len() + 32);
         unsafe {
-            self.writer.write_reserved_fragment(value).unwrap();
+            self.writer.put_slice(value);
         }
         Ok(())
     }
@@ -170,11 +169,9 @@ where
         debug_assert!(name.len() <= 36);
         reserve_minimum!(self.writer);
         unsafe {
-            self.writer.write_reserved_punctuation(b'"').unwrap();
-            self.writer
-                .write_reserved_fragment(name.as_bytes())
-                .unwrap();
-            self.writer.write_reserved_punctuation(b'"').unwrap();
+            self.writer.put_u8(b'"');
+            self.writer.put_slice(name.as_bytes());
+            self.writer.put_u8(b'"');
         }
         Ok(())
     }
@@ -293,7 +290,7 @@ pub(crate) struct Compound<'a, W: 'a, F: 'a> {
 
 impl<W, F> ser::SerializeSeq for Compound<'_, W, F>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     F: Formatter,
 {
     type Ok = ();
@@ -327,7 +324,7 @@ where
 
 impl<W, F> ser::SerializeMap for Compound<'_, W, F>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     F: Formatter,
 {
     type Ok = ();
@@ -392,7 +389,7 @@ struct MapKeySerializer<'a, W: 'a, F: 'a> {
 
 impl<W, F> ser::Serializer for MapKeySerializer<'_, W, F>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     F: Formatter,
 {
     type Ok = ();
@@ -588,7 +585,7 @@ pub(crate) fn set_str_formatter_fn() {
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
-    W: ?Sized + io::Write + WriteExt,
+    W: ?Sized + WriteExt + bytes::BufMut,
 {
     unsafe {
         reserve_str!(writer, value);
@@ -599,7 +596,7 @@ where
             value.len(),
         );
 
-        writer.set_written(written);
+        writer.advance_mut(written);
     }
 }
 
@@ -607,7 +604,7 @@ where
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
-    W: ?Sized + io::Write + WriteExt,
+    W: ?Sized + WriteExt + bytes::BufMut,
 {
     unsafe {
         reserve_str!(writer, value);
@@ -618,7 +615,7 @@ where
             value.len(),
         );
 
-        writer.set_written(written);
+        writer.advance_mut(written);
     }
 }
 
@@ -630,7 +627,7 @@ where
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
-    W: ?Sized + io::Write + WriteExt,
+    W: ?Sized + WriteExt + bytes::BufMut,
 {
     unsafe {
         reserve_str!(writer, value);
@@ -641,7 +638,7 @@ where
             value.len(),
         );
 
-        writer.set_written(written);
+        writer.advance_mut(written);
     }
 }
 
@@ -649,7 +646,7 @@ where
 #[inline(always)]
 fn format_escaped_str<W>(writer: &mut W, value: &str)
 where
-    W: ?Sized + io::Write + WriteExt,
+    W: ?Sized + WriteExt + bytes::BufMut,
 {
     unsafe {
         reserve_str!(writer, value);
@@ -660,14 +657,14 @@ where
             value.len(),
         );
 
-        writer.set_written(written);
+        writer.advance_mut(written);
     }
 }
 
 #[inline]
 pub(crate) fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::new(writer);
@@ -677,7 +674,7 @@ where
 #[inline]
 pub(crate) fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
 where
-    W: io::Write + WriteExt,
+    W: WriteExt + bytes::BufMut,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::pretty(writer);
