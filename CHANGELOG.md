@@ -1,6 +1,17 @@
 # Changelog
 
 
+## 3.11.1 - 2025-07-25
+
+### Changed
+
+- Publish PyPI wheels for CPython 3.14.
+
+### Fixed
+
+- Fix `str` on big-endian architectures.
+
+
 ## 3.11.0 - 2025-07-15
 
 ### Changed
