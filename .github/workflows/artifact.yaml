@@ -80,7 +80,7 @@ jobs:
       matrix:
         python: [
           { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
-          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: true },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.11', compatibility: "manylinux_2_17", publish: true },
@@ -142,7 +142,7 @@ jobs:
       matrix:
         python: [
           { interpreter: 'python3.14t', compatibility: "manylinux_2_34", publish: false },
-          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: false },
+          { interpreter: 'python3.14', compatibility: "manylinux_2_34", publish: true },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.11', compatibility: "manylinux_2_17", publish: true },
@@ -201,11 +201,12 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { interpreter: 'python3.13', abi: 'cp313-cp313' },
-          { interpreter: 'python3.12', abi: 'cp312-cp312' },
-          { interpreter: 'python3.11', abi: 'cp311-cp311' },
-          { interpreter: 'python3.10', abi: 'cp310-cp310' },
-          { interpreter: 'python3.9', abi: 'cp39-cp39' },
+          # { interpreter: 'python3.14', abi: 'cp314-cp314', manylinux: 'manylinux_2_34', publish: true },
+          { interpreter: 'python3.13', abi: 'cp313-cp313', manylinux: 'manylinux_2_17', publish: true },
+          { interpreter: 'python3.12', abi: 'cp312-cp312', manylinux: 'manylinux_2_17', publish: true },
+          { interpreter: 'python3.11', abi: 'cp311-cp311', manylinux: 'manylinux_2_17', publish: true },
+          { interpreter: 'python3.10', abi: 'cp310-cp310', manylinux: 'manylinux_2_17', publish: true },
+          { interpreter: 'python3.9', abi: 'cp39-cp39', manylinux: 'manylinux_2_17', publish: true },
         ]
         target: [
           {
@@ -256,10 +257,11 @@ jobs:
         target: "${{ matrix.target.target }}"
         rust-toolchain: "${{ env.RUST_TOOLCHAIN }}"
         rustup-components: rust-src
-        manylinux: manylinux_2_17
+        manylinux: "${{ matrix.python.manylinux }}"
         args: --release --strip --out=dist --features=${{ matrix.target.features }} -i ${{ matrix.python.interpreter }}
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: "orjson_manylinux_${{ matrix.target.arch }}_${{ matrix.python.interpreter }}"
@@ -305,11 +307,12 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13', pytest: '1' },
-          { version: '3.12', pytest: '1' },
-          { version: '3.11', pytest: '0' },
-          { version: '3.10', pytest: '0' },
-          { version: '3.9', pytest: '0' },
+          { version: '3.14', pytest: '1', publish: true },
+          { version: '3.13', pytest: '1', publish: true },
+          { version: '3.12', pytest: '1', publish: true },
+          { version: '3.11', pytest: '0', publish: true },
+          { version: '3.10', pytest: '0', publish: true },
+          { version: '3.9', pytest: '0', publish: true },
         ]
         platform:
           - target: x86_64-unknown-linux-musl
@@ -345,7 +348,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.09-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.25-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -363,6 +366,7 @@ jobs:
           fi
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_musllinux_${{ matrix.platform.arch }}_${{ matrix.python.version }}
@@ -379,11 +383,12 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.13' },
-          { version: '3.12' },
-          { version: '3.11' },
-          { version: '3.10' },
-          { version: '3.9' },
+          { version: '3.14', publish: true },
+          { version: '3.13', publish: true },
+          { version: '3.12', publish: true },
+          { version: '3.11', publish: true },
+          { version: '3.10', publish: true },
+          { version: '3.9', publish: true },
         ]
         platform:
           - target: aarch64-unknown-linux-musl
@@ -419,7 +424,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.09-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.25-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -434,6 +439,7 @@ jobs:
           venv/bin/python -m pytest -v test
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_musllinux_${{ matrix.platform.arch }}_${{ matrix.python.version }}
@@ -450,6 +456,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', macosx_target: "15.0", publish: true },
           { version: '3.13', macosx_target: "15.0", publish: true },
           { version: '3.12', macosx_target: "15.0", publish: true },
           { version: '3.11', macosx_target: "15.0", publish: true },
@@ -469,6 +476,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: "${{ matrix.python.version }}"
 
     - uses: dtolnay/rust-toolchain@master
@@ -530,6 +538,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', macosx_target: "10.15", publish: true },
           { version: '3.13', macosx_target: "10.15", publish: true },
           { version: '3.12', macosx_target: "10.15", publish: true },
           { version: '3.11', macosx_target: "10.15", publish: true },
@@ -552,6 +561,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: "${{ matrix.python.version }}"
 
     - uses: dtolnay/rust-toolchain@master
@@ -613,7 +623,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
-          { version: '3.9', macosx_target: "10.15" },
+          { version: '3.9', macosx_target: "10.15", publish: true },
         ]
     env:
       CC: "clang"
@@ -632,6 +642,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: "${{ matrix.python.version }}"
 
     - uses: dtolnay/rust-toolchain@master
@@ -676,6 +687,7 @@ jobs:
     - run: source .venv/bin/activate && ./integration/run init
 
     - name: Store wheels
+      if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
         name: orjson_universal2_amd64_${{ matrix.python.version }}
@@ -692,6 +704,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', publish: true },
           { version: '3.13', publish: true },
           { version: '3.12', publish: true },
           { version: '3.11', publish: true },
@@ -716,6 +729,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: "${{ matrix.python.version }}"
         architecture: "${{ matrix.platform.arch }}"
 
@@ -762,6 +776,7 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { version: '3.14', publish: true },
           { version: '3.13', publish: true },
           { version: '3.12', publish: true },
           { version: '3.11', publish: true },
@@ -781,6 +796,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
+        allow-prereleases: true
         python-version: "${{ matrix.python.version }}"
         architecture: "arm64"
 

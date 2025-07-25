@@ -5,6 +5,7 @@
 pub(crate) const _Py_IMMORTAL_REFCNT_LOCAL: u32 = u32::MAX;
 
 #[cfg(all(Py_3_14, target_pointer_width = "32"))]
+#[allow(non_upper_case_globals)]
 pub(crate) const _Py_IMMORTAL_MINIMUM_REFCNT: pyo3_ffi::Py_ssize_t =
     ((1 as core::ffi::c_long) << (30 as core::ffi::c_long)) as pyo3_ffi::Py_ssize_t;
 

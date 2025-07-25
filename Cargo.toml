@@ -38,6 +38,7 @@ yyjson = []
 
 # Features detected by build.rs. Do not specify.
 avx512 = []
+c_ulong_32 = []
 generic_simd = []
 inline_int = []
 intrinsics = []
