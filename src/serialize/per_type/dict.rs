@@ -111,7 +111,7 @@ macro_rules! impl_serialize_entry {
             }
             ObType::Float => {
                 $map.serialize_key($key).unwrap();
-                $map.serialize_value(&FloatSerializer::new($value))?;
+                $map.serialize_value(&FloatSerializer::new($value, $self.state.opts()))?;
             }
             ObType::Bool => {
                 $map.serialize_key($key).unwrap();

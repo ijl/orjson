@@ -11,6 +11,7 @@ __all__ = (
     "JSONEncodeError",
     "loads",
     "OPT_APPEND_NEWLINE",
+    "OPT_FAIL_ON_INVALID_FLOAT",
     "OPT_INDENT_2",
     "OPT_NAIVE_UTC",
     "OPT_NON_STR_KEYS",
