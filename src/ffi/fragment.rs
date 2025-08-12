@@ -74,7 +74,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
             raise_args_exception();
             null_mut()
         } else {
-            let contents = ffi!(PyTuple_GET_ITEM(args, 0));
+            let contents = crate::ffi::PyTuple_GET_ITEM(args, 0);
             Py_INCREF(contents);
             let obj = Box::new(Fragment {
                 #[cfg(Py_GIL_DISABLED)]
