@@ -1090,9 +1090,8 @@ nightly.
 
 orjson is tested on native hardware for amd64, aarch64, and i686 on Linux and
 for arm7, ppc64le, and s390x is cross-compiled and may be tested via
-emulation. It is tested for either aarch64 or amd64 on macOS and
-cross-compiles for the other, depending on version. For Windows it is
-tested on amd64 and i686.
+emulation. It is tested for aarch64 on macOS and cross-compiles for amd64. For
+Windows it is tested on amd64, i686, and aarch64.
 
 There are no runtime dependencies other than libc.
 
