@@ -23,30 +23,32 @@ pub(crate) const _Py_IMMORTAL_REFCNT: pyo3_ffi::Py_ssize_t = {
 #[inline(always)]
 #[allow(non_snake_case)]
 pub(crate) unsafe fn _Py_IsImmortal(op: *mut pyo3_ffi::PyObject) -> core::ffi::c_int {
-    #[cfg(all(target_pointer_width = "64", not(Py_GIL_DISABLED)))]
-    {
-        (((*op).ob_refcnt.ob_refcnt as pyo3_ffi::PY_INT32_T) < 0) as core::ffi::c_int
-    }
-
-    #[cfg(all(target_pointer_width = "32", not(Py_GIL_DISABLED)))]
-    {
-        #[cfg(not(Py_3_14))]
+    unsafe {
+        #[cfg(all(target_pointer_width = "64", not(Py_GIL_DISABLED)))]
         {
-            ((*op).ob_refcnt.ob_refcnt == _Py_IMMORTAL_REFCNT) as core::ffi::c_int
+            (((*op).ob_refcnt.ob_refcnt as pyo3_ffi::PY_INT32_T) < 0) as core::ffi::c_int
         }
 
-        #[cfg(Py_3_14)]
+        #[cfg(all(target_pointer_width = "32", not(Py_GIL_DISABLED)))]
         {
-            ((*op).ob_refcnt.ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT) as core::ffi::c_int
-        }
-    }
+            #[cfg(not(Py_3_14))]
+            {
+                ((*op).ob_refcnt.ob_refcnt == _Py_IMMORTAL_REFCNT) as core::ffi::c_int
+            }
 
-    #[cfg(Py_GIL_DISABLED)]
-    {
-        ((*op)
-            .ob_ref_local
-            .load(std::sync::atomic::Ordering::Relaxed)
-            == _Py_IMMORTAL_REFCNT_LOCAL) as core::ffi::c_int
+            #[cfg(Py_3_14)]
+            {
+                ((*op).ob_refcnt.ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT) as core::ffi::c_int
+            }
+        }
+
+        #[cfg(Py_GIL_DISABLED)]
+        {
+            ((*op)
+                .ob_ref_local
+                .load(std::sync::atomic::Ordering::Relaxed)
+                == _Py_IMMORTAL_REFCNT_LOCAL) as core::ffi::c_int
+        }
     }
 }
 

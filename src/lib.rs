@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512, avx512_target_feature))] // MSRV 1.89
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
