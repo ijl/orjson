@@ -17,6 +17,7 @@ class Fragment(tuple):
     contents: bytes | str
 
 OPT_APPEND_NEWLINE: int
+OPT_ENSURE_ASCII: int
 OPT_INDENT_2: int
 OPT_NAIVE_UTC: int
 OPT_NON_STR_KEYS: int

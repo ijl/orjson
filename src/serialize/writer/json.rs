@@ -9,6 +9,7 @@ use serde_json::error::{Error, Result};
 pub(crate) struct Serializer<W, F = CompactFormatter> {
     writer: W,
     formatter: F,
+    ensure_ascii: bool,
 }
 
 impl<W> Serializer<W>
@@ -17,7 +18,12 @@ where
 {
     #[inline]
     pub fn new(writer: W) -> Self {
-        Serializer::with_formatter(writer, CompactFormatter)
+        Serializer::with_formatter(writer, CompactFormatter, false)
+    }
+
+    #[inline]
+    pub fn with_ascii(writer: W) -> Self {
+        Serializer::with_formatter(writer, CompactFormatter, true)
     }
 }
 
@@ -27,7 +33,12 @@ where
 {
     #[inline]
     pub fn pretty(writer: W) -> Self {
-        Serializer::with_formatter(writer, PrettyFormatter::new())
+        Serializer::with_formatter(writer, PrettyFormatter::new(), false)
+    }
+
+    #[inline]
+    pub fn pretty_ascii(writer: W) -> Self {
+        Serializer::with_formatter(writer, PrettyFormatter::new(), true)
     }
 }
 
@@ -37,8 +48,12 @@ where
     F: Formatter,
 {
     #[inline]
-    pub fn with_formatter(writer: W, formatter: F) -> Self {
-        Serializer { writer, formatter }
+    pub fn with_formatter(writer: W, formatter: F, ensure_ascii: bool) -> Self {
+        Serializer {
+            writer,
+            formatter,
+            ensure_ascii,
+        }
     }
 }
 
@@ -144,7 +159,11 @@ where
 
     #[inline(always)]
     fn serialize_str(self, value: &str) -> Result<()> {
-        format_escaped_str(&mut self.writer, value);
+        if self.ensure_ascii {
+            format_escaped_str_ascii(&mut self.writer, value);
+        } else {
+            format_escaped_str(&mut self.writer, value);
+        }
         Ok(())
     }
 
@@ -661,6 +680,76 @@ where
     }
 }
 
+fn format_escaped_str_ascii<W>(writer: &mut W, value: &str)
+where
+    W: ?Sized + io::Write + WriteExt,
+{
+    // Worst case: every char becomes \uXXXX (6 bytes), plus surrounding quotes (2 bytes)
+    writer.reserve(value.len() * 6 + 2);
+
+    unsafe {
+        writer.write_reserved_punctuation(b'"').unwrap();
+
+        for c in value.chars() {
+            match c {
+                '"' => writer.write_reserved_fragment(b"\\\"").unwrap(),
+                '\\' => writer.write_reserved_fragment(b"\\\\").unwrap(),
+                '\u{08}' => writer.write_reserved_fragment(b"\\b").unwrap(),
+                '\u{0C}' => writer.write_reserved_fragment(b"\\f").unwrap(),
+                '\n' => writer.write_reserved_fragment(b"\\n").unwrap(),
+                '\r' => writer.write_reserved_fragment(b"\\r").unwrap(),
+                '\t' => writer.write_reserved_fragment(b"\\t").unwrap(),
+                c if c.is_ascii() => {
+                    let mut buf = [0u8; 4];
+                    let s = c.encode_utf8(&mut buf);
+                    writer.write_reserved_fragment(s.as_bytes()).unwrap();
+                }
+                c => {
+                    let code = c as u32;
+                    let mut buf = [0u8; 12]; // 12 is enough for "\\uXXXX\\uXXXX".
+                    let written = if code <= 0xFFFF {
+                        // Encode "basic multilingual plane" value: "\\uXXXX".
+                        write_u_escape(&mut buf[..], code);
+                        6
+                    } else {
+                        // Encode surrogate pair: "\\uXXXX\\uXXXX".
+                        let code = code - 0x1_0000;
+                        let high = 0xD800 | ((code >> 10) & 0x3FF);
+                        let low = 0xDC00 | (code & 0x3FF);
+                        write_u_escape(&mut buf[..], high);
+                        write_u_escape(&mut buf[6..], low);
+                        12
+                    };
+                    writer.write_reserved_fragment(&buf[..written]).unwrap();
+                }
+            }
+        }
+
+        writer.write_reserved_punctuation(b'"').unwrap();
+    }
+}
+
+/// Writes a `\uXXXX` escape into the buffer. Always writes exactly 6 bytes.
+fn write_u_escape(buf: &mut [u8], code: u32) -> () {
+    // Always writes exactly 6 bytes: \uXXXX
+    debug_assert!(code <= 0xFFFF);
+    buf[0] = b'\\';
+    buf[1] = b'u';
+
+    fn hex_digit(n: u8) -> u8 {
+        match n {
+            0..=9 => b'0' + n,
+            10..=15 => b'a' + (n - 10),
+            _ => unreachable!(),
+        }
+    }
+
+    buf[2] = hex_digit(((code >> 12) & 0xF) as u8);
+    buf[3] = hex_digit(((code >> 8) & 0xF) as u8);
+    buf[4] = hex_digit(((code >> 4) & 0xF) as u8);
+    buf[5] = hex_digit((code & 0xF) as u8);
+}
+
 #[inline]
 pub(crate) fn to_writer<W, T>(writer: W, value: &T) -> Result<()>
 where
@@ -672,11 +761,31 @@ where
 }
 
 #[inline]
+pub(crate) fn to_writer_ascii<W, T>(writer: W, value: &T) -> Result<()>
+where
+    W: io::Write + WriteExt,
+    T: ?Sized + Serialize,
+{
+    let mut ser = Serializer::with_ascii(writer);
+    value.serialize(&mut ser)
+}
+
+#[inline]
 pub(crate) fn to_writer_pretty<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: WriteExt + bytes::BufMut,
     T: ?Sized + Serialize,
 {
     let mut ser = Serializer::pretty(writer);
+    value.serialize(&mut ser)
+}
+
+#[inline]
+pub(crate) fn to_writer_pretty_ascii<W, T>(writer: W, value: &T) -> Result<()>
+where
+    W: io::Write + WriteExt,
+    T: ?Sized + Serialize,
+{
+    let mut ser = Serializer::pretty_ascii(writer);
     value.serialize(&mut ser)
 }
