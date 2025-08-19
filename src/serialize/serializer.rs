@@ -64,7 +64,14 @@ impl Serialize for PyObjectSerializer {
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
             ObType::Int => IntSerializer::new(self.ptr, self.state.opts()).serialize(serializer),
             ObType::None => NoneSerializer::new().serialize(serializer),
-            ObType::Float => FloatSerializer::new(self.ptr, self.state.opts()).serialize(serializer),
+            ObType::Float => {
+                let val = ffi!(PyFloat_AS_DOUBLE(self.ptr));
+                if val.is_nan() || val.is_infinite() {
+                    DefaultSerializer::new(self).serialize(serializer)
+                } else {
+                    FloatSerializer::new(self.ptr, self.state.opts()).serialize(serializer)
+                }
+            }
             ObType::Bool => BoolSerializer::new(self.ptr).serialize(serializer),
             ObType::Datetime => DateTime::new(self.ptr, self.state.opts()).serialize(serializer),
             ObType::Date => Date::new(self.ptr).serialize(serializer),

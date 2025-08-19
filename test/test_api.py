@@ -170,7 +170,7 @@ class TestApi:
         dumps() option out of range high
         """
         with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps(True, option=1 << 12)
+            orjson.dumps(True, option=1 << 13)
 
     def test_opts_multiple(self):
         """
