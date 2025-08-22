@@ -2,7 +2,7 @@
 
 use serde::ser::{Serialize, Serializer};
 
-use crate::{opt::{Opt, FAIL_ON_INVALID_FLOAT}, serialize::error::SerializeError};
+use crate::{opt::{Opt, STRICT_FLOAT}, serialize::error::SerializeError};
 
 pub(crate) struct FloatSerializer {
     ptr: *mut pyo3_ffi::PyObject,
@@ -26,7 +26,7 @@ impl Serialize for FloatSerializer {
     {
         let val = ffi!(PyFloat_AS_DOUBLE(self.ptr));
         
-        if unlikely!(opt_enabled!(self.opts, FAIL_ON_INVALID_FLOAT))
+        if unlikely!(opt_enabled!(self.opts, STRICT_FLOAT))
             && (val.is_nan() || val.is_infinite())
         {
             err!(SerializeError::InvalidFloat)

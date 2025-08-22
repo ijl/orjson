@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import orjson
-import pytest
 import numpy as np
+import pytest
+
+import orjson
+
 
 class TestFloat:
     @pytest.mark.parametrize("value", [
