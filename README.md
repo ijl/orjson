@@ -546,6 +546,21 @@ This is the same sorting behavior as the standard library.
 
 `dataclass` also serialize as maps but this has no effect on them.
 
+##### OPT_STRICT_FLOAT
+
+Casues the library to raise an error when attempting to serialize a invalid JSON value such as `NaN`, `Infinity`, or `-Infinity`.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"invalid_float": float('nan')}, option=orjson.OPT_STRICT_FLOAT)
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In[8], line 1
+----> 1 orjson.dumps({"invalid_float": float("nan")}, option=orjson.OPT_STRICT_FLOAT)
+
+TypeError: Invalid float
+```
+
 ##### OPT_STRICT_INTEGER
 
 Enforce 53-bit limit on integers. The limit is otherwise 64 bits, the same as
