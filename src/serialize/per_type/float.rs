@@ -26,10 +26,10 @@ impl Serialize for FloatSerializer {
     {
         let val = ffi!(PyFloat_AS_DOUBLE(self.ptr));
         
-        if opt_enabled!(self.opts, FAIL_ON_INVALID_FLOAT) {
-            if val.is_nan() || val.is_infinite() {
-                err!(SerializeError::InvalidFloat)
-            }
+        if unlikely!(opt_enabled!(self.opts, FAIL_ON_INVALID_FLOAT))
+            && (val.is_nan() || val.is_infinite())
+        {
+            err!(SerializeError::InvalidFloat)
         }
 
         serializer.serialize_f64(val)

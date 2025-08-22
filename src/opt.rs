@@ -14,7 +14,7 @@ pub(crate) const PASSTHROUGH_SUBCLASS: Opt = 1 << 8;
 pub(crate) const PASSTHROUGH_DATETIME: Opt = 1 << 9;
 pub(crate) const APPEND_NEWLINE: Opt = 1 << 10;
 pub(crate) const PASSTHROUGH_DATACLASS: Opt = 1 << 11;
-pub(crate) const FAIL_ON_INVALID_FLOAT: Opt = 1 << 12;
+pub(crate) const STRICT_FLOAT: Opt = 1 << 12;
 
 // deprecated
 pub(crate) const SERIALIZE_DATACLASS: Opt = 0;
@@ -27,7 +27,6 @@ pub(crate) const NOT_PASSTHROUGH: Opt =
 
 #[allow(clippy::cast_possible_wrap)]
 pub(crate) const MAX_OPT: i32 = (APPEND_NEWLINE
-    | FAIL_ON_INVALID_FLOAT
     | INDENT_2
     | NAIVE_UTC
     | NON_STR_KEYS
@@ -39,5 +38,6 @@ pub(crate) const MAX_OPT: i32 = (APPEND_NEWLINE
     | SERIALIZE_NUMPY
     | SERIALIZE_UUID
     | SORT_KEYS
+    | STRICT_FLOAT
     | STRICT_INTEGER
     | UTC_Z) as i32;

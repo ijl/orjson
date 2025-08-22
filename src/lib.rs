@@ -188,7 +188,6 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         add!(mptr, c"Fragment", typeref::FRAGMENT_TYPE.cast::<PyObject>());
 
         opt!(mptr, c"OPT_APPEND_NEWLINE", opt::APPEND_NEWLINE);
-        opt!(mptr, c"OPT_FAIL_ON_INVALID_FLOAT", opt::FAIL_ON_INVALID_FLOAT);
         opt!(mptr, c"OPT_INDENT_2", opt::INDENT_2);
         opt!(mptr, c"OPT_NAIVE_UTC", opt::NAIVE_UTC);
         opt!(mptr, c"OPT_NON_STR_KEYS", opt::NON_STR_KEYS);
@@ -204,9 +203,9 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         opt!(mptr, c"OPT_SERIALIZE_NUMPY", opt::SERIALIZE_NUMPY);
         opt!(mptr, c"OPT_SERIALIZE_UUID", opt::SERIALIZE_UUID);
         opt!(mptr, c"OPT_SORT_KEYS", opt::SORT_KEYS);
+        opt!(mptr, c"OPT_STRICT_FLOAT", opt::STRICT_FLOAT);
         opt!(mptr, c"OPT_STRICT_INTEGER", opt::STRICT_INTEGER);
         opt!(mptr, c"OPT_UTC_Z", opt::UTC_Z);
-        opt!(mptr, c"OPT_FAIL_ON_INVALID_FLOAT", opt::FAIL_ON_INVALID_FLOAT);
 
         add!(mptr, c"JSONDecodeError", typeref::JsonDecodeError);
         add!(mptr, c"JSONEncodeError", typeref::JsonEncodeError);

@@ -16,7 +16,7 @@ class TestFloat:
     def test_dumps_succeeds_on_invalid_float_without_option(self, value):
         """
         dumps() succeeds on invalid floats (NaN, Infinity, -Infinity),
-        without option OPT_FAIL_ON_INVALID_FLOAT
+        without option OPT_STRICT_FLOAT
         """
         res = orjson.dumps(value)
         assert res == b'null'
@@ -32,7 +32,7 @@ class TestFloat:
     def test_dumps_fails_on_invalid_float_with_option(self, value):
         """
         dumps() fails with JSONEncodeError on invalid floats (NaN, Infinity, -Infinity),
-        with option OPT_FAIL_ON_INVALID_FLOAT
+        with option OPT_STRICT_FLOAT
         """
         with pytest.raises(orjson.JSONEncodeError):
-            orjson.dumps(float('nan'), option=orjson.OPT_FAIL_ON_INVALID_FLOAT)
+            orjson.dumps(float('nan'), option=orjson.OPT_STRICT_FLOAT)
