@@ -2,12 +2,10 @@
 name = "orjson"
 version = "3.11.2"
 authors = ["ijl <ijl@mailbox.org>"]
-description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 edition = "2021"
 resolver = "2"
 rust-version = "1.85"
 license = "Apache-2.0 OR MIT"
-readme = "README.md"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
     "Cargo.toml",

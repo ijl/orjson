@@ -2,6 +2,7 @@
 name = "orjson"
 version = "3.11.2"
 repository = "https://github.com/ijl/orjson"
+description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
 requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -23,6 +24,8 @@ classifiers = [
     "Programming Language :: Rust",
     "Typing :: Typed",
 ]
+readme = "README.md"
+license = "Apache-2.0 OR MIT"
 
 [project.urls]
 source = "https://github.com/ijl/orjson"

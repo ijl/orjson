@@ -1071,7 +1071,7 @@ functions and objects using the normal `PyImport_*` APIs.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.82
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.85
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
