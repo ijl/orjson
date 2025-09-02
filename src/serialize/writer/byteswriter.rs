@@ -40,7 +40,7 @@ impl BytesWriter {
                 self.len += 1;
             }
             core::ptr::write(self.buffer_ptr(), 0);
-            (*self.bytes.cast::<PyVarObject>()).ob_size = usize_to_isize(self.len);
+            crate::ffi::Py_SET_SIZE(self.bytes.cast::<PyVarObject>(), usize_to_isize(self.len));
             self.resize(self.len);
             self.bytes_ptr()
         }

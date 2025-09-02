@@ -12,8 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         profile: [
-          { rust: "1.82", features: "" }, # MSRV
-          { rust: "nightly-2025-04-15", features: "--features=generic_simd" },
+          { rust: "1.85", features: "" }, # MSRV
+          { rust: "nightly-2025-08-10", features: "--features=generic_simd" },
         ]
         python: [
           { version: '3.13' },

@@ -1,6 +1,24 @@
 # Changelog
 
 
+## 3.11.3 - 2025-08-26
+
+### Fixed
+
+- Fix PyPI project metadata when using maturin 1.9.2 or later.
+
+
+## 3.11.2 - 2025-08-12
+
+### Fixed
+
+- Fix build using Rust 1.89 on amd64.
+
+### Changed
+
+- Build now depends on Rust 1.85 or later instead of 1.82.
+
+
 ## 3.11.1 - 2025-07-25
 
 ### Changed
@@ -9,7 +27,7 @@
 
 ### Fixed
 
-- Fix `str` on big-endian architectures.
+- Fix `str` on big-endian architectures. This was introduced in 3.11.0.
 
 
 ## 3.11.0 - 2025-07-15

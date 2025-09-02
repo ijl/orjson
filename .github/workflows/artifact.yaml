@@ -4,7 +4,7 @@ env:
   CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   FORCE_COLOR: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2025-04-15"
+  RUST_TOOLCHAIN: "nightly-2025-08-10"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   UV_LINK_MODE: "copy"
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      RUST_TOOLCHAIN: "1.82" # MSRV
+      RUST_TOOLCHAIN: "1.85" # MSRV
     steps:
 
     - uses: actions/setup-python@v5
@@ -543,86 +543,6 @@ jobs:
           { version: '3.12', macosx_target: "10.15", publish: true },
           { version: '3.11', macosx_target: "10.15", publish: true },
           { version: '3.10', macosx_target: "10.15", publish: true },
-        ]
-    env:
-      CC: "clang"
-      CFLAGS: "-O2 -fstrict-aliasing"
-      LDFLAGS: "-Wl,--as-needed"
-      CFLAGS_x86_64_apple_darwin: "-O2 -fstrict-aliasing -fno-plt -march=x86-64-v2 -mtune=generic"
-      CFLAGS_aarch64_apple_darwin: "-O2 -fstrict-aliasing -fno-plt -mcpu=apple-m1 -mtune=generic"
-      RUSTFLAGS: "-C lto=fat -Z mir-opt-level=4 -Z threads=3 -D warnings"
-      PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-    steps:
-
-    - name: CPU info
-      run: sysctl -a | grep brand
-
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-python@v5
-      with:
-        allow-prereleases: true
-        python-version: "${{ matrix.python.version }}"
-
-    - uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: "${{ env.RUST_TOOLCHAIN }}"
-        targets: "aarch64-apple-darwin, x86_64-apple-darwin"
-        components: "rust-src"
-
-    - name: Build environment
-      run: |
-        cargo fetch --target aarch64-apple-darwin &
-
-        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
-
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        uv venv --python python${{ matrix.python.version }}
-        uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
-
-        mkdir .cargo
-        cp ci/config.toml .cargo/config.toml
-
-    - name: maturin
-      run: |
-        export PATH=$HOME/.cargo/bin:$HOME/.local/bin:$PATH
-
-        MACOSX_DEPLOYMENT_TARGET="${{ matrix.python.macosx_target }}" \
-        PYO3_CROSS_LIB_DIR=$(python -c "import sysconfig;print(sysconfig.get_config_var('LIBDIR'))") \
-        maturin build \
-          --release \
-          --strip \
-          --features=generic_simd,yyjson \
-          --interpreter python${{ matrix.python.version }} \
-          --target=universal2-apple-darwin
-        uv pip install target/wheels/orjson*.whl
-
-    - run: pytest -v test
-      env:
-        PYTHONMALLOC: "debug"
-
-    - run: source .venv/bin/activate && ./integration/run thread
-    - run: source .venv/bin/activate && ./integration/run http
-    - run: source .venv/bin/activate && ./integration/run init
-
-    - name: Store wheels
-      if: matrix.python.publish == true
-      uses: actions/upload-artifact@v4
-      with:
-        name: orjson_universal2_aarch64_${{ matrix.python.version }}
-        path: target/wheels
-        overwrite: true
-        retention-days: 1
-        if-no-files-found: "error"
-        compression-level: 0
-
-  macos_universal2_amd64:
-    runs-on: macos-13
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        python: [
           { version: '3.9', macosx_target: "10.15", publish: true },
         ]
     env:
@@ -690,7 +610,7 @@ jobs:
       if: matrix.python.publish == true
       uses: actions/upload-artifact@v4
       with:
-        name: orjson_universal2_amd64_${{ matrix.python.version }}
+        name: orjson_universal2_aarch64_${{ matrix.python.version }}
         path: target/wheels
         overwrite: true
         retention-days: 1
@@ -846,7 +766,6 @@ jobs:
     needs: [
       macos_aarch64,
       macos_universal2_aarch64,
-      macos_universal2_amd64,
       manylinux_aarch64,
       manylinux_amd64,
       manylinux_cross,

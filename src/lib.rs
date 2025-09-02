@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![cfg_attr(feature = "avx512", feature(stdarch_x86_avx512, avx512_target_feature))] // MSRV 1.89
 #![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
@@ -86,8 +85,8 @@ use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::{
     PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
     PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyTuple_New, PyTuple_SET_ITEM, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
-    PyVectorcall_NARGS, Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
+    PyTuple_New, PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
+    Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -286,9 +285,9 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
             PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
         let args = PyTuple_New(3);
         let pos = PyLong_FromLongLong(err_pos);
-        PyTuple_SET_ITEM(args, 0, err_msg);
-        PyTuple_SET_ITEM(args, 1, doc);
-        PyTuple_SET_ITEM(args, 2, pos);
+        crate::ffi::PyTuple_SET_ITEM(args, 0, err_msg);
+        crate::ffi::PyTuple_SET_ITEM(args, 1, doc);
+        crate::ffi::PyTuple_SET_ITEM(args, 2, pos);
         PyErr_SetObject(typeref::JsonDecodeError, args);
         debug_assert!(ffi!(Py_REFCNT(args)) <= 2);
         Py_DECREF(args);
@@ -402,7 +401,7 @@ pub(crate) unsafe extern "C" fn dumps(
         }
         if unlikely!(!kwnames.is_null()) {
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
-                let arg = ffi!(PyTuple_GET_ITEM(kwnames, i as Py_ssize_t));
+                let arg = crate::ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
                 if core::ptr::eq(arg, typeref::DEFAULT) {
                     if unlikely!(num_args & 2 == 2) {
                         return raise_dumps_exception_fixed(

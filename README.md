@@ -1086,7 +1086,7 @@ functions and objects using the normal `PyImport_*` APIs.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.82
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.85
 and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
 build command is:
 
@@ -1098,16 +1098,15 @@ It benefits from also having a C build environment to compile a faster
 deserialization backend. See this project's `manylinux_2_28` builds for an
 example using clang and LTO.
 
-The project's own CI tests against `nightly-2025-04-15` and stable 1.82. It
+The project's own CI tests against `nightly-2025-08-10` and stable 1.82. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.
 
 orjson is tested on native hardware for amd64, aarch64, and i686 on Linux and
 for arm7, ppc64le, and s390x is cross-compiled and may be tested via
-emulation. It is tested for either aarch64 or amd64 on macOS and
-cross-compiles for the other, depending on version. For Windows it is
-tested on amd64 and i686.
+emulation. It is tested for aarch64 on macOS and cross-compiles for amd64. For
+Windows it is tested on amd64, i686, and aarch64.
 
 There are no runtime dependencies other than libc.
 

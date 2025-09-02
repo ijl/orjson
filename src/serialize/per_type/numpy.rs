@@ -1246,7 +1246,7 @@ impl NumpyDatetimeUnit {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
-        let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
+        let descr_str = unsafe { crate::ffi::PyTuple_GET_ITEM(el0, 1) };
         let uni = unsafe { PyStr::from_ptr_unchecked(descr_str).to_str().unwrap() };
         if uni.len() < 5 {
             return Self::NaT;
