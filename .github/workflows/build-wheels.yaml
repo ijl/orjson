@@ -25,11 +25,11 @@ jobs:
             platform: manylinux-x86_64
             target: x86_64-unknown-linux-gnu
             python-version: '3.13'
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             platform: manylinux-aarch64
             target: aarch64-unknown-linux-gnu
             python-version: '3.11'
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             platform: manylinux-aarch64
             target: aarch64-unknown-linux-gnu
             python-version: '3.13'
@@ -50,13 +50,7 @@ jobs:
       - name: Install maturin
         run: pip install maturin
 
-      - name: Build wheel (manylinux)
-        if: startsWith(matrix.platform, 'manylinux')
-        run: |
-          docker run --rm -v $(pwd):/io ghcr.io/pyo3/maturin build --release --strip --target ${{ matrix.target }}
-
-      - name: Build wheel (macOS)
-        if: matrix.platform == 'macos-arm'
+      - name: Build wheel
         run: maturin build --release --strip --target ${{ matrix.target }}
 
       - name: Upload wheel artifact
