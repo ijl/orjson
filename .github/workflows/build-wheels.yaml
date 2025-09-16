@@ -51,7 +51,12 @@ jobs:
         run: pip install maturin
 
       - name: Build wheel
-        run: maturin build --release --strip --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.platform }}" == manylinux-* ]]; then
+            docker run --rm -v $(pwd):/io ghcr.io/pyo3/maturin:latest build --release --strip --target ${{ matrix.target }} --manylinux 2_17 -i python${{ matrix.python-version }}
+          else
+            maturin build --release --strip --target ${{ matrix.target }}
+          fi
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
