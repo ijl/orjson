@@ -1,0 +1,66 @@
+name: Build Python Wheels
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos-arm
+            target: aarch64-apple-darwin
+            python-version: '3.11'
+          - os: macos-latest
+            platform: macos-arm
+            target: aarch64-apple-darwin
+            python-version: '3.13'
+          - os: ubuntu-latest
+            platform: manylinux-x86_64
+            target: x86_64-unknown-linux-gnu
+            python-version: '3.11'
+          - os: ubuntu-latest
+            platform: manylinux-x86_64
+            target: x86_64-unknown-linux-gnu
+            python-version: '3.13'
+          - os: ubuntu-latest
+            platform: manylinux-aarch64
+            target: aarch64-unknown-linux-gnu
+            python-version: '3.11'
+          - os: ubuntu-latest
+            platform: manylinux-aarch64
+            target: aarch64-unknown-linux-gnu
+            python-version: '3.13'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build wheel (manylinux)
+        if: startsWith(matrix.platform, 'manylinux')
+        run: |
+          docker run --rm -v $(pwd):/io ghcr.io/pyo3/maturin build --release --strip --target ${{ matrix.target }}
+
+      - name: Build wheel (macOS)
+        if: matrix.platform == 'macos-arm'
+        run: maturin build --release --strip --target ${{ matrix.target }}
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}-py${{ matrix.python-version }}
+          path: target/wheels/*.whl
