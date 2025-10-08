@@ -64,10 +64,12 @@ fn main() {
         match cc::Build::new()
             .file("include/yyjson/yyjson.c")
             .include("include/yyjson")
+            .define("YYJSON_DISABLE_INCR_READER", "1")
             .define("YYJSON_DISABLE_NON_STANDARD", "1")
             .define("YYJSON_DISABLE_UTF8_VALIDATION", "1")
             .define("YYJSON_DISABLE_UTILS", "1")
             .define("YYJSON_DISABLE_WRITER", "1")
+            .flag("-Wno-unused-but-set-variable")
             .try_compile("yyjson")
         {
             Ok(_) => {
