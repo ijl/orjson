@@ -19,6 +19,7 @@ pub(crate) struct yyjson_alc {
     pub ctx: *mut ::core::ffi::c_void,
 }
 pub(crate) type yyjson_read_code = u32;
+pub(crate) type yyjson_read_flag = u32;
 pub(crate) const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
 #[repr(C)]
 pub(crate) struct yyjson_read_err {
@@ -53,6 +54,7 @@ unsafe extern "C" {
     pub fn yyjson_read_opts(
         dat: *mut ::core::ffi::c_char,
         len: usize,
+        flg: yyjson_read_flag,
         alc: *const yyjson_alc,
         err: *mut yyjson_read_err,
     ) -> *mut yyjson_doc;

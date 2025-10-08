@@ -25,6 +25,7 @@ const TAG_INT64: u8 = 0b00001100;
 const TAG_NULL: u8 = 0b00000010;
 const TAG_OBJECT: u8 = 0b00000111;
 const TAG_STRING: u8 = 0b00000101;
+const TAG_STRING_NOESC: u8 = 0b00001101;
 const TAG_TRUE: u8 = 0b00001011;
 const TAG_UINT64: u8 = 0b00000100;
 
@@ -100,6 +101,7 @@ pub(crate) fn deserialize(
         yyjson_read_opts(
             data.as_ptr().cast::<c_char>().cast_mut(),
             data.len(),
+            0,
             &raw const alloc,
             &raw mut err,
         )
@@ -158,6 +160,7 @@ impl ElementType {
     fn from_tag(elem: *mut yyjson_val) -> Self {
         match unsafe { (*elem).tag as u8 } {
             TAG_STRING => Self::String,
+            TAG_STRING_NOESC => Self::String,
             TAG_UINT64 => Self::Uint64,
             TAG_INT64 => Self::Int64,
             TAG_DOUBLE => Self::Double,
