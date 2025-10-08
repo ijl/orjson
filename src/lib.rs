@@ -373,8 +373,8 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
-    match crate::deserialize::deserialize(obj) {
-        Ok(val) => val.as_ptr(),
+    match deserialize::deserialize(obj, true) {
+        Ok(deserialize::DeserializeResult { obj, .. }) => obj.as_ptr(),
         Err(err) => raise_loads_exception(err),
     }
 }

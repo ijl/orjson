@@ -4,10 +4,10 @@ use super::ffi::{
     YYJSON_READ_SUCCESS, yyjson_alc, yyjson_alc_pool_init, yyjson_doc, yyjson_read_err,
     yyjson_read_opts, yyjson_val,
 };
-use crate::deserialize::DeserializeError;
 use crate::deserialize::pyobject::{
     get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
 };
+use crate::deserialize::{DeserializeError, DeserializeResult};
 use crate::str::PyStr;
 use crate::util::usize_to_isize;
 use core::ffi::c_char;
@@ -57,6 +57,10 @@ fn unsafe_yyjson_is_ctn(val: *mut yyjson_val) -> bool {
     unsafe { (*val).tag as u8 & 0b00000110 == 0b00000110 }
 }
 
+fn unsafe_yyjson_doc_get_read_size(doc: *mut yyjson_doc) -> usize {
+    unsafe { (*doc).dat_read }
+}
+
 #[allow(clippy::cast_ptr_alignment)]
 fn unsafe_yyjson_get_next_container(val: *mut yyjson_val) -> *mut yyjson_val {
     unsafe { (val.cast::<u8>().add((*val).uni.ofs)).cast::<yyjson_val>() }
@@ -68,8 +72,9 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
 }
 
 pub(crate) fn deserialize(
-    data: &'static str,
-) -> Result<NonNull<crate::ffi::PyObject>, DeserializeError<'static>> {
+    data: &'static [u8],
+    must_read_all: bool,
+) -> Result<DeserializeResult, DeserializeError<'static>> {
     assume!(!data.is_empty());
     let buffer_capacity = buffer_capacity_to_allocate(data.len());
     let buffer_ptr = ffi!(PyMem_Malloc(buffer_capacity));
@@ -109,6 +114,18 @@ pub(crate) fn deserialize(
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         return Err(DeserializeError::from_yyjson(msg, err.pos as i64, data));
     }
+
+    let bytes_read = unsafe { unsafe_yyjson_doc_get_read_size(doc) };
+
+    if must_read_all && bytes_read != data.len() {
+        ffi!(PyMem_Free(buffer_ptr));
+        return Err(DeserializeError::from_yyjson(
+            Cow::Borrowed("Did not consume all input data"),
+            bytes_read as i64,
+            data,
+        ));
+    }
+
     let val = yyjson_doc_get_root(doc);
     let pyval = {
         if !unsafe_yyjson_is_ctn(val) {
@@ -140,7 +157,10 @@ pub(crate) fn deserialize(
         }
     };
     ffi!(PyMem_Free(buffer_ptr));
-    Ok(pyval)
+    Ok(DeserializeResult {
+        obj: pyval,
+        bytes_read,
+    })
 }
 
 enum ElementType {
