@@ -84,12 +84,13 @@ mod typeref;
 
 use crate::ffi::{
     METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyErr_SetObject,
-    PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer, PyModuleDef,
-    PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS,
+    PyExc_TypeError, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer,
+    PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New,
+    PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
 };
 use core::ffi::{c_char, c_int, c_void};
 
+use crate::typeref::STR_TYPE;
 use crate::util::{isize_to_usize, usize_to_isize};
 
 #[allow(unused_imports)]
@@ -185,6 +186,25 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
             add!(mptr, c"loads", func);
         }
 
+        {
+            let loads_next_doc = c"loads_next(obj, /)\n--\n\nDeserialize the next JSON document from an UTF-8 byte buffer, returning the document and number of bytes read.";
+
+            let wrapped_loads_next = PyMethodDef {
+                ml_name: c"loads_next".as_ptr(),
+                ml_meth: PyMethodDefPointer {
+                    PyCFunction: loads_next,
+                },
+                ml_flags: METH_O,
+                ml_doc: loads_next_doc.as_ptr(),
+            };
+            let func = PyCFunction_NewEx(
+                Box::into_raw(Box::new(wrapped_loads_next)),
+                null_mut(),
+                PyUnicode_InternFromString(c"orjson".as_ptr()),
+            );
+            add!(mptr, c"loads_next", func);
+        }
+
         add!(mptr, c"Fragment", typeref::FRAGMENT_TYPE.cast::<PyObject>());
 
         opt!(mptr, c"OPT_APPEND_NEWLINE", opt::APPEND_NEWLINE);
@@ -268,7 +288,7 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
 #[cold]
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
-fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
+pub(crate) fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
     unsafe {
         let err_pos = err.pos();
         let msg = err.message;
@@ -375,6 +395,35 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
 pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
     match deserialize::deserialize(obj, true) {
         Ok(deserialize::DeserializeResult { obj, .. }) => obj.as_ptr(),
+        Err(err) => raise_loads_exception(err),
+    }
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C" fn loads_next(
+    _self: *mut PyObject,
+    obj: *mut PyObject,
+) -> *mut PyObject {
+    if is_type!(ob_type!(obj), STR_TYPE) {
+        cold_path!();
+        unsafe {
+            let msg = "loads_next requires binary input, not str";
+            let err_msg =
+                PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), msg.len() as isize);
+            PyErr_SetObject(PyExc_TypeError, err_msg);
+            Py_DECREF(err_msg);
+            return null_mut();
+        };
+    }
+
+    match deserialize::deserialize(obj, false) {
+        Ok(deserialize::DeserializeResult { obj, bytes_read }) => unsafe {
+            let result_tuple = PyTuple_New(2);
+            ffi::PyTuple_SET_ITEM(result_tuple, 0, obj.as_ptr());
+            let bytes_read_obj = PyLong_FromLongLong(bytes_read as i64);
+            ffi::PyTuple_SET_ITEM(result_tuple, 1, bytes_read_obj);
+            result_tuple
+        },
         Err(err) => raise_loads_exception(err),
     }
 }

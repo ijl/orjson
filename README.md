@@ -56,6 +56,7 @@ available in the repository.
         2. [option](https://github.com/ijl/orjson?tab=readme-ov-file#option)
         3. [Fragment](https://github.com/ijl/orjson?tab=readme-ov-file#fragment)
     5. [Deserialize](https://github.com/ijl/orjson?tab=readme-ov-file#deserialize)
+        1. [loads_next](https://github.com/ijl/orjson?tab=readme-ov-file#loads_next)
 2. [Types](https://github.com/ijl/orjson?tab=readme-ov-file#types)
     1. [dataclass](https://github.com/ijl/orjson?tab=readme-ov-file#dataclass)
     2. [datetime](https://github.com/ijl/orjson?tab=readme-ov-file#datetime)
@@ -626,6 +627,90 @@ to parse the document.
 
 `JSONDecodeError` is a subclass of `json.JSONDecodeError` and `ValueError`.
 This is for compatibility with the standard library.
+
+### loads_next
+
+```python
+def loads_next(__obj: Union[bytes, bytearray, memoryview]) -> Tuple[Any, int]: ...
+```
+
+`loads_next()` deserializes the next JSON document from a buffer and returns
+a tuple of `(parsed_object, bytes_consumed)`. This is useful for parsing
+multiple JSON documents from a single buffer, such as concatenated JSON
+objects or newline-delimited JSON (NDJSON).
+
+Unlike `loads()`, which requires the input to contain exactly one JSON
+document with only whitespace after it, `loads_next()` stops parsing after
+the first complete JSON document and reports how many bytes were consumed.
+This allows the caller to continue parsing additional documents from the
+same buffer.
+
+Only binary input (`bytes`, `bytearray`, `memoryview`) is accepted.
+`str` input is not supported and will raise `TypeError`.
+
+The input must be valid UTF-8.
+
+```python
+>>> import orjson
+>>> data = b'{"a":1}{"b":2}{"c":3}'
+>>> obj1, n1 = orjson.loads_next(data)
+>>> obj1
+{'a': 1}
+>>> n1
+7
+>>> obj2, n2 = orjson.loads_next(data[n1:])
+>>> obj2
+{'b': 2}
+>>> obj3, n3 = orjson.loads_next(data[n1 + n2:])
+>>> obj3
+{'c': 3}
+```
+
+This is particularly useful for processing NDJSON (newline-delimited JSON)
+files or streams:
+
+```python
+>>> import orjson
+>>> ndjson_data = b'{"id":1,"value":"a"}\n{"id":2,"value":"b"}\n{"id":3,"value":"c"}\n'
+>>> offset = 0
+>>> results = []
+>>> while offset < len(ndjson_data):
+    ...
+obj, consumed = orjson.loads_next(ndjson_data[offset:])
+...
+results.append(obj)
+...
+offset += consumed
+>>> results
+[{'id': 1, 'value': 'a'}, {'id': 2, 'value': 'b'}, {'id': 3, 'value': 'c'}]
+```
+
+Whitespace (spaces, tabs, newlines, carriage returns) before and after the
+JSON document is consumed and included in the byte count:
+
+```python
+>>> import orjson
+>>> data = b'  {"key": "value"}  \n{"next": true}'
+>>> obj, consumed = orjson.loads_next(data)
+>>> obj
+{'key': 'value'}
+>>> consumed  # Includes leading and trailing whitespace
+21
+```
+
+All of the same error conditions from `loads()` apply to `loads_next()`,
+with the addition of a `TypeError` if given a `str` instead of binary input.
+
+Note that with a large input, the library may attempt to allocate much more
+memory than is actually required to parse the next document and fail accordingly.
+User code may alleviate this by slicing the input to a smaller size if necessary,
+and retrying with a larger slice if there was not enough data to parse a complete
+document.
+
+**When to use:** Use `loads()` when you have exactly one JSON document.
+Use `loads_next()` when you need to parse multiple JSON documents from a
+single buffer or stream, such as NDJSON, concatenated JSON objects, or
+streaming JSON APIs.
 
 ## Types
 
