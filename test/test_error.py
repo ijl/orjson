@@ -87,20 +87,18 @@ class TestJsonDecodeError:
         with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:
             json.loads(data)
 
-        assert self._get_error_infos(json_exc_info) == {
-            "pos": 5,
-            "lineno": 1,
-            "colno": 6,
-        }
-
-        with pytest.raises(json.decoder.JSONDecodeError) as json_exc_info:
+        with pytest.raises(json.decoder.JSONDecodeError) as orjson_exc_info:
             orjson.loads(data)
 
-        assert self._get_error_infos(json_exc_info) == {
-            "pos": 6,
-            "lineno": 1,
-            "colno": 7,
-        }
+        assert (
+            self._get_error_infos(json_exc_info)
+            == self._get_error_infos(orjson_exc_info)
+            == {
+                "pos": 5,
+                "lineno": 1,
+                "colno": 6,
+            }
+        )
 
 
 class Custom:
