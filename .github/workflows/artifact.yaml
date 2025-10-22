@@ -240,7 +240,7 @@ jobs:
           {
             arch: 'riscv64',
             cflags: '-Os -fstrict-aliasing',
-            features: 'yyjson',
+            features: '',
             rustflags: '-Z mir-opt-level=4 -C lto=fat -D warnings',
             target: 'riscv64gc-unknown-linux-gnu',
           },
