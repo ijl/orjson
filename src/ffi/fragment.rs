@@ -5,10 +5,11 @@ use core::ffi::c_char;
 #[cfg(Py_GIL_DISABLED)]
 use std::sync::atomic::{AtomicIsize, AtomicU32};
 
-#[cfg(all(Py_GIL_DISABLED, feature = "c_ulong_32"))]
+// c_ulong is 32-bit on Windows (even on x64) and on 32-bit targets; otherwise typically 64-bit.
+#[cfg(all(Py_GIL_DISABLED, any(target_os = "windows", target_pointer_width = "32")))]
 pub(crate) type AtomicCULong = std::sync::atomic::AtomicU32;
 
-#[cfg(all(Py_GIL_DISABLED, not(feature = "c_ulong_32")))]
+#[cfg(all(Py_GIL_DISABLED, not(any(target_os = "windows", target_pointer_width = "32"))))]
 pub(crate) type AtomicCULong = std::sync::atomic::AtomicU64;
 
 use core::ptr::null_mut;
@@ -111,9 +112,15 @@ pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     }
 }
 
-#[cfg(Py_GIL_DISABLED)]
-const FRAGMENT_TP_FLAGS: AtomicCULong =
-    AtomicCULong::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
+#[cfg(all(Py_GIL_DISABLED, any(target_os = "windows", target_pointer_width = "32")))]
+const FRAGMENT_TP_FLAGS: AtomicCULong = AtomicCULong::new(
+    (Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE) as u32,
+);
+
+#[cfg(all(Py_GIL_DISABLED, not(any(target_os = "windows", target_pointer_width = "32"))))]
+const FRAGMENT_TP_FLAGS: AtomicCULong = AtomicCULong::new(
+    (Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE) as u64,
+);
 
 #[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
 const FRAGMENT_TP_FLAGS: core::ffi::c_ulong =
