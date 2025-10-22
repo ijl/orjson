@@ -38,8 +38,11 @@ fn main() {
     #[allow(unused_variables)]
     let is_64_bit_python = matches!(python_config.pointer_width, Some(64));
 
-    #[cfg(all(target_arch = "x86_64", not(target_os = "macos")))]
-    if version_check::is_min_version("1.89.0").unwrap_or(false) && is_64_bit_python {
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+
+    if target_arch == "x86_64" && target_os != "macos"
+        && version_check::is_min_version("1.89.0").unwrap_or(false) && is_64_bit_python {
         println!("cargo:rustc-cfg=feature=\"avx512\"");
     }
 
@@ -51,8 +54,7 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"optimize\"");
     }
 
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if is_64_bit_python {
+    if (target_arch == "x86_64" || target_arch == "aarch64") && is_64_bit_python {
         println!("cargo:rustc-cfg=feature=\"inline_int\"");
     }
 
