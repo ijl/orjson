@@ -4,8 +4,8 @@ use core::ffi::c_char;
 
 use core::ptr::null_mut;
 use pyo3_ffi::{
-    PyErr_SetObject, PyExc_TypeError, PyObject, PyTypeObject, PyType_Ready, PyType_Type,
-    PyUnicode_FromStringAndSize, PyVarObject, Py_DECREF, Py_INCREF, Py_SIZE, Py_TPFLAGS_DEFAULT,
+    Py_DECREF, Py_INCREF, Py_SIZE, Py_TPFLAGS_DEFAULT, PyErr_SetObject, PyExc_TypeError, PyObject,
+    PyType_Ready, PyType_Type, PyTypeObject, PyUnicode_FromStringAndSize, PyVarObject,
 };
 
 #[cfg(Py_GIL_DISABLED)]

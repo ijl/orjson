@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use bytes::{buf::UninitSlice, BufMut};
+use bytes::{BufMut, buf::UninitSlice};
 use core::mem::MaybeUninit;
 
 const BUFFER_LENGTH: usize = 64 - core::mem::size_of::<usize>();

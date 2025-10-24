@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, OMIT_MICROSECONDS};
+use crate::opt::{OMIT_MICROSECONDS, Opt};
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{DateTimeError, DateTimeLike, Offset};

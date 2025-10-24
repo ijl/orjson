@@ -8,12 +8,12 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::str::PyStr;
-use crate::typeref::{load_numpy_types, ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES};
+use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES, load_numpy_types};
 use crate::util::isize_to_usize;
 use core::ffi::{c_char, c_int, c_void};
-use jiff::civil::DateTime;
 use jiff::Timestamp;
-use pyo3_ffi::{PyObject, PyTypeObject, Py_intptr_t, Py_ssize_t};
+use jiff::civil::DateTime;
+use pyo3_ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::fmt;
 

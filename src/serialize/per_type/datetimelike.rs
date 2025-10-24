@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, NAIVE_UTC, OMIT_MICROSECONDS, UTC_Z};
+use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, Opt, UTC_Z};
 
 pub(crate) enum DateTimeError {
     LibraryUnsupported,

@@ -37,11 +37,7 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
 #[allow(dead_code)]
 #[inline(always)]
 pub(crate) fn parse_bool(val: bool) -> NonNull<pyo3_ffi::PyObject> {
-    if val {
-        parse_true()
-    } else {
-        parse_false()
-    }
+    if val { parse_true() } else { parse_false() }
 }
 
 #[inline(always)]

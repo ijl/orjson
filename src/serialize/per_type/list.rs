@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::serialize::error::SerializeError;
-use crate::serialize::obtype::{pyobject_to_obtype, ObType};
+use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,

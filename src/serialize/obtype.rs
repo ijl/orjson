@@ -5,7 +5,7 @@ use crate::opt::{
 };
 use crate::serialize::per_type::{is_numpy_array, is_numpy_scalar};
 use crate::typeref::{
-    BOOL_TYPE, DATACLASS_FIELDS_STR, DATETIME_TYPE, DATE_TYPE, DICT_TYPE, ENUM_TYPE, FLOAT_TYPE,
+    BOOL_TYPE, DATACLASS_FIELDS_STR, DATE_TYPE, DATETIME_TYPE, DICT_TYPE, ENUM_TYPE, FLOAT_TYPE,
     FRAGMENT_TYPE, INT_TYPE, LIST_TYPE, NONE_TYPE, STR_TYPE, TIME_TYPE, TUPLE_TYPE, UUID_TYPE,
 };
 

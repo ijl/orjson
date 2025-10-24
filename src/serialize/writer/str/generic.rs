@@ -10,25 +10,25 @@ pub(crate) unsafe fn format_escaped_str_impl_generic_128(
     value_ptr: *const u8,
     value_len: usize,
 ) -> usize {
-    const STRIDE: usize = 16;
+    unsafe {
+        const STRIDE: usize = 16;
 
-    let mut dst = odst;
-    let mut src = value_ptr;
+        let mut dst = odst;
+        let mut src = value_ptr;
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    if value_len < STRIDE {
-        impl_format_scalar!(dst, src, value_len);
-    } else {
-        let blash = u8x16::splat(b'\\');
-        let quote = u8x16::splat(b'"');
-        let x20 = u8x16::splat(32);
+        if value_len < STRIDE {
+            impl_format_scalar!(dst, src, value_len);
+        } else {
+            let blash = u8x16::splat(b'\\');
+            let quote = u8x16::splat(b'"');
+            let x20 = u8x16::splat(32);
 
-        let last_stride_src = src.add(value_len).sub(STRIDE);
-        let mut nb: usize = value_len;
+            let last_stride_src = src.add(value_len).sub(STRIDE);
+            let mut nb: usize = value_len;
 
-        unsafe {
             {
                 while nb >= STRIDE {
                     let v = u8x16::from_slice(core::slice::from_raw_parts(src, STRIDE));
@@ -82,10 +82,10 @@ pub(crate) unsafe fn format_escaped_str_impl_generic_128(
                 }
             }
         }
+
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
+
+        dst as usize - odst as usize
     }
-
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
-
-    dst as usize - odst as usize
 }

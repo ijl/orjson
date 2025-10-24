@@ -26,6 +26,7 @@
 #![allow(clippy::host_endian_bytes)]
 #![allow(clippy::if_not_else)]
 #![allow(clippy::implicit_return)]
+#![allow(clippy::incompatible_msrv)] // MSRV 1.89
 #![allow(clippy::inline_always)]
 #![allow(clippy::let_underscore_untyped)]
 #![allow(clippy::missing_assert_message)]
@@ -83,16 +84,16 @@ mod typeref;
 
 use core::ffi::{c_char, c_int, c_void};
 use pyo3_ffi::{
-    PyCFunction_NewEx, PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef,
-    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyTuple_New, PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
-    Py_DECREF, Py_SIZE, Py_ssize_t, METH_KEYWORDS, METH_O,
+    METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyErr_SetObject,
+    PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer, PyModuleDef,
+    PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New, PyUnicode_FromStringAndSize,
+    PyUnicode_InternFromString, PyVectorcall_NARGS,
 };
 
 use crate::util::{isize_to_usize, usize_to_isize};
 
 #[allow(unused_imports)]
-use core::ptr::{null, null_mut, NonNull};
+use core::ptr::{NonNull, null, null_mut};
 
 #[cfg(Py_3_13)]
 macro_rules! add {
@@ -424,8 +425,7 @@ pub(crate) unsafe extern "C" fn dumps(
         }
 
         let mut optsbits: i32 = 0;
-        if unlikely!(optsptr.is_some()) {
-            let opts = optsptr.unwrap();
+        if let Some(opts) = optsptr {
             if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
                 #[allow(clippy::cast_possible_truncation)]
                 let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes

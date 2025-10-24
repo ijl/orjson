@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
-use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
 use crate::serialize::writer::WriteExt;
+use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
 

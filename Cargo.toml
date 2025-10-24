@@ -2,8 +2,8 @@
 name = "orjson"
 version = "3.11.3"
 authors = ["ijl <ijl@mailbox.org>"]
-edition = "2021"
-resolver = "2"
+edition = "2024"
+resolver = "3"
 rust-version = "1.85"
 license = "Apache-2.0 OR MIT"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]

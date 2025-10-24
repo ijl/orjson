@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2};
-use crate::serialize::obtype::{pyobject_to_obtype, ObType};
+use crate::opt::{APPEND_NEWLINE, INDENT_2, Opt};
+use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
     ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
-    StrSubclassSerializer, Time, ZeroListSerializer, UUID,
+    StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
+use crate::serialize::writer::{BytesWriter, to_writer, to_writer_pretty};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 

@@ -6,4 +6,4 @@ mod pystr;
 mod pyunicode_new;
 mod scalar;
 
-pub(crate) use pystr::{set_str_create_fn, PyStr, PyStrSubclass};
+pub(crate) use pystr::{PyStr, PyStrSubclass, set_str_create_fn};

@@ -2,7 +2,7 @@
 
 use crate::ffi::orjson_fragmenttype_new;
 use core::ffi::CStr;
-use core::ptr::{null_mut, NonNull};
+use core::ptr::{NonNull, null_mut};
 use once_cell::race::{OnceBool, OnceBox};
 
 use pyo3_ffi::*;
@@ -80,9 +80,11 @@ fn _init_typerefs_impl() -> bool {
         debug_assert!(crate::opt::MAX_OPT < i32::from(u16::MAX));
 
         #[cfg(not(Py_GIL_DISABLED))]
-        assert!(crate::deserialize::KEY_MAP
-            .set(crate::deserialize::KeyMap::default())
-            .is_ok());
+        assert!(
+            crate::deserialize::KEY_MAP
+                .set(crate::deserialize::KeyMap::default())
+                .is_ok()
+        );
 
         crate::serialize::writer::set_str_formatter_fn();
         crate::str::set_str_create_fn();

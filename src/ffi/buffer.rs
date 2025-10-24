@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use core::ffi::c_int;
-use pyo3_ffi::{PyObject, PyVarObject, Py_buffer, Py_hash_t, Py_ssize_t};
+use pyo3_ffi::{Py_buffer, Py_hash_t, Py_ssize_t, PyObject, PyVarObject};
 
 #[repr(C)]
 pub(crate) struct _PyManagedBufferObject {

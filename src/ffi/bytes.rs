@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use core::ffi::c_char;
-use pyo3_ffi::{PyBytesObject, PyObject, Py_ssize_t};
+use pyo3_ffi::{Py_ssize_t, PyBytesObject, PyObject};
 
 use super::compat::Py_SIZE;
 

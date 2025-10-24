@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::deserialize::pyobject::*;
 use crate::deserialize::DeserializeError;
+use crate::deserialize::pyobject::*;
 use crate::str::PyStr;
 use core::ptr::NonNull;
 use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};

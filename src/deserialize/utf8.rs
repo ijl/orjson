@@ -4,8 +4,8 @@ use crate::deserialize::DeserializeError;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
 use crate::str::PyStr;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
-use crate::util::isize_to_usize;
 use crate::util::INVALID_STR;
+use crate::util::isize_to_usize;
 use core::ffi::c_char;
 use std::borrow::Cow;
 
