@@ -18,7 +18,7 @@ export CFLAGS="-Os -fstrict-aliasing"
 
 export RUSTFLAGS="-C panic=unwind -C linker=${CC} -C link-arg=-fuse-ld=${LD}"
 
-maturin build --profile=dev --target=${TARGET} --features="${ORJSON_FEATURES}" --interpreter "${PYTHON}"
+maturin build --profile=dev --target="${TARGET}" --features="${ORJSON_FEATURES}"
 
 uv pip install ${CARGO_TARGET_DIR}/wheels/*.whl
 

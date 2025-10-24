@@ -11,7 +11,7 @@ from .util import read_fixture_obj
 @pytest.mark.parametrize("library", libraries)
 @pytest.mark.parametrize("fixture", fixtures)
 def test_dumps(benchmark, fixture, library):
-    dumper, loader = libraries[library]
+    dumper, _ = libraries[library]
     benchmark.group = f"{fixture} serialization"
     benchmark.extra_info["lib"] = library
     data = read_fixture_obj(f"{fixture}.xz")

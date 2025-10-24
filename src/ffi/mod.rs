@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+#[cfg(Py_GIL_DISABLED)]
+mod atomiculong;
 mod buffer;
 mod bytes;
 pub(crate) mod compat;

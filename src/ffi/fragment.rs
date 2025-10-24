@@ -2,22 +2,16 @@
 
 use core::ffi::c_char;
 
-#[cfg(Py_GIL_DISABLED)]
-use std::sync::atomic::{AtomicIsize, AtomicU32};
-
-#[cfg(all(Py_GIL_DISABLED, feature = "c_ulong_32"))]
-pub(crate) type AtomicCULong = std::sync::atomic::AtomicU32;
-
-#[cfg(all(Py_GIL_DISABLED, not(feature = "c_ulong_32")))]
-pub(crate) type AtomicCULong = std::sync::atomic::AtomicU64;
-
 use core::ptr::null_mut;
 use pyo3_ffi::{
     PyErr_SetObject, PyExc_TypeError, PyObject, PyTypeObject, PyType_Ready, PyType_Type,
     PyUnicode_FromStringAndSize, PyVarObject, Py_DECREF, Py_INCREF, Py_SIZE, Py_TPFLAGS_DEFAULT,
 };
 
-// https://docs.python.org/3/c-api/typeobj.html#typedef-examples
+#[cfg(Py_GIL_DISABLED)]
+use super::atomiculong::AtomicCULong;
+#[cfg(Py_GIL_DISABLED)]
+use std::sync::atomic::{AtomicIsize, AtomicU32};
 
 #[cfg(Py_GIL_DISABLED)]
 macro_rules! pymutex_new {

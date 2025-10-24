@@ -19,6 +19,7 @@ abis = (
     "cp311-cp311",
     "cp312-cp312",
     "cp313-cp313",
+    "cp314-cp314",
 )
 
 per_abi_tags = (
@@ -44,19 +45,7 @@ for abi in abis:
     for tag in per_abi_tags:
         wheels_matrix.add(f"{prefix}-{abi}-{tag}.whl")
 
-wheels_prerelease = {
-    f"{prefix}-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl",
-    f"{prefix}-cp314-cp314-macosx_15_0_arm64.whl",
-    f"{prefix}-cp314-cp314-manylinux_2_34_aarch64.whl",
-    f"{prefix}-cp314-cp314-manylinux_2_34_x86_64.whl",
-    f"{prefix}-cp314-cp314-musllinux_1_2_aarch64.whl",
-    f"{prefix}-cp314-cp314-musllinux_1_2_armv7l.whl",
-    f"{prefix}-cp314-cp314-musllinux_1_2_i686.whl",
-    f"{prefix}-cp314-cp314-musllinux_1_2_x86_64.whl",
-    f"{prefix}-cp314-cp314-win32.whl",
-    f"{prefix}-cp314-cp314-win_amd64.whl",
-    f"{prefix}-cp314-cp314-win_arm64.whl",
-}
+wheels_prerelease = set()
 
 wheels_unique = {
     f"{prefix}-cp311-cp311-macosx_15_0_arm64.whl",
@@ -65,6 +54,8 @@ wheels_unique = {
     f"{prefix}-cp312-cp312-win_arm64.whl",
     f"{prefix}-cp313-cp313-macosx_15_0_arm64.whl",
     f"{prefix}-cp313-cp313-win_arm64.whl",
+    f"{prefix}-cp314-cp314-macosx_15_0_arm64.whl",
+    f"{prefix}-cp314-cp314-win_arm64.whl",
 }
 
 wheels_expected = wheels_matrix | wheels_unique | wheels_prerelease

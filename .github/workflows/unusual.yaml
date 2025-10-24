@@ -1,7 +1,6 @@
 name: unusual
 on: push
 env:
-  CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
   FORCE_COLOR: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 jobs:
@@ -11,25 +10,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [
-          { rust: "1.85", features: "" }, # MSRV
-          { rust: "nightly-2025-08-10", features: "--features=generic_simd" },
-        ]
-        python: [
-          { version: '3.13' },
-          { version: '3.12' },
-          { version: '3.9' },
+        cfg: [
+          { rust: "1.85", python: "3.15", version_check: "1" },
+          { rust: "1.85", python: "3.14", version_check: "0" },
+          { rust: "1.85", python: "3.9", version_check: "0" },
         ]
     env:
       ORJSON_DISABLE_YYJSON: "1"
-      CARGO_UNSTABLE_SPARSE_REGISTRY: "true"
-      UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
     steps:
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.profile.rust }} --profile minimal -y
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.cfg.rust }} --profile minimal -y
 
     - uses: actions/setup-python@v5
       with:
-        python-version: '${{ matrix.python.version }}'
+        python-version: '${{ matrix.cfg.python }}'
+        allow-prereleases: true
 
     - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
 
@@ -37,13 +31,13 @@ jobs:
 
     - name: build
       run: |
-        PATH="$HOME/.cargo/bin:$PATH" maturin build --release \
-          --out=dist \
+        PATH="$HOME/.cargo/bin:$PATH" UNSAFE_PYO3_SKIP_VERSION_CHECK="${{ matrix.cfg.version_check }}" \
+          maturin build \
           --profile=dev \
-          --interpreter python${{ matrix.python.version }} \
-          --target=x86_64-unknown-linux-gnu ${{ matrix.profile.features }}
+          --interpreter python${{ matrix.cfg.python }} \
+          --target=x86_64-unknown-linux-gnu
 
-    - run: python -m pip install --user dist/orjson*.whl
+    - run: python -m pip install --user target/wheels/orjson*.whl
     - run: python -m pip install --user -r test/requirements.txt -r integration/requirements.txt
 
     - run: pytest -s -rxX -v test
