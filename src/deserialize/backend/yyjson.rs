@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use super::ffi::{
+    YYJSON_READ_SUCCESS, yyjson_alc, yyjson_alc_pool_init, yyjson_doc, yyjson_read_err,
+    yyjson_read_opts, yyjson_val,
+};
 use crate::deserialize::DeserializeError;
 use crate::deserialize::pyobject::{
     get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
-};
-use crate::ffi::yyjson::{
-    YYJSON_READ_SUCCESS, yyjson_alc_pool_init, yyjson_doc, yyjson_read_err, yyjson_read_opts,
-    yyjson_val,
 };
 use crate::str::PyStr;
 use crate::util::usize_to_isize;
@@ -80,7 +80,7 @@ pub(crate) fn deserialize(
             data,
         ));
     }
-    let mut alloc = crate::ffi::yyjson::yyjson_alc {
+    let mut alloc = yyjson_alc {
         malloc: None,
         realloc: None,
         free: None,

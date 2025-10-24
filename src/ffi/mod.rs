@@ -7,8 +7,6 @@ mod bytes;
 pub(crate) mod compat;
 mod fragment;
 mod long;
-#[cfg(feature = "yyjson")]
-pub(crate) mod yyjson;
 
 pub(crate) use buffer::*;
 pub(crate) use bytes::*;

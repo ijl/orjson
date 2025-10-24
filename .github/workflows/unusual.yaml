@@ -15,8 +15,6 @@ jobs:
           { rust: "1.85", python: "3.14", version_check: "0" },
           { rust: "1.85", python: "3.9", version_check: "0" },
         ]
-    env:
-      ORJSON_DISABLE_YYJSON: "1"
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.cfg.rust }} --profile minimal -y
 

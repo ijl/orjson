@@ -1071,17 +1071,13 @@ functions and objects using the normal `PyImport_*` APIs.
 
 ## Packaging
 
-To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.85
-and the [maturin](https://github.com/PyO3/maturin) build tool. The recommended
-build command is:
+To package orjson requires at least [Rust](https://www.rust-lang.org/) 1.85,
+a C compiler, and the [maturin](https://github.com/PyO3/maturin) build tool.
+The recommended build command is:
 
 ```sh
 maturin build --release --strip
 ```
-
-It benefits from also having a C build environment to compile a faster
-deserialization backend. See this project's `manylinux_2_28` builds for an
-example using clang and LTO.
 
 The project's own CI tests against `nightly-2025-10-21` and stable 1.85. It
 is prudent to pin the nightly version because that channel can introduce

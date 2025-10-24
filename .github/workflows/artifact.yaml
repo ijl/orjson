@@ -106,7 +106,7 @@ jobs:
         with:
           arch: "x86_64"
           interpreter: "${{ matrix.python.interpreter }}"
-          features: "avx512,yyjson"
+          features: "avx512"
           compatibility: "${{ matrix.python.compatibility }}"
           publish: "${{ matrix.python.publish }}"
 
@@ -122,7 +122,7 @@ jobs:
       - name: Debug
         env:
           CARGO_TARGET_DIR: "/tmp/orjson"
-          ORJSON_FEATURES: "avx512,yyjson"
+          ORJSON_FEATURES: "avx512"
           PYTHON: "${{ matrix.python.interpreter }}"
           TARGET: "x86_64-unknown-linux-gnu"
         run: |
@@ -168,7 +168,7 @@ jobs:
         with:
           arch: "aarch64"
           interpreter: "${{ matrix.python.interpreter }}"
-          features: "generic_simd,yyjson"
+          features: "generic_simd"
           compatibility: "${{ matrix.python.compatibility }}"
           publish: "${{ matrix.python.publish }}"
 
@@ -184,7 +184,7 @@ jobs:
       - name: Debug
         env:
           CARGO_TARGET_DIR: "/tmp/orjson"
-          ORJSON_FEATURES: "generic_simd,yyjson"
+          ORJSON_FEATURES: "generic_simd"
           PYTHON: "${{ matrix.python.interpreter }}"
           TARGET: "aarch64-unknown-linux-gnu"
         run: |
@@ -210,28 +210,28 @@ jobs:
           {
             arch: 'i686',
             cflags: '-Os -fstrict-aliasing',
-            features: 'yyjson',
+            features: '',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings',
             target: 'i686-unknown-linux-gnu',
           },
           {
             arch: 'armv7',
             cflags: '-Os -fstrict-aliasing',
-            features: 'yyjson',
+            features: '',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings -C opt-level=s',
             target: 'armv7-unknown-linux-gnueabihf',
           },
           {
             arch: 'ppc64le',
             cflags: '-Os -fstrict-aliasing',
-            features: 'generic_simd,yyjson',
+            features: 'generic_simd',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
           },
           {
             arch: 's390x',
             cflags: '-Os -fstrict-aliasing -march=z10',
-            features: 'yyjson',
+            features: '',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings -C target-cpu=z10',
             target: 's390x-unknown-linux-gnu',
           },
@@ -316,11 +316,11 @@ jobs:
           - target: x86_64-unknown-linux-musl
             arch: x86_64
             platform: linux/amd64
-            features: avx512,unwind,yyjson
+            features: avx512,unwind
           - target: i686-unknown-linux-musl
             arch: i686
             platform: linux/386
-            features: unwind,yyjson
+            features: unwind
     steps:
     - uses: actions/checkout@v5
 
@@ -392,11 +392,11 @@ jobs:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
             platform: linux/arm64
-            features: generic_simd,unwind,yyjson
+            features: generic_simd,unwind
           - target: armv7-unknown-linux-musleabihf
             arch: armv7l
             platform: linux/arm/v7
-            features: yyjson
+            features: ''
     steps:
     - uses: actions/checkout@v5
 
@@ -506,7 +506,7 @@ jobs:
         maturin build \
           --release \
           --strip \
-          --features=generic_simd,yyjson \
+          --features=generic_simd \
           --interpreter python${{ matrix.python.version }} \
           --target=aarch64-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -592,7 +592,7 @@ jobs:
         maturin build \
           --release \
           --strip \
-          --features=generic_simd,yyjson \
+          --features=generic_simd \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -631,8 +631,8 @@ jobs:
           { version: '3.9', publish: true },
         ]
         platform: [
-          { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512,yyjson" },
-          { arch: "x86", target: "i686-pc-windows-msvc", features: "yyjson" },
+          { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512" },
+          { arch: "x86", target: "i686-pc-windows-msvc", features: "" },
         ]
     env:
       CFLAGS: "-O2"
