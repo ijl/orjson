@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+#[cfg(target_endian = "little")]
+use crate::ffi::PyCompactUnicodeObject;
+use crate::ffi::{Py_HashBuffer, Py_ssize_t, PyASCIIObject, PyObject};
 use crate::typeref::{EMPTY_UNICODE, STR_TYPE};
 #[cfg(target_endian = "little")]
 use crate::util::isize_to_usize;
 #[cfg(target_endian = "little")]
 use core::ffi::c_void;
 use core::ptr::NonNull;
-#[cfg(target_endian = "little")]
-use pyo3_ffi::PyCompactUnicodeObject;
-use pyo3_ffi::{PyASCIIObject, PyObject};
 
 fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
-    let mut str_size: pyo3_ffi::Py_ssize_t = 0;
+    let mut str_size: Py_ssize_t = 0;
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)).cast::<u8>();
     if unlikely!(ptr.is_null()) {
         None
@@ -21,7 +21,7 @@ fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
 }
 
 #[cfg(feature = "avx512")]
-pub type StrDeserializer = unsafe fn(&str) -> *mut pyo3_ffi::PyObject;
+pub type StrDeserializer = unsafe fn(&str) -> *mut PyObject;
 
 #[cfg(feature = "avx512")]
 static mut STR_CREATE_FN: StrDeserializer = super::scalar::str_impl_kind_scalar;
@@ -105,10 +105,7 @@ impl PyStr {
             };
             let num_bytes =
                 (*ptr).length * (((*ptr).state & STATE_KIND_MASK) >> STATE_KIND_SHIFT) as isize;
-            #[cfg(Py_3_14)]
-            let hash = pyo3_ffi::Py_HashBuffer(data_ptr, num_bytes);
-            #[cfg(not(Py_3_14))]
-            let hash = pyo3_ffi::_Py_HashBytes(data_ptr, num_bytes);
+            let hash = Py_HashBuffer(data_ptr, num_bytes);
             (*ptr).hash = hash;
             debug_assert!((*ptr).hash != -1);
         }
@@ -121,10 +118,7 @@ impl PyStr {
             #[allow(clippy::cast_possible_wrap)]
             let num_bytes =
                 ffi!(PyUnicode_KIND(self.ptr.as_ptr())) as isize * ffi!(Py_SIZE(self.ptr.as_ptr()));
-            #[cfg(Py_3_14)]
-            let hash = pyo3_ffi::Py_HashBuffer(data_ptr, num_bytes);
-            #[cfg(not(Py_3_14))]
-            let hash = pyo3_ffi::_Py_HashBytes(data_ptr, num_bytes);
+            let hash = Py_HashBuffer(data_ptr, num_bytes);
             (*self.ptr.as_ptr().cast::<PyASCIIObject>()).hash = hash;
             debug_assert!((*self.ptr.as_ptr().cast::<PyASCIIObject>()).hash != -1);
         }

@@ -82,13 +82,13 @@ mod serialize;
 mod str;
 mod typeref;
 
-use core::ffi::{c_char, c_int, c_void};
-use pyo3_ffi::{
+use crate::ffi::{
     METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyErr_SetObject,
     PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer, PyModuleDef,
     PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New, PyUnicode_FromStringAndSize,
     PyUnicode_InternFromString, PyVectorcall_NARGS,
 };
+use core::ffi::{c_char, c_int, c_void};
 
 use crate::util::{isize_to_usize, usize_to_isize};
 
@@ -98,32 +98,32 @@ use core::ptr::{NonNull, null, null_mut};
 #[cfg(Py_3_13)]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        pyo3_ffi::PyModule_Add($mptr, $name.as_ptr(), $obj);
+        crate::ffi::PyModule_Add($mptr, $name.as_ptr(), $obj);
     };
 }
 
 #[cfg(all(Py_3_10, not(Py_3_13)))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        pyo3_ffi::PyModule_AddObjectRef($mptr, $name.as_ptr(), $obj);
+        crate::ffi::PyModule_AddObjectRef($mptr, $name.as_ptr(), $obj);
     };
 }
 
 #[cfg(not(Py_3_10))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
-        pyo3_ffi::PyModule_AddObject($mptr, $name.as_ptr(), $obj);
+        crate::ffi::PyModule_AddObject($mptr, $name.as_ptr(), $obj);
     };
 }
 
 macro_rules! opt {
     ($mptr:expr, $name:expr, $opt:expr) => {
         #[cfg(all(not(target_os = "windows"), target_pointer_width = "64"))]
-        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), i64::from($opt));
+        crate::ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), i64::from($opt));
         #[cfg(all(not(target_os = "windows"), target_pointer_width = "32"))]
-        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
+        crate::ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
         #[cfg(target_os = "windows")]
-        pyo3_ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
+        crate::ffi::PyModule_AddIntConstant($mptr, $name.as_ptr(), $opt as i32);
     };
 }
 
@@ -156,7 +156,7 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
                     #[cfg(not(Py_3_10))]
                     _PyCFunctionFastWithKeywords: dumps,
                 },
-                ml_flags: pyo3_ffi::METH_FASTCALL | METH_KEYWORDS,
+                ml_flags: crate::ffi::METH_FASTCALL | METH_KEYWORDS,
                 ml_doc: dumps_doc.as_ptr(),
             };
 
@@ -228,19 +228,19 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
     unsafe {
         let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
             PyModuleDef_Slot {
-                slot: pyo3_ffi::Py_mod_exec,
+                slot: crate::ffi::Py_mod_exec,
                 #[allow(clippy::fn_to_numeric_cast_any, clippy::as_conversions)]
                 value: orjson_init_exec as *mut c_void,
             },
             #[cfg(Py_3_12)]
             PyModuleDef_Slot {
-                slot: pyo3_ffi::Py_mod_multiple_interpreters,
-                value: pyo3_ffi::Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
+                slot: crate::ffi::Py_mod_multiple_interpreters,
+                value: crate::ffi::Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED,
             },
             #[cfg(Py_3_13)]
             PyModuleDef_Slot {
-                slot: pyo3_ffi::Py_mod_gil,
-                value: pyo3_ffi::Py_MOD_GIL_USED,
+                slot: crate::ffi::Py_mod_gil,
+                value: crate::ffi::Py_MOD_GIL_USED,
             },
             PyModuleDef_Slot {
                 slot: 0,
@@ -315,7 +315,7 @@ fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
 #[cfg(Py_3_12)]
 fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
     unsafe {
-        let cause_exc: *mut PyObject = pyo3_ffi::PyErr_GetRaisedException();
+        let cause_exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
 
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
@@ -324,9 +324,9 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
         Py_DECREF(err_msg);
 
         if !cause_exc.is_null() {
-            let exc: *mut PyObject = pyo3_ffi::PyErr_GetRaisedException();
-            pyo3_ffi::PyException_SetCause(exc, cause_exc);
-            pyo3_ffi::PyErr_SetRaisedException(exc);
+            let exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
+            crate::ffi::PyException_SetCause(exc, cause_exc);
+            crate::ffi::PyErr_SetRaisedException(exc);
         }
     }
     null_mut()
@@ -341,7 +341,7 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
         let mut cause_tp: *mut PyObject = null_mut();
         let mut cause_val: *mut PyObject = null_mut();
         let mut cause_traceback: *mut PyObject = null_mut();
-        pyo3_ffi::PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
+        crate::ffi::PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
 
         let err_msg =
             PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
@@ -351,19 +351,23 @@ fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
         let mut tp: *mut PyObject = null_mut();
         let mut val: *mut PyObject = null_mut();
         let mut traceback: *mut PyObject = null_mut();
-        pyo3_ffi::PyErr_Fetch(&mut tp, &mut val, &mut traceback);
-        pyo3_ffi::PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
+        crate::ffi::PyErr_Fetch(&mut tp, &mut val, &mut traceback);
+        crate::ffi::PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
 
         if !cause_tp.is_null() {
-            pyo3_ffi::PyErr_NormalizeException(&mut cause_tp, &mut cause_val, &mut cause_traceback);
-            pyo3_ffi::PyException_SetCause(val, cause_val);
+            crate::ffi::PyErr_NormalizeException(
+                &mut cause_tp,
+                &mut cause_val,
+                &mut cause_traceback,
+            );
+            crate::ffi::PyException_SetCause(val, cause_val);
             Py_DECREF(cause_tp);
         }
         if !cause_traceback.is_null() {
             Py_DECREF(cause_traceback);
         }
 
-        pyo3_ffi::PyErr_Restore(tp, val, traceback);
+        crate::ffi::PyErr_Restore(tp, val, traceback);
     }
     null_mut()
 }

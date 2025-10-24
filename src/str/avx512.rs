@@ -9,7 +9,7 @@ use core::arch::x86_64::{
 
 #[inline(never)]
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,bmi2")]
-pub(crate) unsafe fn create_str_impl_avx512vl(buf: &str) -> *mut pyo3_ffi::PyObject {
+pub(crate) unsafe fn create_str_impl_avx512vl(buf: &str) -> *mut crate::ffi::PyObject {
     unsafe {
         const STRIDE: usize = 64;
 

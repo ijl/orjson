@@ -34,7 +34,7 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
 }
 
 pub(crate) fn read_input_to_buf(
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 ) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let buffer: &[u8];
@@ -58,7 +58,7 @@ pub(crate) fn read_input_to_buf(
         buffer = unsafe { core::slice::from_raw_parts(as_str.as_ptr(), as_str.len()) };
     } else if unlikely!(is_type!(obj_type_ptr, MEMORYVIEW_TYPE)) {
         let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
-        if unsafe { pyo3_ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
+        if unsafe { crate::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
             return Err(DeserializeError::invalid(Cow::Borrowed(
                 "Input type memoryview must be a C contiguous buffer",
             )));

@@ -14,10 +14,10 @@ use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 
 pub(crate) fn serialize(
-    ptr: *mut pyo3_ffi::PyObject,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    ptr: *mut crate::ffi::PyObject,
+    default: Option<NonNull<crate::ffi::PyObject>>,
     opts: Opt,
-) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
+) -> Result<NonNull<crate::ffi::PyObject>, String> {
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
     let res = if opt_disabled!(opts, INDENT_2) {
@@ -35,16 +35,16 @@ pub(crate) fn serialize(
 }
 
 pub(crate) struct PyObjectSerializer {
-    pub ptr: *mut pyo3_ffi::PyObject,
+    pub ptr: *mut crate::ffi::PyObject,
     pub state: SerializerState,
-    pub default: Option<NonNull<pyo3_ffi::PyObject>>,
+    pub default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl PyObjectSerializer {
     pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,

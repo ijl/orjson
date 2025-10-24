@@ -6,8 +6,8 @@ use crate::typeref::EMPTY_UNICODE;
 use core::ptr::NonNull;
 
 pub(crate) fn deserialize(
-    ptr: *mut pyo3_ffi::PyObject,
-) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+    ptr: *mut crate::ffi::PyObject,
+) -> Result<NonNull<crate::ffi::PyObject>, DeserializeError<'static>> {
     debug_assert!(ffi!(Py_REFCNT(ptr)) >= 1);
     let buffer = read_input_to_buf(ptr)?;
     debug_assert!(!buffer.is_empty());

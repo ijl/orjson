@@ -10,12 +10,12 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub(crate) struct IntSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl IntSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         IntSerializer {
             ptr: ptr,
             opts: opts,
@@ -44,23 +44,12 @@ impl Serialize for IntSerializer {
                 }
             } else {
                 let mut buffer: [u8; 8] = [0; 8];
-
-                #[cfg(not(Py_3_13))]
-                let ret = crate::ffi::_PyLong_AsByteArray(
-                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
+                let ret = crate::ffi::PyLong_AsByteArray(
+                    self.ptr.cast::<crate::ffi::PyLongObject>(),
                     buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
                     8,
                     1,
                     is_signed,
-                );
-                #[cfg(Py_3_13)]
-                let ret = crate::ffi::_PyLong_AsByteArray(
-                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
-                    buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
-                    8,
-                    1,
-                    is_signed,
-                    0,
                 );
                 if unlikely!(ret == -1) {
                     #[cfg(not(Py_3_13))]

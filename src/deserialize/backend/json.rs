@@ -11,7 +11,7 @@ use std::fmt;
 
 pub(crate) fn deserialize(
     data: &'static str,
-) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+) -> Result<NonNull<crate::ffi::PyObject>, DeserializeError<'static>> {
     let mut deserializer = serde_json::Deserializer::from_str(data);
     let seed = JsonValue {};
     match seed.deserialize(&mut deserializer) {
@@ -34,7 +34,7 @@ pub(crate) fn deserialize(
 struct JsonValue;
 
 impl<'de> DeserializeSeed<'de> for JsonValue {
-    type Value = NonNull<pyo3_ffi::PyObject>;
+    type Value = NonNull<crate::ffi::PyObject>;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -45,7 +45,7 @@ impl<'de> DeserializeSeed<'de> for JsonValue {
 }
 
 impl<'de> Visitor<'de> for JsonValue {
-    type Value = NonNull<pyo3_ffi::PyObject>;
+    type Value = NonNull<crate::ffi::PyObject>;
 
     fn expecting(&self, _formatter: &mut fmt::Formatter) -> fmt::Result {
         Ok(())
@@ -104,7 +104,7 @@ impl<'de> Visitor<'de> for JsonValue {
         match seq.next_element_seed(self) {
             Ok(None) => Ok(nonnull!(ffi!(PyList_New(0)))),
             Ok(Some(elem)) => {
-                let mut elements: SmallVec<[*mut pyo3_ffi::PyObject; 8]> =
+                let mut elements: SmallVec<[*mut crate::ffi::PyObject; 8]> =
                     SmallVec::with_capacity(8);
                 elements.push(elem.as_ptr());
                 while let Some(elem) = seq.next_element_seed(self)? {

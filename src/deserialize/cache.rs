@@ -26,7 +26,7 @@ impl CachedKey {
 
 impl Drop for CachedKey {
     fn drop(&mut self) {
-        ffi!(Py_DECREF(self.ptr.as_ptr().cast::<pyo3_ffi::PyObject>()));
+        ffi!(Py_DECREF(self.ptr.as_ptr().cast::<crate::ffi::PyObject>()));
     }
 }
 

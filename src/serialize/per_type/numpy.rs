@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use crate::opt::Opt;
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
@@ -13,7 +14,6 @@ use crate::util::isize_to_usize;
 use core::ffi::{c_char, c_int, c_void};
 use jiff::Timestamp;
 use jiff::civil::DateTime;
-use pyo3_ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use serde::ser::{self, Serialize, SerializeSeq, Serializer};
 use std::fmt;
 
@@ -886,7 +886,7 @@ impl Serialize for DataTypeBool {
 }
 
 pub(crate) struct NumpyScalar {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut PyObject,
     opts: Opt,
 }
 
@@ -1246,7 +1246,7 @@ impl NumpyDatetimeUnit {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
-        let descr_str = unsafe { crate::ffi::PyTuple_GET_ITEM(el0, 1) };
+        let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
         let uni = unsafe { PyStr::from_ptr_unchecked(descr_str).to_str().unwrap() };
         if uni.len() < 5 {
             return Self::NaT;

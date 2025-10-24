@@ -39,17 +39,17 @@ impl Serialize for ZeroDictSerializer {
 }
 
 pub(crate) struct DictGenericSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
     #[allow(dead_code)]
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl DictGenericSerializer {
     pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         DictGenericSerializer {
             ptr: ptr,
@@ -205,9 +205,9 @@ macro_rules! impl_serialize_entry {
 }
 
 pub(crate) struct Dict {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl Serialize for Dict {
@@ -217,8 +217,8 @@ impl Serialize for Dict {
         S: Serializer,
     {
         let mut pos = 0;
-        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
@@ -254,9 +254,9 @@ impl Serialize for Dict {
 }
 
 pub(crate) struct DictSortedKey {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl Serialize for DictSortedKey {
@@ -266,15 +266,15 @@ impl Serialize for DictSortedKey {
         S: Serializer,
     {
         let mut pos = 0;
-        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
         let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
 
-        let mut items: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
+        let mut items: SmallVec<[(&str, *mut crate::ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
 
         for _ in 0..len as usize {
@@ -309,7 +309,7 @@ impl Serialize for DictSortedKey {
 }
 
 #[inline(never)]
-fn non_str_str(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_str(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     // because of ObType::Enum
     let uni = unsafe { PyStr::from_ptr_unchecked(key).to_str() };
     if unlikely!(uni.is_none()) {
@@ -321,7 +321,7 @@ fn non_str_str(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
 
 #[cold]
 #[inline(never)]
-fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_str_subclass(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     let uni = unsafe { PyStrSubclass::from_ptr_unchecked(key).to_str() };
     if unlikely!(uni.is_none()) {
         Err(SerializeError::InvalidStr)
@@ -332,7 +332,7 @@ fn non_str_str_subclass(key: *mut pyo3_ffi::PyObject) -> Result<String, Serializ
 
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
-fn non_str_date(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_date(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
     Date::new(key).write_buf(&mut buf);
     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
@@ -341,7 +341,7 @@ fn non_str_date(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> 
 
 #[inline(never)]
 fn non_str_datetime(
-    key: *mut pyo3_ffi::PyObject,
+    key: *mut crate::ffi::PyObject,
     opts: crate::opt::Opt,
 ) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
@@ -356,7 +356,7 @@ fn non_str_datetime(
 #[cold]
 #[inline(never)]
 fn non_str_time(
-    key: *mut pyo3_ffi::PyObject,
+    key: *mut crate::ffi::PyObject,
     opts: crate::opt::Opt,
 ) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
@@ -370,7 +370,7 @@ fn non_str_time(
 
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
-fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_uuid(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
     UUID::new(key).write_buf(&mut buf);
     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
@@ -380,7 +380,7 @@ fn non_str_uuid(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> 
 #[allow(clippy::unnecessary_wraps)]
 #[cold]
 #[inline(never)]
-fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_float(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     let val = ffi!(PyFloat_AS_DOUBLE(key));
     if !val.is_finite() {
         Ok(String::from("null"))
@@ -391,7 +391,7 @@ fn non_str_float(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError>
 
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
-fn non_str_int(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_int(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
     let ival = ffi!(PyLong_AsLongLong(key));
     if unlikely!(ival == -1 && !ffi!(PyErr_Occurred()).is_null()) {
         ffi!(PyErr_Clear());
@@ -406,19 +406,19 @@ fn non_str_int(key: *mut pyo3_ffi::PyObject) -> Result<String, SerializeError> {
 }
 
 #[inline(never)]
-fn sort_dict_items(items: &mut SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]>) {
+fn sort_dict_items(items: &mut SmallVec<[(&str, *mut crate::ffi::PyObject); 8]>) {
     items.sort_unstable_by(|a, b| a.0.cmp(b.0));
 }
 
 pub(crate) struct DictNonStrKey {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl DictNonStrKey {
     fn pyobject_to_string(
-        key: *mut pyo3_ffi::PyObject,
+        key: *mut crate::ffi::PyObject,
         opts: crate::opt::Opt,
     ) -> Result<String, SerializeError> {
         match pyobject_to_obtype(key, opts) {
@@ -464,8 +464,8 @@ impl Serialize for DictNonStrKey {
         S: Serializer,
     {
         let mut pos = 0;
-        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
@@ -474,7 +474,7 @@ impl Serialize for DictNonStrKey {
         let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
 
-        let mut items: SmallVec<[(String, *mut pyo3_ffi::PyObject); 8]> =
+        let mut items: SmallVec<[(String, *mut crate::ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
 
         for _ in 0..len {
@@ -498,7 +498,7 @@ impl Serialize for DictNonStrKey {
             }
         }
 
-        let mut items_as_str: SmallVec<[(&str, *mut pyo3_ffi::PyObject); 8]> =
+        let mut items_as_str: SmallVec<[(&str, *mut crate::ffi::PyObject); 8]> =
             SmallVec::with_capacity(len);
         items
             .iter()

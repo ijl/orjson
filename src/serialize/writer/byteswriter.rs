@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+use crate::ffi::{
+    _PyBytes_Resize, PyBytes_FromStringAndSize, PyBytesObject, PyObject, PyVarObject,
+};
 use crate::util::usize_to_isize;
 use bytes::{BufMut, buf::UninitSlice};
 use core::mem::MaybeUninit;
 use core::ptr::NonNull;
-use pyo3_ffi::{_PyBytes_Resize, PyBytes_FromStringAndSize, PyBytesObject, PyObject, PyVarObject};
 
 const BUFFER_LENGTH: usize = 1024;
 

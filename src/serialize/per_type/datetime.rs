@@ -31,11 +31,11 @@ macro_rules! write_microsecond {
 
 #[repr(transparent)]
 pub(crate) struct Date {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 }
 
 impl Date {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
         Date { ptr: ptr }
     }
 
@@ -88,12 +88,12 @@ pub(crate) enum TimeError {
 }
 
 pub(crate) struct Time {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         Time {
             ptr: ptr,
             opts: opts,
@@ -105,7 +105,7 @@ impl Time {
     where
         B: bytes::BufMut,
     {
-        if unsafe { (*self.ptr.cast::<pyo3_ffi::PyDateTime_Time>()).hastzinfo == 1 } {
+        if unsafe { (*self.ptr.cast::<crate::ffi::PyDateTime_Time>()).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
@@ -138,12 +138,12 @@ impl Serialize for Time {
 }
 
 pub(crate) struct DateTime {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl DateTime {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
@@ -177,7 +177,7 @@ impl DateTimeLike for DateTime {
     }
 
     fn has_tz(&self) -> bool {
-        unsafe { (*(self.ptr.cast::<pyo3_ffi::PyDateTime_DateTime>())).hastzinfo == 1 }
+        unsafe { (*(self.ptr.cast::<crate::ffi::PyDateTime_DateTime>())).hastzinfo == 1 }
     }
 
     #[inline(never)]

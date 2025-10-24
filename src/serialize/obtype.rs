@@ -32,7 +32,7 @@ pub(crate) enum ObType {
     Unknown,
 }
 
-pub(crate) fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObType {
+pub(crate) fn pyobject_to_obtype(obj: *mut crate::ffi::PyObject, opts: Opt) -> ObType {
     let ob_type = ob_type!(obj);
     if is_class_by_type!(ob_type, STR_TYPE) {
         ObType::Str
@@ -59,7 +59,7 @@ pub(crate) fn pyobject_to_obtype(obj: *mut pyo3_ffi::PyObject, opts: Opt) -> ObT
 #[cfg_attr(feature = "optimize", optimize(size))]
 #[inline(never)]
 pub(crate) fn pyobject_to_obtype_unlikely(
-    ob_type: *mut pyo3_ffi::PyTypeObject,
+    ob_type: *mut crate::ffi::PyTypeObject,
     opts: Opt,
 ) -> ObType {
     if is_class_by_type!(ob_type, UUID_TYPE) {
