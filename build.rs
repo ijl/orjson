@@ -7,9 +7,9 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
+    println!("cargo:rustc-check-cfg=cfg(cold_path)");
     println!("cargo:rustc-check-cfg=cfg(CPython)");
     println!("cargo:rustc-check-cfg=cfg(GraalPy)");
-    println!("cargo:rustc-check-cfg=cfg(intrinsics)");
     println!("cargo:rustc-check-cfg=cfg(optimize)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_10)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_11)");
@@ -50,8 +50,8 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"avx512\"");
     }
 
-    if version_check::supports_feature("core_intrinsics").unwrap_or(false) {
-        println!("cargo:rustc-cfg=feature=\"intrinsics\"");
+    if version_check::supports_feature("cold_path").unwrap_or(false) {
+        println!("cargo:rustc-cfg=feature=\"cold_path\"");
     }
 
     if version_check::supports_feature("optimize_attribute").unwrap_or(false) {

@@ -82,33 +82,10 @@ macro_rules! opt_disabled {
     };
 }
 
-#[cfg(feature = "intrinsics")]
-macro_rules! unlikely {
-    ($exp:expr) => {
-        core::intrinsics::unlikely($exp)
-    };
-}
-
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! unlikely {
-    ($exp:expr) => {
-        $exp
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! likely {
-    ($exp:expr) => {
-        core::intrinsics::likely($exp)
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! likely {
-    ($exp:expr) => {
-        $exp
+macro_rules! cold_path {
+    () => {
+        #[cfg(feature = "cold_path")]
+        core::hint::cold_path();
     };
 }
 
@@ -345,22 +322,6 @@ macro_rules! assume {
         unsafe {
             core::hint::assert_unchecked($expr);
         };
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! trailing_zeros {
-    ($val:expr) => {
-        core::intrinsics::cttz_nonzero($val) as usize
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! trailing_zeros {
-    ($val:expr) => {
-        $val.trailing_zeros() as usize
     };
 }
 

@@ -9,7 +9,8 @@ use core::ptr::NonNull;
 #[cfg(not(Py_GIL_DISABLED))]
 #[inline(always)]
 pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
-    if unlikely!(key_str.len() > 64) {
+    if key_str.len() > 64 {
+        cold_path!();
         PyStr::from_str_with_hash(key_str)
     } else {
         assume!(key_str.len() <= 64);
@@ -23,7 +24,7 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
                     || hash,
                     || CachedKey::new(PyStr::from_str_with_hash(key_str)),
                 );
-            unsafe { entry.get() }
+            entry.get()
         }
     }
 }

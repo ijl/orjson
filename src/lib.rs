@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-#![cfg_attr(feature = "intrinsics", feature(core_intrinsics))]
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
-#![allow(internal_features)] // core_intrinsics
+#![cfg_attr(feature = "cold_path", feature(cold_path))]
 #![allow(non_camel_case_types)]
 #![allow(stable_features)] // MSRV
 #![allow(static_mut_refs)]
@@ -392,7 +391,8 @@ pub(crate) unsafe extern "C" fn dumps(
         let mut optsptr: Option<NonNull<PyObject>> = None;
 
         let num_args = PyVectorcall_NARGS(isize_to_usize(nargs));
-        if unlikely!(num_args == 0) {
+        if num_args == 0 {
+            cold_path!();
             return raise_dumps_exception_fixed(
                 "dumps() missing 1 required positional argument: 'obj'",
             );
@@ -403,18 +403,21 @@ pub(crate) unsafe extern "C" fn dumps(
         if num_args & 3 == 3 {
             optsptr = Some(NonNull::new_unchecked(*args.offset(2)));
         }
-        if unlikely!(!kwnames.is_null()) {
+        if !kwnames.is_null() {
+            cold_path!();
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
                 let arg = crate::ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
                 if core::ptr::eq(arg, typeref::DEFAULT) {
-                    if unlikely!(num_args & 2 == 2) {
+                    if num_args & 2 == 2 {
+                        cold_path!();
                         return raise_dumps_exception_fixed(
                             "dumps() got multiple values for argument: 'default'",
                         );
                     }
                     default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
                 } else if core::ptr::eq(arg, typeref::OPTION) {
-                    if unlikely!(num_args & 3 == 3) {
+                    if num_args & 3 == 3 {
+                        cold_path!();
                         return raise_dumps_exception_fixed(
                             "dumps() got multiple values for argument: 'option'",
                         );
@@ -430,14 +433,17 @@ pub(crate) unsafe extern "C" fn dumps(
 
         let mut optsbits: i32 = 0;
         if let Some(opts) = optsptr {
+            cold_path!();
             if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
                 #[allow(clippy::cast_possible_truncation)]
                 let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
                 optsbits = tmp;
-                if unlikely!(!(0..=opt::MAX_OPT).contains(&optsbits)) {
+                if !(0..=opt::MAX_OPT).contains(&optsbits) {
+                    cold_path!();
                     return raise_dumps_exception_fixed("Invalid opts");
                 }
-            } else if unlikely!(!core::ptr::eq(opts.as_ptr(), typeref::NONE)) {
+            } else if !core::ptr::eq(opts.as_ptr(), typeref::NONE) {
+                cold_path!();
                 return raise_dumps_exception_fixed("Invalid opts");
             }
         }

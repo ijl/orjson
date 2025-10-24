@@ -101,7 +101,8 @@ pub(crate) fn pyobject_to_obtype_unlikely(
         return ObType::Dataclass;
     }
 
-    if unlikely!(opt_enabled!(opts, SERIALIZE_NUMPY)) {
+    if opt_enabled!(opts, SERIALIZE_NUMPY) {
+        cold_path!();
         if is_numpy_scalar(ob_type) {
             return ObType::NumpyScalar;
         } else if is_numpy_array(ob_type) {

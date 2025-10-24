@@ -32,9 +32,9 @@ unwind = ["unwinding"]
 
 # Features detected by build.rs. Do not specify.
 avx512 = []
+cold_path = []
 generic_simd = []
 inline_int = []
-intrinsics = []
 optimize = []
 
 [dependencies]

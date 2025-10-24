@@ -12,7 +12,8 @@ pub(crate) fn deserialize(
     let buffer = read_input_to_buf(ptr)?;
     debug_assert!(!buffer.is_empty());
 
-    if unlikely!(buffer.len() == 2) {
+    if buffer.len() == 2 {
+        cold_path!();
         if buffer == b"[]" {
             return Ok(nonnull!(ffi!(PyList_New(0))));
         } else if buffer == b"{}" {

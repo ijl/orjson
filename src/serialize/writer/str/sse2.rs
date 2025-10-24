@@ -48,7 +48,7 @@ pub(crate) unsafe fn format_escaped_str_impl_sse2_128(
                     _mm_storeu_si128(dst.cast::<__m128i>(), str_vec);
 
                     if mask != 0 {
-                        let cn = trailing_zeros!(mask) as usize;
+                        let cn = mask.trailing_zeros() as usize;
                         nb -= cn;
                         dst = dst.add(cn);
                         src = src.add(cn);
@@ -81,7 +81,7 @@ pub(crate) unsafe fn format_escaped_str_impl_sse2_128(
                     _mm_storeu_si128(dst.cast::<__m128i>(), str_vec);
 
                     if mask != 0 {
-                        let cn = trailing_zeros!(mask) as usize;
+                        let cn = mask.trailing_zeros() as usize;
                         nb -= cn;
                         dst = dst.add(cn);
                         scratch_ptr = scratch_ptr.add(cn);

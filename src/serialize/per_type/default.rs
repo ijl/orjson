@@ -25,7 +25,8 @@ impl Serialize for DefaultSerializer<'_> {
     {
         match self.previous.default {
             Some(callable) => {
-                if unlikely!(self.previous.state.default_calls_limit()) {
+                if self.previous.state.default_calls_limit() {
+                    cold_path!();
                     err!(SerializeError::DefaultRecursionLimit)
                 }
                 #[cfg(not(Py_3_10))]
@@ -46,7 +47,7 @@ impl Serialize for DefaultSerializer<'_> {
                         core::ptr::null_mut(),
                     )
                 };
-                if unlikely!(default_obj.is_null()) {
+                if default_obj.is_null() {
                     err!(SerializeError::UnsupportedType(nonnull!(self.previous.ptr)))
                 } else {
                     let res = PyObjectSerializer::new(

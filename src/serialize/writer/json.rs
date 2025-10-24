@@ -119,7 +119,8 @@ where
 
     #[inline]
     fn serialize_f32(self, value: f32) -> Result<()> {
-        if unlikely!(value.is_infinite() || value.is_nan()) {
+        if value.is_infinite() || value.is_nan() {
+            cold_path!();
             self.serialize_unit()
         } else {
             self.formatter
@@ -129,7 +130,8 @@ where
     }
     #[inline]
     fn serialize_f64(self, value: f64) -> Result<()> {
-        if unlikely!(value.is_infinite() || value.is_nan()) {
+        if value.is_infinite() || value.is_nan() {
+            cold_path!();
             self.serialize_unit()
         } else {
             self.formatter

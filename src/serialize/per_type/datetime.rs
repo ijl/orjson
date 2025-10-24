@@ -48,7 +48,8 @@ impl Date {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
             let mut yearbuf = itoa::Buffer::new();
             let formatted = yearbuf.format(year);
-            if unlikely!(year < 1000) {
+            if year < 1000 {
+                cold_path!();
                 // date-fullyear   = 4DIGIT
                 buf.put_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
             }

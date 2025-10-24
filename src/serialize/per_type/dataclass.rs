@@ -31,12 +31,13 @@ impl Serialize for DataclassGenericSerializer<'_> {
     where
         S: Serializer,
     {
-        if unlikely!(self.previous.state.recursion_limit()) {
+        if self.previous.state.recursion_limit() {
             err!(SerializeError::RecursionLimit)
         }
         let dict = ffi!(PyObject_GetAttr(self.previous.ptr, DICT_STR));
         let ob_type = ob_type!(self.previous.ptr);
-        if unlikely!(dict.is_null()) {
+        if dict.is_null() {
+            cold_path!();
             ffi!(PyErr_Clear());
             DataclassFallbackSerializer::new(
                 self.previous.ptr,
@@ -90,7 +91,8 @@ impl Serialize for DataclassFastSerializer {
         S: Serializer,
     {
         let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
-        if unlikely!(len == 0) {
+        if len == 0 {
+            cold_path!();
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
@@ -109,7 +111,8 @@ impl Serialize for DataclassFastSerializer {
 
             let key_as_str = {
                 let key_ob_type = ob_type!(key);
-                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                if !is_class_by_type!(key_ob_type, STR_TYPE) {
+                    cold_path!();
                     err!(SerializeError::KeyMustBeStr)
                 }
                 match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
@@ -117,7 +120,8 @@ impl Serialize for DataclassFastSerializer {
                     None => err!(SerializeError::InvalidStr),
                 }
             };
-            if unlikely!(key_as_str.as_bytes()[0] == b'_') {
+            if key_as_str.as_bytes()[0] == b'_' {
+                cold_path!();
                 continue;
             }
             let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
@@ -159,7 +163,8 @@ impl Serialize for DataclassFallbackSerializer {
         debug_assert!(ffi!(Py_REFCNT(fields)) >= 2);
         ffi!(Py_DECREF(fields));
         let len = isize_to_usize(ffi!(Py_SIZE(fields)));
-        if unlikely!(len == 0) {
+        if len == 0 {
+            cold_path!();
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
@@ -189,6 +194,7 @@ impl Serialize for DataclassFallbackSerializer {
                 None => err!(SerializeError::InvalidStr),
             };
             if key_as_str.as_bytes()[0] == b'_' {
+                cold_path!();
                 continue;
             }
 

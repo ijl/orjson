@@ -73,7 +73,7 @@ pub(crate) fn deserialize(
     assume!(!data.is_empty());
     let buffer_capacity = buffer_capacity_to_allocate(data.len());
     let buffer_ptr = ffi!(PyMem_Malloc(buffer_capacity));
-    if unlikely!(buffer_ptr.is_null()) {
+    if buffer_ptr.is_null() {
         return Err(DeserializeError::from_yyjson(
             Cow::Borrowed("Not enough memory to allocate buffer for parsing"),
             0,
@@ -104,14 +104,15 @@ pub(crate) fn deserialize(
             &raw mut err,
         )
     };
-    if unlikely!(doc.is_null()) {
+    if doc.is_null() {
         ffi!(PyMem_Free(buffer_ptr));
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         return Err(DeserializeError::from_yyjson(msg, err.pos as i64, data));
     }
     let val = yyjson_doc_get_root(doc);
     let pyval = {
-        if unlikely!(!unsafe_yyjson_is_ctn(val)) {
+        if !unsafe_yyjson_is_ctn(val) {
+            cold_path!();
             match ElementType::from_tag(val) {
                 ElementType::String => parse_yy_string(val),
                 ElementType::Uint64 => parse_yy_u64(val),
@@ -214,7 +215,8 @@ fn populate_yy_array(list: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
 
         for _ in 0..len {
             let val = next;
-            if unlikely!(unsafe_yyjson_is_ctn(val)) {
+            if unsafe_yyjson_is_ctn(val) {
+                cold_path!();
                 next = unsafe_yyjson_get_next_container(val);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
                     let pyval = ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val))));
@@ -265,7 +267,8 @@ fn populate_yy_object(dict: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
                 );
                 get_unicode_key(key_str)
             };
-            if unlikely!(unsafe_yyjson_is_ctn(val)) {
+            if unsafe_yyjson_is_ctn(val) {
+                cold_path!();
                 next_key = unsafe_yyjson_get_next_container(val);
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {

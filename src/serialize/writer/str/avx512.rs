@@ -36,7 +36,7 @@ pub(crate) unsafe fn format_escaped_str_impl_512vl(
                 | _mm256_cmplt_epu8_mask(str_vec, x20);
 
             if mask != 0 {
-                let cn = trailing_zeros!(mask);
+                let cn = mask.trailing_zeros() as usize;
                 src = src.add(cn);
                 dst = dst.add(cn);
                 nb -= cn;
@@ -63,7 +63,7 @@ pub(crate) unsafe fn format_escaped_str_impl_512vl(
                 & remainder_mask;
 
             if mask != 0 {
-                let cn = trailing_zeros!(mask);
+                let cn = mask.trailing_zeros() as usize;
                 src = src.add(cn);
                 dst = dst.add(cn);
                 nb -= cn;

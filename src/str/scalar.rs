@@ -14,7 +14,7 @@ pub(crate) unsafe fn str_impl_kind_scalar(buf: &str) -> *mut crate::ffi::PyObjec
         let len = buf.len();
         assume!(len > 0);
 
-        if unlikely!(*(buf.as_bytes().as_ptr()) > 239) {
+        if *(buf.as_bytes().as_ptr()) > 239 {
             return pyunicode_fourbyte(buf, num_chars);
         }
 

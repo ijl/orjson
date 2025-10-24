@@ -323,9 +323,11 @@ impl Serialize for NumpyArray {
     where
         S: Serializer,
     {
-        if unlikely!(!(self.depth >= self.dimensions() || self.shape()[self.depth] != 0)) {
+        if !(self.depth >= self.dimensions() || self.shape()[self.depth] != 0) {
+            cold_path!();
             ZeroListSerializer::new().serialize(serializer)
         } else if !self.children.is_empty() {
+            cold_path!();
             let mut seq = serializer.serialize_seq(None).unwrap();
             for child in &self.children {
                 seq.serialize_element(child).unwrap();

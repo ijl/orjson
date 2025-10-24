@@ -37,7 +37,7 @@ pub(crate) unsafe fn format_escaped_str_impl_generic_128(
                     v.copy_to_slice(core::slice::from_raw_parts_mut(dst, STRIDE));
 
                     if mask != 0 {
-                        let cn = trailing_zeros!(mask) as usize;
+                        let cn = mask.trailing_zeros() as usize;
                         nb -= cn;
                         dst = dst.add(cn);
                         src = src.add(cn);
@@ -67,7 +67,7 @@ pub(crate) unsafe fn format_escaped_str_impl_generic_128(
             loop {
                 v.copy_to_slice(core::slice::from_raw_parts_mut(dst, STRIDE));
                 if mask != 0 {
-                    let cn = trailing_zeros!(mask) as usize;
+                    let cn = mask.trailing_zeros() as usize;
                     nb -= cn;
                     dst = dst.add(cn);
                     scratch_ptr = scratch_ptr.add(cn);

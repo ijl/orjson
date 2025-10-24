@@ -13,7 +13,8 @@ use core::ptr::NonNull;
 fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     let mut str_size: Py_ssize_t = 0;
     let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &mut str_size)).cast::<u8>();
-    if unlikely!(ptr.is_null()) {
+    if ptr.is_null() {
+        cold_path!();
         None
     } else {
         Some(str_from_slice!(ptr, str_size as usize))
@@ -76,7 +77,7 @@ impl PyStr {
 
     #[inline(always)]
     pub fn from_str(buf: &str) -> PyStr {
-        if unlikely!(buf.is_empty()) {
+        if buf.is_empty() {
             return PyStr {
                 ptr: nonnull!(use_immortal!(EMPTY_UNICODE)),
             };
@@ -129,7 +130,8 @@ impl PyStr {
     pub fn to_str(self) -> Option<&'static str> {
         unsafe {
             let op = self.ptr.as_ptr();
-            if unlikely!((*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == 0) {
+            if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT == 0 {
+                cold_path!();
                 to_str_via_ffi(op)
             } else if (*op.cast::<PyASCIIObject>()).state & STATE_COMPACT_ASCII
                 == STATE_COMPACT_ASCII

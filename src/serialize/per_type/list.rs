@@ -86,7 +86,8 @@ impl Serialize for ListTupleSerializer {
     where
         S: Serializer,
     {
-        if unlikely!(self.state.recursion_limit()) {
+        if self.state.recursion_limit() {
+            cold_path!();
             err!(SerializeError::RecursionLimit)
         }
         debug_assert!(self.len >= 1);

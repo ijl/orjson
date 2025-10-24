@@ -146,7 +146,8 @@ impl WriteExt for &mut BytesWriter {
     #[inline(always)]
     fn reserve(&mut self, len: usize) {
         let end_length = self.len + len;
-        if unlikely!(end_length >= self.cap) {
+        if end_length >= self.cap {
+            cold_path!();
             self.grow(end_length);
         }
     }
