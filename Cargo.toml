@@ -1,6 +1,6 @@
 [package]
 name = "orjson"
-version = "3.11.3"
+version = "3.11.4"
 authors = ["ijl <ijl@mailbox.org>"]
 edition = "2024"
 resolver = "3"
