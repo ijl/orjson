@@ -21,15 +21,15 @@ fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     }
 }
 
-#[cfg(feature = "avx512")]
+#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
 pub type StrDeserializer = unsafe fn(&str) -> *mut PyObject;
 
-#[cfg(feature = "avx512")]
+#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
 static mut STR_CREATE_FN: StrDeserializer = super::scalar::str_impl_kind_scalar;
 
 pub fn set_str_create_fn() {
     unsafe {
-        #[cfg(feature = "avx512")]
+        #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
         if std::is_x86_feature_detected!("avx512vl") {
             STR_CREATE_FN = crate::str::avx512::create_str_impl_avx512vl;
         }
@@ -82,9 +82,9 @@ impl PyStr {
                 ptr: nonnull!(use_immortal!(EMPTY_UNICODE)),
             };
         }
-        #[cfg(not(feature = "avx512"))]
+        #[cfg(not(all(target_arch = "x86_64", feature = "avx512")))]
         let str_ptr = unsafe { super::scalar::str_impl_kind_scalar(buf) };
-        #[cfg(feature = "avx512")]
+        #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
         let str_ptr = unsafe { STR_CREATE_FN(buf) };
         debug_assert!(!str_ptr.is_null());
         PyStr {
