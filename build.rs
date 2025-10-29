@@ -45,9 +45,16 @@ fn main() {
         }
     }
 
-    #[cfg(all(target_arch = "x86_64", not(target_os = "macos")))]
-    if version_check::is_min_version("1.89.0").unwrap_or(false) && is_64_bit_python {
-        println!("cargo:rustc-cfg=feature=\"avx512\"");
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH")
+        .expect("CARGO_CFG_TARGET_ARCH is not set.");
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS")
+        .expect("CARGO_CFG_TARGET_OS is not set.");
+
+    // Only enable the avx512 feature if the TARGET is x86_64 (and not macOS).
+    if target_arch == "x86_64" && target_os != "macos" {
+        if version_check::is_min_version("1.89.0").unwrap_or(false) && is_64_bit_python {
+            println!("cargo:rustc-cfg=feature=\"avx512\"");
+        }
     }
 
     if version_check::supports_feature("cold_path").unwrap_or(false) {
