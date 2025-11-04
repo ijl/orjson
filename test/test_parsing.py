@@ -1934,11 +1934,7 @@ class TestJSONTestSuiteParsing:
         """
         i_structure_500_nested_arrays.json
         """
-        try:
-            self._run_pass_json("i_structure_500_nested_arrays.json.xz")
-        except orjson.JSONDecodeError:
-            # fails on serde, passes on yyjson
-            pass
+        self._run_pass_json("i_structure_500_nested_arrays.json.xz")
 
     def test_i_structure_UTF_8_BOM_empty_object(self):
         """
