@@ -338,10 +338,8 @@ fn non_str_numpy_scalar(
     key: *mut crate::ffi::PyObject,
     opts: crate::opt::Opt,
 ) -> Result<String, SerializeError> {
-    // TODO really I'd like to reuse the NumpyScalar serialize method logic here, but we don't have the serializer
-    // So for now we fake it.
     let scalar = NumpyScalar::new(key, opts);
-    serde_json::to_string(&scalar).map_err(|_| SerializeError::NumpyMalformed)
+    Ok(scalar.to_string())
 }
 
 #[allow(clippy::unnecessary_wraps)]
