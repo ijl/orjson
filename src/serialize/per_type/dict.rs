@@ -332,6 +332,18 @@ fn non_str_str_subclass(key: *mut crate::ffi::PyObject) -> Result<String, Serial
     }
 }
 
+#[cold]
+#[inline(never)]
+fn non_str_numpy_scalar(
+    key: *mut crate::ffi::PyObject,
+    opts: crate::opt::Opt,
+) -> Result<String, SerializeError> {
+    // TODO really I'd like to reuse the NumpyScalar serialize method logic here, but we don't have the serializer
+    // So for now we fake it.
+    let scalar = NumpyScalar::new(key, opts);
+    serde_json::to_string(&scalar).map_err(|_| SerializeError::NumpyMalformed)
+}
+
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_date(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
@@ -448,8 +460,8 @@ impl DictNonStrKey {
             }
             ObType::Str => non_str_str(key),
             ObType::StrSubclass => non_str_str_subclass(key),
+            ObType::NumpyScalar => non_str_numpy_scalar(key, opts),
             ObType::Tuple
-            | ObType::NumpyScalar
             | ObType::NumpyArray
             | ObType::Dict
             | ObType::List

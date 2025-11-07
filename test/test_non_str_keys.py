@@ -230,12 +230,12 @@ class TestNonStrKeyTests:
 
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_dict_non_str_numpy_scalar_int8(self):
-        assert orjson.dumps({numpy.int8(0): numpy.int8(0)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"0": 0}'
+        assert orjson.dumps({numpy.int8(0): numpy.int8(0)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"0":0}'
         assert (
-            orjson.dumps({numpy.int8(127): numpy.int8(127)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"127": 127}'
+            orjson.dumps({numpy.int8(127): numpy.int8(127)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"127":127}'
         )
         assert (
-            orjson.dumps({numpy.int8(-128): numpy.int8(-128)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"-128": -128}'
+            orjson.dumps({numpy.int8(-128): numpy.int8(-128)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"-128":-128}'
         )
 
     # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
