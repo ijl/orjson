@@ -8,6 +8,7 @@ rust-version = "1.85"
 license = "Apache-2.0 OR MIT"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
+    "build.rs",
     "Cargo.toml",
     "CHANGELOG.md",
     "include/yyjson",
