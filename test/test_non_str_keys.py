@@ -228,6 +228,60 @@ class TestNonStrKeyTests:
             == b'{"1970-01-03":3,"1970-01-05":2,"other":1}'
         )
 
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_int8(self):
+        assert orjson.dumps({numpy.int8(0): numpy.int8(0)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"0": 0}'
+        assert (
+            orjson.dumps({numpy.int8(127): numpy.int8(127)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"127": 127}'
+        )
+        assert (
+            orjson.dumps({numpy.int8(-128): numpy.int8(-128)}, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS) == b'{"-128": -128}'
+        )
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_int16(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_int32(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_int64(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_uint8(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_uint16(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_uint32(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_uint64(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_float16(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_float32(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_float64(self):
+    #     pass
+
+    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    # def test_dict_non_str_numpy_scalar_bool(self):
+    #     pass
+
     @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_dict_keys_time_err(self):
         """
