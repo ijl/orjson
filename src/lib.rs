@@ -21,6 +21,7 @@
 #![allow(clippy::decimal_literal_representation)]
 #![allow(clippy::default_numeric_fallback)]
 #![allow(clippy::doc_markdown)]
+#![allow(clippy::enum_variant_names)]
 #![allow(clippy::explicit_iter_loop)]
 #![allow(clippy::host_endian_bytes)]
 #![allow(clippy::if_not_else)]
@@ -288,7 +289,6 @@ fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
         crate::ffi::PyTuple_SET_ITEM(args, 1, doc);
         crate::ffi::PyTuple_SET_ITEM(args, 2, pos);
         PyErr_SetObject(typeref::JsonDecodeError, args);
-        debug_assert!(ffi!(Py_REFCNT(args)) <= 2);
         Py_DECREF(args);
     }
     null_mut()

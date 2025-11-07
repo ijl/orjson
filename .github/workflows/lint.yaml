@@ -10,10 +10,11 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: "3.14"
-    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
-    - run: pip install -U "ruff>=0.14,<0.15" "mypy==1.18.2"
 
     - uses: actions/checkout@v5
+
+    - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
+    - run: pip install -r requirements-lint.txt
 
     - run: cargo fmt
     - run: ./script/lint

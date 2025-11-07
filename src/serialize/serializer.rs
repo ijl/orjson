@@ -28,7 +28,7 @@ pub(crate) fn serialize(
     match res {
         Ok(()) => Ok(buf.finish(opt_enabled!(opts, APPEND_NEWLINE))),
         Err(err) => {
-            ffi!(Py_DECREF(buf.bytes_ptr().as_ptr()));
+            buf.abort();
             Err(err.to_string())
         }
     }

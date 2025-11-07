@@ -105,7 +105,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
 pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     unsafe {
         Py_DECREF((*object.cast::<Fragment>()).contents);
-        std::alloc::dealloc(object.cast::<u8>(), core::alloc::Layout::new::<Fragment>());
+        crate::ffi::PyMem_Free(object.cast::<core::ffi::c_void>());
     }
 }
 

@@ -13,7 +13,8 @@ from tabulate import tabulate
 
 import orjson
 
-os.sched_setaffinity(os.getpid(), {0, 1})
+if hasattr(os, "sched_setaffinity"):
+    os.sched_setaffinity(os.getpid(), {0, 1})
 
 data_as_obj = []
 for year in range(1920, 2020):

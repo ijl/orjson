@@ -126,13 +126,15 @@ pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyVarObject) -> pyo3_ffi::Py_ssi
     unsafe { pyo3_ffi::Py_SIZE(op.cast::<pyo3_ffi::PyObject>()) }
 }
 
-#[cfg(CPython)]
+#[allow(unused)]
+#[cfg(any(CPython, PyPy))]
 #[inline(always)]
 #[allow(non_snake_case)]
 pub(crate) unsafe fn Py_SET_SIZE(op: *mut pyo3_ffi::PyVarObject, size: pyo3_ffi::Py_ssize_t) {
     unsafe { (*op).ob_size = size }
 }
 
+#[allow(unused)]
 #[cfg(GraalPy)]
 #[inline(always)]
 #[allow(non_snake_case)]

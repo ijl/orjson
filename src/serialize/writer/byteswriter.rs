@@ -1,19 +1,24 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::{
-    _PyBytes_Resize, PyBytes_FromStringAndSize, PyBytesObject, PyObject, PyVarObject,
-};
+use crate::ffi::{PyBytes_FromStringAndSize, PyObject};
 use crate::util::usize_to_isize;
 use bytes::{BufMut, buf::UninitSlice};
 use core::mem::MaybeUninit;
 use core::ptr::NonNull;
 
+#[cfg(CPython)]
 const BUFFER_LENGTH: usize = 1024;
+
+#[cfg(not(CPython))]
+const BUFFER_LENGTH: usize = 4096;
 
 pub(crate) struct BytesWriter {
     cap: usize,
     len: usize,
-    bytes: *mut PyBytesObject,
+    #[cfg(CPython)]
+    bytes: *mut crate::ffi::PyBytesObject,
+    #[cfg(not(CPython))]
+    bytes: *mut u8,
 }
 
 impl BytesWriter {
@@ -22,45 +27,101 @@ impl BytesWriter {
         BytesWriter {
             cap: BUFFER_LENGTH,
             len: 0,
+            #[cfg(CPython)]
             bytes: unsafe {
                 PyBytes_FromStringAndSize(core::ptr::null_mut(), usize_to_isize(BUFFER_LENGTH))
-                    .cast::<PyBytesObject>()
+                    .cast::<crate::ffi::PyBytesObject>()
             },
+            #[cfg(not(CPython))]
+            bytes: unsafe { crate::ffi::PyMem_Malloc(BUFFER_LENGTH).cast::<u8>() },
         }
     }
 
-    #[inline]
-    pub fn bytes_ptr(&mut self) -> NonNull<PyObject> {
-        unsafe { NonNull::new_unchecked(self.bytes.cast::<PyObject>()) }
+    #[cfg(CPython)]
+    pub fn abort(&mut self) {
+        ffi!(Py_DECREF(self.bytes.cast::<PyObject>()));
     }
 
-    #[inline]
-    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
+    #[cfg(not(CPython))]
+    pub fn abort(&mut self) {
+        unsafe {
+            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
+        }
+    }
+
+    fn append_and_terminate(&mut self, append: bool) {
         unsafe {
             if append {
                 core::ptr::write(self.buffer_ptr(), b'\n');
                 self.len += 1;
             }
+            #[cfg(CPython)]
             core::ptr::write(self.buffer_ptr(), 0);
-            crate::ffi::Py_SET_SIZE(self.bytes.cast::<PyVarObject>(), usize_to_isize(self.len));
-            self.resize(self.len);
-            self.bytes_ptr()
         }
     }
 
+    #[cfg(CPython)]
+    #[inline]
+    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
+        unsafe {
+            self.append_and_terminate(append);
+            crate::ffi::Py_SET_SIZE(
+                self.bytes.cast::<crate::ffi::PyVarObject>(),
+                usize_to_isize(self.len),
+            );
+            self.resize(self.len);
+            NonNull::new_unchecked(self.bytes.cast::<PyObject>())
+        }
+    }
+
+    #[cfg(not(CPython))]
+    #[inline]
+    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
+        unsafe {
+            self.append_and_terminate(append);
+            let bytes = PyBytes_FromStringAndSize(
+                self.bytes.cast::<i8>().cast_const(),
+                usize_to_isize(self.len),
+            );
+            debug_assert!(!bytes.is_null());
+            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
+            nonnull!(bytes)
+        }
+    }
+
+    #[cfg(CPython)]
     #[inline]
     fn buffer_ptr(&self) -> *mut u8 {
         unsafe { (&raw mut (*self.bytes).ob_sval).cast::<u8>().add(self.len) }
     }
 
+    #[cfg(not(CPython))]
+    #[inline]
+    fn buffer_ptr(&self) -> *mut u8 {
+        debug_assert!(!self.bytes.is_null());
+        unsafe { self.bytes.add(self.len) }
+    }
+
+    #[cfg(CPython)]
     #[inline]
     pub fn resize(&mut self, len: usize) {
         self.cap = len;
         unsafe {
-            _PyBytes_Resize(
+            crate::ffi::_PyBytes_Resize(
                 (&raw mut self.bytes).cast::<*mut PyObject>(),
                 usize_to_isize(len),
             );
+        }
+    }
+
+    #[cfg(not(CPython))]
+    #[inline]
+    pub fn resize(&mut self, len: usize) {
+        self.cap = len;
+        unsafe {
+            self.bytes =
+                crate::ffi::PyMem_Realloc(self.bytes.cast::<core::ffi::c_void>(), len).cast::<u8>();
+            debug_assert!(!self.bytes.is_null());
         }
     }
 

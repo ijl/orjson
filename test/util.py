@@ -2,11 +2,14 @@
 
 import lzma
 import os
+import sys
 import sysconfig
 from pathlib import Path
 from typing import Any
 
 IS_FREETHREADING = sysconfig.get_config_var("Py_GIL_DISABLED")
+
+SUPPORTS_MEMORYVIEW = sys.implementation == "cpython"
 
 numpy = None  # type: ignore
 if not IS_FREETHREADING:

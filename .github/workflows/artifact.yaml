@@ -273,7 +273,7 @@ jobs:
       if: "matrix.target.arch == 's390x'"
       uses: sandervocke/setup-qemu-container@v1
       with:
-        container: registry.fedoraproject.org/fedora:42
+        container: registry.fedoraproject.org/fedora:43
         arch: ${{ matrix.target.arch }}
         podman_args: "-v .:/orjson -v /tmp:/tmp --workdir /orjson"
 

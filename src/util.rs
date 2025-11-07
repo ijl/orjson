@@ -306,13 +306,13 @@ macro_rules! pydict_setitem {
 
 macro_rules! reserve_minimum {
     ($writer:expr) => {
-        $writer.reserve(64);
+        $writer.reserve(128);
     };
 }
 
 macro_rules! reserve_pretty {
     ($writer:expr, $val:expr) => {
-        $writer.reserve($val + 16);
+        $writer.reserve($val + 32);
     };
 }
 

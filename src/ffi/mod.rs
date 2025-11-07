@@ -39,12 +39,15 @@ pub(crate) use pyo3_ffi::{
     PyLong_FromUnsignedLongLong, PyLong_Type, PyLongObject, PyMapping_GetItemString, PyMem_Free,
     PyMem_Malloc, PyMem_Realloc, PyMemoryView_Type, PyMethodDef, PyMethodDefPointer,
     PyModule_AddIntConstant, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Init,
-    PyModuleDef_Slot, PyObject, PyObject_CallMethodNoArgs, PyObject_CallMethodObjArgs,
-    PyObject_CallMethodOneArg, PyObject_GenericGetDict, PyObject_GetAttr, PyObject_HasAttr,
-    PyObject_Vectorcall, PyTuple_New, PyTuple_Type, PyTupleObject, PyType_Ready, PyType_Type,
-    PyTypeObject, PyUnicode_AsUTF8AndSize, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
-    PyUnicode_New, PyUnicode_Type, PyVarObject, PyVectorcall_NARGS,
+    PyModuleDef_Slot, PyObject, PyObject_CallMethodObjArgs, PyObject_GenericGetDict,
+    PyObject_GetAttr, PyObject_HasAttr, PyObject_Vectorcall, PyTuple_New, PyTuple_Type,
+    PyTupleObject, PyType_Ready, PyType_Type, PyTypeObject, PyUnicode_AsUTF8AndSize,
+    PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyUnicode_New, PyUnicode_Type,
+    PyVarObject, PyVectorcall_NARGS,
 };
+
+#[cfg(CPython)]
+pub(crate) use pyo3_ffi::{PyObject_CallMethodNoArgs, PyObject_CallMethodOneArg};
 
 #[cfg(all(CPython, not(target_endian = "little")))]
 pub(crate) use pyo3_ffi::{PyUnicode_DATA, PyUnicode_KIND};
