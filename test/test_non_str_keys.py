@@ -252,49 +252,195 @@ class TestNonStrKeyTests:
             == b'{"-128":-128}'
         )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_int16(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_int16(self):
+        assert (
+            orjson.dumps(
+                {numpy.int16(0): numpy.int16(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int16(32767): numpy.int16(32767)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"32767":32767}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int16(-32768): numpy.int16(-32768)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"-32768":-32768}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_int32(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_int32(self):
+        assert (
+            orjson.dumps(
+                {numpy.int32(0): numpy.int32(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int32(2147483647): numpy.int32(2147483647)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"2147483647":2147483647}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int32(-2147483648): numpy.int32(-2147483648)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"-2147483648":-2147483648}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_int64(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_int64(self):
+        assert (
+            orjson.dumps(
+                {numpy.int64(0): numpy.int64(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int64(9223372036854775807): numpy.int64(9223372036854775807)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"9223372036854775807":9223372036854775807}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.int64(-9223372036854775808): numpy.int64(-9223372036854775808)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"-9223372036854775808":-9223372036854775808}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_uint8(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_uint8(self):
+        assert (
+            orjson.dumps(
+                {numpy.uint8(0): numpy.uint8(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.uint8(255): numpy.uint8(255)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"255":255}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_uint16(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_uint16(self):
+        assert (
+            orjson.dumps(
+                {numpy.uint16(0): numpy.uint16(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.uint16(65535): numpy.uint16(65535)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"65535":65535}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_uint32(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_uint32(self):
+        assert (
+            orjson.dumps(
+                {numpy.uint32(0): numpy.uint32(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.uint32(4294967295): numpy.uint32(4294967295)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"4294967295":4294967295}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_uint64(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_uint64(self):
+        assert (
+            orjson.dumps(
+                {numpy.uint64(0): numpy.uint64(0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"0":0}'
+        )
+        assert (
+            orjson.dumps(
+                {numpy.uint64(18446744073709551615): numpy.uint64(18446744073709551615)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"18446744073709551615":18446744073709551615}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_float16(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_float16(self):
+        assert (
+            orjson.dumps(
+                {numpy.float16(1.0): numpy.float16(1.0)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"1.0":1.0}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_float32(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_float32(self):
+        assert (
+            orjson.dumps(
+                {numpy.float32(1.41): numpy.float32(1.41)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"1.41":1.41}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_float64(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_float64(self):
+        assert (
+            orjson.dumps(
+                {numpy.float64(1.732): numpy.float64(1.732)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"1.732":1.732}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_bool(self):
-    #     pass
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_bool(self):
+        assert (
+            orjson.dumps(
+                {numpy.bool_(True): numpy.bool_(False)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"true":false}'
+        )
+
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_datetime(self):
+        assert (
+            orjson.dumps(
+                {numpy.datetime64("1999-12-31T23:59:59.999999"): 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"1999-12-31T23:59:59.999999":1}'
+        )
 
     @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_dict_keys_time_err(self):
