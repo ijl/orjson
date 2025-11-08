@@ -896,6 +896,56 @@ impl NumpyScalar {
     pub fn new(ptr: *mut PyObject, opts: Opt) -> Self {
         NumpyScalar { ptr, opts }
     }
+
+    pub fn try_to_string(&self) -> Result<String, NumpyDateTimeError> {
+        unsafe {
+            let ob_type = ob_type!(self.ptr);
+            let scalar_types =
+                unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
+            if core::ptr::eq(ob_type, scalar_types.float64) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyFloat64>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.float32) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyFloat32>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.float16) {
+                let as_f16 = half::f16::from_bits((*(self.ptr.cast::<NumpyFloat16>())).value);
+                Ok(format!("{}", as_f16))
+            } else if core::ptr::eq(ob_type, scalar_types.int64) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyInt64>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.int32) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyInt32>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.int16) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyInt16>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.int8) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyInt8>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.uint64) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyUint64>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.uint32) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyUint32>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.uint16) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyUint16>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.uint8) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyUint8>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.bool_) {
+                Ok(format!("{}", (*(self.ptr.cast::<NumpyBool>())).value))
+            } else if core::ptr::eq(ob_type, scalar_types.datetime64) {
+                let unit = NumpyDatetimeUnit::from_pyobject(self.ptr);
+                let obj = &*self.ptr.cast::<NumpyDatetime64>();
+                let dt = unit.datetime(obj.value, self.opts);
+                if let Ok(moment) = dt {
+                    let mut buf = SmallFixedBuffer::new();
+                    let Ok(_) = moment.write_buf(&mut buf, self.opts) else {
+                        return Err(NumpyDateTimeError::UnsupportedUnit(unit));
+                    };
+                    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
+                    Ok(String::from(key_as_str))
+                } else {
+                    Err(NumpyDateTimeError::UnsupportedUnit(unit))
+                }
+            } else {
+                unreachable!()
+            }
+        }
+    }
 }
 
 impl Serialize for NumpyScalar {
@@ -1201,7 +1251,7 @@ impl fmt::Display for NumpyDatetimeUnit {
 }
 
 #[derive(Clone, Copy)]
-enum NumpyDateTimeError {
+pub enum NumpyDateTimeError {
     UnsupportedUnit(NumpyDatetimeUnit),
     Unrepresentable { unit: NumpyDatetimeUnit, val: i64 },
 }

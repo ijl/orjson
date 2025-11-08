@@ -332,6 +332,18 @@ fn non_str_str_subclass(key: *mut crate::ffi::PyObject) -> Result<String, Serial
     }
 }
 
+#[cold]
+#[inline(never)]
+fn non_str_numpy_scalar(
+    key: *mut crate::ffi::PyObject,
+    opts: crate::opt::Opt,
+) -> Result<String, SerializeError> {
+    let scalar = NumpyScalar::new(key, opts);
+    scalar
+        .try_to_string()
+        .map_err(|_| SerializeError::NumpyUnsupportedDatatype)
+}
+
 #[allow(clippy::unnecessary_wraps)]
 #[inline(never)]
 fn non_str_date(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
@@ -448,8 +460,8 @@ impl DictNonStrKey {
             }
             ObType::Str => non_str_str(key),
             ObType::StrSubclass => non_str_str_subclass(key),
+            ObType::NumpyScalar => non_str_numpy_scalar(key, opts),
             ObType::Tuple
-            | ObType::NumpyScalar
             | ObType::NumpyArray
             | ObType::Dict
             | ObType::List
