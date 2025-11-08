@@ -339,7 +339,9 @@ fn non_str_numpy_scalar(
     opts: crate::opt::Opt,
 ) -> Result<String, SerializeError> {
     let scalar = NumpyScalar::new(key, opts);
-    Ok(scalar.to_string())
+    scalar
+        .try_to_string()
+        .map_err(|_| SerializeError::NumpyUnsupportedDatatype)
 }
 
 #[allow(clippy::unnecessary_wraps)]

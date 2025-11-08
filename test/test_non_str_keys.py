@@ -430,25 +430,25 @@ class TestNonStrKeyTests:
             == b'{"1.732":1.732}'
         )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_scalar_bool(self):
-    #     assert (
-    #         orjson.dumps(
-    #             {numpy.bool_(True): numpy.bool_(False)},
-    #             option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
-    #         )
-    #         == b'{"true":false}'
-    #     )
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_scalar_bool(self):
+        assert (
+            orjson.dumps(
+                {numpy.bool_(True): numpy.bool_(False)},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"true":false}'
+        )
 
-    # @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
-    # def test_dict_non_str_numpy_datetime(self):
-    #     assert (
-    #         orjson.dumps(
-    #             {numpy.datetime64("1999-12-31T23:59:59.999999"): 1},
-    #             option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
-    #         )
-    #         == b'{"1999-12-31T23:59:59.999999":1}'
-    #     )
+    @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
+    def test_dict_non_str_numpy_datetime(self):
+        assert (
+            orjson.dumps(
+                {numpy.datetime64("1999-12-31T23:59:59.999999"): 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            )
+            == b'{"1999-12-31T23:59:59.999999":1}'
+        )
 
     @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_dict_keys_time_err(self):
