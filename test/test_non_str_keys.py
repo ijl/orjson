@@ -450,6 +450,34 @@ class TestNonStrKeyTests:
             == b'{"1999-12-31T23:59:59.999999":1}'
         )
 
+    @pytest.mark.skipif(numpy is None, reason='numpy is not installed')
+    def test_dict_non_str_numpy_datetime_ranges(self):
+        for dt in numpy.arange('0', '10000', dtype='datetime64[Y]'):
+            assert orjson.dumps(
+                {dt: 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            ) == ('{"' + str(dt) + '-01-01T00:00:00":1}').encode()
+        for dt in numpy.arange('1990', '2030', dtype='datetime64[M]'):
+            assert orjson.dumps(
+                {dt: 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            ) == ('{"' + str(dt) + '-01T00:00:00":1}').encode()
+        for dt in numpy.arange('2020', '2030', dtype='datetime64[D]'):
+            assert orjson.dumps(
+                {dt: 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            ) == ('{"' + str(dt) + 'T00:00:00":1}').encode()
+        for dt in numpy.arange('2025', '2030', dtype='datetime64[h]'):
+            assert orjson.dumps(
+                {dt: 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            ) == ('{"' + str(dt) + ':00:00":1}').encode()
+        for dt in numpy.arange('1945-08-06', '1945-08-09', dtype='datetime64[s]'):
+            assert orjson.dumps(
+                {dt: 1},
+                option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS,
+            ) == ('{"' + str(dt) + '":1}').encode()
+
     @pytest.mark.skipif(pytz is None, reason="pytz optional")
     def test_dict_keys_time_err(self):
         """
