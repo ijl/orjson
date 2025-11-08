@@ -291,19 +291,19 @@ If displayed, the indentation and linebreaks appear like this:
 This measures serializing the github.json fixture as compact (52KiB) or
 pretty (64KiB):
 
-| Library   |   compact (ms) |   pretty (ms) |   vs. orjson |
-|-----------|----------------|---------------|--------------|
-| orjson    |           0.01 |          0.02 |            1 |
-| json      |           0.13 |          0.54 |           34 |
+| Library | compact (ms) | pretty (ms) | vs. orjson |
+| ------- | ------------ | ----------- | ---------- |
+| orjson  | 0.01         | 0.02        | 1          |
+| json    | 0.13         | 0.54        | 34         |
 
 This measures serializing the citm_catalog.json fixture, more of a worst
 case due to the amount of nesting and newlines, as compact (489KiB) or
 pretty (1.1MiB):
 
-| Library   |   compact (ms) |   pretty (ms) |   vs. orjson |
-|-----------|----------------|---------------|--------------|
-| orjson    |           0.25 |          0.45 |          1   |
-| json      |           3.01 |         24.42 |         54.4 |
+| Library | compact (ms) | pretty (ms) | vs. orjson |
+| ------- | ------------ | ----------- | ---------- |
+| orjson  | 0.25         | 0.45        | 1          |
+| json    | 3.01         | 24.42       | 54.4       |
 
 This can be reproduced using the `pyindent` script.
 
@@ -329,10 +329,12 @@ b'"1970-01-01T00:00:00+00:00"'
 
 Serialize `dict` keys of type other than `str`. This allows `dict` keys
 to be one of `str`, `int`, `float`, `bool`, `None`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, `enum.Enum`, and `uuid.UUID`. For comparison,
-the standard library serializes `str`, `int`, `float`, `bool` or `None` by
-default. orjson benchmarks as being faster at serializing non-`str` keys
-than other libraries. This option is slower for `str` keys than the default.
+`datetime.date`, `datetime.time`, `enum.Enum`, and `uuid.UUID`. If enabled
+with the `OPT_SERIALIZE_NUMPY`, then this additionally allows the same scalar
+values. For comparison, the standard library serializes `str`, `int`, `float`,
+`bool` or `None` by default. orjson benchmarks as being faster at serializing
+non-`str` keys than other libraries. This option is slower for `str` keys
+than the default.
 
 ```python
 >>> import orjson, datetime, uuid
@@ -378,10 +380,10 @@ single integer. In "str keys", the keys were converted to `str` before
 serialization, and orjson still specifes `option=orjson.OPT_NON_STR_KEYS`
 (which is always somewhat slower).
 
-| Library   |   str keys (ms) |   int keys (ms) | int keys sorted (ms)   |
-|-----------|-----------------|-----------------|------------------------|
-| orjson    |            0.5  |            0.93 | 2.08                   |
-| json      |            2.72 |            3.59 |                        |
+| Library | str keys (ms) | int keys (ms) | int keys sorted (ms) |
+| ------- | ------------- | ------------- | -------------------- |
+| orjson  | 0.5           | 0.93          | 2.08                 |
+| json    | 2.72          | 3.59          |                      |
 
 json is blank because it
 raises `TypeError` on attempting to sort before converting all keys to `str`.
@@ -527,10 +529,10 @@ b'{"a":3,"b":1,"c":2}'
 
 This measures serializing the twitter.json fixture unsorted and sorted:
 
-| Library   |   unsorted (ms) |   sorted (ms) |   vs. orjson |
-|-----------|-----------------|---------------|--------------|
-| orjson    |            0.11 |          0.3  |          1   |
-| json      |            1.36 |          1.93 |          6.4 |
+| Library | unsorted (ms) | sorted (ms) | vs. orjson |
+| ------- | ------------- | ----------- | ---------- |
+| orjson  | 0.11          | 0.3         | 1          |
+| json    | 1.36          | 1.93        | 6.4        |
 
 The benchmark can be reproduced using the `pysort` script.
 
@@ -640,10 +642,10 @@ using `__slots__`, frozen dataclasses, those with optional or default
 attributes, and subclasses. There is a performance benefit to not
 using `__slots__`.
 
-| Library   |   dict (ms) |   dataclass (ms) |   vs. orjson |
-|-----------|-------------|------------------|--------------|
-| orjson    |        0.43 |             0.95 |            1 |
-| json      |        5.81 |            38.32 |           40 |
+| Library | dict (ms) | dataclass (ms) | vs. orjson |
+| ------- | --------- | -------------- | ---------- |
+| orjson  | 0.43      | 0.95           | 1          |
+| json    | 5.81      | 38.32          | 40         |
 
 This measures serializing 555KiB of JSON, orjson natively and other libraries
 using `default` to serialize the output of `dataclasses.asdict()`. This can be
@@ -865,26 +867,26 @@ If an array is malformed, `orjson.JSONEncodeError` is raised.
 This measures serializing 92MiB of JSON from an `numpy.ndarray` with
 dimensions of `(50000, 100)` and `numpy.float64` values:
 
-| Library   | Latency (ms)   |   RSS diff (MiB) |   vs. orjson |
-|-----------|----------------|------------------|--------------|
-| orjson    | 105            |              105 |          1   |
-| json      | 1,481          |              295 |         14.2 |
+| Library | Latency (ms) | RSS diff (MiB) | vs. orjson |
+| ------- | ------------ | -------------- | ---------- |
+| orjson  | 105          | 105            | 1          |
+| json    | 1,481        | 295            | 14.2       |
 
 This measures serializing 100MiB of JSON from an `numpy.ndarray` with
 dimensions of `(100000, 100)` and `numpy.int32` values:
 
-| Library   |   Latency (ms) |   RSS diff (MiB) |   vs. orjson |
-|-----------|----------------|------------------|--------------|
-| orjson    |             68 |              119 |          1   |
-| json      |            684 |              501 |         10.1 |
+| Library | Latency (ms) | RSS diff (MiB) | vs. orjson |
+| ------- | ------------ | -------------- | ---------- |
+| orjson  | 68           | 119            | 1          |
+| json    | 684          | 501            | 10.1       |
 
 This measures serializing 105MiB of JSON from an `numpy.ndarray` with
 dimensions of `(100000, 200)` and `numpy.bool` values:
 
-| Library   |   Latency (ms) |   RSS diff (MiB) |   vs. orjson |
-|-----------|----------------|------------------|--------------|
-| orjson    |             50 |              125 |          1   |
-| json      |            573 |              398 |         11.5 |
+| Library | Latency (ms) | RSS diff (MiB) | vs. orjson |
+| ------- | ------------ | -------------- | ---------- |
+| orjson  | 50           | 125            | 1          |
+| json    | 573          | 398            | 11.5       |
 
 In these benchmarks, orjson serializes natively and `json` serializes
 `ndarray.tolist()` via `default`. The RSS column measures peak memory
@@ -957,10 +959,10 @@ library handles a combined 342 JSON fixtures from the
 [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
 [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) tests:
 
-| Library    |   Invalid JSON documents not rejected |   Valid JSON documents not deserialized |
-|------------|---------------------------------------|-----------------------------------------|
-| orjson     |                                     0 |                                       0 |
-| json       |                                    17 |                                       0 |
+| Library | Invalid JSON documents not rejected | Valid JSON documents not deserialized |
+| ------- | ----------------------------------- | ------------------------------------- |
+| orjson  | 0                                   | 0                                     |
+| json    | 17                                  | 0                                     |
 
 This shows that all libraries deserialize valid JSON but only orjson
 correctly rejects the given invalid JSON fixtures. Errors are largely due to
@@ -982,59 +984,59 @@ used documents.
 
 #### twitter.json serialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                             0.1 |                    8453 |                  1   |
-| json      |                             1.3 |                     765 |                 11.1 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 0.1                           | 8453                  | 1                  |
+| json    | 1.3                           | 765                   | 11.1               |
 
 #### twitter.json deserialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                             0.5 |                    1889 |                  1   |
-| json      |                             2.2 |                     453 |                  4.2 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 0.5                           | 1889                  | 1                  |
+| json    | 2.2                           | 453                   | 4.2                |
 
 #### github.json serialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                            0.01 |                  103693 |                  1   |
-| json      |                            0.13 |                    7648 |                 13.6 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 0.01                          | 103693                | 1                  |
+| json    | 0.13                          | 7648                  | 13.6               |
 
 #### github.json deserialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                            0.04 |                   23264 |                  1   |
-| json      |                            0.1  |                   10430 |                  2.2 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 0.04                          | 23264                 | 1                  |
+| json    | 0.1                           | 10430                 | 2.2                |
 
 #### citm_catalog.json serialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                             0.3 |                    3975 |                  1   |
-| json      |                             3   |                     338 |                 11.8 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 0.3                           | 3975                  | 1                  |
+| json    | 3                             | 338                   | 11.8               |
 
 #### citm_catalog.json deserialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                             1.3 |                     781 |                  1   |
-| json      |                             4   |                     250 |                  3.1 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 1.3                           | 781                   | 1                  |
+| json    | 4                             | 250                   | 3.1                |
 
 #### canada.json serialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                             2.5 |                     399 |                  1   |
-| json      |                            29.8 |                      33 |                 11.9 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 2.5                           | 399                   | 1                  |
+| json    | 29.8                          | 33                    | 11.9               |
 
 #### canada.json deserialization
 
-| Library   |   Median latency (milliseconds) |   Operations per second |   Relative (latency) |
-|-----------|---------------------------------|-------------------------|----------------------|
-| orjson    |                               3 |                     333 |                    1 |
-| json      |                              18 |                      55 |                    6 |
+| Library | Median latency (milliseconds) | Operations per second | Relative (latency) |
+| ------- | ----------------------------- | --------------------- | ------------------ |
+| orjson  | 3                             | 333                   | 1                  |
+| json    | 18                            | 55                    | 6                  |
 
 ### Reproducing
 
