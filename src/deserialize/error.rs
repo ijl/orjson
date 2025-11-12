@@ -19,7 +19,8 @@ impl<'a> DeserializeError<'a> {
     }
 
     #[cold]
-    pub fn from_yyjson(message: Cow<'a, str>, pos: i64, data: &'a str) -> Self {
+    pub fn from_yyjson(message: Cow<'a, str>, pos: i64, data: &'a [u8]) -> Self {
+        let data = unsafe { core::str::from_utf8_unchecked(data) };
         DeserializeError {
             message: message,
             data: Some(data),
