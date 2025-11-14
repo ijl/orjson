@@ -254,6 +254,21 @@ b"[]"
 b"[]\n"
 ```
 
+##### OPT_APPEND_NEWLINE
+
+Casues the library to raise an error when attempting to serialize a invalid JSON value such as `NaN`, `Infinity`, or `-Infinity`.
+
+```python
+>>> import orjson
+>>> orjson.dumps({"invalid_float": float('nan')}, option=orjson.OPT_FAIL_ON_INVALID_FLOAT)
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+Cell In[8], line 1
+----> 1 orjson.dumps({"invalid_float": float("nan")}, option=orjson.OPT_FAIL_ON_INVALID_FLOAT)
+
+TypeError: Invalid float
+```
+
 ##### OPT_INDENT_2
 
 Pretty-print output with an indent of two spaces. This is equivalent to

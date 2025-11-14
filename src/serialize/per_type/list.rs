@@ -108,7 +108,7 @@ impl Serialize for ListTupleSerializer {
                     seq.serialize_element(&NoneSerializer::new()).unwrap();
                 }
                 ObType::Float => {
-                    seq.serialize_element(&FloatSerializer::new(value))?;
+                    seq.serialize_element(&FloatSerializer::new(value, self.state.opts()))?;
                 }
                 ObType::Bool => {
                     seq.serialize_element(&BoolSerializer::new(value)).unwrap();
