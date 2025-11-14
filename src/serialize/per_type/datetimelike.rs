@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, NAIVE_UTC, OMIT_MICROSECONDS, UTC_Z};
+use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, Opt, UTC_Z};
 
 pub(crate) enum DateTimeError {
     LibraryUnsupported,
@@ -75,7 +75,8 @@ pub(crate) trait DateTimeLike {
             let year = self.year();
             let mut yearbuf = itoa::Buffer::new();
             let formatted = yearbuf.format(year);
-            if unlikely!(year < 1000) {
+            if year < 1000 {
+                cold_path!();
                 // date-fullyear   = 4DIGIT
                 buf.put_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
             }

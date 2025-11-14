@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
-use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
 use crate::serialize::writer::WriteExt;
+use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
 use serde::ser::{self, Impossible, Serialize};
 use serde_json::error::{Error, Result};
 
@@ -119,7 +119,8 @@ where
 
     #[inline]
     fn serialize_f32(self, value: f32) -> Result<()> {
-        if unlikely!(value.is_infinite() || value.is_nan()) {
+        if value.is_infinite() || value.is_nan() {
+            cold_path!();
             self.serialize_unit()
         } else {
             self.formatter
@@ -129,7 +130,8 @@ where
     }
     #[inline]
     fn serialize_f64(self, value: f64) -> Result<()> {
-        if unlikely!(value.is_infinite() || value.is_nan()) {
+        if value.is_infinite() || value.is_nan() {
+            cold_path!();
             self.serialize_unit()
         } else {
             self.formatter

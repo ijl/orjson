@@ -4,11 +4,11 @@ use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct BoolSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 }
 
 impl BoolSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
         BoolSerializer { ptr: ptr }
     }
 }

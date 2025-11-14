@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::ffi::orjson_fragmenttype_new;
 use core::ffi::CStr;
-use core::ptr::{null_mut, NonNull};
+use core::ptr::{NonNull, null_mut};
 use once_cell::race::{OnceBool, OnceBox};
 
-use pyo3_ffi::*;
+use crate::ffi::{
+    Py_DECREF, Py_False, Py_INCREF, Py_None, Py_True, Py_XDECREF, PyBool_Type, PyByteArray_Type,
+    PyBytes_Type, PyDict_Type, PyErr_Clear, PyErr_NewException, PyExc_TypeError, PyFloat_Type,
+    PyImport_ImportModule, PyList_Type, PyLong_Type, PyMapping_GetItemString, PyMemoryView_Type,
+    PyObject, PyObject_GenericGetDict, PyTuple_Type, PyTypeObject, PyUnicode_InternFromString,
+    PyUnicode_New, PyUnicode_Type, orjson_fragmenttype_new,
+};
 
 pub(crate) static mut DEFAULT: *mut PyObject = null_mut();
 pub(crate) static mut OPTION: *mut PyObject = null_mut();
@@ -67,6 +72,31 @@ unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut Py
     }
 }
 
+#[cfg(not(PyPy))]
+unsafe fn look_up_datetime() {
+    unsafe {
+        crate::ffi::PyDateTime_IMPORT();
+        let datetime_capsule = crate::ffi::PyCapsule_Import(c"datetime.datetime_CAPI".as_ptr(), 1)
+            .cast::<crate::ffi::PyDateTime_CAPI>();
+        debug_assert!(!datetime_capsule.is_null());
+
+        DATETIME_TYPE = (*datetime_capsule).DateTimeType;
+        DATE_TYPE = (*datetime_capsule).DateType;
+        TIME_TYPE = (*datetime_capsule).TimeType;
+        ZONEINFO_TYPE = (*datetime_capsule).TZInfoType;
+    }
+}
+
+#[cfg(PyPy)]
+unsafe fn look_up_datetime() {
+    unsafe {
+        DATETIME_TYPE = look_up_type_object(c"datetime", c"datetime");
+        DATE_TYPE = look_up_type_object(c"datetime", c"date");
+        TIME_TYPE = look_up_type_object(c"datetime", c"time");
+        ZONEINFO_TYPE = look_up_type_object(c"zoneinfo", c"ZoneInfo");
+    }
+}
+
 static INIT: OnceBool = OnceBool::new();
 
 pub(crate) fn init_typerefs() {
@@ -80,9 +110,11 @@ fn _init_typerefs_impl() -> bool {
         debug_assert!(crate::opt::MAX_OPT < i32::from(u16::MAX));
 
         #[cfg(not(Py_GIL_DISABLED))]
-        assert!(crate::deserialize::KEY_MAP
-            .set(crate::deserialize::KeyMap::default())
-            .is_ok());
+        assert!(
+            crate::deserialize::KEY_MAP
+                .set(crate::deserialize::KeyMap::default())
+                .is_ok()
+        );
 
         crate::serialize::writer::set_str_formatter_fn();
         crate::str::set_str_create_fn();
@@ -97,21 +129,14 @@ fn _init_typerefs_impl() -> bool {
         DICT_TYPE = &raw mut PyDict_Type;
         LIST_TYPE = &raw mut PyList_Type;
         TUPLE_TYPE = &raw mut PyTuple_Type;
-        NONE_TYPE = (*NONE).ob_type;
+        NONE_TYPE = ob_type!(NONE);
         BOOL_TYPE = &raw mut PyBool_Type;
         INT_TYPE = &raw mut PyLong_Type;
         FLOAT_TYPE = &raw mut PyFloat_Type;
         BYTEARRAY_TYPE = &raw mut PyByteArray_Type;
         MEMORYVIEW_TYPE = &raw mut PyMemoryView_Type;
 
-        PyDateTime_IMPORT();
-        let datetime_capsule = pyo3_ffi::PyCapsule_Import(c"datetime.datetime_CAPI".as_ptr(), 1)
-            .cast::<pyo3_ffi::PyDateTime_CAPI>();
-
-        DATETIME_TYPE = (*datetime_capsule).DateTimeType;
-        DATE_TYPE = (*datetime_capsule).DateType;
-        TIME_TYPE = (*datetime_capsule).TimeType;
-        ZONEINFO_TYPE = (*datetime_capsule).TZInfoType;
+        look_up_datetime();
 
         UUID_TYPE = look_up_type_object(c"uuid", c"UUID");
         ENUM_TYPE = look_up_type_object(c"enum", c"EnumMeta");
@@ -135,15 +160,17 @@ fn _init_typerefs_impl() -> bool {
         DEFAULT = PyUnicode_InternFromString(c"default".as_ptr());
         OPTION = PyUnicode_InternFromString(c"option".as_ptr());
 
-        JsonEncodeError = pyo3_ffi::PyExc_TypeError;
+        JsonEncodeError = PyExc_TypeError;
         Py_INCREF(JsonEncodeError);
         let json_jsondecodeerror =
             look_up_type_object(c"json", c"JSONDecodeError").cast::<PyObject>();
-        JsonDecodeError = pyo3_ffi::PyErr_NewException(
+        debug_assert!(!json_jsondecodeerror.is_null());
+        JsonDecodeError = PyErr_NewException(
             c"orjson.JSONDecodeError".as_ptr(),
             json_jsondecodeerror,
             null_mut(),
         );
+        debug_assert!(!JsonDecodeError.is_null());
         Py_XDECREF(json_jsondecodeerror);
     };
     true

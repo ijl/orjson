@@ -1,9 +1,9 @@
 [package]
 name = "orjson"
-version = "3.11.3"
+version = "3.11.4"
 authors = ["ijl <ijl@mailbox.org>"]
-edition = "2021"
-resolver = "2"
+edition = "2024"
+resolver = "3"
 rust-version = "1.85"
 license = "Apache-2.0 OR MIT"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
@@ -30,16 +30,11 @@ default = []
 # Avoid bundling libgcc on musl.
 unwind = ["unwinding"]
 
-# Build yyjson as a backend and panic if it fails. The default is to attempt
-# to build and on failure fall back to another backend.
-yyjson = []
-
 # Features detected by build.rs. Do not specify.
 avx512 = []
-c_ulong_32 = []
+cold_path = []
 generic_simd = []
 inline_int = []
-intrinsics = []
 optimize = []
 
 [dependencies]
@@ -52,10 +47,10 @@ itoa = { version = "1", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { version = "0.25", default-features = false, features = ["extension-module"] }
+pyo3-ffi = { version = "0.27", default-features = false, features = ["extension-module"] }
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
-serde_json = { version = "1", default-features = false, features = ["std", "float_roundtrip"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 smallvec = { version = "^1.11", default-features = false, features = ["union", "write"] }
 unwinding = { version = "=0.2.8", default-features = false, features = ["unwinder"], optional = true }
@@ -64,7 +59,7 @@ xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] 
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "0.25" }
+pyo3-build-config = { version = "0.27" }
 version_check = { version = "0.9" }
 
 [profile.dev]
@@ -80,7 +75,7 @@ overflow-checks = true
 codegen-units = 1
 debug = false
 incremental = false
-lto = "thin"
+lto = "fat"
 opt-level = 3
 panic = "abort"
 

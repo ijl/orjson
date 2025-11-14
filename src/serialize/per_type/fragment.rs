@@ -10,11 +10,11 @@ use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct FragmentSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 }
 
 impl FragmentSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
         FragmentSerializer { ptr: ptr }
     }
 }

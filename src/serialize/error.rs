@@ -20,7 +20,7 @@ pub(crate) enum SerializeError {
     NumpyNotCContiguous,
     NumpyNotNativeEndian,
     NumpyUnsupportedDatatype,
-    UnsupportedType(NonNull<pyo3_ffi::PyObject>),
+    UnsupportedType(NonNull<crate::ffi::PyObject>),
 }
 
 impl core::fmt::Display for SerializeError {

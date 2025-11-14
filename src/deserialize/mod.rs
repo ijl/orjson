@@ -9,6 +9,6 @@ mod pyobject;
 mod utf8;
 
 #[cfg(not(Py_GIL_DISABLED))]
-pub(crate) use cache::{KeyMap, KEY_MAP};
+pub(crate) use cache::{KEY_MAP, KeyMap};
 pub(crate) use deserializer::deserialize;
 pub(crate) use error::DeserializeError;

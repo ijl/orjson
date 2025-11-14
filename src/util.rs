@@ -8,9 +8,17 @@ macro_rules! is_type {
     };
 }
 
+#[cfg(CPython)]
 macro_rules! ob_type {
     ($obj:expr) => {
         unsafe { (*$obj).ob_type }
+    };
+}
+
+#[cfg(not(CPython))]
+macro_rules! ob_type {
+    ($obj:expr) => {
+        unsafe { crate::ffi::Py_TYPE($obj) }
     };
 }
 
@@ -40,14 +48,14 @@ macro_rules! tp_flags {
 
 macro_rules! is_subclass_by_flag {
     ($tp_flags:expr, $flag:ident) => {
-        unsafe { (($tp_flags & pyo3_ffi::$flag) != 0) }
+        unsafe { (($tp_flags & crate::ffi::$flag) != 0) }
     };
 }
 
 macro_rules! is_subclass_by_type {
     ($ob_type:expr, $type:ident) => {
         unsafe {
-            (*($ob_type.cast::<pyo3_ffi::PyTypeObject>()))
+            (*($ob_type.cast::<crate::ffi::PyTypeObject>()))
                 .ob_base
                 .ob_base
                 .ob_type
@@ -74,33 +82,10 @@ macro_rules! opt_disabled {
     };
 }
 
-#[cfg(feature = "intrinsics")]
-macro_rules! unlikely {
-    ($exp:expr) => {
-        core::intrinsics::unlikely($exp)
-    };
-}
-
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! unlikely {
-    ($exp:expr) => {
-        $exp
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! likely {
-    ($exp:expr) => {
-        core::intrinsics::likely($exp)
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! likely {
-    ($exp:expr) => {
-        $exp
+macro_rules! cold_path {
+    () => {
+        #[cfg(feature = "cold_path")]
+        core::hint::cold_path();
     };
 }
 
@@ -148,78 +133,99 @@ macro_rules! reverse_pydict_incref {
 
 macro_rules! ffi {
     ($fn:ident()) => {
-        unsafe { pyo3_ffi::$fn() }
+        unsafe { crate::ffi::$fn() }
     };
 
     ($fn:ident($obj1:expr)) => {
-        unsafe { pyo3_ffi::$fn($obj1) }
+        unsafe { crate::ffi::$fn($obj1) }
     };
 
     ($fn:ident($obj1:expr, $obj2:expr)) => {
-        unsafe { pyo3_ffi::$fn($obj1, $obj2) }
+        unsafe { crate::ffi::$fn($obj1, $obj2) }
     };
 
     ($fn:ident($obj1:expr, $obj2:expr, $obj3:expr)) => {
-        unsafe { pyo3_ffi::$fn($obj1, $obj2, $obj3) }
+        unsafe { crate::ffi::$fn($obj1, $obj2, $obj3) }
     };
 
     ($fn:ident($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr)) => {
-        unsafe { pyo3_ffi::$fn($obj1, $obj2, $obj3, $obj4) }
+        unsafe { crate::ffi::$fn($obj1, $obj2, $obj3, $obj4) }
     };
 }
 
+#[cfg(CPython)]
 macro_rules! call_method {
     ($obj1:expr, $obj2:expr) => {
-        unsafe { pyo3_ffi::PyObject_CallMethodNoArgs($obj1, $obj2) }
+        unsafe { crate::ffi::PyObject_CallMethodNoArgs($obj1, $obj2) }
     };
     ($obj1:expr, $obj2:expr, $obj3:expr) => {
-        unsafe { pyo3_ffi::PyObject_CallMethodOneArg($obj1, $obj2, $obj3) }
+        unsafe { crate::ffi::PyObject_CallMethodOneArg($obj1, $obj2, $obj3) }
     };
 }
 
+#[cfg(not(CPython))]
+macro_rules! call_method {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe { crate::ffi::PyObject_CallMethodObjArgs($obj1, $obj2) }
+    };
+    ($obj1:expr, $obj2:expr, $obj3:expr) => {
+        unsafe { crate::ffi::PyObject_CallMethodObjArgs($obj1, $obj2, $obj3) }
+    };
+}
+
+#[cfg(CPython)]
 macro_rules! str_hash {
     ($op:expr) => {
-        unsafe { (*$op.cast::<pyo3_ffi::PyASCIIObject>()).hash }
+        unsafe { (*$op.cast::<crate::ffi::PyASCIIObject>()).hash }
     };
 }
 
-#[cfg(Py_3_13)]
+#[cfg(all(CPython, Py_3_13))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
-        unsafe { pyo3_ffi::PyDict_Contains(pyo3_ffi::PyType_GetDict($obj1), $obj2) == 1 }
+        unsafe { crate::ffi::PyDict_Contains(crate::ffi::PyType_GetDict($obj1), $obj2) == 1 }
     };
 }
 
-#[cfg(all(Py_3_12, not(Py_3_13)))]
+#[cfg(all(CPython, Py_3_12, not(Py_3_13)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
+            debug_assert!(str_hash!($obj2) != -1);
             crate::ffi::_PyDict_Contains_KnownHash(
-                pyo3_ffi::PyType_GetDict($obj1),
+                crate::ffi::PyType_GetDict($obj1),
                 $obj2,
-                (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
+                (*$obj2.cast::<crate::ffi::PyASCIIObject>()).hash,
             ) == 1
         }
     };
 }
 
-#[cfg(all(Py_3_10, not(Py_3_12)))]
+#[cfg(all(CPython, Py_3_10, not(Py_3_12)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
+            debug_assert!(str_hash!($obj2) != -1);
             crate::ffi::_PyDict_Contains_KnownHash(
                 (*$obj1).tp_dict,
                 $obj2,
-                (*$obj2.cast::<pyo3_ffi::PyASCIIObject>()).hash,
+                (*$obj2.cast::<crate::ffi::PyASCIIObject>()).hash,
             ) == 1
         }
     };
 }
 
-#[cfg(not(Py_3_10))]
+#[cfg(all(CPython, not(Py_3_10)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
-        unsafe { pyo3_ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
+        unsafe { crate::ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
+    };
+}
+
+#[cfg(not(CPython))]
+macro_rules! pydict_contains {
+    ($obj1:expr, $obj2:expr) => {
+        unsafe { crate::ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
     };
 }
 
@@ -240,20 +246,28 @@ macro_rules! use_immortal {
     };
 }
 
-#[cfg(not(Py_3_13))]
+#[cfg(all(CPython, not(Py_3_13)))]
 macro_rules! pydict_next {
     ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
         unsafe { crate::ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, core::ptr::null_mut()) }
     };
 }
 
-#[cfg(Py_3_13)]
+#[cfg(all(CPython, Py_3_13))]
 macro_rules! pydict_next {
     ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { pyo3_ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
+        unsafe { crate::ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
     };
 }
 
+#[cfg(not(CPython))]
+macro_rules! pydict_next {
+    ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
+        unsafe { crate::ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
+    };
+}
+
+#[cfg(CPython)]
 macro_rules! pydict_setitem {
     ($dict:expr, $pykey:expr, $pyval:expr) => {
         debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
@@ -265,7 +279,7 @@ macro_rules! pydict_setitem {
         #[cfg(Py_3_13)]
         unsafe {
             let _ = crate::ffi::_PyDict_SetItem_KnownHash_LockHeld(
-                $dict.cast::<pyo3_ffi::PyDictObject>(),
+                $dict.cast::<crate::ffi::PyDictObject>(),
                 $pykey,
                 $pyval,
                 str_hash!($pykey),
@@ -277,15 +291,28 @@ macro_rules! pydict_setitem {
     };
 }
 
+#[cfg(not(CPython))]
+macro_rules! pydict_setitem {
+    ($dict:expr, $pykey:expr, $pyval:expr) => {
+        debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
+        unsafe {
+            let _ = crate::ffi::PyDict_SetItem($dict, $pykey, $pyval);
+        }
+        #[cfg(not(Py_GIL_DISABLED))]
+        reverse_pydict_incref!($pykey);
+        reverse_pydict_incref!($pyval);
+    };
+}
+
 macro_rules! reserve_minimum {
     ($writer:expr) => {
-        $writer.reserve(64);
+        $writer.reserve(128);
     };
 }
 
 macro_rules! reserve_pretty {
     ($writer:expr, $val:expr) => {
-        $writer.reserve($val + 16);
+        $writer.reserve($val + 32);
     };
 }
 
@@ -295,22 +322,6 @@ macro_rules! assume {
         unsafe {
             core::hint::assert_unchecked($expr);
         };
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(feature = "intrinsics")]
-macro_rules! trailing_zeros {
-    ($val:expr) => {
-        core::intrinsics::cttz_nonzero($val) as usize
-    };
-}
-
-#[allow(unused_macros)]
-#[cfg(not(feature = "intrinsics"))]
-macro_rules! trailing_zeros {
-    ($val:expr) => {
-        $val.trailing_zeros() as usize
     };
 }
 

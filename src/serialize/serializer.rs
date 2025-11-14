@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, APPEND_NEWLINE, INDENT_2};
-use crate::serialize::obtype::{pyobject_to_obtype, ObType};
+use crate::opt::{APPEND_NEWLINE, INDENT_2, Opt};
+use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
     ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
-    StrSubclassSerializer, Time, ZeroListSerializer, UUID,
+    StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{to_writer, to_writer_pretty, BytesWriter};
+use crate::serialize::writer::{BytesWriter, to_writer, to_writer_pretty};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 
 pub(crate) fn serialize(
-    ptr: *mut pyo3_ffi::PyObject,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    ptr: *mut crate::ffi::PyObject,
+    default: Option<NonNull<crate::ffi::PyObject>>,
     opts: Opt,
-) -> Result<NonNull<pyo3_ffi::PyObject>, String> {
+) -> Result<NonNull<crate::ffi::PyObject>, String> {
     let mut buf = BytesWriter::default();
     let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
     let res = if opt_disabled!(opts, INDENT_2) {
@@ -28,23 +28,23 @@ pub(crate) fn serialize(
     match res {
         Ok(()) => Ok(buf.finish(opt_enabled!(opts, APPEND_NEWLINE))),
         Err(err) => {
-            ffi!(Py_DECREF(buf.bytes_ptr().as_ptr()));
+            buf.abort();
             Err(err.to_string())
         }
     }
 }
 
 pub(crate) struct PyObjectSerializer {
-    pub ptr: *mut pyo3_ffi::PyObject,
+    pub ptr: *mut crate::ffi::PyObject,
     pub state: SerializerState,
-    pub default: Option<NonNull<pyo3_ffi::PyObject>>,
+    pub default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl PyObjectSerializer {
     pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         PyObjectSerializer {
             ptr: ptr,

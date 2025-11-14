@@ -23,16 +23,18 @@ pub(crate) unsafe fn format_escaped_str_scalar(
     value_ptr: *const u8,
     value_len: usize,
 ) -> usize {
-    let mut dst = odst;
-    let mut src = value_ptr;
+    unsafe {
+        let mut dst = odst;
+        let mut src = value_ptr;
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    impl_format_scalar!(dst, src, value_len);
+        impl_format_scalar!(dst, src, value_len);
 
-    core::ptr::write(dst, b'"');
-    dst = dst.add(1);
+        core::ptr::write(dst, b'"');
+        dst = dst.add(1);
 
-    dst as usize - odst as usize
+        dst as usize - odst as usize
+    }
 }

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::deserialize::pyobject::{
-    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
+use super::ffi::{
+    YYJSON_READ_SUCCESS, yyjson_alc, yyjson_alc_pool_init, yyjson_doc, yyjson_read_err,
+    yyjson_read_opts, yyjson_val,
 };
 use crate::deserialize::DeserializeError;
-use crate::ffi::yyjson::{
-    yyjson_alc_pool_init, yyjson_doc, yyjson_read_err, yyjson_read_opts, yyjson_val,
-    YYJSON_READ_SUCCESS,
+use crate::deserialize::pyobject::{
+    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
 };
 use crate::str::PyStr;
 use crate::util::usize_to_isize;
 use core::ffi::c_char;
-use core::ptr::{null, null_mut, NonNull};
+use core::ptr::{NonNull, null, null_mut};
 use std::borrow::Cow;
 
 const YYJSON_TAG_BIT: u8 = 8;
@@ -69,18 +69,18 @@ fn unsafe_yyjson_get_next_non_container(val: *mut yyjson_val) -> *mut yyjson_val
 
 pub(crate) fn deserialize(
     data: &'static str,
-) -> Result<NonNull<pyo3_ffi::PyObject>, DeserializeError<'static>> {
+) -> Result<NonNull<crate::ffi::PyObject>, DeserializeError<'static>> {
     assume!(!data.is_empty());
     let buffer_capacity = buffer_capacity_to_allocate(data.len());
     let buffer_ptr = ffi!(PyMem_Malloc(buffer_capacity));
-    if unlikely!(buffer_ptr.is_null()) {
+    if buffer_ptr.is_null() {
         return Err(DeserializeError::from_yyjson(
             Cow::Borrowed("Not enough memory to allocate buffer for parsing"),
             0,
             data,
         ));
     }
-    let mut alloc = crate::ffi::yyjson::yyjson_alc {
+    let mut alloc = yyjson_alc {
         malloc: None,
         realloc: None,
         free: None,
@@ -104,14 +104,15 @@ pub(crate) fn deserialize(
             &raw mut err,
         )
     };
-    if unlikely!(doc.is_null()) {
+    if doc.is_null() {
         ffi!(PyMem_Free(buffer_ptr));
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         return Err(DeserializeError::from_yyjson(msg, err.pos as i64, data));
     }
     let val = yyjson_doc_get_root(doc);
     let pyval = {
-        if unlikely!(!unsafe_yyjson_is_ctn(val)) {
+        if !unsafe_yyjson_is_ctn(val) {
+            cold_path!();
             match ElementType::from_tag(val) {
                 ElementType::String => parse_yy_string(val),
                 ElementType::Uint64 => parse_yy_u64(val),
@@ -172,7 +173,7 @@ impl ElementType {
 }
 
 #[inline(always)]
-fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
     PyStr::from_str(str_from_slice!(
         (*elem).uni.str_.cast::<u8>(),
         unsafe_yyjson_get_len(elem)
@@ -181,17 +182,17 @@ fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
 }
 
 #[inline(always)]
-fn parse_yy_u64(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+fn parse_yy_u64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
     parse_u64(unsafe { (*elem).uni.u64_ })
 }
 
 #[inline(always)]
-fn parse_yy_i64(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+fn parse_yy_i64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
     parse_i64(unsafe { (*elem).uni.i64_ })
 }
 
 #[inline(always)]
-fn parse_yy_f64(elem: *mut yyjson_val) -> NonNull<pyo3_ffi::PyObject> {
+fn parse_yy_f64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
     parse_f64(unsafe { (*elem).uni.f64_ })
 }
 
@@ -205,16 +206,17 @@ macro_rules! append_to_list {
 }
 
 #[inline(never)]
-fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
+fn populate_yy_array(list: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
         let mut next = unsafe_yyjson_get_first(elem);
-        let mut dptr = (*list.cast::<pyo3_ffi::PyListObject>()).ob_item;
+        let mut dptr = (*list.cast::<crate::ffi::PyListObject>()).ob_item;
 
         for _ in 0..len {
             let val = next;
-            if unlikely!(unsafe_yyjson_is_ctn(val)) {
+            if unsafe_yyjson_is_ctn(val) {
+                cold_path!();
                 next = unsafe_yyjson_get_next_container(val);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
                     let pyval = ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val))));
@@ -250,7 +252,7 @@ fn populate_yy_array(list: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
 }
 
 #[inline(never)]
-fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
+fn populate_yy_object(dict: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
@@ -265,7 +267,8 @@ fn populate_yy_object(dict: *mut pyo3_ffi::PyObject, elem: *mut yyjson_val) {
                 );
                 get_unicode_key(key_str)
             };
-            if unlikely!(unsafe_yyjson_is_ctn(val)) {
+            if unsafe_yyjson_is_ctn(val) {
+                cold_path!();
                 next_key = unsafe_yyjson_get_next_container(val);
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {

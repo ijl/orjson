@@ -10,12 +10,12 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub(crate) struct IntSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl IntSerializer {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         IntSerializer {
             ptr: ptr,
             opts: opts,
@@ -44,40 +44,28 @@ impl Serialize for IntSerializer {
                 }
             } else {
                 let mut buffer: [u8; 8] = [0; 8];
-
-                #[cfg(not(Py_3_13))]
-                let ret = crate::ffi::_PyLong_AsByteArray(
-                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
+                let ret = crate::ffi::PyLong_AsByteArray(
+                    self.ptr.cast::<crate::ffi::PyLongObject>(),
                     buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
                     8,
                     1,
                     is_signed,
                 );
-                #[cfg(Py_3_13)]
-                let ret = crate::ffi::_PyLong_AsByteArray(
-                    self.ptr.cast::<pyo3_ffi::PyLongObject>(),
-                    buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
-                    8,
-                    1,
-                    is_signed,
-                    0,
-                );
-                if unlikely!(ret == -1) {
+                if ret == -1 {
+                    cold_path!();
                     #[cfg(not(Py_3_13))]
                     ffi!(PyErr_Clear());
                     err!(SerializeError::Integer64Bits)
                 }
                 if is_signed == 0 {
                     let val = u64::from_ne_bytes(buffer);
-                    if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
-                        && val > STRICT_INT_MAX as u64
-                    {
+                    if opt_enabled!(self.opts, STRICT_INTEGER) && val > STRICT_INT_MAX as u64 {
                         err!(SerializeError::Integer53Bits)
                     }
                     serializer.serialize_u64(val)
                 } else {
                     let val = i64::from_ne_bytes(buffer);
-                    if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
+                    if opt_enabled!(self.opts, STRICT_INTEGER)
                         && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
                     {
                         err!(SerializeError::Integer53Bits)
@@ -97,22 +85,20 @@ impl Serialize for IntSerializer {
         unsafe {
             if crate::ffi::pylong_is_unsigned(self.ptr) {
                 let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
-                if unlikely!(val == u64::MAX) && !ffi!(PyErr_Occurred()).is_null() {
+                if val == u64::MAX && !ffi!(PyErr_Occurred()).is_null() {
                     ffi!(PyErr_Clear());
                     err!(SerializeError::Integer64Bits)
-                } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
-                    && val > STRICT_INT_MAX as u64
-                {
+                } else if opt_enabled!(self.opts, STRICT_INTEGER) && val > STRICT_INT_MAX as u64 {
                     err!(SerializeError::Integer53Bits)
                 } else {
                     serializer.serialize_u64(val)
                 }
             } else {
                 let val = ffi!(PyLong_AsLongLong(self.ptr));
-                if unlikely!(val == -1) && !ffi!(PyErr_Occurred()).is_null() {
+                if val == -1 && !ffi!(PyErr_Occurred()).is_null() {
                     ffi!(PyErr_Clear());
                     err!(SerializeError::Integer64Bits)
-                } else if unlikely!(opt_enabled!(self.opts, STRICT_INTEGER))
+                } else if opt_enabled!(self.opts, STRICT_INTEGER)
                     && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
                 {
                     err!(SerializeError::Integer53Bits)

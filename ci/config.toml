@@ -1,6 +1,5 @@
 [unstable]
 build-std = ["core", "std", "alloc", "proc_macro", "panic_abort"]
-build-std-features = ["panic_immediate_abort"]
 trim-paths = true
 
 [target.x86_64-apple-darwin]

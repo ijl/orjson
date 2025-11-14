@@ -31,12 +31,13 @@ impl Serialize for DataclassGenericSerializer<'_> {
     where
         S: Serializer,
     {
-        if unlikely!(self.previous.state.recursion_limit()) {
+        if self.previous.state.recursion_limit() {
             err!(SerializeError::RecursionLimit)
         }
         let dict = ffi!(PyObject_GetAttr(self.previous.ptr, DICT_STR));
         let ob_type = ob_type!(self.previous.ptr);
-        if unlikely!(dict.is_null()) {
+        if dict.is_null() {
+            cold_path!();
             ffi!(PyErr_Clear());
             DataclassFallbackSerializer::new(
                 self.previous.ptr,
@@ -64,16 +65,16 @@ impl Serialize for DataclassGenericSerializer<'_> {
 }
 
 pub(crate) struct DataclassFastSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl DataclassFastSerializer {
     pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         DataclassFastSerializer {
             ptr: ptr,
@@ -90,14 +91,15 @@ impl Serialize for DataclassFastSerializer {
         S: Serializer,
     {
         let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
-        if unlikely!(len == 0) {
+        if len == 0 {
+            cold_path!();
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
 
         let mut pos = 0;
-        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
@@ -109,7 +111,8 @@ impl Serialize for DataclassFastSerializer {
 
             let key_as_str = {
                 let key_ob_type = ob_type!(key);
-                if unlikely!(!is_class_by_type!(key_ob_type, STR_TYPE)) {
+                if !is_class_by_type!(key_ob_type, STR_TYPE) {
+                    cold_path!();
                     err!(SerializeError::KeyMustBeStr)
                 }
                 match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
@@ -117,7 +120,8 @@ impl Serialize for DataclassFastSerializer {
                     None => err!(SerializeError::InvalidStr),
                 }
             };
-            if unlikely!(key_as_str.as_bytes()[0] == b'_') {
+            if key_as_str.as_bytes()[0] == b'_' {
+                cold_path!();
                 continue;
             }
             let pyvalue = PyObjectSerializer::new(value, self.state, self.default);
@@ -129,16 +133,16 @@ impl Serialize for DataclassFastSerializer {
 }
 
 pub(crate) struct DataclassFallbackSerializer {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
 }
 
 impl DataclassFallbackSerializer {
     pub fn new(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         DataclassFallbackSerializer {
             ptr: ptr,
@@ -159,14 +163,15 @@ impl Serialize for DataclassFallbackSerializer {
         debug_assert!(ffi!(Py_REFCNT(fields)) >= 2);
         ffi!(Py_DECREF(fields));
         let len = isize_to_usize(ffi!(Py_SIZE(fields)));
-        if unlikely!(len == 0) {
+        if len == 0 {
+            cold_path!();
             return ZeroDictSerializer::new().serialize(serializer);
         }
         let mut map = serializer.serialize_map(None).unwrap();
 
         let mut pos = 0;
-        let mut next_key: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
-        let mut next_value: *mut pyo3_ffi::PyObject = core::ptr::null_mut();
+        let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
+        let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
         pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
 
@@ -179,7 +184,8 @@ impl Serialize for DataclassFallbackSerializer {
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);
             ffi!(Py_DECREF(field_type));
-            if unsafe { !core::ptr::eq(field_type.cast::<pyo3_ffi::PyTypeObject>(), FIELD_TYPE) } {
+            if unsafe { !core::ptr::eq(field_type.cast::<crate::ffi::PyTypeObject>(), FIELD_TYPE) }
+            {
                 continue;
             }
 
@@ -188,6 +194,7 @@ impl Serialize for DataclassFallbackSerializer {
                 None => err!(SerializeError::InvalidStr),
             };
             if key_as_str.as_bytes()[0] == b'_' {
+                cold_path!();
                 continue;
             }
 

@@ -1,6 +1,16 @@
 # Changelog
 
 
+## 3.11.4 - 2025-10-24
+
+### Changed
+
+- ABI compatibility with CPython 3.15 alpha 1.
+- Publish PyPI wheels for 3.14 and manylinux i686, manylinux arm7,
+manylinux ppc64le, manylinux s390x.
+- Build now requires a C compiler.
+
+
 ## 3.11.3 - 2025-08-26
 
 ### Fixed

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-use crate::opt::{Opt, OMIT_MICROSECONDS};
+use crate::opt::{OMIT_MICROSECONDS, Opt};
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::datetimelike::{DateTimeError, DateTimeLike, Offset};
@@ -31,11 +31,11 @@ macro_rules! write_microsecond {
 
 #[repr(transparent)]
 pub(crate) struct Date {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 }
 
 impl Date {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
         Date { ptr: ptr }
     }
 
@@ -48,7 +48,8 @@ impl Date {
             let year = ffi!(PyDateTime_GET_YEAR(self.ptr));
             let mut yearbuf = itoa::Buffer::new();
             let formatted = yearbuf.format(year);
-            if unlikely!(year < 1000) {
+            if year < 1000 {
+                cold_path!();
                 // date-fullyear   = 4DIGIT
                 buf.put_slice(&[b'0', b'0', b'0', b'0'][..(4 - formatted.len())]);
             }
@@ -88,12 +89,12 @@ pub(crate) enum TimeError {
 }
 
 pub(crate) struct Time {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl Time {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         Time {
             ptr: ptr,
             opts: opts,
@@ -105,7 +106,7 @@ impl Time {
     where
         B: bytes::BufMut,
     {
-        if unsafe { (*self.ptr.cast::<pyo3_ffi::PyDateTime_Time>()).hastzinfo == 1 } {
+        if unsafe { (*self.ptr.cast::<crate::ffi::PyDateTime_Time>()).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
         let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
@@ -138,12 +139,12 @@ impl Serialize for Time {
 }
 
 pub(crate) struct DateTime {
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
     opts: Opt,
 }
 
 impl DateTime {
-    pub fn new(ptr: *mut pyo3_ffi::PyObject, opts: Opt) -> Self {
+    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
         DateTime {
             ptr: ptr,
             opts: opts,
@@ -177,7 +178,7 @@ impl DateTimeLike for DateTime {
     }
 
     fn has_tz(&self) -> bool {
-        unsafe { (*(self.ptr.cast::<pyo3_ffi::PyDateTime_DateTime>())).hastzinfo == 1 }
+        unsafe { (*(self.ptr.cast::<crate::ffi::PyDateTime_DateTime>())).hastzinfo == 1 }
     }
 
     #[inline(never)]

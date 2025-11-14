@@ -55,6 +55,66 @@ pub(crate) unsafe fn _Py_IsImmortal(op: *mut pyo3_ffi::PyObject) -> core::ffi::c
 #[cfg(CPython)]
 #[inline(always)]
 #[allow(non_snake_case)]
+pub(crate) unsafe fn _PyDict_NewPresized(len: isize) -> *mut pyo3_ffi::PyObject {
+    unsafe { pyo3_ffi::_PyDict_NewPresized(len) }
+}
+
+#[cfg(not(CPython))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn _PyDict_NewPresized(_len: isize) -> *mut pyo3_ffi::PyObject {
+    unsafe { pyo3_ffi::PyDict_New() }
+}
+
+#[cfg(all(CPython, Py_3_14))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn Py_HashBuffer(
+    ptr: *const core::ffi::c_void,
+    len: pyo3_ffi::Py_ssize_t,
+) -> pyo3_ffi::Py_hash_t {
+    unsafe { pyo3_ffi::Py_HashBuffer(ptr, len) }
+}
+
+#[cfg(all(CPython, not(Py_3_14)))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn Py_HashBuffer(
+    ptr: *const core::ffi::c_void,
+    len: pyo3_ffi::Py_ssize_t,
+) -> pyo3_ffi::Py_hash_t {
+    unsafe { pyo3_ffi::_Py_HashBytes(ptr, len) }
+}
+
+#[cfg(not(Py_3_13))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyLong_AsByteArray(
+    v: *mut pyo3_ffi::PyLongObject,
+    bytes: *mut core::ffi::c_uchar,
+    n: pyo3_ffi::Py_ssize_t,
+    little_endian: core::ffi::c_int,
+    is_signed: core::ffi::c_int,
+) -> core::ffi::c_int {
+    unsafe { _PyLong_AsByteArray(v, bytes, n, little_endian, is_signed) }
+}
+
+#[cfg(Py_3_13)]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyLong_AsByteArray(
+    v: *mut pyo3_ffi::PyLongObject,
+    bytes: *mut core::ffi::c_uchar,
+    n: pyo3_ffi::Py_ssize_t,
+    little_endian: core::ffi::c_int,
+    is_signed: core::ffi::c_int,
+) -> core::ffi::c_int {
+    unsafe { _PyLong_AsByteArray(v, bytes, n, little_endian, is_signed, 0) }
+}
+
+#[cfg(CPython)]
+#[inline(always)]
+#[allow(non_snake_case)]
 pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyVarObject) -> pyo3_ffi::Py_ssize_t {
     unsafe { (*op).ob_size }
 }
@@ -66,18 +126,20 @@ pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyVarObject) -> pyo3_ffi::Py_ssi
     unsafe { pyo3_ffi::Py_SIZE(op.cast::<pyo3_ffi::PyObject>()) }
 }
 
-#[cfg(CPython)]
+#[allow(unused)]
+#[cfg(any(CPython, PyPy))]
 #[inline(always)]
 #[allow(non_snake_case)]
 pub(crate) unsafe fn Py_SET_SIZE(op: *mut pyo3_ffi::PyVarObject, size: pyo3_ffi::Py_ssize_t) {
     unsafe { (*op).ob_size = size }
 }
 
-#[cfg(not(CPython))]
+#[allow(unused)]
+#[cfg(GraalPy)]
 #[inline(always)]
 #[allow(non_snake_case)]
 pub(crate) unsafe fn Py_SET_SIZE(op: *mut pyo3_ffi::PyVarObject, size: pyo3_ffi::Py_ssize_t) {
-    unimplemented!()
+    unsafe { (*op)._ob_size_graalpy = size }
 }
 
 #[cfg(CPython)]
@@ -125,6 +187,7 @@ pub(crate) unsafe fn PyTuple_SET_ITEM(
 }
 
 unsafe extern "C" {
+    #[cfg(CPython)]
     pub fn _PyDict_Next(
         mp: *mut pyo3_ffi::PyObject,
         pos: *mut pyo3_ffi::Py_ssize_t,
@@ -133,14 +196,14 @@ unsafe extern "C" {
         hash: *mut pyo3_ffi::Py_hash_t,
     ) -> core::ffi::c_int;
 
-    #[cfg(Py_3_10)]
+    #[cfg(all(CPython, Py_3_10))]
     pub fn _PyDict_Contains_KnownHash(
         op: *mut pyo3_ffi::PyObject,
         key: *mut pyo3_ffi::PyObject,
         hash: pyo3_ffi::Py_hash_t,
     ) -> core::ffi::c_int;
 
-    #[cfg(not(Py_3_13))]
+    #[cfg(all(CPython, not(Py_3_13)))]
     pub(crate) fn _PyDict_SetItem_KnownHash(
         mp: *mut pyo3_ffi::PyObject,
         name: *mut pyo3_ffi::PyObject,
@@ -148,7 +211,7 @@ unsafe extern "C" {
         hash: pyo3_ffi::Py_hash_t,
     ) -> core::ffi::c_int;
 
-    #[cfg(Py_3_13)]
+    #[cfg(all(CPython, Py_3_13))]
     pub(crate) fn _PyDict_SetItem_KnownHash_LockHeld(
         mp: *mut pyo3_ffi::PyDictObject,
         name: *mut pyo3_ffi::PyObject,
@@ -157,6 +220,7 @@ unsafe extern "C" {
     ) -> core::ffi::c_int;
 
     #[cfg(Py_3_13)]
+    #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
     pub(crate) fn _PyLong_AsByteArray(
         v: *mut pyo3_ffi::PyLongObject,
         bytes: *mut core::ffi::c_uchar,
@@ -167,6 +231,7 @@ unsafe extern "C" {
     ) -> core::ffi::c_int;
 
     #[cfg(not(Py_3_13))]
+    #[cfg_attr(PyPy, link_name = "_PyPyLong_AsByteArrayO")]
     pub(crate) fn _PyLong_AsByteArray(
         v: *mut pyo3_ffi::PyLongObject,
         bytes: *mut core::ffi::c_uchar,

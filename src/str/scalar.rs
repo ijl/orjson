@@ -5,7 +5,7 @@ use crate::str::pyunicode_new::{
 };
 
 #[inline(never)]
-pub(crate) unsafe fn str_impl_kind_scalar(buf: &str) -> *mut pyo3_ffi::PyObject {
+pub(crate) unsafe fn str_impl_kind_scalar(buf: &str) -> *mut crate::ffi::PyObject {
     let num_chars = bytecount::num_chars(buf.as_bytes());
     if buf.len() == num_chars {
         return pyunicode_ascii(buf.as_ptr(), num_chars);
@@ -14,7 +14,7 @@ pub(crate) unsafe fn str_impl_kind_scalar(buf: &str) -> *mut pyo3_ffi::PyObject 
         let len = buf.len();
         assume!(len > 0);
 
-        if unlikely!(*(buf.as_bytes().as_ptr()) > 239) {
+        if *(buf.as_bytes().as_ptr()) > 239 {
             return pyunicode_fourbyte(buf, num_chars);
         }
 

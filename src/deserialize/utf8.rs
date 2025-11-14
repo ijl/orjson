@@ -4,8 +4,8 @@ use crate::deserialize::DeserializeError;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
 use crate::str::PyStr;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
-use crate::util::isize_to_usize;
 use crate::util::INVALID_STR;
+use crate::util::isize_to_usize;
 use core::ffi::c_char;
 use std::borrow::Cow;
 
@@ -34,7 +34,7 @@ fn is_valid_utf8(buf: &[u8]) -> bool {
 }
 
 pub(crate) fn read_input_to_buf(
-    ptr: *mut pyo3_ffi::PyObject,
+    ptr: *mut crate::ffi::PyObject,
 ) -> Result<&'static [u8], DeserializeError<'static>> {
     let obj_type_ptr = ob_type!(ptr);
     let buffer: &[u8];
@@ -51,14 +51,15 @@ pub(crate) fn read_input_to_buf(
     } else if is_type!(obj_type_ptr, STR_TYPE) {
         let pystr = unsafe { PyStr::from_ptr_unchecked(ptr) };
         let uni = pystr.to_str();
-        if unlikely!(uni.is_none()) {
+        if uni.is_none() {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
         let as_str = uni.unwrap();
         buffer = unsafe { core::slice::from_raw_parts(as_str.as_ptr(), as_str.len()) };
-    } else if unlikely!(is_type!(obj_type_ptr, MEMORYVIEW_TYPE)) {
+    } else if is_type!(obj_type_ptr, MEMORYVIEW_TYPE) {
+        cold_path!();
         let membuf = unsafe { PyMemoryView_GET_BUFFER(ptr) };
-        if unsafe { pyo3_ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
+        if unsafe { crate::ffi::PyBuffer_IsContiguous(membuf, b'C' as c_char) == 0 } {
             return Err(DeserializeError::invalid(Cow::Borrowed(
                 "Input type memoryview must be a C contiguous buffer",
             )));
@@ -72,7 +73,8 @@ pub(crate) fn read_input_to_buf(
         if !is_valid_utf8(buffer) {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
-    } else if unlikely!(is_type!(obj_type_ptr, BYTEARRAY_TYPE)) {
+    } else if is_type!(obj_type_ptr, BYTEARRAY_TYPE) {
+        cold_path!();
         buffer = unsafe {
             core::slice::from_raw_parts(
                 ffi!(PyByteArray_AsString(ptr)).cast::<u8>().cast_const(),
@@ -87,7 +89,8 @@ pub(crate) fn read_input_to_buf(
             "Input must be bytes, bytearray, memoryview, or str",
         )));
     }
-    if unlikely!(buffer.is_empty()) {
+    if buffer.is_empty() {
+        cold_path!();
         Err(DeserializeError::invalid(Cow::Borrowed(
             "Input is a zero-length, empty document",
         )))

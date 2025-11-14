@@ -12,13 +12,12 @@ export CC="${CC:-clang}"
 export LD="${LD:-lld}"
 export TARGET="${TARGET:-x86_64-unknown-linux-gnu}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
-export ORJSON_FEATURES="${ORJSON_FEATURES:-yyjson}"
 
 export CFLAGS="-Os -fstrict-aliasing"
 
 export RUSTFLAGS="-C panic=unwind -C linker=${CC} -C link-arg=-fuse-ld=${LD}"
 
-maturin build --profile=dev --target=${TARGET} --features="${ORJSON_FEATURES}" --interpreter "${PYTHON}"
+maturin build --profile=dev --target="${TARGET}"
 
 uv pip install ${CARGO_TARGET_DIR}/wheels/*.whl
 

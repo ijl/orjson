@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::serialize::error::SerializeError;
-use crate::serialize::obtype::{pyobject_to_obtype, ObType};
+use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
@@ -34,23 +34,23 @@ impl Serialize for ZeroListSerializer {
 }
 
 pub(crate) struct ListTupleSerializer {
-    data_ptr: *const *mut pyo3_ffi::PyObject,
+    data_ptr: *const *mut crate::ffi::PyObject,
     state: SerializerState,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
     len: usize,
 }
 
 impl ListTupleSerializer {
     pub fn from_list(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         debug_assert!(
             is_type!(ob_type!(ptr), LIST_TYPE)
                 || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_LIST_SUBCLASS)
         );
-        let data_ptr = unsafe { (*ptr.cast::<pyo3_ffi::PyListObject>()).ob_item };
+        let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyListObject>()).ob_item };
         let len = isize_to_usize(ffi!(Py_SIZE(ptr)));
         Self {
             data_ptr: data_ptr,
@@ -61,15 +61,15 @@ impl ListTupleSerializer {
     }
 
     pub fn from_tuple(
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut crate::ffi::PyObject,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         debug_assert!(
             is_type!(ob_type!(ptr), TUPLE_TYPE)
                 || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_TUPLE_SUBCLASS)
         );
-        let data_ptr = unsafe { (*ptr.cast::<pyo3_ffi::PyTupleObject>()).ob_item.as_ptr() };
+        let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyTupleObject>()).ob_item.as_ptr() };
         let len = isize_to_usize(ffi!(Py_SIZE(ptr)));
         Self {
             data_ptr: data_ptr,
@@ -86,7 +86,8 @@ impl Serialize for ListTupleSerializer {
     where
         S: Serializer,
     {
-        if unlikely!(self.state.recursion_limit()) {
+        if self.state.recursion_limit() {
+            cold_path!();
             err!(SerializeError::RecursionLimit)
         }
         debug_assert!(self.len >= 1);

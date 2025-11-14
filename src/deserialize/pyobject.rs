@@ -9,7 +9,8 @@ use core::ptr::NonNull;
 #[cfg(not(Py_GIL_DISABLED))]
 #[inline(always)]
 pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
-    if unlikely!(key_str.len() > 64) {
+    if key_str.len() > 64 {
+        cold_path!();
         PyStr::from_str_with_hash(key_str)
     } else {
         assume!(key_str.len() <= 64);
@@ -23,7 +24,7 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
                     || hash,
                     || CachedKey::new(PyStr::from_str_with_hash(key_str)),
                 );
-            unsafe { entry.get() }
+            entry.get()
         }
     }
 }
@@ -36,39 +37,35 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
 
 #[allow(dead_code)]
 #[inline(always)]
-pub(crate) fn parse_bool(val: bool) -> NonNull<pyo3_ffi::PyObject> {
-    if val {
-        parse_true()
-    } else {
-        parse_false()
-    }
+pub(crate) fn parse_bool(val: bool) -> NonNull<crate::ffi::PyObject> {
+    if val { parse_true() } else { parse_false() }
 }
 
 #[inline(always)]
-pub(crate) fn parse_true() -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_true() -> NonNull<crate::ffi::PyObject> {
     nonnull!(use_immortal!(TRUE))
 }
 
 #[inline(always)]
-pub(crate) fn parse_false() -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_false() -> NonNull<crate::ffi::PyObject> {
     nonnull!(use_immortal!(FALSE))
 }
 #[inline(always)]
-pub(crate) fn parse_i64(val: i64) -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_i64(val: i64) -> NonNull<crate::ffi::PyObject> {
     nonnull!(ffi!(PyLong_FromLongLong(val)))
 }
 
 #[inline(always)]
-pub(crate) fn parse_u64(val: u64) -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_u64(val: u64) -> NonNull<crate::ffi::PyObject> {
     nonnull!(ffi!(PyLong_FromUnsignedLongLong(val)))
 }
 
 #[inline(always)]
-pub(crate) fn parse_f64(val: f64) -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_f64(val: f64) -> NonNull<crate::ffi::PyObject> {
     nonnull!(ffi!(PyFloat_FromDouble(val)))
 }
 
 #[inline(always)]
-pub(crate) fn parse_none() -> NonNull<pyo3_ffi::PyObject> {
+pub(crate) fn parse_none() -> NonNull<crate::ffi::PyObject> {
     nonnull!(use_immortal!(NONE))
 }
