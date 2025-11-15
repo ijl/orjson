@@ -190,6 +190,53 @@ with the standard library.
 If the failure was caused by an exception in `default` then
 `JSONEncodeError` chains the original exception as `__cause__`.
 
+```python
+def dump_to(
+        __obj: Any,
+        __callback: Callable[[bytes], None],
+        default: Optional[Callable[[Any], Any]] = ...,
+        option: Optional[int] = ...,
+        buffer_size: int = ...,
+) -> None: ...
+```
+
+`dump_to()` serializes Python objects to JSON and calls a callback with
+chunks of serialized output. This is useful for streaming large JSON objects
+without holding the entire serialized result in memory.
+
+The callback is invoked with `bytes` chunks as the object is serialized. The
+callback is called periodically when the internal buffer exceeds
+`buffer_size` bytes (default: 1048576, 1 MiB). The callback is called at
+least once with any remaining data when serialization completes.
+
+The callback may be called with a chunk larger than `buffer_size` if a single
+value serializes to more than `buffer_size` bytes. More memory than `buffer_size`
+may be allocated at any given time.
+
+```python
+>> > import orjson
+>> > chunks = []
+>> > orjson.dump_to({"key": "value"}, chunks.append)
+>> > b"".join(chunks)
+b'{"key":"value"}'
+```
+
+This is useful for writing large JSON objects directly to files or network
+streams without intermediate buffering:
+
+```python
+>> > import orjson
+>> > with open("output.json", "wb") as f:
+    ...
+orjson.dump_to(large_data, f.write)
+```
+
+The `default` and `option` parameters work identically to `dumps()`,
+and error handling is similar. If `callback` raises an exception during
+serialization, the exception is propagated to the caller and serialization stops.
+
+The global interpreter lock (GIL) is held for the duration of the call.
+
 #### default
 
 To serialize a subclass or arbitrary types, specify `default` as a

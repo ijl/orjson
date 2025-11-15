@@ -83,10 +83,10 @@ mod str;
 mod typeref;
 
 use crate::ffi::{
-    METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyErr_SetObject,
-    PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer, PyModuleDef,
-    PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS,
+    METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyCallable_Check,
+    PyErr_SetObject, PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer,
+    PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New,
+    PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
 };
 use core::ffi::{c_char, c_int, c_void};
 
@@ -166,6 +166,29 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
                 PyUnicode_InternFromString(c"orjson".as_ptr()),
             );
             add!(mptr, c"dumps", func);
+        }
+
+        {
+            let dump_to_doc = c"dump_to(obj, callback, /, default=None, option=None, *, buffer_size=...)\n--\n\nSerialize Python objects to JSON; pass byte chunks of JSON to callback.";
+
+            let wrapped_dump_to = PyMethodDef {
+                ml_name: c"dump_to".as_ptr(),
+                ml_meth: PyMethodDefPointer {
+                    #[cfg(Py_3_10)]
+                    PyCFunctionFastWithKeywords: dump_to,
+                    #[cfg(not(Py_3_10))]
+                    _PyCFunctionFastWithKeywords: dump_to,
+                },
+                ml_flags: crate::ffi::METH_FASTCALL | METH_KEYWORDS,
+                ml_doc: dump_to_doc.as_ptr(),
+            };
+
+            let func = PyCFunction_NewEx(
+                Box::into_raw(Box::new(wrapped_dump_to)),
+                null_mut(),
+                PyUnicode_InternFromString(c"orjson".as_ptr()),
+            );
+            add!(mptr, c"dump_to", func);
         }
 
         {
@@ -379,6 +402,29 @@ pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) 
     }
 }
 
+#[inline]
+unsafe fn convert_opts(optsptr: Option<NonNull<PyObject>>) -> Result<opt::Opt, *mut PyObject> {
+    let mut optsbits: i32 = 0;
+    if let Some(opts) = optsptr {
+        cold_path!();
+        unsafe {
+            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
+                #[allow(clippy::cast_possible_truncation)]
+                let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
+                optsbits = tmp;
+                if !(0..=opt::MAX_OPT).contains(&optsbits) {
+                    cold_path!();
+                    return Err(raise_dumps_exception_fixed("Invalid opts"));
+                }
+            } else if !core::ptr::eq(opts.as_ptr(), typeref::NONE) {
+                cold_path!();
+                return Err(raise_dumps_exception_fixed("Invalid opts"));
+            }
+        }
+    }
+    Ok(optsbits as opt::Opt)
+}
+
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn dumps(
     _self: *mut PyObject,
@@ -431,25 +477,106 @@ pub(crate) unsafe extern "C" fn dumps(
             }
         }
 
-        let mut optsbits: i32 = 0;
-        if let Some(opts) = optsptr {
+        let opts = match convert_opts(optsptr) {
+            Ok(value) => value,
+            Err(value) => return value,
+        };
+
+        #[allow(clippy::cast_sign_loss)]
+        match crate::serialize::serialize(*args, default, opts) {
+            Ok(val) => val.as_ptr(),
+            Err(err) => raise_dumps_exception_dynamic(err.as_str()),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C" fn dump_to(
+    _self: *mut PyObject,
+    args: *const *mut PyObject,
+    nargs: Py_ssize_t,
+    kwnames: *mut PyObject,
+) -> *mut PyObject {
+    unsafe {
+        let mut default: Option<NonNull<PyObject>> = None;
+        let mut optsptr: Option<NonNull<PyObject>> = None;
+        let mut buffer_size: usize = 64 * 1024;
+
+        let num_args = PyVectorcall_NARGS(isize_to_usize(nargs));
+        if num_args < 2 {
             cold_path!();
-            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
-                #[allow(clippy::cast_possible_truncation)]
-                let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
-                optsbits = tmp;
-                if !(0..=opt::MAX_OPT).contains(&optsbits) {
-                    cold_path!();
-                    return raise_dumps_exception_fixed("Invalid opts");
+            return raise_dumps_exception_fixed(
+                "dump_to() missing required positional arguments: 'obj' and 'callback'",
+            );
+        }
+
+        let callback = NonNull::new_unchecked(*args.offset(1));
+
+        // Check that callback is callable
+        if PyCallable_Check(callback.as_ptr()) == 0 {
+            return raise_dumps_exception_fixed("callback must be callable");
+        }
+
+        if num_args & 4 == 4 {
+            default = Some(NonNull::new_unchecked(*args.offset(2)));
+        }
+        if num_args & 8 == 8 {
+            optsptr = Some(NonNull::new_unchecked(*args.offset(3)));
+        }
+
+        if !kwnames.is_null() {
+            cold_path!();
+            for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
+                let arg = ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+                if core::ptr::eq(arg, typeref::DEFAULT) {
+                    if default.is_some() {
+                        cold_path!();
+                        return raise_dumps_exception_fixed(
+                            "dump_to() got multiple values for argument: 'default'",
+                        );
+                    }
+                    default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
+                } else if core::ptr::eq(arg, typeref::OPTION) {
+                    if optsptr.is_some() {
+                        cold_path!();
+                        return raise_dumps_exception_fixed(
+                            "dump_to() got multiple values for argument: 'option'",
+                        );
+                    }
+                    optsptr = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
+                } else if core::ptr::eq(arg, typeref::BUFFER_SIZE) {
+                    let buffer_size_obj = *args.offset(num_args + i);
+                    let size = PyLong_AsLong(buffer_size_obj);
+                    if size <= 0 {
+                        // Could have overflowed, been negative, or otherwise invalid
+                        // to interpret as an integer
+                        return raise_dumps_exception_dynamic(
+                            "buffer_size must be a positive integer",
+                        );
+                    }
+                    buffer_size = size as usize;
+                } else {
+                    return raise_dumps_exception_fixed(
+                        "dump_to() got an unexpected keyword argument",
+                    );
                 }
-            } else if !core::ptr::eq(opts.as_ptr(), typeref::NONE) {
-                cold_path!();
-                return raise_dumps_exception_fixed("Invalid opts");
             }
         }
 
+        let opts = match convert_opts(optsptr) {
+            Ok(value) => value,
+            Err(value) => return value,
+        };
+
         #[allow(clippy::cast_sign_loss)]
-        match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
+        match serialize::serialize_with_callback(
+            *args,
+            callback,
+            default,
+            opts,
+            buffer_size,
+            usize::MAX,
+        ) {
             Ok(val) => val.as_ptr(),
             Err(err) => raise_dumps_exception_dynamic(err.as_str()),
         }

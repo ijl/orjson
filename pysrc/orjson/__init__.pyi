@@ -8,6 +8,14 @@ def dumps(
     default: Callable[[Any], Any] | None = ...,
     option: int | None = ...,
 ) -> bytes: ...
+def dump_to(
+    __obj: Any,
+    __callback: Callable[[bytes], None],
+    default: Callable[[Any], Any] | None = ...,
+    option: int | None = ...,
+    *,
+    buffer_size: int | None = ...,
+) -> bytes: ...
 def loads(__obj: bytes | bytearray | memoryview | str) -> Any: ...
 
 class JSONDecodeError(json.JSONDecodeError): ...
