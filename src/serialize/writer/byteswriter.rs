@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 use crate::ffi::{PyBytes_FromStringAndSize, PyObject};
+use crate::serialize::writer::Writer;
 use crate::util::usize_to_isize;
 use bytes::{BufMut, buf::UninitSlice};
 use core::mem::MaybeUninit;
 use core::ptr::NonNull;
+use std::io;
 
 #[cfg(CPython)]
 const BUFFER_LENGTH: usize = 1024;
@@ -37,18 +39,6 @@ impl BytesWriter {
         }
     }
 
-    #[cfg(CPython)]
-    pub fn abort(&mut self) {
-        ffi!(Py_DECREF(self.bytes.cast::<PyObject>()));
-    }
-
-    #[cfg(not(CPython))]
-    pub fn abort(&mut self) {
-        unsafe {
-            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
-        }
-    }
-
     fn append_and_terminate(&mut self, append: bool) {
         unsafe {
             if append {
@@ -57,35 +47,6 @@ impl BytesWriter {
             }
             #[cfg(CPython)]
             core::ptr::write(self.buffer_ptr(), 0);
-        }
-    }
-
-    #[cfg(CPython)]
-    #[inline]
-    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
-        unsafe {
-            self.append_and_terminate(append);
-            crate::ffi::Py_SET_SIZE(
-                self.bytes.cast::<crate::ffi::PyVarObject>(),
-                usize_to_isize(self.len),
-            );
-            self.resize(self.len);
-            NonNull::new_unchecked(self.bytes.cast::<PyObject>())
-        }
-    }
-
-    #[cfg(not(CPython))]
-    #[inline]
-    pub fn finish(&mut self, append: bool) -> NonNull<PyObject> {
-        unsafe {
-            self.append_and_terminate(append);
-            let bytes = PyBytes_FromStringAndSize(
-                self.bytes.cast::<i8>().cast_const(),
-                usize_to_isize(self.len),
-            );
-            debug_assert!(!bytes.is_null());
-            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
-            nonnull!(bytes)
         }
     }
 
@@ -133,6 +94,49 @@ impl BytesWriter {
             cap *= 2;
         }
         self.resize(cap);
+    }
+}
+
+impl Writer for BytesWriter {
+    #[cfg(CPython)]
+    fn abort(&mut self) {
+        ffi!(Py_DECREF(self.bytes.cast::<PyObject>()));
+    }
+
+    #[cfg(not(CPython))]
+    fn abort(&mut self) {
+        unsafe {
+            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
+        }
+    }
+
+    #[cfg(CPython)]
+    #[inline]
+    fn finish(&mut self, append: bool) -> io::Result<NonNull<PyObject>> {
+        unsafe {
+            self.append_and_terminate(append);
+            crate::ffi::Py_SET_SIZE(
+                self.bytes.cast::<crate::ffi::PyVarObject>(),
+                usize_to_isize(self.len),
+            );
+            self.resize(self.len);
+            Ok(NonNull::new_unchecked(self.bytes.cast::<PyObject>()))
+        }
+    }
+
+    #[cfg(not(CPython))]
+    #[inline]
+    fn finish(&mut self, append: bool) -> io::Result<NonNull<PyObject>> {
+        unsafe {
+            self.append_and_terminate(append);
+            let bytes = PyBytes_FromStringAndSize(
+                self.bytes.cast::<i8>().cast_const(),
+                usize_to_isize(self.len),
+            );
+            debug_assert!(!bytes.is_null());
+            crate::ffi::PyMem_Free(self.bytes.cast::<core::ffi::c_void>());
+            Ok(nonnull!(bytes))
+        }
     }
 }
 
