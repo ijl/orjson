@@ -9,29 +9,47 @@ use crate::serialize::per_type::{
     StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{BytesWriter, to_writer, to_writer_pretty};
+use crate::serialize::writer::{BytesWriter, WriteExt, Writer, to_writer, to_writer_pretty};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
+
+#[inline]
+fn serialize_to_writer<W>(
+    mut writer: W,
+    ptr: *mut crate::ffi::PyObject,
+    default: Option<NonNull<crate::ffi::PyObject>>,
+    opts: Opt,
+) -> Result<NonNull<crate::ffi::PyObject>, String>
+where
+    W: Writer + bytes::BufMut,
+    for<'a> &'a mut W: WriteExt,
+{
+    let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
+    let res = if opt_disabled!(opts, INDENT_2) {
+        to_writer(&mut writer, &obj)
+    } else {
+        to_writer_pretty(&mut writer, &obj)
+    };
+    if let Err(e) = res {
+        writer.abort();
+        return Err(e.to_string());
+    }
+    match writer.finish(opt_enabled!(opts, APPEND_NEWLINE)) {
+        Ok(val) => Ok(val),
+        Err(err) => {
+            writer.abort();
+            Err(err.to_string())
+        }
+    }
+}
 
 pub(crate) fn serialize(
     ptr: *mut crate::ffi::PyObject,
     default: Option<NonNull<crate::ffi::PyObject>>,
     opts: Opt,
 ) -> Result<NonNull<crate::ffi::PyObject>, String> {
-    let mut buf = BytesWriter::default();
-    let obj = PyObjectSerializer::new(ptr, SerializerState::new(opts), default);
-    let res = if opt_disabled!(opts, INDENT_2) {
-        to_writer(&mut buf, &obj)
-    } else {
-        to_writer_pretty(&mut buf, &obj)
-    };
-    match res {
-        Ok(()) => Ok(buf.finish(opt_enabled!(opts, APPEND_NEWLINE))),
-        Err(err) => {
-            buf.abort();
-            Err(err.to_string())
-        }
-    }
+    let bw = BytesWriter::default();
+    serialize_to_writer(bw, ptr, default, opts)
 }
 
 pub(crate) struct PyObjectSerializer {
