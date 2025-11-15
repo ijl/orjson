@@ -8,4 +8,4 @@ mod serializer;
 mod state;
 pub(crate) mod writer;
 
-pub(crate) use serializer::serialize;
+pub(crate) use serializer::{serialize, serialize_with_callback};

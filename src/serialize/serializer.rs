@@ -9,7 +9,9 @@ use crate::serialize::per_type::{
     StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{BytesWriter, WriteExt, Writer, to_writer, to_writer_pretty};
+use crate::serialize::writer::{
+    BytesWriter, CallbackWriter, WriteExt, Writer, to_writer, to_writer_pretty,
+};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, Serializer};
 
@@ -50,6 +52,23 @@ pub(crate) fn serialize(
 ) -> Result<NonNull<crate::ffi::PyObject>, String> {
     let bw = BytesWriter::default();
     serialize_to_writer(bw, ptr, default, opts)
+}
+
+pub(crate) fn serialize_with_callback(
+    ptr: *mut crate::ffi::PyObject,
+    callback: NonNull<crate::ffi::PyObject>,
+    default: Option<NonNull<crate::ffi::PyObject>>,
+    opts: Opt,
+    flush_threshold: usize,
+    maximum_buffer_size: usize,
+) -> Result<NonNull<crate::ffi::PyObject>, String> {
+    let cw = CallbackWriter::new(
+        callback,
+        flush_threshold,
+        flush_threshold, // initial_buffer_size
+        maximum_buffer_size,
+    );
+    serialize_to_writer(cw, ptr, default, opts)
 }
 
 pub(crate) struct PyObjectSerializer {
