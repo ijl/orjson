@@ -5689,7 +5689,6 @@ doc_end:
         } else {
             while (char_is_space(*cur)) cur++;
         }
-        if (unlikely(cur < end)) goto fail_garbage;
     }
     
     doc = (yyjson_doc *)val_hdr;
@@ -6053,7 +6052,6 @@ doc_end:
         } else {
             while (char_is_space(*cur)) cur++;
         }
-        if (unlikely(cur < end)) goto fail_garbage;
     }
     
     doc = (yyjson_doc *)val_hdr;
@@ -6454,7 +6452,6 @@ doc_end:
         } else {
             while (char_is_space(*cur)) cur++;
         }
-        if (unlikely(cur < end)) goto fail_garbage;
     }
     
     doc = (yyjson_doc *)val_hdr;

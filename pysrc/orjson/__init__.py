@@ -10,6 +10,7 @@ __all__ = (
     "JSONDecodeError",
     "JSONEncodeError",
     "loads",
+    "loads_next",
     "OPT_APPEND_NEWLINE",
     "OPT_INDENT_2",
     "OPT_NAIVE_UTC",

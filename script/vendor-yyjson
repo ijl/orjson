@@ -34,3 +34,5 @@ sed -i 's/(pre && !false)/(false)/g' include/yyjson/yyjson.c
 
 git apply include/yyjson-recursion-limit.patch
 git apply include/yyjson-reduce-unused.patch
+
+sed -i '/        if (unlikely(cur < end)) goto fail_garbage;/d' include/yyjson/yyjson.c
