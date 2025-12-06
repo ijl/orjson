@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2021-2025)
 
 use core::ffi::CStr;
 use core::ptr::NonNull;

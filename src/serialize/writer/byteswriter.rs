@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2020-2025)
 
 use crate::ffi::{PyBytes_FromStringAndSize, PyObject};
 use crate::util::usize_to_isize;

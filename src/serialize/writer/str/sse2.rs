@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 
 use core::arch::x86_64::{
     __m128i, _mm_cmpeq_epi8, _mm_loadu_si128, _mm_movemask_epi8, _mm_or_si128, _mm_set1_epi8,

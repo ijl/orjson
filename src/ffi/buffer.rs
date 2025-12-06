@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2021-2025), Baul (2020)
 
 use crate::ffi::{Py_buffer, Py_hash_t, Py_ssize_t, PyObject, PyVarObject};
 use core::ffi::c_int;

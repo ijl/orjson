@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025)
 
 use crate::opt::{Opt, STRICT_INTEGER};
 use crate::serialize::error::SerializeError;

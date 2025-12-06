@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
 
 use crate::ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use crate::opt::Opt;

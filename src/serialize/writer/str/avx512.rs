@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 
 use core::arch::x86_64::{
     _mm256_cmpeq_epu8_mask, _mm256_cmplt_epu8_mask, _mm256_loadu_epi8, _mm256_maskz_loadu_epi8,

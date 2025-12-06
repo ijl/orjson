@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright Ben Sully (2021), ijl (2020-2025)
 
 use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, Opt, UTC_Z};
 

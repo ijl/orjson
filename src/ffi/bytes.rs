@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2022-2025)
 
 use crate::ffi::{Py_ssize_t, PyObject};
 use core::ffi::c_char;

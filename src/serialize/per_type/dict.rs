@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025), Aviram Hassan (2020)
 
 use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
 use crate::serialize::buffer::SmallFixedBuffer;

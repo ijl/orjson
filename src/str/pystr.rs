@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2025)
 
 #[cfg(target_endian = "little")]
 use crate::ffi::PyCompactUnicodeObject;

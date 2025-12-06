@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2023), Eric Jolibois (2022)
 
 import orjson
 

@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright Aarni Koskela (2021), ijl (2019)
 
 from json import dumps as _json_dumps
 from json import loads as json_loads

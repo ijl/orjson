@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2020-2025), Jack Amadeo (2023)
 
 use core::ffi::c_char;
 use core::ptr::null_mut;

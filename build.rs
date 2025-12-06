@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2021-2025)
 
 fn main() {
     let python_config = pyo3_build_config::get();

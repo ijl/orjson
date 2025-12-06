@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025)
 
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::VALUE_STR;

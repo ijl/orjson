@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 
 #[cfg(Py_GIL_DISABLED)]
 #[allow(non_upper_case_globals)]

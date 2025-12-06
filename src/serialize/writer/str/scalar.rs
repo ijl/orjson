@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 
 macro_rules! impl_format_scalar {
     ($dst:expr, $src:expr, $value_len:expr) => {

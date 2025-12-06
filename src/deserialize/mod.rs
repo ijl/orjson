@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2020-2025), Eric Jolibois (2021)
 
 mod backend;
 #[cfg(not(Py_GIL_DISABLED))]

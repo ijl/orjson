@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025)
 
 use crate::ffi::{Fragment, PyBytes_AS_STRING, PyBytes_GET_SIZE};
 use crate::serialize::error::SerializeError;

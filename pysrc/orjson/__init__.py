@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2023)
 
 from .orjson import *
 from .orjson import __version__

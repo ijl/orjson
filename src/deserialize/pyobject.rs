@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2022-2025)
 
 #[cfg(not(Py_GIL_DISABLED))]
 use crate::deserialize::cache::{CachedKey, KEY_MAP};

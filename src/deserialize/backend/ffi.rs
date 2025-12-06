@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2022-2025)
 
 #[repr(C)]
 pub(crate) struct yyjson_alc {

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025), Ben Sully (2021)
 
 use crate::opt::{OMIT_MICROSECONDS, Opt};
 use crate::serialize::buffer::SmallFixedBuffer;

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2025)
 // pyo3-ffi/src/impl_/mod.rs at 0.27.1
 
 mod atomic_c_ulong {

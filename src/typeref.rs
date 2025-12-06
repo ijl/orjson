@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025), Aviram Hassan (2020-2021), Nazar Kostetskyi (2022), Ben Sully (2021)
 
 use core::ffi::CStr;
 use core::ptr::{NonNull, null_mut};

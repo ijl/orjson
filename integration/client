@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2020-2023)
 
 import asyncio
 import sys

@@ -87,6 +87,10 @@ ignore = [
     "UP012", # Unnecessary call to encode as UTF-8
 ]
 
+[tool.pytest]
+minversion = "9.0"
+strict = true
+
 [tool.ruff.lint.isort]
 known-first-party = ["orjson"]
 

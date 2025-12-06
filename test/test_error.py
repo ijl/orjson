@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2021-2025), Eric Jolibois (2021), o.ermakov (2023)
 
 import json
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2018-2025)
 
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]

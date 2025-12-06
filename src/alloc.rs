@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2025)
 
 use crate::ffi::{PyMem_Free, PyMem_Malloc, PyMem_Realloc};
 use core::alloc::{GlobalAlloc, Layout};

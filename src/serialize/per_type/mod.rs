@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2020-2025), Ben Sully (2021)
 
 mod dataclass;
 mod datetime;

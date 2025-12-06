@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2018-2025), J. Nick Koston (2022), Anders Kaseorg (2022)
 
 import pytest
 

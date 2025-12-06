@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright ijl (2020-2025), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021), Marco Ribeiro (2020), Eric Jolibois (2021)
 # mypy: ignore-errors
 
 import sys

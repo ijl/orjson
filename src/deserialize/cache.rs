@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2019-2025)
 
 use crate::str::PyStr;
 use associative_cache::{AssociativeCache, Capacity2048, HashDirectMapped, RoundRobinReplacement};

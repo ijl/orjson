@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 
 use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 use core::simd::u8x16;

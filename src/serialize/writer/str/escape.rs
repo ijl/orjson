@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2024-2025)
 // the constants and SIMD approach are adapted from cloudwego's sonic-rs
 
 #[cfg(feature = "inline_int")]

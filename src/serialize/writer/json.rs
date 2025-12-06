@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2022-2025)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
 use crate::serialize::writer::WriteExt;

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// Copyright ijl (2019-2025), Marc Mueller (2023)
 
 pub(crate) const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 

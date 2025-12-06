@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+# Copyright Anders Kaseorg (2023)
 import orjson
 
 
