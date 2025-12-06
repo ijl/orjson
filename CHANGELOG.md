@@ -1,6 +1,14 @@
 # Changelog
 
 
+## 3.11.5 - 2025-12-06
+
+### Changed
+
+- Show simple error message instead of traceback when attempting to
+build on unsupported Python versions.
+
+
 ## 3.11.4 - 2025-10-24
 
 ### Changed
