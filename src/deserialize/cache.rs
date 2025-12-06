@@ -2,7 +2,7 @@
 
 use crate::str::PyStr;
 use associative_cache::{AssociativeCache, Capacity2048, HashDirectMapped, RoundRobinReplacement};
-use once_cell::unsync::OnceCell;
+use core::cell::OnceCell;
 
 #[repr(transparent)]
 pub(crate) struct CachedKey {

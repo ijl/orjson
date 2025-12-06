@@ -11,6 +11,8 @@ IS_FREETHREADING = sysconfig.get_config_var("Py_GIL_DISABLED")
 
 SUPPORTS_MEMORYVIEW = sys.implementation == "cpython"
 
+SUPPORTS_GETREFCOUNT = sys.implementation == "cpython"
+
 numpy = None  # type: ignore
 if not IS_FREETHREADING:
     try:

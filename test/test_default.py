@@ -8,7 +8,7 @@ import pytest
 
 import orjson
 
-from .util import numpy
+from .util import SUPPORTS_GETREFCOUNT, numpy
 
 
 class Custom:
@@ -262,10 +262,12 @@ class TestType:
         def default(obj):
             return obj
 
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     def test_reference_cleanup_default_custom_pass(self):
         ref = Custom()
@@ -275,9 +277,11 @@ class TestType:
                 return str(ref)
             raise TypeError
 
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         orjson.dumps(ref, default=default)
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     def test_reference_cleanup_default_custom_error(self):
         """
@@ -288,10 +292,12 @@ class TestType:
         def default(obj):
             raise TypeError
 
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         with pytest.raises(orjson.JSONEncodeError):
             orjson.dumps(ref, default=default)
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     def test_reference_cleanup_default_subclass(self):
         ref = datetime.datetime(1970, 1, 1, 0, 0, 0)
@@ -301,31 +307,37 @@ class TestType:
                 return repr(ref)
             raise TypeError
 
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         orjson.dumps(ref, option=orjson.OPT_PASSTHROUGH_DATETIME, default=default)
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     def test_reference_cleanup_default_subclass_lambda(self):
         ref = uuid.uuid4()
 
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         orjson.dumps(
             ref,
             option=orjson.OPT_PASSTHROUGH_DATETIME,
             default=lambda val: str(val),
         )
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     @pytest.mark.skipif(numpy is None, reason="numpy is not installed")
     def test_default_numpy(self):
         ref = numpy.array([""] * 100)  # type: ignore
-        refcount = sys.getrefcount(ref)
+        if SUPPORTS_GETREFCOUNT:
+            refcount = sys.getrefcount(ref)
         orjson.dumps(
             ref,
             option=orjson.OPT_SERIALIZE_NUMPY,
             default=lambda val: val.tolist(),
         )
-        assert sys.getrefcount(ref) == refcount
+        if SUPPORTS_GETREFCOUNT:
+            assert sys.getrefcount(ref) == refcount
 
     def test_default_set(self):
         """

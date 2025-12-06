@@ -3,7 +3,6 @@
 
 import collections
 import io
-import math
 import os
 
 import pandas as pd
@@ -94,7 +93,7 @@ def tab(obj):
         if not per_op_data:
             continue
 
-        max_y = 0
+        max_y = 10 if operation == "serialization" else 5
 
         json_baseline = {}
         for each in per_op_data:
@@ -105,8 +104,7 @@ def tab(obj):
 
         for each in per_op_data:
             relative = each["operations"] / json_baseline[each["group"]]
-            each["relative"] = relative
-            max_y = max(max_y, relative)
+            each["relative"] = min(max_y, relative)
 
         p = pd.DataFrame.from_dict(per_op_data)
         p.groupby("group")
@@ -126,9 +124,6 @@ def tab(obj):
         plt.title(operation)
 
         # ensure Y range
-        max_y = math.ceil(max_y)
-        if max_y > 10 and max_y % 2 > 0:
-            max_y = max_y + 1
         plt.gca().set_yticks(
             list(
                 {1, max_y}.union(

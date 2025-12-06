@@ -21,6 +21,8 @@ import pytest
 
 import orjson
 
+from .util import IS_FREETHREADING
+
 FIXTURE = '{"a":[81891289, 8919812.190129012], "b": false, "c": null, "d": "東京"}'
 
 
@@ -54,6 +56,9 @@ DATACLASS_FIXTURE = [
 ]
 
 MAX_INCREASE = 4194304  # 4MiB
+
+if IS_FREETHREADING:
+    MAX_INCREASE *= 4
 
 
 class Unsupported:

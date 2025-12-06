@@ -2,6 +2,8 @@
 name = "orjson"
 version = "3.11.4"
 authors = ["ijl <ijl@mailbox.org>"]
+description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
+repository = "https://github.com/ijl/orjson"
 edition = "2024"
 resolver = "3"
 rust-version = "1.85"
@@ -42,12 +44,12 @@ associative-cache = { version = "2", default-features = false }
 bytes = { version = "1", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
 encoding_rs = { version = "0.8", default-features = false }
-half = { version = "2", default-features = false, features = ["std"] }
+half = { version = "2", default-features = false }
 itoa = { version = "1", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { version = "0.27", default-features = false, features = ["extension-module"] }
+pyo3-ffi = { version = "0.27", default-features = false }
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std"] }

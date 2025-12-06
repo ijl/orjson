@@ -2,7 +2,8 @@
 
 use core::ffi::CStr;
 use core::ptr::{NonNull, null_mut};
-use once_cell::race::{OnceBool, OnceBox};
+use once_cell::race::OnceBox;
+use std::sync::OnceLock;
 
 use crate::ffi::{
     Py_DECREF, Py_False, Py_INCREF, Py_None, Py_True, Py_XDECREF, PyBool_Type, PyByteArray_Type,
@@ -97,7 +98,7 @@ unsafe fn look_up_datetime() {
     }
 }
 
-static INIT: OnceBool = OnceBool::new();
+static INIT: OnceLock<bool> = OnceLock::new();
 
 pub(crate) fn init_typerefs() {
     INIT.get_or_init(_init_typerefs_impl);

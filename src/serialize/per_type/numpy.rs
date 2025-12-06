@@ -196,11 +196,13 @@ impl NumpyArray {
     #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
         let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
+        debug_assert!(!capsule.is_null());
         let array = unsafe {
             (*capsule.cast::<PyCapsule>())
                 .pointer
                 .cast::<PyArrayInterface>()
         };
+        debug_assert!(!array.is_null());
         if unsafe { (*array).two != 2 } {
             ffi!(Py_DECREF(capsule));
             Err(PyArrayError::Malformed)

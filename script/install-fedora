@@ -21,4 +21,4 @@ rm -rf "${VENV}"
 uv venv --python "${PYTHON}" "${VENV}"
 source "${VENV}/bin/activate"
 
-uv pip install --upgrade "maturin>=1,<2" -r test/requirements.txt -r integration/requirements.txt
+uv pip install --upgrade "maturin>=1.10,<2" -r test/requirements.txt -r integration/requirements.txt

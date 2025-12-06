@@ -258,9 +258,7 @@ b"[]\n"
 
 Pretty-print output with an indent of two spaces. This is equivalent to
 `indent=2` in the standard library. Pretty printing is slower and the output
-larger. orjson is the fastest compared library at pretty printing and has
-much less of a slowdown to pretty print than the standard library does. This
-option is compatible with all other options.
+larger. This option is compatible with all other options.
 
 ```python
 >>> import orjson
@@ -949,8 +947,7 @@ repositories. It is tested to not crash against the
 It is tested to not leak memory. It is tested to not crash
 against and not accept invalid UTF-8. There are integration tests
 exercising the library's use in web servers (gunicorn using multiprocess/forked
-workers) and when
-multithreaded. It also uses some tests from the ultrajson library.
+workers) and when multithreaded.
 
 orjson is the most correct of the compared libraries. This graph shows how each
 library handles a combined 342 JSON fixtures from the
@@ -1079,7 +1076,7 @@ The recommended build command is:
 maturin build --release --strip
 ```
 
-The project's own CI tests against `nightly-2025-10-21` and stable 1.85. It
+The project's own CI tests against `nightly-2025-12-01` and stable 1.85. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.

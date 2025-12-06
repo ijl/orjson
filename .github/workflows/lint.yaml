@@ -11,7 +11,7 @@ jobs:
       with:
         python-version: "3.14"
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable --profile=default -y
     - run: pip install -r requirements-lint.txt

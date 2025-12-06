@@ -9,8 +9,6 @@ inputs:
     required: true
   compatibility:
     required: true
-  publish:
-    required: true
 
 runs:
   using: "composite"

@@ -23,9 +23,9 @@ jobs:
         python-version: '${{ matrix.cfg.python }}'
         allow-prereleases: true
 
-    - run: python -m pip install --user --upgrade pip "maturin>=1,<2" wheel
+    - run: python -m pip install --user --upgrade pip "maturin>=1.10,<2" wheel
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: build
       run: |

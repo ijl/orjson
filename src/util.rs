@@ -41,7 +41,7 @@ macro_rules! tp_flags {
         unsafe {
             (*$ob_type)
                 .tp_flags
-                .load(std::sync::atomic::Ordering::Relaxed)
+                .load(core::sync::atomic::Ordering::Relaxed)
         }
     };
 }

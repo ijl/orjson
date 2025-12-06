@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
 #[repr(C)]
 pub(crate) struct yyjson_alc {
     pub malloc: ::core::option::Option<
@@ -18,14 +20,17 @@ pub(crate) struct yyjson_alc {
     >,
     pub ctx: *mut ::core::ffi::c_void,
 }
+
 pub(crate) type yyjson_read_code = u32;
 pub(crate) const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
+
 #[repr(C)]
 pub(crate) struct yyjson_read_err {
     pub code: yyjson_read_code,
     pub msg: *const ::core::ffi::c_char,
     pub pos: usize,
 }
+
 #[repr(C)]
 pub(crate) union yyjson_val_uni {
     pub u64_: u64,
@@ -35,11 +40,13 @@ pub(crate) union yyjson_val_uni {
     pub ptr: *mut ::core::ffi::c_void,
     pub ofs: usize,
 }
+
 #[repr(C)]
 pub(crate) struct yyjson_val {
     pub tag: u64,
     pub uni: yyjson_val_uni,
 }
+
 #[repr(C)]
 pub(crate) struct yyjson_doc {
     pub root: *mut yyjson_val,

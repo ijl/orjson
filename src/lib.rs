@@ -76,24 +76,27 @@ mod util;
 
 mod alloc;
 mod deserialize;
+mod exception;
 mod ffi;
 mod opt;
 mod serialize;
 mod str;
 mod typeref;
 
-use crate::ffi::{
-    METH_KEYWORDS, METH_O, Py_DECREF, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyErr_SetObject,
-    PyLong_AsLong, PyLong_FromLongLong, PyMethodDef, PyMethodDefPointer, PyModuleDef,
-    PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject, PyTuple_New, PyUnicode_FromStringAndSize,
-    PyUnicode_InternFromString, PyVectorcall_NARGS,
-};
 use core::ffi::{c_char, c_int, c_void};
-
-use crate::util::{isize_to_usize, usize_to_isize};
-
-#[allow(unused_imports)]
 use core::ptr::{NonNull, null, null_mut};
+
+use crate::deserialize::deserialize;
+use crate::exception::{
+    raise_dumps_exception_dynamic, raise_dumps_exception_fixed, raise_loads_exception,
+};
+use crate::ffi::{
+    METH_KEYWORDS, METH_O, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyLong_AsLong, PyMethodDef,
+    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
+    PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
+};
+use crate::serialize::serialize;
+use crate::util::{isize_to_usize, usize_to_isize};
 
 #[cfg(Py_3_13)]
 macro_rules! add {
@@ -148,7 +151,7 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         {
             let dumps_doc = c"dumps(obj, /, default=None, option=None)\n--\n\nSerialize Python objects to JSON.";
 
-            let wrapped_dumps = PyMethodDef {
+            let wrapped_dumps = Box::new(PyMethodDef {
                 ml_name: c"dumps".as_ptr(),
                 ml_meth: PyMethodDefPointer {
                     #[cfg(Py_3_10)]
@@ -158,10 +161,10 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
                 },
                 ml_flags: crate::ffi::METH_FASTCALL | METH_KEYWORDS,
                 ml_doc: dumps_doc.as_ptr(),
-            };
+            });
 
             let func = PyCFunction_NewEx(
-                Box::into_raw(Box::new(wrapped_dumps)),
+                Box::into_raw(wrapped_dumps),
                 null_mut(),
                 PyUnicode_InternFromString(c"orjson".as_ptr()),
             );
@@ -171,14 +174,14 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
         {
             let loads_doc = c"loads(obj, /)\n--\n\nDeserialize JSON to Python objects.";
 
-            let wrapped_loads = PyMethodDef {
+            let wrapped_loads = Box::new(PyMethodDef {
                 ml_name: c"loads".as_ptr(),
                 ml_meth: PyMethodDefPointer { PyCFunction: loads },
                 ml_flags: METH_O,
                 ml_doc: loads_doc.as_ptr(),
-            };
+            });
             let func = PyCFunction_NewEx(
-                Box::into_raw(Box::new(wrapped_loads)),
+                Box::into_raw(wrapped_loads),
                 null_mut(),
                 PyUnicode_InternFromString(c"orjson".as_ptr()),
             );
@@ -213,18 +216,17 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     }
 }
 
-#[cfg(not(Py_3_12))]
-const PYMODULEDEF_LEN: usize = 2;
-#[cfg(all(Py_3_12, not(Py_3_13)))]
-const PYMODULEDEF_LEN: usize = 3;
-#[cfg(Py_3_13)]
-const PYMODULEDEF_LEN: usize = 4;
-
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
+    #[cfg(not(Py_3_12))]
+    const PYMODULEDEF_LEN: usize = 2;
+    #[cfg(all(Py_3_12, not(Py_3_13)))]
+    const PYMODULEDEF_LEN: usize = 3;
+    #[cfg(Py_3_13)]
+    const PYMODULEDEF_LEN: usize = 4;
     unsafe {
         let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
             PyModuleDef_Slot {
@@ -265,118 +267,23 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
     }
 }
 
-#[cold]
-#[inline(never)]
-#[cfg_attr(feature = "optimize", optimize(size))]
-fn raise_loads_exception(err: deserialize::DeserializeError) -> *mut PyObject {
-    unsafe {
-        let err_pos = err.pos();
-        let msg = err.message;
-        let doc = match err.data {
-            Some(as_str) => PyUnicode_FromStringAndSize(
-                as_str.as_ptr().cast::<c_char>(),
-                usize_to_isize(as_str.len()),
-            ),
-            None => {
-                use_immortal!(crate::typeref::EMPTY_UNICODE)
-            }
-        };
-        let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
-        let args = PyTuple_New(3);
-        let pos = PyLong_FromLongLong(err_pos);
-        crate::ffi::PyTuple_SET_ITEM(args, 0, err_msg);
-        crate::ffi::PyTuple_SET_ITEM(args, 1, doc);
-        crate::ffi::PyTuple_SET_ITEM(args, 2, pos);
-        PyErr_SetObject(typeref::JsonDecodeError, args);
-        Py_DECREF(args);
-    }
-    null_mut()
-}
-
-#[cold]
-#[inline(never)]
-#[cfg_attr(feature = "optimize", optimize(size))]
-fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
-    unsafe {
-        let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
-        PyErr_SetObject(typeref::JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
-        Py_DECREF(err_msg);
-    }
-    null_mut()
-}
-
-#[cold]
-#[inline(never)]
-#[cfg_attr(feature = "optimize", optimize(size))]
-#[cfg(Py_3_12)]
-fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
-    unsafe {
-        let cause_exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
-
-        let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(typeref::JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
-        Py_DECREF(err_msg);
-
-        if !cause_exc.is_null() {
-            let exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
-            crate::ffi::PyException_SetCause(exc, cause_exc);
-            crate::ffi::PyErr_SetRaisedException(exc);
-        }
-    }
-    null_mut()
-}
-
-#[cold]
-#[inline(never)]
-#[cfg_attr(feature = "optimize", optimize(size))]
-#[cfg(not(Py_3_12))]
-fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
-    unsafe {
-        let mut cause_tp: *mut PyObject = null_mut();
-        let mut cause_val: *mut PyObject = null_mut();
-        let mut cause_traceback: *mut PyObject = null_mut();
-        crate::ffi::PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
-
-        let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(typeref::JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
-        Py_DECREF(err_msg);
-        let mut tp: *mut PyObject = null_mut();
-        let mut val: *mut PyObject = null_mut();
-        let mut traceback: *mut PyObject = null_mut();
-        crate::ffi::PyErr_Fetch(&mut tp, &mut val, &mut traceback);
-        crate::ffi::PyErr_NormalizeException(&mut tp, &mut val, &mut traceback);
-
-        if !cause_tp.is_null() {
-            crate::ffi::PyErr_NormalizeException(
-                &mut cause_tp,
-                &mut cause_val,
-                &mut cause_traceback,
-            );
-            crate::ffi::PyException_SetCause(val, cause_val);
-            Py_DECREF(cause_tp);
-        }
-        if !cause_traceback.is_null() {
-            Py_DECREF(cause_traceback);
-        }
-
-        crate::ffi::PyErr_Restore(tp, val, traceback);
-    }
-    null_mut()
-}
-
 #[unsafe(no_mangle)]
 pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) -> *mut PyObject {
-    match crate::deserialize::deserialize(obj) {
-        Ok(val) => val.as_ptr(),
-        Err(err) => raise_loads_exception(err),
-    }
+    deserialize(obj).map_or_else(raise_loads_exception, NonNull::as_ptr)
+}
+
+#[cfg(CPython)]
+macro_rules! matches_kwarg {
+    ($val:expr, $ref:expr) => {
+        unsafe { core::ptr::eq($val, $ref) }
+    };
+}
+
+#[cfg(not(CPython))]
+macro_rules! matches_kwarg {
+    ($val:expr, $ref:expr) => {
+        unsafe { crate::ffi::PyObject_Hash($val) == crate::ffi::PyObject_Hash($ref) }
+    };
 }
 
 #[unsafe(no_mangle)]
@@ -407,15 +314,7 @@ pub(crate) unsafe extern "C" fn dumps(
             cold_path!();
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
                 let arg = crate::ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
-                if core::ptr::eq(arg, typeref::DEFAULT) {
-                    if num_args & 2 == 2 {
-                        cold_path!();
-                        return raise_dumps_exception_fixed(
-                            "dumps() got multiple values for argument: 'default'",
-                        );
-                    }
-                    default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
-                } else if core::ptr::eq(arg, typeref::OPTION) {
+                if matches_kwarg!(arg, typeref::OPTION) {
                     if num_args & 3 == 3 {
                         cold_path!();
                         return raise_dumps_exception_fixed(
@@ -423,6 +322,14 @@ pub(crate) unsafe extern "C" fn dumps(
                         );
                     }
                     optsptr = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
+                } else if matches_kwarg!(arg, typeref::DEFAULT) {
+                    if num_args & 2 == 2 {
+                        cold_path!();
+                        return raise_dumps_exception_fixed(
+                            "dumps() got multiple values for argument: 'default'",
+                        );
+                    }
+                    default = Some(NonNull::new_unchecked(*args.offset(num_args + i)));
                 } else {
                     return raise_dumps_exception_fixed(
                         "dumps() got an unexpected keyword argument",
@@ -449,9 +356,11 @@ pub(crate) unsafe extern "C" fn dumps(
         }
 
         #[allow(clippy::cast_sign_loss)]
-        match crate::serialize::serialize(*args, default, optsbits as opt::Opt) {
-            Ok(val) => val.as_ptr(),
-            Err(err) => raise_dumps_exception_dynamic(err.as_str()),
-        }
+        let opts = optsbits as opt::Opt;
+
+        serialize(*args, default, opts).map_or_else(
+            |err| raise_dumps_exception_dynamic(err.as_str()),
+            NonNull::as_ptr,
+        )
     }
 }

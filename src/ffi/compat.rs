@@ -46,7 +46,7 @@ pub(crate) unsafe fn _Py_IsImmortal(op: *mut pyo3_ffi::PyObject) -> core::ffi::c
         {
             ((*op)
                 .ob_ref_local
-                .load(std::sync::atomic::Ordering::Relaxed)
+                .load(core::sync::atomic::Ordering::Relaxed)
                 == _Py_IMMORTAL_REFCNT_LOCAL) as core::ffi::c_int
         }
     }
@@ -56,7 +56,13 @@ pub(crate) unsafe fn _Py_IsImmortal(op: *mut pyo3_ffi::PyObject) -> core::ffi::c
 #[inline(always)]
 #[allow(non_snake_case)]
 pub(crate) unsafe fn _PyDict_NewPresized(len: isize) -> *mut pyo3_ffi::PyObject {
-    unsafe { pyo3_ffi::_PyDict_NewPresized(len) }
+    unsafe {
+        if len > 8 {
+            pyo3_ffi::_PyDict_NewPresized(len)
+        } else {
+            pyo3_ffi::PyDict_New()
+        }
+    }
 }
 
 #[cfg(not(CPython))]

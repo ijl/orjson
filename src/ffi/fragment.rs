@@ -11,12 +11,12 @@ use pyo3_ffi::{
 #[cfg(Py_GIL_DISABLED)]
 use super::atomiculong::AtomicCULong;
 #[cfg(Py_GIL_DISABLED)]
-use std::sync::atomic::{AtomicIsize, AtomicU32};
+use core::sync::atomic::{AtomicIsize, AtomicU32};
 
 #[cfg(Py_GIL_DISABLED)]
 macro_rules! pymutex_new {
     () => {
-        unsafe { std::mem::zeroed() }
+        unsafe { core::mem::zeroed() }
     };
 }
 
@@ -109,22 +109,18 @@ pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     }
 }
 
-#[cfg(Py_GIL_DISABLED)]
-const FRAGMENT_TP_FLAGS: AtomicCULong =
-    AtomicCULong::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
-
-#[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
-const FRAGMENT_TP_FLAGS: core::ffi::c_ulong =
-    Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE;
-
-#[cfg(not(Py_3_10))]
-const FRAGMENT_TP_FLAGS: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
-
 #[unsafe(no_mangle)]
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
     unsafe {
+        #[cfg(Py_GIL_DISABLED)]
+        let tp_flags: AtomicCULong =
+            AtomicCULong::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
+        #[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
+        let tp_flags: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE;
+        #[cfg(not(Py_3_10))]
+        let tp_flags: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
         let ob = Box::new(PyTypeObject {
             ob_base: PyVarObject {
                 ob_base: PyObject {
@@ -161,7 +157,7 @@ pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
             tp_dealloc: Some(orjson_fragment_dealloc),
             tp_init: None,
             tp_new: Some(orjson_fragment_tp_new),
-            tp_flags: FRAGMENT_TP_FLAGS,
+            tp_flags: tp_flags,
             // ...
             tp_bases: null_mut(),
             tp_cache: null_mut(),
