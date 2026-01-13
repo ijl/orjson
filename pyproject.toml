@@ -1,6 +1,6 @@
 [project]
 name = "orjson"
-version = "3.10.14-post4"
+version = "3.10.14-post5"
 repository = "https://github.com/ijl/orjson"
 requires-python = ">=3.8"
 classifiers = [
