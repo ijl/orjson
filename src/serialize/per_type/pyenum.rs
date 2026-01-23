@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // Copyright ijl (2018-2025)
 
+use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::typeref::VALUE_STR;
 use serde::ser::{Serialize, Serializer};
@@ -22,10 +23,18 @@ impl Serialize for EnumSerializer<'_> {
     where
         S: Serializer,
     {
+        if self.previous.state.recursion_limit() {
+            cold_path!();
+            err!(SerializeError::RecursionLimit)
+        }
         let value = ffi!(PyObject_GetAttr(self.previous.ptr, VALUE_STR));
         debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
-        let ret = PyObjectSerializer::new(value, self.previous.state, self.previous.default)
-            .serialize(serializer);
+        let ret = PyObjectSerializer::new(
+            value,
+            self.previous.state.copy_for_recursive_call(),
+            self.previous.default,
+        )
+        .serialize(serializer);
         ffi!(Py_DECREF(value));
         ret
     }

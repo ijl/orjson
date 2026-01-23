@@ -9,6 +9,7 @@ use crate::serialize::per_type::{
     ListTupleSerializer, NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer,
     StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
+use crate::serialize::error::SerializeError;
 use crate::serialize::state::SerializerState;
 use crate::serialize::writer::{BytesWriter, to_writer, to_writer_pretty};
 use core::ptr::NonNull;
@@ -60,6 +61,10 @@ impl Serialize for PyObjectSerializer {
     where
         S: Serializer,
     {
+        if self.state.recursion_limit() {
+            cold_path!();
+            err!(SerializeError::RecursionLimit)
+        }
         match pyobject_to_obtype(self.ptr, self.state.opts()) {
             ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
             ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),

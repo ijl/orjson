@@ -423,9 +423,12 @@ pub(crate) struct DictNonStrKey {
 impl DictNonStrKey {
     fn pyobject_to_string(
         key: *mut crate::ffi::PyObject,
-        opts: crate::opt::Opt,
+        state: SerializerState,
     ) -> Result<String, SerializeError> {
-        match pyobject_to_obtype(key, opts) {
+        if state.recursion_limit() {
+            return Err(SerializeError::RecursionLimit);
+        }
+        match pyobject_to_obtype(key, state.opts()) {
             ObType::None => Ok(String::from("null")),
             ObType::Bool => {
                 if unsafe { core::ptr::eq(key, TRUE) } {
@@ -436,14 +439,14 @@ impl DictNonStrKey {
             }
             ObType::Int => non_str_int(key),
             ObType::Float => non_str_float(key),
-            ObType::Datetime => non_str_datetime(key, opts),
+            ObType::Datetime => non_str_datetime(key, state.opts()),
             ObType::Date => non_str_date(key),
-            ObType::Time => non_str_time(key, opts),
+            ObType::Time => non_str_time(key, state.opts()),
             ObType::Uuid => non_str_uuid(key),
             ObType::Enum => {
                 let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
                 debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
-                let ret = Self::pyobject_to_string(value, opts);
+                let ret = Self::pyobject_to_string(value, state.copy_for_recursive_call());
                 ffi!(Py_DECREF(value));
                 ret
             }
@@ -473,7 +476,9 @@ impl Serialize for DictNonStrKey {
 
         pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
 
-        let opts = self.state.opts() & NOT_PASSTHROUGH;
+        let opts = (self.state.opts() & 0xFFFF) & NOT_PASSTHROUGH;
+        let mut state = SerializerState::new(opts);
+        state = state.copy_from(self.state);
 
         let len = isize_to_usize(ffi!(Py_SIZE(self.ptr)));
         assume!(len > 0);
@@ -495,7 +500,7 @@ impl Serialize for DictNonStrKey {
                     None => err!(SerializeError::InvalidStr),
                 }
             } else {
-                match Self::pyobject_to_string(key, opts) {
+                match Self::pyobject_to_string(key, state) {
                     Ok(key_as_str) => items.push((key_as_str, value)),
                     Err(err) => err!(err),
                 }
