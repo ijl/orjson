@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2022-2025), Aarni Koskela (2021), Eric Jolibois (2021)
+// Copyright ijl (2023-2026), Eric Jolibois (2021), Aarni Koskela (2021)
 
 use crate::deserialize::DeserializeError;
-use crate::deserialize::utf8::read_input_to_buf;
+use crate::deserialize::input::read_input_to_buf;
 use crate::typeref::EMPTY_UNICODE;
 use core::ptr::NonNull;
 
@@ -15,16 +15,19 @@ pub(crate) fn deserialize(
 
     if buffer.len() == 2 {
         cold_path!();
-        if buffer == b"[]" {
-            return Ok(nonnull!(ffi!(PyList_New(0))));
-        } else if buffer == b"{}" {
-            return Ok(nonnull!(ffi!(PyDict_New())));
-        } else if buffer == b"\"\"" {
-            unsafe { return Ok(nonnull!(use_immortal!(EMPTY_UNICODE))) }
+        match buffer.as_bytes() {
+            b"[]" => {
+                return Ok(nonnull!(ffi!(PyList_New(0))));
+            }
+            b"{}" => {
+                return Ok(nonnull!(ffi!(PyDict_New())));
+            }
+            b"\"\"" => {
+                return Ok(nonnull!(use_immortal!(EMPTY_UNICODE)));
+            }
+            _ => {}
         }
     }
 
-    let buffer_str = unsafe { core::str::from_utf8_unchecked(buffer) };
-
-    crate::deserialize::backend::deserialize(buffer_str)
+    crate::deserialize::backend::deserialize(buffer)
 }

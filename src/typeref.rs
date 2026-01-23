@@ -7,11 +7,11 @@ use once_cell::race::OnceBox;
 use std::sync::OnceLock;
 
 use crate::ffi::{
-    Py_DECREF, Py_False, Py_INCREF, Py_None, Py_True, Py_XDECREF, PyBool_Type, PyByteArray_Type,
-    PyBytes_Type, PyDict_Type, PyErr_Clear, PyErr_NewException, PyExc_TypeError, PyFloat_Type,
-    PyImport_ImportModule, PyList_Type, PyLong_Type, PyMapping_GetItemString, PyMemoryView_Type,
-    PyObject, PyObject_GenericGetDict, PyTuple_Type, PyTypeObject, PyUnicode_InternFromString,
-    PyUnicode_New, PyUnicode_Type, orjson_fragmenttype_new,
+    Py_DECREF, Py_False, Py_INCREF, Py_None, Py_True, Py_XDECREF, PyBool_Type, PyBytes_Type,
+    PyDict_Type, PyErr_Clear, PyErr_NewException, PyExc_TypeError, PyFloat_Type,
+    PyImport_ImportModule, PyList_Type, PyLong_Type, PyMapping_GetItemString, PyObject,
+    PyObject_GenericGetDict, PyTuple_Type, PyTypeObject, PyUnicode_InternFromString, PyUnicode_New,
+    PyUnicode_Type, orjson_fragmenttype_new,
 };
 
 pub(crate) static mut DEFAULT: *mut PyObject = null_mut();
@@ -23,8 +23,6 @@ pub(crate) static mut FALSE: *mut PyObject = null_mut();
 pub(crate) static mut EMPTY_UNICODE: *mut PyObject = null_mut();
 
 pub(crate) static mut BYTES_TYPE: *mut PyTypeObject = null_mut();
-pub(crate) static mut BYTEARRAY_TYPE: *mut PyTypeObject = null_mut();
-pub(crate) static mut MEMORYVIEW_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut STR_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut INT_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut BOOL_TYPE: *mut PyTypeObject = null_mut();
@@ -135,8 +133,6 @@ fn _init_typerefs_impl() -> bool {
         BOOL_TYPE = &raw mut PyBool_Type;
         INT_TYPE = &raw mut PyLong_Type;
         FLOAT_TYPE = &raw mut PyFloat_Type;
-        BYTEARRAY_TYPE = &raw mut PyByteArray_Type;
-        MEMORYVIEW_TYPE = &raw mut PyMemoryView_Type;
 
         look_up_datetime();
 

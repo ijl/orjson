@@ -3,12 +3,17 @@
 
 #[cfg(Py_GIL_DISABLED)]
 mod atomiculong;
+#[cfg(CPython)]
 mod buffer;
 mod bytes;
 pub(crate) mod compat;
 mod fragment;
 mod long;
+mod pybytearrayref;
+mod pybytesref;
+mod pymemoryview;
 mod pystrref;
+mod utf8;
 
 pub(crate) use compat::*;
 
@@ -16,10 +21,13 @@ pub(crate) use long::pylong_is_unsigned;
 #[cfg(feature = "inline_int")]
 pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};
 
+#[allow(unused)]
 pub(crate) use {
-    buffer::PyMemoryView_GET_BUFFER,
     bytes::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyBytesObject},
     fragment::{Fragment, orjson_fragmenttype_new},
+    pybytearrayref::{PyByteArrayRef, PyByteArrayRefError},
+    pybytesref::{PyBytesRef, PyBytesRefError},
+    pymemoryview::{PyMemoryViewRef, PyMemoryViewRefError},
     pystrref::{PyStrRef, PyStrSubclassRef, set_str_create_fn},
 };
 
@@ -57,6 +65,9 @@ pub(crate) use pyo3_ffi::PyErr_Restore;
 
 #[cfg(CPython)]
 pub(crate) use pyo3_ffi::{PyObject_CallMethodNoArgs, PyObject_CallMethodOneArg};
+
+#[cfg(CPython)]
+pub(crate) use buffer::PyMemoryView_GET_BUFFER;
 
 #[cfg(not(feature = "inline_str"))]
 pub(crate) use pyo3_ffi::{PyUnicode_DATA, PyUnicode_KIND};
