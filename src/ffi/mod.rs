@@ -3,14 +3,16 @@
 
 #[cfg(Py_GIL_DISABLED)]
 mod atomiculong;
-#[cfg(CPython)]
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 mod buffer;
 mod bytes;
 pub(crate) mod compat;
 mod fragment;
 mod long;
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 mod pybytearrayref;
 mod pybytesref;
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 mod pymemoryview;
 mod pystrref;
 mod utf8;
@@ -25,10 +27,15 @@ pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zer
 pub(crate) use {
     bytes::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyBytesObject},
     fragment::{Fragment, orjson_fragmenttype_new},
-    pybytearrayref::{PyByteArrayRef, PyByteArrayRefError},
     pybytesref::{PyBytesRef, PyBytesRefError},
-    pymemoryview::{PyMemoryViewRef, PyMemoryViewRefError},
     pystrref::{PyStrRef, PyStrSubclassRef, set_str_create_fn},
+};
+
+#[allow(unused_imports)]
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
+pub(crate) use {
+    pybytearrayref::{PyByteArrayRef, PyByteArrayRefError},
+    pymemoryview::{PyMemoryViewRef, PyMemoryViewRefError},
 };
 
 #[allow(unused_imports)]
@@ -66,7 +73,7 @@ pub(crate) use pyo3_ffi::PyErr_Restore;
 #[cfg(CPython)]
 pub(crate) use pyo3_ffi::{PyObject_CallMethodNoArgs, PyObject_CallMethodOneArg};
 
-#[cfg(CPython)]
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 pub(crate) use buffer::PyMemoryView_GET_BUFFER;
 
 #[cfg(not(feature = "inline_str"))]

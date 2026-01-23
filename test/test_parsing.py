@@ -1,11 +1,16 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright ijl (2018-2025)
+# Copyright ijl (2018-2026)
 
 import pytest
 
 import orjson
 
-from .util import SUPPORTS_MEMORYVIEW, needs_data, read_fixture_bytes
+from .util import (
+    SUPPORTS_BYTEARRAY,
+    SUPPORTS_MEMORYVIEW,
+    needs_data,
+    read_fixture_bytes,
+)
 
 
 @needs_data
@@ -14,8 +19,9 @@ class TestJSONTestSuiteParsing:
         data = read_fixture_bytes(filename, "parsing")
         with pytest.raises(exc):
             orjson.loads(data)
-        with pytest.raises(exc):
-            orjson.loads(bytearray(data))
+        if SUPPORTS_BYTEARRAY:
+            with pytest.raises(exc):
+                orjson.loads(bytearray(data))
         if SUPPORTS_MEMORYVIEW:
             with pytest.raises(exc):
                 orjson.loads(memoryview(data))
@@ -30,7 +36,8 @@ class TestJSONTestSuiteParsing:
     def _run_pass_json(self, filename, match=""):
         data = read_fixture_bytes(filename, "parsing")
         orjson.loads(data)
-        orjson.loads(bytearray(data))
+        if SUPPORTS_BYTEARRAY:
+            orjson.loads(bytearray(data))
         if SUPPORTS_MEMORYVIEW:
             orjson.loads(memoryview(data))
         orjson.loads(data.decode("utf-8"))

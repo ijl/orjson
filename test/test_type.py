@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright ijl (2018-2025)
+# Copyright ijl (2018-2026)
 
 import io
 import sys
@@ -8,7 +8,7 @@ import pytest
 
 import orjson
 
-from .util import SUPPORTS_MEMORYVIEW
+from .util import SUPPORTS_BYTEARRAY, SUPPORTS_MEMORYVIEW
 
 
 class TestType:
@@ -275,6 +275,7 @@ class TestType:
         """
         assert orjson.loads(b"[]") == []
 
+    @pytest.mark.skipif(SUPPORTS_BYTEARRAY is False, reason="bytearray")
     def test_bytearray_loads(self):
         """
         bytearray loads
@@ -283,31 +284,37 @@ class TestType:
         arr.extend(b"[]")
         assert orjson.loads(arr) == []
 
-    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW, reason="memoryview not supported")
+    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is True, reason="memoryview")
     def test_memoryview_loads_supported(self):
         """
         memoryview loads supported
         """
-        arr = bytearray()
-        arr.extend(b"[]")
-        assert orjson.loads(memoryview(arr)) == []
+        assert orjson.loads(memoryview(b"[]")) == []
 
-    @pytest.mark.skipif(not SUPPORTS_MEMORYVIEW, reason="memoryview supported")
+    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is False, reason="memoryview")
     def test_memoryview_loads_unsupported(self):
         """
         memoryview loads unsupported
         """
-        arr = bytearray()
-        arr.extend(b"[]")
-        with pytest.raises(orjson.JSONEncodeError):
-            orjson.loads(memoryview(arr))
+        with pytest.raises(orjson.JSONDecodeError):
+            orjson.loads(memoryview(b"[]"))
 
-    def test_bytesio_loads(self):
+    @pytest.mark.skipif(SUPPORTS_BYTEARRAY is False, reason="bytearray")
+    def test_bytesio_loads_supported(self):
         """
-        BytesIO loads
+        BytesIO loads supported
         """
         arr = io.BytesIO(b"[]")
         assert orjson.loads(arr.getbuffer()) == []
+
+    @pytest.mark.skipif(SUPPORTS_BYTEARRAY is True, reason="bytearray")
+    def test_bytesio_loads_unsupported(self):
+        """
+        BytesIO loads unsupported
+        """
+        arr = io.BytesIO(b"[]")
+        with pytest.raises(orjson.JSONDecodeError):
+            orjson.loads(arr.getbuffer())
 
     def test_bool(self):
         """

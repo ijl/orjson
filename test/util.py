@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright ijl (2018-2025)
+# Copyright ijl (2018-2026)
 
 import lzma
 import os
@@ -10,7 +10,9 @@ from typing import Any
 
 IS_FREETHREADING = sysconfig.get_config_var("Py_GIL_DISABLED")
 
-SUPPORTS_MEMORYVIEW = sys.implementation == "cpython"
+SUPPORTS_MEMORYVIEW = sys.implementation == "cpython" and not IS_FREETHREADING
+
+SUPPORTS_BYTEARRAY = not IS_FREETHREADING
 
 SUPPORTS_GETREFCOUNT = sys.implementation == "cpython"
 
