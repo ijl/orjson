@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2018-2025), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
+// Copyright ijl (2018-2026), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
 
 use crate::ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use crate::opt::Opt;
@@ -215,8 +215,7 @@ impl NumpyArray {
             Err(PyArrayError::NotNativeEndian)
         } else {
             debug_assert!(unsafe { (*array).nd >= 0 });
-            #[allow(clippy::cast_sign_loss)]
-            let num_dimensions = unsafe { (*array).nd as usize };
+            let num_dimensions = unsafe { (*array).nd.cast_unsigned() as usize };
             if num_dimensions == 0 {
                 ffi!(Py_DECREF(capsule));
                 return Err(PyArrayError::UnsupportedDataType);
@@ -294,10 +293,7 @@ impl NumpyArray {
     }
 
     fn dimensions(&self) -> usize {
-        #[allow(clippy::cast_sign_loss)]
-        unsafe {
-            (*self.array).nd as usize
-        }
+        unsafe { (*self.array).nd.cast_unsigned() as usize }
     }
 
     fn shape(&self) -> &[isize] {
@@ -1394,9 +1390,7 @@ impl DateTimeLike for NumpyDatetime64Repr {
 
     fn nanosecond(&self) -> u32 {
         debug_assert!(self.dt.subsec_nanosecond() >= 0);
-        #[allow(clippy::cast_sign_loss)]
-        let ret = self.dt.subsec_nanosecond() as u32; // stmt_expr_attributes
-        ret
+        self.dt.subsec_nanosecond().cast_unsigned()
     }
 
     fn microsecond(&self) -> u32 {

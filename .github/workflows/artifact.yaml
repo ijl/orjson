@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2022-2025), messense (2022), Dominic LoBue (2022)
+# Copyright ijl (2022-2026), messense (2022), Dominic LoBue (2022)
 
 name: artifact
 on: push
@@ -8,7 +8,7 @@ env:
   ORJSON_BUILD_FREETHREADED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   RUST_TOOLCHAIN: "nightly-2025-12-01"
-  RUST_TOOLCHAIN_STABLE: "1.85"
+  RUST_TOOLCHAIN_STABLE: "1.89"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
   UV_LINK_MODE: "copy"

@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         cfg: [
-          { rust: "1.85", python: "3.15", version_check: "1" },
-          { rust: "1.85", python: "3.14", version_check: "0" },
-          { rust: "1.85", python: "3.10", version_check: "0" },
+          { rust: "1.89", python: "3.15", version_check: "1" },
+          { rust: "1.89", python: "3.14", version_check: "0" },
+          { rust: "1.89", python: "3.10", version_check: "0" },
         ]
     steps:
     - run: curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain ${{ matrix.cfg.rust }} --profile minimal -y

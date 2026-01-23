@@ -5,9 +5,7 @@
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
 #![cfg_attr(feature = "cold_path", feature(cold_path))]
 #![allow(non_camel_case_types)]
-#![allow(stable_features)] // MSRV
 #![allow(static_mut_refs)]
-#![allow(unknown_lints)] // internal_features
 #![allow(unused_unsafe)]
 #![warn(clippy::correctness)]
 #![warn(clippy::suspicious)]
@@ -27,7 +25,6 @@
 #![allow(clippy::host_endian_bytes)]
 #![allow(clippy::if_not_else)]
 #![allow(clippy::implicit_return)]
-#![allow(clippy::incompatible_msrv)] // MSRV 1.89
 #![allow(clippy::inline_always)]
 #![allow(clippy::let_underscore_untyped)]
 #![allow(clippy::missing_assert_message)]

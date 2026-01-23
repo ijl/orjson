@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2018-2025), Ben Sully (2021)
+// Copyright ijl (2018-2026), Ben Sully (2021)
 
 use crate::opt::{OMIT_MICROSECONDS, Opt};
 use crate::serialize::buffer::SmallFixedBuffer;
@@ -60,16 +60,14 @@ impl Date {
         {
             let val_py = ffi!(PyDateTime_GET_MONTH(self.ptr));
             debug_assert!(val_py >= 0);
-            #[allow(clippy::cast_sign_loss)]
-            let val = val_py as u32;
+            let val = val_py.cast_unsigned();
             write_double_digit!(buf, val);
         }
         buf.put_u8(b'-');
         {
             let val_py = ffi!(PyDateTime_GET_DAY(self.ptr));
             debug_assert!(val_py >= 0);
-            #[allow(clippy::cast_sign_loss)]
-            let val = val_py as u32;
+            let val = val_py.cast_unsigned();
             write_double_digit!(buf, val);
         }
     }
@@ -110,16 +108,16 @@ impl Time {
         if unsafe { (*self.ptr.cast::<crate::ffi::PyDateTime_Time>()).hastzinfo == 1 } {
             return Err(TimeError::HasTimezone);
         }
-        let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)) as u8;
+        let hour = ffi!(PyDateTime_TIME_GET_HOUR(self.ptr)).cast_unsigned();
         write_double_digit!(buf, hour);
         buf.put_u8(b':');
-        let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)) as u8;
+        let minute = ffi!(PyDateTime_TIME_GET_MINUTE(self.ptr)).cast_unsigned();
         write_double_digit!(buf, minute);
         buf.put_u8(b':');
-        let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)) as u8;
+        let second = ffi!(PyDateTime_TIME_GET_SECOND(self.ptr)).cast_unsigned();
         write_double_digit!(buf, second);
         if opt_disabled!(self.opts, OMIT_MICROSECONDS) {
-            let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)) as u32;
+            let microsecond = ffi!(PyDateTime_TIME_GET_MICROSECOND(self.ptr)).cast_unsigned();
             write_microsecond!(buf, microsecond);
         }
         Ok(())

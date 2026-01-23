@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
 use crate::serialize::error::SerializeError;
 use crate::serialize::serializer::PyObjectSerializer;
@@ -30,8 +30,7 @@ impl Serialize for DefaultSerializer<'_> {
                     cold_path!();
                     err!(SerializeError::DefaultRecursionLimit)
                 }
-                #[allow(clippy::cast_sign_loss)]
-                let nargs = ffi!(PyVectorcall_NARGS(1)) as usize;
+                let nargs = ffi!(PyVectorcall_NARGS(1)).cast_unsigned() as usize;
                 let default_obj = unsafe {
                     crate::ffi::PyObject_Vectorcall(
                         callable.as_ptr(),

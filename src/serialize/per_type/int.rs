@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
 use crate::opt::{Opt, STRICT_INTEGER};
 use crate::serialize::error::SerializeError;
@@ -38,8 +38,9 @@ impl Serialize for IntSerializer {
             let is_signed = i32::from(!crate::ffi::pylong_is_unsigned(self.ptr));
             if crate::ffi::pylong_fits_in_i32(self.ptr) {
                 if is_signed == 0 {
-                    #[allow(clippy::cast_sign_loss)]
-                    serializer.serialize_u64(crate::ffi::pylong_get_inline_value(self.ptr) as u64)
+                    serializer.serialize_u64(
+                        crate::ffi::pylong_get_inline_value(self.ptr).cast_unsigned(),
+                    )
                 } else {
                     serializer.serialize_i64(crate::ffi::pylong_get_inline_value(self.ptr))
                 }

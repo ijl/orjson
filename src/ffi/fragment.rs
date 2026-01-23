@@ -52,7 +52,7 @@ fn raise_args_exception() {
     unsafe {
         let msg = "orjson.Fragment() takes exactly 1 positional argument";
         let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), msg.len() as isize);
+            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), msg.len().cast_signed());
         PyErr_SetObject(PyExc_TypeError, err_msg);
         Py_DECREF(err_msg);
     };
@@ -151,7 +151,7 @@ pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
                 _ob_size_graalpy: 0,
             },
             tp_name: c"orjson.Fragment".as_ptr(),
-            tp_basicsize: core::mem::size_of::<Fragment>() as isize,
+            tp_basicsize: core::mem::size_of::<Fragment>().cast_signed(),
             tp_itemsize: 0,
             tp_dealloc: Some(orjson_fragment_dealloc),
             tp_init: None,

@@ -333,8 +333,7 @@ pub(crate) fn usize_to_isize(val: usize) -> isize {
 }
 
 #[inline(always)]
-#[allow(clippy::cast_sign_loss)]
 pub(crate) fn isize_to_usize(val: isize) -> usize {
     debug_assert!(val >= 0);
-    val as usize
+    val.cast_unsigned()
 }
