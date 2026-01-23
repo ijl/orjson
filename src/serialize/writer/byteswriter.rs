@@ -161,6 +161,9 @@ unsafe impl BufMut for BytesWriter {
     #[inline]
     fn put_u8(&mut self, value: u8) {
         debug_assert!(self.remaining_mut() > 1);
+        if self.len + 1 > self.cap {
+            self.resize(self.len + 1);
+        }
         unsafe {
             core::ptr::write(self.buffer_ptr(), value);
             self.advance_mut(1);
@@ -170,6 +173,9 @@ unsafe impl BufMut for BytesWriter {
     #[inline]
     fn put_bytes(&mut self, val: u8, cnt: usize) {
         debug_assert!(self.remaining_mut() > cnt);
+        if self.len + cnt > self.cap {
+            self.resize(self.len + cnt);
+        }
         unsafe {
             core::ptr::write_bytes(self.buffer_ptr(), val, cnt);
             self.advance_mut(cnt);
@@ -179,6 +185,9 @@ unsafe impl BufMut for BytesWriter {
     #[inline]
     fn put_slice(&mut self, src: &[u8]) {
         debug_assert!(self.remaining_mut() > src.len());
+        if self.len + src.len() > self.cap {
+            self.resize(self.len + src.len());
+        }
         unsafe {
             core::ptr::copy_nonoverlapping(src.as_ptr(), self.buffer_ptr(), src.len());
             self.advance_mut(src.len());
