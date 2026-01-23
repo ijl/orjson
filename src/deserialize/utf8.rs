@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2021-2025), Aarni Koskela (2021)
+// Copyright ijl (2021-2026), Aarni Koskela (2021)
 
 use crate::deserialize::DeserializeError;
+use crate::ffi::PyStrRef;
 use crate::ffi::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyMemoryView_GET_BUFFER};
-use crate::str::PyStr;
 use crate::typeref::{BYTEARRAY_TYPE, BYTES_TYPE, MEMORYVIEW_TYPE, STR_TYPE};
 use crate::util::INVALID_STR;
 use crate::util::isize_to_usize;
@@ -50,8 +50,8 @@ pub(crate) fn read_input_to_buf(
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }
     } else if is_type!(obj_type_ptr, STR_TYPE) {
-        let pystr = unsafe { PyStr::from_ptr_unchecked(ptr) };
-        let uni = pystr.to_str();
+        let pystr = unsafe { PyStrRef::from_ptr_unchecked(ptr) };
+        let uni = pystr.as_str();
         if uni.is_none() {
             return Err(DeserializeError::invalid(Cow::Borrowed(INVALID_STR)));
         }

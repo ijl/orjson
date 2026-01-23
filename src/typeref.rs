@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2020-2025), Aviram Hassan (2020-2021), Nazar Kostetskyi (2022), Ben Sully (2021)
+// Copyright ijl (2020-2026), Aviram Hassan (2020-2021), Nazar Kostetskyi (2022), Ben Sully (2021)
 
 use core::ffi::CStr;
 use core::ptr::{NonNull, null_mut};
@@ -119,7 +119,7 @@ fn _init_typerefs_impl() -> bool {
         );
 
         crate::serialize::writer::set_str_formatter_fn();
-        crate::str::set_str_create_fn();
+        crate::ffi::set_str_create_fn();
 
         NONE = Py_None();
         TRUE = Py_True();

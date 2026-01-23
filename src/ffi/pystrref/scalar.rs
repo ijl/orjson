@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2024-2025)
+// Copyright ijl (2024-2026)
 
-use crate::str::pyunicode_new::{
+use super::pyunicode_new::{
     pyunicode_ascii, pyunicode_fourbyte, pyunicode_onebyte, pyunicode_twobyte,
 };
 
@@ -16,6 +16,7 @@ pub(crate) unsafe fn str_impl_kind_scalar(buf: &str) -> *mut crate::ffi::PyObjec
         assume!(len > 0);
 
         if *(buf.as_bytes().as_ptr()) > 239 {
+            cold_path!();
             return pyunicode_fourbyte(buf, num_chars);
         }
 

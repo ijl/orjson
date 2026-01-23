@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::{PyStrRef, PyStrSubclassRef};
 use crate::opt::{APPEND_NEWLINE, INDENT_2, Opt};
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
@@ -60,44 +61,54 @@ impl Serialize for PyObjectSerializer {
     where
         S: Serializer,
     {
-        match pyobject_to_obtype(self.ptr, self.state.opts()) {
-            ObType::Str => StrSerializer::new(self.ptr).serialize(serializer),
-            ObType::StrSubclass => StrSubclassSerializer::new(self.ptr).serialize(serializer),
-            ObType::Int => IntSerializer::new(self.ptr, self.state.opts()).serialize(serializer),
-            ObType::None => NoneSerializer::new().serialize(serializer),
-            ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
-            ObType::Bool => BoolSerializer::new(self.ptr).serialize(serializer),
-            ObType::Datetime => DateTime::new(self.ptr, self.state.opts()).serialize(serializer),
-            ObType::Date => Date::new(self.ptr).serialize(serializer),
-            ObType::Time => Time::new(self.ptr, self.state.opts()).serialize(serializer),
-            ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
-            ObType::Dict => {
-                DictGenericSerializer::new(self.ptr, self.state, self.default).serialize(serializer)
-            }
-            ObType::List => {
-                if ffi!(Py_SIZE(self.ptr)) == 0 {
-                    ZeroListSerializer::new().serialize(serializer)
-                } else {
-                    ListTupleSerializer::from_list(self.ptr, self.state, self.default)
+        unsafe {
+            match pyobject_to_obtype(self.ptr, self.state.opts()) {
+                ObType::Str => {
+                    StrSerializer::new(PyStrRef::from_ptr_unchecked(self.ptr)).serialize(serializer)
+                }
+                ObType::StrSubclass => {
+                    StrSubclassSerializer::new(PyStrSubclassRef::from_ptr_unchecked(self.ptr))
                         .serialize(serializer)
                 }
-            }
-            ObType::Tuple => {
-                if ffi!(Py_SIZE(self.ptr)) == 0 {
-                    ZeroListSerializer::new().serialize(serializer)
-                } else {
-                    ListTupleSerializer::from_tuple(self.ptr, self.state, self.default)
-                        .serialize(serializer)
+                ObType::Int => {
+                    IntSerializer::new(self.ptr, self.state.opts()).serialize(serializer)
                 }
+                ObType::None => NoneSerializer::new().serialize(serializer),
+                ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
+                ObType::Bool => BoolSerializer::new(self.ptr).serialize(serializer),
+                ObType::Datetime => {
+                    DateTime::new(self.ptr, self.state.opts()).serialize(serializer)
+                }
+                ObType::Date => Date::new(self.ptr).serialize(serializer),
+                ObType::Time => Time::new(self.ptr, self.state.opts()).serialize(serializer),
+                ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
+                ObType::Dict => DictGenericSerializer::new(self.ptr, self.state, self.default)
+                    .serialize(serializer),
+                ObType::List => {
+                    if ffi!(Py_SIZE(self.ptr)) == 0 {
+                        ZeroListSerializer::new().serialize(serializer)
+                    } else {
+                        ListTupleSerializer::from_list(self.ptr, self.state, self.default)
+                            .serialize(serializer)
+                    }
+                }
+                ObType::Tuple => {
+                    if ffi!(Py_SIZE(self.ptr)) == 0 {
+                        ZeroListSerializer::new().serialize(serializer)
+                    } else {
+                        ListTupleSerializer::from_tuple(self.ptr, self.state, self.default)
+                            .serialize(serializer)
+                    }
+                }
+                ObType::Dataclass => DataclassGenericSerializer::new(self).serialize(serializer),
+                ObType::Enum => EnumSerializer::new(self).serialize(serializer),
+                ObType::NumpyArray => NumpySerializer::new(self).serialize(serializer),
+                ObType::NumpyScalar => {
+                    NumpyScalar::new(self.ptr, self.state.opts()).serialize(serializer)
+                }
+                ObType::Fragment => FragmentSerializer::new(self.ptr).serialize(serializer),
+                ObType::Unknown => DefaultSerializer::new(self).serialize(serializer),
             }
-            ObType::Dataclass => DataclassGenericSerializer::new(self).serialize(serializer),
-            ObType::Enum => EnumSerializer::new(self).serialize(serializer),
-            ObType::NumpyArray => NumpySerializer::new(self).serialize(serializer),
-            ObType::NumpyScalar => {
-                NumpyScalar::new(self.ptr, self.state.opts()).serialize(serializer)
-            }
-            ObType::Fragment => FragmentSerializer::new(self.ptr).serialize(serializer),
-            ObType::Unknown => DefaultSerializer::new(self).serialize(serializer),
         }
     }
 }

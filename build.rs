@@ -17,6 +17,8 @@ fn main() {
             #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
             if is_64_bit_python {
                 println!("cargo:rustc-cfg=feature=\"inline_int\"");
+                #[cfg(target_endian = "little")]
+                println!("cargo:rustc-cfg=feature=\"inline_str\"");
             }
         }
         pyo3_build_config::PythonImplementation::GraalPy => not_supported("GraalPy"),

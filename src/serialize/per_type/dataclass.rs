@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::PyStrRef;
 use crate::serialize::error::SerializeError;
 use crate::serialize::per_type::dict::ZeroDictSerializer;
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::str::PyStr;
 use crate::typeref::{
     DATACLASS_FIELDS_STR, DICT_STR, FIELD_TYPE, FIELD_TYPE_STR, SLOTS_STR, STR_TYPE,
 };
@@ -116,7 +116,7 @@ impl Serialize for DataclassFastSerializer {
                     cold_path!();
                     err!(SerializeError::KeyMustBeStr)
                 }
-                match unsafe { PyStr::from_ptr_unchecked(key).to_str() } {
+                match unsafe { PyStrRef::from_ptr_unchecked(key).as_str() } {
                     Some(uni) => uni,
                     None => err!(SerializeError::InvalidStr),
                 }
@@ -190,7 +190,7 @@ impl Serialize for DataclassFallbackSerializer {
                 continue;
             }
 
-            let key_as_str = match unsafe { PyStr::from_ptr_unchecked(attr).to_str() } {
+            let key_as_str = match unsafe { PyStrRef::from_ptr_unchecked(attr).as_str() } {
                 Some(uni) => uni,
                 None => err!(SerializeError::InvalidStr),
             };

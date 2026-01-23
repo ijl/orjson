@@ -8,15 +8,20 @@ mod bytes;
 pub(crate) mod compat;
 mod fragment;
 mod long;
+mod pystrref;
 
-pub(crate) use buffer::*;
-pub(crate) use bytes::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyBytesObject};
 pub(crate) use compat::*;
 
-pub(crate) use fragment::{Fragment, orjson_fragmenttype_new};
 pub(crate) use long::pylong_is_unsigned;
 #[cfg(feature = "inline_int")]
 pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};
+
+pub(crate) use {
+    buffer::PyMemoryView_GET_BUFFER,
+    bytes::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyBytesObject},
+    fragment::{Fragment, orjson_fragmenttype_new},
+    pystrref::{PyStrRef, PyStrSubclassRef, set_str_create_fn},
+};
 
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{
@@ -53,7 +58,7 @@ pub(crate) use pyo3_ffi::PyErr_Restore;
 #[cfg(CPython)]
 pub(crate) use pyo3_ffi::{PyObject_CallMethodNoArgs, PyObject_CallMethodOneArg};
 
-#[cfg(all(CPython, not(target_endian = "little")))]
+#[cfg(not(feature = "inline_str"))]
 pub(crate) use pyo3_ffi::{PyUnicode_DATA, PyUnicode_KIND};
 
 #[cfg(Py_3_12)]

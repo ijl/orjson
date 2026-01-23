@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // Copyright ijl (2018-2026), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
 
+use crate::ffi::PyStrRef;
 use crate::ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
 use crate::opt::Opt;
 use crate::serialize::buffer::SmallFixedBuffer;
@@ -9,7 +10,6 @@ use crate::serialize::per_type::{
     DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
 };
 use crate::serialize::serializer::PyObjectSerializer;
-use crate::str::PyStr;
 use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES, load_numpy_types};
 use crate::util::isize_to_usize;
 use core::ffi::{c_char, c_int, c_void};
@@ -1248,7 +1248,7 @@ impl NumpyDatetimeUnit {
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
         let el0 = ffi!(PyList_GET_ITEM(descr, 0));
         let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let uni = unsafe { PyStr::from_ptr_unchecked(descr_str).to_str().unwrap() };
+        let uni = unsafe { PyStrRef::from_ptr_unchecked(descr_str).as_str().unwrap() };
         if uni.len() < 5 {
             return Self::NaT;
         }

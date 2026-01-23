@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2022-2025), Anders Kaseorg (2023)
+// Copyright ijl (2022-2026), Anders Kaseorg (2023)
 
 use super::ffi::{
     YYJSON_READ_SUCCESS, yyjson_alc, yyjson_alc_pool_init, yyjson_doc, yyjson_read_err,
@@ -9,7 +9,7 @@ use crate::deserialize::DeserializeError;
 use crate::deserialize::pyobject::{
     get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
 };
-use crate::str::PyStr;
+use crate::ffi::PyStrRef;
 use crate::util::usize_to_isize;
 use core::ffi::c_char;
 use core::ptr::{NonNull, null, null_mut};
@@ -175,7 +175,7 @@ impl ElementType {
 
 #[inline(always)]
 fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
-    PyStr::from_str(str_from_slice!(
+    PyStrRef::from_str(str_from_slice!(
         (*elem).uni.str_.cast::<u8>(),
         unsafe_yyjson_get_len(elem)
     ))

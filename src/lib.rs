@@ -78,7 +78,6 @@ mod exception;
 mod ffi;
 mod opt;
 mod serialize;
-mod str;
 mod typeref;
 
 use core::ffi::{c_char, c_int, c_void};

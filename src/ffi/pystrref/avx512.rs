@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2024-2025)
+// Copyright ijl (2024-2026)
 
-use crate::str::pyunicode_new::*;
+use super::pyunicode_new::*;
 
 use core::arch::x86_64::{
     _mm512_and_si512, _mm512_cmpgt_epu8_mask, _mm512_cmpneq_epi8_mask, _mm512_loadu_epi8,

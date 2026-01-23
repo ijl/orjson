@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::{PyStrRef, PyStrSubclassRef};
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
@@ -97,10 +98,14 @@ impl Serialize for ListTupleSerializer {
             let value = unsafe { *((self.data_ptr).add(idx)) };
             match pyobject_to_obtype(value, self.state.opts()) {
                 ObType::Str => {
-                    seq.serialize_element(&StrSerializer::new(value))?;
+                    seq.serialize_element(&StrSerializer::new(unsafe {
+                        PyStrRef::from_ptr_unchecked(value)
+                    }))?;
                 }
                 ObType::StrSubclass => {
-                    seq.serialize_element(&StrSubclassSerializer::new(value))?;
+                    seq.serialize_element(&StrSubclassSerializer::new(unsafe {
+                        PyStrSubclassRef::from_ptr_unchecked(value)
+                    }))?;
                 }
                 ObType::Int => {
                     seq.serialize_element(&IntSerializer::new(value, self.state.opts()))?;

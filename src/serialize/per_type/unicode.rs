@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::{PyStrRef, PyStrSubclassRef};
 use crate::serialize::error::SerializeError;
-use crate::str::{PyStr, PyStrSubclass};
 
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct StrSerializer {
-    ptr: *mut crate::ffi::PyObject,
+    ob: PyStrRef,
 }
 
 impl StrSerializer {
-    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
-        StrSerializer { ptr: ptr }
+    pub fn new(ptr: PyStrRef) -> Self {
+        StrSerializer { ob: ptr }
     }
 }
 
@@ -23,21 +23,24 @@ impl Serialize for StrSerializer {
     where
         S: Serializer,
     {
-        match unsafe { PyStr::from_ptr_unchecked(self.ptr).to_str() } {
+        match self.ob.clone().as_str() {
             Some(uni) => serializer.serialize_str(uni),
-            None => err!(SerializeError::InvalidStr),
+            None => {
+                cold_path!();
+                err!(SerializeError::InvalidStr)
+            }
         }
     }
 }
 
 #[repr(transparent)]
 pub(crate) struct StrSubclassSerializer {
-    ptr: *mut crate::ffi::PyObject,
+    ob: PyStrSubclassRef,
 }
 
 impl StrSubclassSerializer {
-    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
-        StrSubclassSerializer { ptr: ptr }
+    pub fn new(ptr: PyStrSubclassRef) -> Self {
+        StrSubclassSerializer { ob: ptr }
     }
 }
 
@@ -47,9 +50,12 @@ impl Serialize for StrSubclassSerializer {
     where
         S: Serializer,
     {
-        match unsafe { PyStrSubclass::from_ptr_unchecked(self.ptr).to_str() } {
+        match self.ob.as_str() {
             Some(uni) => serializer.serialize_str(uni),
-            None => err!(SerializeError::InvalidStr),
+            None => {
+                cold_path!();
+                err!(SerializeError::InvalidStr)
+            }
         }
     }
 }

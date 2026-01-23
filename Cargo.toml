@@ -38,6 +38,7 @@ avx512 = []
 cold_path = []
 generic_simd = []
 inline_int = []
+inline_str = []
 optimize = []
 
 [dependencies]

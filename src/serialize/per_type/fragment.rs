@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::PyStrRef;
 use crate::ffi::{Fragment, PyBytes_AS_STRING, PyBytes_GET_SIZE};
 use crate::serialize::error::SerializeError;
-use crate::str::PyStr;
 use crate::typeref::{BYTES_TYPE, STR_TYPE};
 use crate::util::isize_to_usize;
 
@@ -38,7 +38,7 @@ impl Serialize for FragmentSerializer {
                     isize_to_usize(PyBytes_GET_SIZE((*fragment).contents)),
                 );
             } else if core::ptr::eq(ob_type, STR_TYPE) {
-                match unsafe { PyStr::from_ptr_unchecked((*fragment).contents).to_str() } {
+                match unsafe { PyStrRef::from_ptr_unchecked((*fragment).contents).as_str() } {
                     Some(uni) => buffer = uni.as_bytes(),
                     None => err!(SerializeError::InvalidStr),
                 }

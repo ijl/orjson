@@ -1,39 +1,47 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 
-#[cfg(not(Py_GIL_DISABLED))]
-use crate::deserialize::cache::{CachedKey, KEY_MAP};
-use crate::str::PyStr;
+use crate::ffi::PyStrRef;
 use crate::typeref::{FALSE, NONE, TRUE};
 use core::ptr::NonNull;
 
-#[cfg(not(Py_GIL_DISABLED))]
+#[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 #[inline(always)]
-pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
+pub(crate) fn get_unicode_key(key_str: &str) -> PyStrRef {
     if key_str.len() > 64 {
         cold_path!();
-        PyStr::from_str_with_hash(key_str)
+        PyStrRef::from_str_with_hash(key_str)
     } else {
         assume!(key_str.len() <= 64);
         let hash = xxhash_rust::xxh3::xxh3_64(key_str.as_bytes());
         unsafe {
-            let entry = KEY_MAP
+            let entry = crate::deserialize::cache::KEY_MAP
                 .get_mut()
                 .unwrap_or_else(|| unreachable_unchecked!())
                 .entry(&hash)
                 .or_insert_with(
                     || hash,
-                    || CachedKey::new(PyStr::from_str_with_hash(key_str)),
+                    || {
+                        crate::deserialize::cache::CachedKey::new(PyStrRef::from_str_with_hash(
+                            key_str,
+                        ))
+                    },
                 );
             entry.get()
         }
     }
 }
 
-#[cfg(Py_GIL_DISABLED)]
+#[cfg(all(CPython, Py_GIL_DISABLED))]
 #[inline(always)]
-pub(crate) fn get_unicode_key(key_str: &str) -> PyStr {
-    PyStr::from_str_with_hash(key_str)
+pub(crate) fn get_unicode_key(key_str: &str) -> PyStrRef {
+    PyStrRef::from_str_with_hash(key_str)
+}
+
+#[cfg(not(CPython))]
+#[inline(always)]
+pub(crate) fn get_unicode_key(key_str: &str) -> PyStrRef {
+    PyStrRef::from_str(key_str)
 }
 
 #[allow(dead_code)]
