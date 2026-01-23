@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]
 #![cfg_attr(feature = "generic_simd", feature(portable_simd))]
@@ -106,17 +106,10 @@ macro_rules! add {
     };
 }
 
-#[cfg(all(Py_3_10, not(Py_3_13)))]
+#[cfg(not(Py_3_13))]
 macro_rules! add {
     ($mptr:expr, $name:expr, $obj:expr) => {
         crate::ffi::PyModule_AddObjectRef($mptr, $name.as_ptr(), $obj);
-    };
-}
-
-#[cfg(not(Py_3_10))]
-macro_rules! add {
-    ($mptr:expr, $name:expr, $obj:expr) => {
-        crate::ffi::PyModule_AddObject($mptr, $name.as_ptr(), $obj);
     };
 }
 
@@ -134,7 +127,6 @@ macro_rules! opt {
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
 #[cold]
-#[cfg_attr(not(Py_3_10), allow(deprecated))] // _PyCFunctionFastWithKeywords
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
     unsafe {
@@ -155,10 +147,7 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
             let wrapped_dumps = Box::new(PyMethodDef {
                 ml_name: c"dumps".as_ptr(),
                 ml_meth: PyMethodDefPointer {
-                    #[cfg(Py_3_10)]
                     PyCFunctionFastWithKeywords: dumps,
-                    #[cfg(not(Py_3_10))]
-                    _PyCFunctionFastWithKeywords: dumps,
                 },
                 ml_flags: crate::ffi::METH_FASTCALL | METH_KEYWORDS,
                 ml_doc: dumps_doc.as_ptr(),

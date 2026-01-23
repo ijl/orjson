@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2024-2025)
+// Copyright ijl (2024-2026)
 
 #[cfg(Py_GIL_DISABLED)]
 #[allow(non_upper_case_globals)]
@@ -203,7 +203,7 @@ unsafe extern "C" {
         hash: *mut pyo3_ffi::Py_hash_t,
     ) -> core::ffi::c_int;
 
-    #[cfg(all(CPython, Py_3_10))]
+    #[cfg(CPython)]
     pub fn _PyDict_Contains_KnownHash(
         op: *mut pyo3_ffi::PyObject,
         key: *mut pyo3_ffi::PyObject,

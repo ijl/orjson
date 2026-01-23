@@ -87,7 +87,6 @@ jobs:
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.11', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.10', compatibility: "manylinux_2_17", publish: true },
-          { interpreter: 'python3.9', compatibility: "manylinux_2_17", publish: true },
         ]
         arch: [
           { runner: "ubuntu-24.04", arch: "x86_64", features: "avx512", },
@@ -148,7 +147,6 @@ jobs:
           { interpreter: 'python3.12', abi: 'cp312-cp312', manylinux: 'manylinux_2_17', publish: true },
           { interpreter: 'python3.11', abi: 'cp311-cp311', manylinux: 'manylinux_2_17', publish: true },
           { interpreter: 'python3.10', abi: 'cp310-cp310', manylinux: 'manylinux_2_17', publish: true },
-          { interpreter: 'python3.9', abi: 'cp39-cp39', manylinux: 'manylinux_2_17', publish: true },
         ]
         target: [
           {
@@ -254,7 +252,6 @@ jobs:
           { version: '3.12', pytest: '1', publish: true },
           { version: '3.11', pytest: '0', publish: true },
           { version: '3.10', pytest: '0', publish: true },
-          { version: '3.9', pytest: '0', publish: true },
         ]
         platform:
           - target: x86_64-unknown-linux-musl
@@ -330,7 +327,6 @@ jobs:
           { version: '3.12', publish: true },
           { version: '3.11', publish: true },
           { version: '3.10', publish: true },
-          { version: '3.9', publish: true },
         ]
         platform:
           - target: aarch64-unknown-linux-musl
@@ -485,7 +481,6 @@ jobs:
           { version: '3.12', macosx_target: "10.15", publish: true },
           { version: '3.11', macosx_target: "10.15", publish: true },
           { version: '3.10', macosx_target: "10.15", publish: true },
-          { version: '3.9', macosx_target: "10.15", publish: true },
         ]
     env:
       CC: "clang"
@@ -571,7 +566,6 @@ jobs:
           { version: '3.12', publish: true },
           { version: '3.11', publish: true },
           { version: '3.10', publish: true },
-          { version: '3.9', publish: true },
         ]
         platform: [
           { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512" },

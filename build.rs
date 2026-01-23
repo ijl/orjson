@@ -44,7 +44,6 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_13)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_15)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_9)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
     println!("cargo:rustc-check-cfg=cfg(PyPy)");
 

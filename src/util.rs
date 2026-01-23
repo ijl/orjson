@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2019-2025), Marc Mueller (2023)
+// Copyright ijl (2019-2026), Marc Mueller (2023)
 
 pub(crate) const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
@@ -202,7 +202,7 @@ macro_rules! pydict_contains {
     };
 }
 
-#[cfg(all(CPython, Py_3_10, not(Py_3_12)))]
+#[cfg(all(CPython, not(Py_3_12)))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
@@ -213,13 +213,6 @@ macro_rules! pydict_contains {
                 (*$obj2.cast::<crate::ffi::PyASCIIObject>()).hash,
             ) == 1
         }
-    };
-}
-
-#[cfg(all(CPython, not(Py_3_10)))]
-macro_rules! pydict_contains {
-    ($obj1:expr, $obj2:expr) => {
-        unsafe { crate::ffi::PyDict_Contains((*$obj1).tp_dict, $obj2) == 1 }
     };
 }
 

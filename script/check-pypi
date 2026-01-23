@@ -15,7 +15,6 @@ pyproject_version = pyproject_doc["project"]["version"]
 prefix = f"orjson-{pyproject_version}"
 
 abis = (
-    "cp39-cp39",
     "cp310-cp310",
     "cp311-cp311",
     "cp312-cp312",

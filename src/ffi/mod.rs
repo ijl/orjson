@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 
 #[cfg(Py_GIL_DISABLED)]
 mod atomiculong;
@@ -18,7 +18,7 @@ pub(crate) use long::pylong_is_unsigned;
 #[cfg(feature = "inline_int")]
 pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};
 
-#[allow(unused_imports, deprecated)]
+#[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{
     _PyBytes_Resize, METH_FASTCALL, METH_KEYWORDS, METH_O, Py_DECREF, Py_False, Py_INCREF, Py_None,
     Py_REFCNT, Py_SIZE, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS,
@@ -33,29 +33,28 @@ pub(crate) use pyo3_ffi::{
     PyDateTime_IMPORT, PyDateTime_TIME_GET_HOUR, PyDateTime_TIME_GET_MICROSECOND,
     PyDateTime_TIME_GET_MINUTE, PyDateTime_TIME_GET_SECOND, PyDateTime_Time, PyDict_Contains,
     PyDict_New, PyDict_Next, PyDict_SetItem, PyDict_Type, PyDictObject, PyErr_Clear,
-    PyErr_NewException, PyErr_Occurred, PyErr_Restore, PyErr_SetObject, PyExc_TypeError,
-    PyException_SetCause, PyFloat_AS_DOUBLE, PyFloat_FromDouble, PyFloat_Type,
-    PyImport_ImportModule, PyList_GET_ITEM, PyList_New, PyList_SET_ITEM, PyList_Type, PyListObject,
-    PyLong_AsLong, PyLong_AsLongLong, PyLong_AsUnsignedLongLong, PyLong_FromLongLong,
-    PyLong_FromUnsignedLongLong, PyLong_Type, PyLongObject, PyMapping_GetItemString, PyMem_Free,
-    PyMem_Malloc, PyMem_Realloc, PyMemoryView_Type, PyMethodDef, PyMethodDefPointer,
-    PyModule_AddIntConstant, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Init,
-    PyModuleDef_Slot, PyObject, PyObject_CallMethodObjArgs, PyObject_GenericGetDict,
+    PyErr_NewException, PyErr_Occurred, PyErr_SetObject, PyExc_TypeError, PyException_SetCause,
+    PyFloat_AS_DOUBLE, PyFloat_FromDouble, PyFloat_Type, PyImport_ImportModule, PyList_GET_ITEM,
+    PyList_New, PyList_SET_ITEM, PyList_Type, PyListObject, PyLong_AsLong, PyLong_AsLongLong,
+    PyLong_AsUnsignedLongLong, PyLong_FromLongLong, PyLong_FromUnsignedLongLong, PyLong_Type,
+    PyLongObject, PyMapping_GetItemString, PyMem_Free, PyMem_Malloc, PyMem_Realloc,
+    PyMemoryView_Type, PyMethodDef, PyMethodDefPointer, PyModule_AddIntConstant,
+    PyModule_AddObject, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Init, PyModuleDef_Slot,
+    PyObject, PyObject_CallFunctionObjArgs, PyObject_CallMethodObjArgs, PyObject_GenericGetDict,
     PyObject_GetAttr, PyObject_HasAttr, PyObject_Hash, PyObject_Vectorcall, PyTuple_New,
     PyTuple_Type, PyTupleObject, PyType_Ready, PyType_Type, PyTypeObject, PyUnicode_AsUTF8AndSize,
     PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyUnicode_New, PyUnicode_Type,
     PyVarObject, PyVectorcall_NARGS,
 };
 
+#[allow(unused_imports, deprecated)]
+pub(crate) use pyo3_ffi::PyErr_Restore;
+
 #[cfg(CPython)]
 pub(crate) use pyo3_ffi::{PyObject_CallMethodNoArgs, PyObject_CallMethodOneArg};
 
 #[cfg(all(CPython, not(target_endian = "little")))]
 pub(crate) use pyo3_ffi::{PyUnicode_DATA, PyUnicode_KIND};
-
-#[cfg(not(Py_3_10))]
-#[allow(unused_imports)]
-pub(crate) use pyo3_ffi::{PyModule_AddObject, PyObject_CallFunctionObjArgs};
 
 #[cfg(Py_3_12)]
 #[allow(unused_imports)]
@@ -68,7 +67,7 @@ pub(crate) use pyo3_ffi::{
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{PyErr_Fetch, PyErr_NormalizeException};
 
-#[cfg(all(Py_3_10, not(Py_3_13)))]
+#[cfg(not(Py_3_13))]
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::PyModule_AddObjectRef;
 

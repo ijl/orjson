@@ -3,7 +3,7 @@ name = "orjson"
 version = "3.11.5"
 repository = "https://github.com/ijl/orjson"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -14,7 +14,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -50,7 +49,7 @@ include = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -96,7 +95,7 @@ strict = true
 known-first-party = ["orjson"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 
 [[tool.mypy.overrides]]
 module = ["dateutil", "pytz"]

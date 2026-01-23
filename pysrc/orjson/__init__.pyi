@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2019-2025), Eric Jolibois (2022), Anders Kaseorg (2020)
+# Copyright ijl (2019-2026), Eric Jolibois (2022), Anders Kaseorg (2020)
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 __version__: str
 

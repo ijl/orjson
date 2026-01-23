@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2020-2025)
+// Copyright ijl (2020-2026)
 
 use core::ffi::c_char;
 
@@ -118,10 +118,8 @@ pub(crate) unsafe extern "C" fn orjson_fragmenttype_new() -> *mut PyTypeObject {
         #[cfg(Py_GIL_DISABLED)]
         let tp_flags: AtomicCULong =
             AtomicCULong::new(Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE);
-        #[cfg(all(Py_3_10, not(Py_GIL_DISABLED)))]
+        #[cfg(not(Py_GIL_DISABLED))]
         let tp_flags: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT | pyo3_ffi::Py_TPFLAGS_IMMUTABLETYPE;
-        #[cfg(not(Py_3_10))]
-        let tp_flags: core::ffi::c_ulong = Py_TPFLAGS_DEFAULT;
         let ob = Box::new(PyTypeObject {
             ob_base: PyVarObject {
                 ob_base: PyObject {
