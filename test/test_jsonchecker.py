@@ -1,8 +1,6 @@
-# SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2018-2025)
-"""
-Tests files from http://json.org/JSON_checker/
-"""
+# SPDX-License-Identifier: MPL-2.0
+# Copyright ijl (2018-2026)
+# Test files from http://json.org/JSON_checker/
 
 import pytest
 

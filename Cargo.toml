@@ -7,7 +7,7 @@ repository = "https://github.com/ijl/orjson"
 edition = "2024"
 resolver = "3"
 rust-version = "1.85"
-license = "Apache-2.0 OR MIT"
+license = "MPL-2.0 AND (Apache-2.0 OR MIT)"
 keywords = ["fast", "json", "dataclass", "dataclasses", "datetime", "rfc", "8259", "3339"]
 include = [
     "Cargo.toml",
@@ -15,6 +15,7 @@ include = [
     "include/yyjson",
     "LICENSE-APACHE",
     "LICENSE-MIT",
+    "LICENSE-MPL-2.0",
     "pyproject.toml",
     "README.md",
     "src",

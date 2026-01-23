@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2024-2025)
 // the constants and SIMD approach are adapted from cloudwego's sonic-rs
 

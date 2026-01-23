@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2019-2025), Aarni Koskela (2021)
+# Copyright ijl (2018-2025), Aarni Koskela (2021)
 
 import lzma
 import os

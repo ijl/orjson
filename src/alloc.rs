@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2025)
 
 use crate::ffi::{PyMem_Free, PyMem_Malloc, PyMem_Realloc};

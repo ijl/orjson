@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2018-2025)
 
 #![cfg_attr(feature = "optimize", feature(optimize_attribute))]

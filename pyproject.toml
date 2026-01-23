@@ -9,6 +9,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -26,7 +27,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 readme = "README.md"
-license = "Apache-2.0 OR MIT"
+license = "MPL-2.0 AND (Apache-2.0 OR MIT)"
 
 [project.urls]
 source = "https://github.com/ijl/orjson"

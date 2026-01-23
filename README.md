@@ -40,8 +40,8 @@ orjson may support PEP 703 free-threading when it is stable.
 Releases follow semantic versioning and serializing a new object type
 without an opt-in flag is considered a breaking change.
 
-orjson is licensed under both the Apache 2.0 and MIT licenses. The
-repository and issue tracker is
+orjson contains source code licensed under the Mozilla Public License 2.0,
+Apache 2.0, and MIT licenses. The repository and issue tracker is
 [github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
 submitted there. There is a
 [CHANGELOG](https://github.com/ijl/orjson/blob/master/CHANGELOG.md)
@@ -1100,5 +1100,6 @@ with `pytest -q test`.
 
 ## License
 
-orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2025, available
-to you under either the Apache 2 license or MIT license at your choice.
+orjson was written by ijl <<ijl@mailbox.org>>, copyright 2018 - 2026, with
+some source files available under the Mozilla Public License 2.0 and some
+available under your choice of the Apache 2 license or MIT license.

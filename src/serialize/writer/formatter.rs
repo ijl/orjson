@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: (Apache-2.0 OR MIT)
+// SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2022-2025)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
