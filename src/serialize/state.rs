@@ -43,7 +43,7 @@ impl SerializerState {
     #[inline(always)]
     pub fn copy_for_recursive_call(self) -> Self {
         let opt = self.state & !RECURSION_MASK;
-        let recursion = (((self.state & RECURSION_MASK) >> RECURSION_SHIFT) + 1) << RECURSION_SHIFT;
+        let recursion = (((self.state & RECURSION_MASK) >> RECURSION_SHIFT).saturating_add(1) << RECURSION_SHIFT) & RECURSION_MASK;
         Self {
             state: opt | recursion,
         }
@@ -52,9 +52,21 @@ impl SerializerState {
     #[inline(always)]
     pub fn copy_for_default_call(self) -> Self {
         let opt = self.state & !DEFAULT_MASK;
-        let default_calls = (((self.state & DEFAULT_MASK) >> DEFAULT_SHIFT) + 1) << DEFAULT_SHIFT;
+        let default_calls = (((self.state & DEFAULT_MASK) >> DEFAULT_SHIFT)
+            .saturating_add(1)
+            << DEFAULT_SHIFT)
+            & DEFAULT_MASK;
         Self {
             state: opt | default_calls,
+        }
+    }
+
+    #[inline(always)]
+    pub fn copy_from(self, other: Self) -> Self {
+        let opt = self.state & !(RECURSION_MASK | DEFAULT_MASK);
+        let counters = other.state & (RECURSION_MASK | DEFAULT_MASK);
+        Self {
+            state: opt | counters,
         }
     }
 }
