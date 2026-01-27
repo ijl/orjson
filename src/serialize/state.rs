@@ -5,9 +5,11 @@ use crate::opt::Opt;
 
 const RECURSION_SHIFT: usize = 24;
 const RECURSION_MASK: u32 = 255 << RECURSION_SHIFT;
+const RECURSION_LIMIT: u32 = 64;
 
 const DEFAULT_SHIFT: usize = 16;
 const DEFAULT_MASK: u32 = 255 << DEFAULT_SHIFT;
+const DEFAULT_CALLS_LIMIT: u32 = 64;
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
@@ -32,12 +34,12 @@ impl SerializerState {
 
     #[inline(always)]
     pub fn recursion_limit(self) -> bool {
-        self.state & RECURSION_MASK == RECURSION_MASK
+        (self.state & RECURSION_MASK) >> RECURSION_SHIFT >= RECURSION_LIMIT
     }
 
     #[inline(always)]
     pub fn default_calls_limit(self) -> bool {
-        self.state & DEFAULT_MASK == DEFAULT_MASK
+        (self.state & DEFAULT_MASK) >> DEFAULT_SHIFT >= DEFAULT_CALLS_LIMIT
     }
 
     #[inline(always)]
