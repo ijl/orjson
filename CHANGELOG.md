@@ -1,6 +1,20 @@
 # Changelog
 
 
+## 3.11.6 - 2026-01-29
+
+### Changed
+
+- orjson now includes code licensed under the Mozilla Public License 2.0 (MPL-2.0).
+- Drop support for Python 3.9.
+- ABI compatibility with CPython 3.15 alpha 5.
+- Build now depends on Rust 1.89 or later instead of 1.85.
+
+### Fixed
+
+- Fix sporadic crash serializing deeply nested `list` of `dict`.
+
+
 ## 3.11.5 - 2025-12-06
 
 ### Changed
