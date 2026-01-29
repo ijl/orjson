@@ -175,7 +175,7 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        debug_assert_has_capacity!(writer);
+        reserve_minimum!(writer);
         unsafe {
             writer.put_u8(b'}');
         }

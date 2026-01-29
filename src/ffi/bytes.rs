@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 
 use crate::ffi::{Py_ssize_t, PyObject};
 use core::ffi::c_char;
