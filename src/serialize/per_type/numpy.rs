@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // Copyright ijl (2018-2026), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
 
-use crate::ffi::PyStrRef;
-use crate::ffi::{Py_intptr_t, Py_ssize_t, PyObject, PyTypeObject};
+use crate::ffi::{
+    Py_intptr_t, Py_ssize_t, PyListRef, PyObject, PyStrRef, PyTupleRef, PyTypeObject,
+};
 use crate::opt::Opt;
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
@@ -1246,34 +1247,43 @@ impl NumpyDatetimeUnit {
     fn from_pyobject(ptr: *mut PyObject) -> Self {
         let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
         let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
-        let el0 = ffi!(PyList_GET_ITEM(descr, 0));
-        let descr_str = ffi!(PyTuple_GET_ITEM(el0, 1));
-        let uni = unsafe { PyStrRef::from_ptr_unchecked(descr_str).as_str().unwrap() };
-        if uni.len() < 5 {
-            return Self::NaT;
+        let el0 = unsafe { PyListRef::from_ptr_unchecked(descr).get(0) };
+        let descr_str = unsafe { PyTupleRef::from_ptr_unchecked(el0).get(1) };
+        match PyStrRef::from_ptr(descr_str) {
+            Ok(uni) => {
+                match uni.as_str() {
+                    Some(as_str) => {
+                        if as_str.len() < 5 {
+                            return Self::NaT;
+                        }
+                        // unit descriptions are found at
+                        // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
+                        let ret = match &as_str[4..as_str.len() - 1] {
+                            "Y" => Self::Years,
+                            "M" => Self::Months,
+                            "W" => Self::Weeks,
+                            "D" => Self::Days,
+                            "h" => Self::Hours,
+                            "m" => Self::Minutes,
+                            "s" => Self::Seconds,
+                            "ms" => Self::Milliseconds,
+                            "us" => Self::Microseconds,
+                            "ns" => Self::Nanoseconds,
+                            "ps" => Self::Picoseconds,
+                            "fs" => Self::Femtoseconds,
+                            "as" => Self::Attoseconds,
+                            "generic" => Self::Generic,
+                            _ => unreachable!(),
+                        };
+                        ffi!(Py_DECREF(dtype));
+                        ffi!(Py_DECREF(descr));
+                        ret
+                    }
+                    None => Self::NaT,
+                }
+            }
+            Err(_) => Self::NaT,
         }
-        // unit descriptions are found at
-        // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
-        let ret = match &uni[4..uni.len() - 1] {
-            "Y" => Self::Years,
-            "M" => Self::Months,
-            "W" => Self::Weeks,
-            "D" => Self::Days,
-            "h" => Self::Hours,
-            "m" => Self::Minutes,
-            "s" => Self::Seconds,
-            "ms" => Self::Milliseconds,
-            "us" => Self::Microseconds,
-            "ns" => Self::Nanoseconds,
-            "ps" => Self::Picoseconds,
-            "fs" => Self::Femtoseconds,
-            "as" => Self::Attoseconds,
-            "generic" => Self::Generic,
-            _ => unreachable!(),
-        };
-        ffi!(Py_DECREF(dtype));
-        ffi!(Py_DECREF(descr));
-        ret
     }
 
     /// Return a `NumpyDatetime64Repr` for a value in array with this unit.

@@ -6,11 +6,8 @@ use super::ffi::{
     yyjson_read_opts, yyjson_val,
 };
 use crate::deserialize::DeserializeError;
-use crate::deserialize::pyobject::{
-    get_unicode_key, parse_f64, parse_false, parse_i64, parse_none, parse_true, parse_u64,
-};
-use crate::ffi::PyStrRef;
-use crate::util::usize_to_isize;
+use crate::deserialize::pyobject::get_unicode_key;
+use crate::ffi::{PyBoolRef, PyDictRef, PyFloatRef, PyIntRef, PyListRef, PyNoneRef, PyStrRef};
 use core::ffi::c_char;
 use core::ptr::{NonNull, null, null_mut};
 use std::borrow::Cow;
@@ -119,25 +116,23 @@ pub(crate) fn deserialize(
                 ElementType::Uint64 => parse_yy_u64(val),
                 ElementType::Int64 => parse_yy_i64(val),
                 ElementType::Double => parse_yy_f64(val),
-                ElementType::Null => parse_none(),
-                ElementType::True => parse_true(),
-                ElementType::False => parse_false(),
+                ElementType::Null => PyNoneRef::none().as_non_null_ptr(),
+                ElementType::True => PyBoolRef::pytrue().as_non_null_ptr(),
+                ElementType::False => PyBoolRef::pyfalse().as_non_null_ptr(),
                 ElementType::Array | ElementType::Object => unreachable_unchecked!(),
             }
         } else if is_yyjson_tag!(val, TAG_ARRAY) {
-            let pyval = nonnull!(ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val)))));
+            let pyval = PyListRef::with_capacity(unsafe_yyjson_get_len(val));
             if unsafe_yyjson_get_len(val) > 0 {
-                populate_yy_array(pyval.as_ptr(), val);
+                populate_yy_array(pyval.clone(), val);
             }
-            pyval
+            pyval.as_non_null_ptr()
         } else {
-            let pyval = nonnull!(ffi!(_PyDict_NewPresized(usize_to_isize(
-                unsafe_yyjson_get_len(val)
-            ))));
+            let pyval = PyDictRef::with_capacity(unsafe_yyjson_get_len(val));
             if unsafe_yyjson_get_len(val) > 0 {
-                populate_yy_object(pyval.as_ptr(), val);
+                populate_yy_object(pyval.clone(), val);
             }
-            pyval
+            pyval.as_non_null_ptr()
         }
     };
     ffi!(PyMem_Free(buffer_ptr));
@@ -184,54 +179,42 @@ fn parse_yy_string(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
 
 #[inline(always)]
 fn parse_yy_u64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
-    parse_u64(unsafe { (*elem).uni.u64_ })
+    PyIntRef::from_u64(unsafe { (*elem).uni.u64_ }).as_non_null_ptr()
 }
 
 #[inline(always)]
 fn parse_yy_i64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
-    parse_i64(unsafe { (*elem).uni.i64_ })
+    PyIntRef::from_i64(unsafe { (*elem).uni.i64_ }).as_non_null_ptr()
 }
 
 #[inline(always)]
 fn parse_yy_f64(elem: *mut yyjson_val) -> NonNull<crate::ffi::PyObject> {
-    parse_f64(unsafe { (*elem).uni.f64_ })
-}
-
-macro_rules! append_to_list {
-    ($dptr:expr, $pyval:expr) => {
-        unsafe {
-            core::ptr::write($dptr, $pyval);
-            $dptr = $dptr.add(1);
-        }
-    };
+    PyFloatRef::from_f64(unsafe { (*elem).uni.f64_ }).as_non_null_ptr()
 }
 
 #[inline(never)]
-fn populate_yy_array(list: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
+fn populate_yy_array(mut list: PyListRef, elem: *mut yyjson_val) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
         let mut next = unsafe_yyjson_get_first(elem);
-        let mut dptr = (*list.cast::<crate::ffi::PyListObject>()).ob_item;
 
-        for _ in 0..len {
+        for idx in 0..len {
             let val = next;
             if unsafe_yyjson_is_ctn(val) {
                 cold_path!();
                 next = unsafe_yyjson_get_next_container(val);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
-                    let pyval = ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val))));
-                    append_to_list!(dptr, pyval);
+                    let pyval = PyListRef::with_capacity(unsafe_yyjson_get_len(val));
+                    list.set(idx, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_array(pyval, val);
+                        populate_yy_array(pyval.clone(), val);
                     }
                 } else {
-                    let pyval = ffi!(_PyDict_NewPresized(usize_to_isize(unsafe_yyjson_get_len(
-                        val
-                    ))));
-                    append_to_list!(dptr, pyval);
+                    let pyval = PyDictRef::with_capacity(unsafe_yyjson_get_len(val));
+                    list.set(idx, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval, val);
+                        populate_yy_object(pyval.clone(), val);
                     }
                 }
             } else {
@@ -241,19 +224,19 @@ fn populate_yy_array(list: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::Uint64 => parse_yy_u64(val),
                     ElementType::Int64 => parse_yy_i64(val),
                     ElementType::Double => parse_yy_f64(val),
-                    ElementType::Null => parse_none(),
-                    ElementType::True => parse_true(),
-                    ElementType::False => parse_false(),
+                    ElementType::Null => PyNoneRef::none().as_non_null_ptr(),
+                    ElementType::True => PyBoolRef::pytrue().as_non_null_ptr(),
+                    ElementType::False => PyBoolRef::pyfalse().as_non_null_ptr(),
                     ElementType::Array | ElementType::Object => unreachable_unchecked!(),
                 };
-                append_to_list!(dptr, pyval.as_ptr());
+                list.set(idx, pyval.as_ptr());
             }
         }
     }
 }
 
 #[inline(never)]
-fn populate_yy_object(dict: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
+fn populate_yy_object(mut dict: PyDictRef, elem: *mut yyjson_val) {
     unsafe {
         let len = unsafe_yyjson_get_len(elem);
         assume!(len >= 1);
@@ -273,18 +256,16 @@ fn populate_yy_object(dict: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
                 next_key = unsafe_yyjson_get_next_container(val);
                 next_val = next_key.add(1);
                 if is_yyjson_tag!(val, TAG_ARRAY) {
-                    let pyval = ffi!(PyList_New(usize_to_isize(unsafe_yyjson_get_len(val))));
-                    pydict_setitem!(dict, pykey.as_ptr(), pyval);
+                    let pyval = PyListRef::with_capacity(unsafe_yyjson_get_len(val));
+                    dict.set(pykey, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
                         populate_yy_array(pyval, val);
                     }
                 } else {
-                    let pyval = ffi!(_PyDict_NewPresized(usize_to_isize(unsafe_yyjson_get_len(
-                        val
-                    ))));
-                    pydict_setitem!(dict, pykey.as_ptr(), pyval);
+                    let pyval = PyDictRef::with_capacity(unsafe_yyjson_get_len(val));
+                    dict.set(pykey, pyval.as_ptr());
                     if unsafe_yyjson_get_len(val) > 0 {
-                        populate_yy_object(pyval, val);
+                        populate_yy_object(pyval.clone(), val);
                     }
                 }
             } else {
@@ -295,12 +276,12 @@ fn populate_yy_object(dict: *mut crate::ffi::PyObject, elem: *mut yyjson_val) {
                     ElementType::Uint64 => parse_yy_u64(val),
                     ElementType::Int64 => parse_yy_i64(val),
                     ElementType::Double => parse_yy_f64(val),
-                    ElementType::Null => parse_none(),
-                    ElementType::True => parse_true(),
-                    ElementType::False => parse_false(),
+                    ElementType::Null => PyNoneRef::none().as_non_null_ptr(),
+                    ElementType::True => PyBoolRef::pytrue().as_non_null_ptr(),
+                    ElementType::False => PyBoolRef::pyfalse().as_non_null_ptr(),
                     ElementType::Array | ElementType::Object => unreachable_unchecked!(),
                 };
-                pydict_setitem!(dict, pykey.as_ptr(), pyval.as_ptr());
+                dict.set(pykey, pyval.as_ptr());
             }
         }
     }

@@ -122,15 +122,15 @@ pub(crate) unsafe fn PyLong_AsByteArray(
 #[cfg(CPython)]
 #[inline(always)]
 #[allow(non_snake_case)]
-pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyVarObject) -> pyo3_ffi::Py_ssize_t {
-    unsafe { (*op).ob_size }
+pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyObject) -> pyo3_ffi::Py_ssize_t {
+    unsafe { (*op.cast::<pyo3_ffi::PyVarObject>()).ob_size }
 }
 
 #[cfg(not(CPython))]
 #[inline(always)]
 #[allow(non_snake_case)]
-pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyVarObject) -> pyo3_ffi::Py_ssize_t {
-    unsafe { pyo3_ffi::Py_SIZE(op.cast::<pyo3_ffi::PyObject>()) }
+pub(crate) unsafe fn Py_SIZE(op: *mut pyo3_ffi::PyObject) -> pyo3_ffi::Py_ssize_t {
+    unsafe { pyo3_ffi::Py_SIZE(op) }
 }
 
 #[allow(unused)]
@@ -156,7 +156,12 @@ pub(crate) unsafe fn PyTuple_GET_ITEM(
     op: *mut pyo3_ffi::PyObject,
     i: pyo3_ffi::Py_ssize_t,
 ) -> *mut pyo3_ffi::PyObject {
-    unsafe { pyo3_ffi::PyTuple_GET_ITEM(op, i) }
+    unsafe {
+        *(*op.cast::<pyo3_ffi::PyTupleObject>())
+            .ob_item
+            .as_ptr()
+            .offset(i)
+    }
 }
 
 #[cfg(not(CPython))]
@@ -177,7 +182,12 @@ pub(crate) unsafe fn PyTuple_SET_ITEM(
     i: pyo3_ffi::Py_ssize_t,
     v: *mut pyo3_ffi::PyObject,
 ) {
-    unsafe { pyo3_ffi::PyTuple_SET_ITEM(op, i, v) }
+    unsafe {
+        *(*(op.cast::<pyo3_ffi::PyTupleObject>()))
+            .ob_item
+            .as_mut_ptr()
+            .offset(i) = v;
+    }
 }
 
 #[cfg(not(CPython))]

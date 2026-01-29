@@ -174,13 +174,6 @@ macro_rules! call_method {
     };
 }
 
-#[cfg(CPython)]
-macro_rules! str_hash {
-    ($op:expr) => {
-        unsafe { (*$op.cast::<crate::ffi::PyASCIIObject>()).hash }
-    };
-}
-
 #[cfg(all(CPython, Py_3_13))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
@@ -192,7 +185,7 @@ macro_rules! pydict_contains {
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
-            debug_assert!(str_hash!($obj2) != -1);
+            debug_assert!((*$obj2.cast::<crate::ffi::PyASCIIObject>()).hash != -1);
             crate::ffi::_PyDict_Contains_KnownHash(
                 crate::ffi::PyType_GetDict($obj1),
                 $obj2,
@@ -206,7 +199,7 @@ macro_rules! pydict_contains {
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
         unsafe {
-            debug_assert!(str_hash!($obj2) != -1);
+            debug_assert!((*$obj2.cast::<crate::ffi::PyASCIIObject>()).hash != -1);
             crate::ffi::_PyDict_Contains_KnownHash(
                 (*$obj1).tp_dict,
                 $obj2,
@@ -258,43 +251,6 @@ macro_rules! pydict_next {
 macro_rules! pydict_next {
     ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
         unsafe { crate::ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
-    };
-}
-
-#[cfg(CPython)]
-macro_rules! pydict_setitem {
-    ($dict:expr, $pykey:expr, $pyval:expr) => {
-        debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
-        debug_assert!(str_hash!($pykey) != -1);
-        #[cfg(not(Py_3_13))]
-        unsafe {
-            let _ = crate::ffi::_PyDict_SetItem_KnownHash($dict, $pykey, $pyval, str_hash!($pykey));
-        }
-        #[cfg(Py_3_13)]
-        unsafe {
-            let _ = crate::ffi::_PyDict_SetItem_KnownHash_LockHeld(
-                $dict.cast::<crate::ffi::PyDictObject>(),
-                $pykey,
-                $pyval,
-                str_hash!($pykey),
-            );
-        }
-        #[cfg(not(Py_GIL_DISABLED))]
-        reverse_pydict_incref!($pykey);
-        reverse_pydict_incref!($pyval);
-    };
-}
-
-#[cfg(not(CPython))]
-macro_rules! pydict_setitem {
-    ($dict:expr, $pykey:expr, $pyval:expr) => {
-        debug_assert!(ffi!(Py_REFCNT($dict)) == 1);
-        unsafe {
-            let _ = crate::ffi::PyDict_SetItem($dict, $pykey, $pyval);
-        }
-        #[cfg(not(Py_GIL_DISABLED))]
-        reverse_pydict_incref!($pykey);
-        reverse_pydict_incref!($pyval);
     };
 }
 

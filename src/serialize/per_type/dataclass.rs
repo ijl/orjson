@@ -102,13 +102,23 @@ impl Serialize for DataclassFastSerializer {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
+        pydict_next!(
+            self.ptr,
+            &raw mut pos,
+            &raw mut next_key,
+            &raw mut next_value
+        );
 
         for _ in 0..len {
             let key = next_key;
             let value = next_value;
 
-            pydict_next!(self.ptr, &mut pos, &mut next_key, &mut next_value);
+            pydict_next!(
+                self.ptr,
+                &raw mut pos,
+                &raw mut next_key,
+                &raw mut next_value
+            );
 
             let key_as_str = {
                 let key_ob_type = ob_type!(key);
@@ -174,13 +184,13 @@ impl Serialize for DataclassFallbackSerializer {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
+        pydict_next!(fields, &raw mut pos, &raw mut next_key, &raw mut next_value);
 
         for _ in 0..len {
             let attr = next_key;
             let field = next_value;
 
-            pydict_next!(fields, &mut pos, &mut next_key, &mut next_value);
+            pydict_next!(fields, &raw mut pos, &raw mut next_key, &raw mut next_value);
 
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);

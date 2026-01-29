@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2018-2026)
 
-use crate::ffi::{PyStrRef, PyStrSubclassRef};
+use crate::ffi::{
+    PyBoolRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef, PyStrRef,
+    PyStrSubclassRef, PyUuidRef,
+};
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
@@ -11,7 +14,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::typeref::{LIST_TYPE, TUPLE_TYPE};
+use crate::typeref::TUPLE_TYPE;
 use crate::util::isize_to_usize;
 
 use core::ptr::NonNull;
@@ -44,19 +47,13 @@ pub(crate) struct ListTupleSerializer {
 
 impl ListTupleSerializer {
     pub fn from_list(
-        ptr: *mut crate::ffi::PyObject,
+        ob: PyListRef,
         state: SerializerState,
         default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
-        debug_assert!(
-            is_type!(ob_type!(ptr), LIST_TYPE)
-                || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_LIST_SUBCLASS)
-        );
-        let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyListObject>()).ob_item };
-        let len = isize_to_usize(ffi!(Py_SIZE(ptr)));
         Self {
-            data_ptr: data_ptr,
-            len: len,
+            data_ptr: ob.data_ptr(),
+            len: ob.len(),
             state: state.copy_for_recursive_call(),
             default: default,
         }
@@ -108,16 +105,24 @@ impl Serialize for ListTupleSerializer {
                     }))?;
                 }
                 ObType::Int => {
-                    seq.serialize_element(&IntSerializer::new(value, self.state.opts()))?;
+                    seq.serialize_element(&IntSerializer::new(
+                        unsafe { PyIntRef::from_ptr_unchecked(value) },
+                        self.state.opts(),
+                    ))?;
                 }
                 ObType::None => {
                     seq.serialize_element(&NoneSerializer::new()).unwrap();
                 }
                 ObType::Float => {
-                    seq.serialize_element(&FloatSerializer::new(value))?;
+                    seq.serialize_element(&FloatSerializer::new(unsafe {
+                        PyFloatRef::from_ptr_unchecked(value)
+                    }))?;
                 }
                 ObType::Bool => {
-                    seq.serialize_element(&BoolSerializer::new(value)).unwrap();
+                    seq.serialize_element(&BoolSerializer::new(unsafe {
+                        PyBoolRef::from_ptr_unchecked(value)
+                    }))
+                    .unwrap();
                 }
                 ObType::Datetime => {
                     seq.serialize_element(&DateTime::new(value, self.state.opts()))?;
@@ -129,18 +134,28 @@ impl Serialize for ListTupleSerializer {
                     seq.serialize_element(&Time::new(value, self.state.opts()))?;
                 }
                 ObType::Uuid => {
-                    seq.serialize_element(&UUID::new(value)).unwrap();
+                    seq.serialize_element(&UUID::new(unsafe {
+                        PyUuidRef::from_ptr_unchecked(value)
+                    }))
+                    .unwrap();
                 }
                 ObType::Dict => {
-                    let pyvalue = DictGenericSerializer::new(value, self.state, self.default);
+                    let pyvalue = DictGenericSerializer::new(
+                        unsafe { PyDictRef::from_ptr_unchecked(value) },
+                        self.state,
+                        self.default,
+                    );
                     seq.serialize_element(&pyvalue)?;
                 }
                 ObType::List => {
                     if ffi!(Py_SIZE(value)) == 0 {
                         seq.serialize_element(&ZeroListSerializer::new()).unwrap();
                     } else {
-                        let pyvalue =
-                            ListTupleSerializer::from_list(value, self.state, self.default);
+                        let pyvalue = ListTupleSerializer::from_list(
+                            unsafe { PyListRef::from_ptr_unchecked(value) },
+                            self.state,
+                            self.default,
+                        );
                         seq.serialize_element(&pyvalue)?;
                     }
                 }
@@ -176,7 +191,9 @@ impl Serialize for ListTupleSerializer {
                     seq.serialize_element(&NumpyScalar::new(value, self.state.opts()))?;
                 }
                 ObType::Fragment => {
-                    seq.serialize_element(&FragmentSerializer::new(value))?;
+                    seq.serialize_element(&FragmentSerializer::new(unsafe {
+                        PyFragmentRef::from_ptr_unchecked(value)
+                    }))?;
                 }
                 ObType::Unknown => {
                     seq.serialize_element(&DefaultSerializer::new(&PyObjectSerializer::new(

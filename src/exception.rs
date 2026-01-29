@@ -1,42 +1,29 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2020-2025), Jack Amadeo (2023)
+// Copyright ijl (2020-2026), Jack Amadeo (2023)
 
-use core::ffi::c_char;
 use core::ptr::null_mut;
 
 use crate::deserialize::DeserializeError;
-use crate::ffi::{
-    Py_DECREF, PyErr_SetObject, PyLong_FromLongLong, PyObject, PyTuple_New,
-    PyUnicode_FromStringAndSize,
-};
-use crate::typeref::{EMPTY_UNICODE, JsonDecodeError, JsonEncodeError};
-use crate::util::usize_to_isize;
+use crate::ffi::{Py_DECREF, PyErr_SetObject, PyIntRef, PyObject, PyStrRef, PyTupleRef};
+use crate::typeref::{JsonDecodeError, JsonEncodeError};
 
 #[cold]
 #[inline(never)]
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) fn raise_loads_exception(err: DeserializeError) -> *mut PyObject {
     unsafe {
-        let err_pos = err.pos();
-        let msg = err.message;
+        let err_pos = PyIntRef::from_i64(err.pos());
+        let err_msg = PyStrRef::from_str(&err.message);
         let doc = match err.data {
-            Some(as_str) => PyUnicode_FromStringAndSize(
-                as_str.as_ptr().cast::<c_char>(),
-                usize_to_isize(as_str.len()),
-            ),
-            None => {
-                use_immortal!(EMPTY_UNICODE)
-            }
+            Some(as_str) => PyStrRef::from_str(as_str),
+            None => PyStrRef::empty(),
         };
-        let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
-        let args = PyTuple_New(3);
-        let pos = PyLong_FromLongLong(err_pos);
-        crate::ffi::PyTuple_SET_ITEM(args, 0, err_msg);
-        crate::ffi::PyTuple_SET_ITEM(args, 1, doc);
-        crate::ffi::PyTuple_SET_ITEM(args, 2, pos);
-        PyErr_SetObject(JsonDecodeError, args);
-        Py_DECREF(args);
+        let mut args = PyTupleRef::with_capacity(3);
+        args.set(0, err_msg.as_ptr());
+        args.set(1, doc.as_ptr());
+        args.set(2, err_pos.as_ptr());
+        PyErr_SetObject(JsonDecodeError, args.as_ptr());
+        Py_DECREF(args.as_ptr());
     }
     null_mut()
 }
@@ -46,11 +33,9 @@ pub(crate) fn raise_loads_exception(err: DeserializeError) -> *mut PyObject {
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) fn raise_dumps_exception_fixed(msg: &str) -> *mut PyObject {
     unsafe {
-        let err_msg =
-            PyUnicode_FromStringAndSize(msg.as_ptr().cast::<c_char>(), usize_to_isize(msg.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
-        Py_DECREF(err_msg);
+        let err_msg = PyStrRef::from_str(msg);
+        PyErr_SetObject(JsonEncodeError, err_msg.as_ptr());
+        Py_DECREF(err_msg.as_ptr());
     }
     null_mut()
 }
@@ -63,11 +48,9 @@ pub(crate) fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
     unsafe {
         let cause_exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
 
-        let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) <= 2);
-        Py_DECREF(err_msg);
+        let err_msg = PyStrRef::from_str(err);
+        PyErr_SetObject(JsonEncodeError, err_msg.as_ptr());
+        Py_DECREF(err_msg.as_ptr());
 
         if !cause_exc.is_null() {
             let exc: *mut PyObject = crate::ffi::PyErr_GetRaisedException();
@@ -89,11 +72,10 @@ pub(crate) fn raise_dumps_exception_dynamic(err: &str) -> *mut PyObject {
         let mut cause_traceback: *mut PyObject = null_mut();
         crate::ffi::PyErr_Fetch(&mut cause_tp, &mut cause_val, &mut cause_traceback);
 
-        let err_msg =
-            PyUnicode_FromStringAndSize(err.as_ptr().cast::<c_char>(), usize_to_isize(err.len()));
-        PyErr_SetObject(JsonEncodeError, err_msg);
-        debug_assert!(ffi!(Py_REFCNT(err_msg)) == 2);
-        Py_DECREF(err_msg);
+        let err_msg = PyStrRef::from_str(err);
+        PyErr_SetObject(JsonEncodeError, err_msg.as_ptr());
+        Py_DECREF(err_msg.as_ptr());
+
         let mut tp: *mut PyObject = null_mut();
         let mut val: *mut PyObject = null_mut();
         let mut traceback: *mut PyObject = null_mut();

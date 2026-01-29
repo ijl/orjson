@@ -88,9 +88,9 @@ use crate::exception::{
     raise_dumps_exception_dynamic, raise_dumps_exception_fixed, raise_loads_exception,
 };
 use crate::ffi::{
-    METH_KEYWORDS, METH_O, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyLong_AsLong, PyMethodDef,
-    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyObject,
-    PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
+    METH_KEYWORDS, METH_O, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyIntRef, PyMethodDef,
+    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyNoneRef, PyObject,
+    PyTupleRef, PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
 };
 use crate::serialize::serialize;
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -298,8 +298,9 @@ pub(crate) unsafe extern "C" fn dumps(
         }
         if !kwnames.is_null() {
             cold_path!();
+            let kwob = PyTupleRef::from_ptr_unchecked(kwnames);
             for i in 0..=Py_SIZE(kwnames).saturating_sub(1) {
-                let arg = crate::ffi::PyTuple_GET_ITEM(kwnames, i as Py_ssize_t);
+                let arg = kwob.get(i.cast_unsigned());
                 if matches_kwarg!(arg, typeref::OPTION) {
                     if num_args & 3 == 3 {
                         cold_path!();
@@ -324,25 +325,26 @@ pub(crate) unsafe extern "C" fn dumps(
             }
         }
 
-        let mut optsbits: i32 = 0;
-        if let Some(opts) = optsptr {
+        let mut opts = 0 as opt::Opt;
+        if let Some(tmp) = optsptr {
             cold_path!();
-            if core::ptr::eq((*opts.as_ptr()).ob_type, typeref::INT_TYPE) {
-                #[allow(clippy::cast_possible_truncation)]
-                let tmp = PyLong_AsLong(optsptr.unwrap().as_ptr()) as i32; // stmt_expr_attributes
-                optsbits = tmp;
-                if !(0..=opt::MAX_OPT).contains(&optsbits) {
-                    cold_path!();
-                    return raise_dumps_exception_fixed("Invalid opts");
+            match PyIntRef::from_ptr(tmp.as_ptr()) {
+                Ok(val) => match val.as_opt() {
+                    Ok(opt) => {
+                        opts = opt;
+                    }
+                    Err(_) => {
+                        return raise_dumps_exception_fixed("Invalid opts");
+                    }
+                },
+                Err(_) => {
+                    if !core::ptr::eq(tmp.as_ptr(), PyNoneRef::none().as_ptr()) {
+                        cold_path!();
+                        return raise_dumps_exception_fixed("Invalid opts");
+                    }
                 }
-            } else if !core::ptr::eq(opts.as_ptr(), typeref::NONE) {
-                cold_path!();
-                return raise_dumps_exception_fixed("Invalid opts");
             }
         }
-
-        #[allow(clippy::cast_sign_loss)]
-        let opts = optsbits as opt::Opt;
 
         serialize(*args, default, opts).map_or_else(
             |err| raise_dumps_exception_dynamic(err.as_str()),

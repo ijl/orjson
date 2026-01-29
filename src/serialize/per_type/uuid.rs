@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::PyUuidRef;
 use crate::serialize::buffer::SmallFixedBuffer;
-use crate::typeref::INT_ATTR_STR;
-use core::ffi::c_uchar;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct UUID {
-    ptr: *mut crate::ffi::PyObject,
+    ob: PyUuidRef,
 }
 
 impl UUID {
-    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
-        UUID { ptr: ptr }
+    pub fn new(ptr: PyUuidRef) -> Self {
+        UUID { ob: ptr }
     }
 
     #[inline(never)]
@@ -21,28 +20,10 @@ impl UUID {
     where
         B: bytes::BufMut,
     {
-        let value: u128;
-        {
-            // test_uuid_immutable, test_uuid_int
-            let py_int = ffi!(PyObject_GetAttr(self.ptr, INT_ATTR_STR));
-            ffi!(Py_DECREF(py_int));
-            let mut buffer: [c_uchar; 16] = [0; 16];
-            unsafe {
-                // test_uuid_overflow
-                crate::ffi::PyLong_AsByteArray(
-                    py_int.cast::<crate::ffi::PyLongObject>(),
-                    buffer.as_mut_ptr(),
-                    16,
-                    1, // little_endian
-                    0, // is_signed
-                );
-            };
-            value = u128::from_le_bytes(buffer);
-        }
         unsafe {
             let buffer_length: usize = 40;
             debug_assert!(buf.remaining_mut() >= buffer_length);
-            let len = uuid::Uuid::from_u128(value)
+            let len = uuid::Uuid::from_u128(self.ob.value())
                 .hyphenated()
                 .encode_lower(core::slice::from_raw_parts_mut(
                     buf.chunk_mut().as_mut_ptr(),

@@ -2,8 +2,6 @@
 // Copyright ijl (2022-2026)
 
 use crate::ffi::PyStrRef;
-use crate::typeref::{FALSE, NONE, TRUE};
-use core::ptr::NonNull;
 
 #[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 #[inline(always)]
@@ -42,39 +40,4 @@ pub(crate) fn get_unicode_key(key_str: &str) -> PyStrRef {
 #[inline(always)]
 pub(crate) fn get_unicode_key(key_str: &str) -> PyStrRef {
     PyStrRef::from_str(key_str)
-}
-
-#[allow(dead_code)]
-#[inline(always)]
-pub(crate) fn parse_bool(val: bool) -> NonNull<crate::ffi::PyObject> {
-    if val { parse_true() } else { parse_false() }
-}
-
-#[inline(always)]
-pub(crate) fn parse_true() -> NonNull<crate::ffi::PyObject> {
-    nonnull!(use_immortal!(TRUE))
-}
-
-#[inline(always)]
-pub(crate) fn parse_false() -> NonNull<crate::ffi::PyObject> {
-    nonnull!(use_immortal!(FALSE))
-}
-#[inline(always)]
-pub(crate) fn parse_i64(val: i64) -> NonNull<crate::ffi::PyObject> {
-    nonnull!(ffi!(PyLong_FromLongLong(val)))
-}
-
-#[inline(always)]
-pub(crate) fn parse_u64(val: u64) -> NonNull<crate::ffi::PyObject> {
-    nonnull!(ffi!(PyLong_FromUnsignedLongLong(val)))
-}
-
-#[inline(always)]
-pub(crate) fn parse_f64(val: f64) -> NonNull<crate::ffi::PyObject> {
-    nonnull!(ffi!(PyFloat_FromDouble(val)))
-}
-
-#[inline(always)]
-pub(crate) fn parse_none() -> NonNull<crate::ffi::PyObject> {
-    nonnull!(use_immortal!(NONE))
 }

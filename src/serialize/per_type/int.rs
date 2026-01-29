@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2018-2026)
 
+use crate::ffi::PyIntRef;
 use crate::opt::{Opt, STRICT_INTEGER};
 use crate::serialize::error::SerializeError;
 use serde::ser::{Serialize, Serializer};
@@ -11,16 +12,13 @@ const STRICT_INT_MIN: i64 = -9007199254740991;
 const STRICT_INT_MAX: i64 = 9007199254740991;
 
 pub(crate) struct IntSerializer {
-    ptr: *mut crate::ffi::PyObject,
+    ob: PyIntRef,
     opts: Opt,
 }
 
 impl IntSerializer {
-    pub fn new(ptr: *mut crate::ffi::PyObject, opts: Opt) -> Self {
-        IntSerializer {
-            ptr: ptr,
-            opts: opts,
-        }
+    pub fn new(ob: PyIntRef, opts: Opt) -> Self {
+        IntSerializer { ob: ob, opts: opts }
     }
 }
 
@@ -32,47 +30,32 @@ impl Serialize for IntSerializer {
         S: Serializer,
     {
         unsafe {
-            if crate::ffi::pylong_is_zero(self.ptr) {
-                return serializer.serialize_bytes(b"0");
-            }
-            let is_signed = i32::from(!crate::ffi::pylong_is_unsigned(self.ptr));
-            if crate::ffi::pylong_fits_in_i32(self.ptr) {
-                if is_signed == 0 {
-                    serializer.serialize_u64(
-                        crate::ffi::pylong_get_inline_value(self.ptr).cast_unsigned(),
-                    )
-                } else {
-                    serializer.serialize_i64(crate::ffi::pylong_get_inline_value(self.ptr))
-                }
-            } else {
-                let mut buffer: [u8; 8] = [0; 8];
-                let ret = crate::ffi::PyLong_AsByteArray(
-                    self.ptr.cast::<crate::ffi::PyLongObject>(),
-                    buffer.as_mut_ptr().cast::<core::ffi::c_uchar>(),
-                    8,
-                    1,
-                    is_signed,
-                );
-                if ret == -1 {
-                    cold_path!();
-                    #[cfg(not(Py_3_13))]
-                    ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
-                }
-                if is_signed == 0 {
-                    let val = u64::from_ne_bytes(buffer);
-                    if opt_enabled!(self.opts, STRICT_INTEGER) && val > STRICT_INT_MAX as u64 {
-                        err!(SerializeError::Integer53Bits)
-                    }
-                    serializer.serialize_u64(val)
-                } else {
-                    let val = i64::from_ne_bytes(buffer);
+            match self.ob.kind() {
+                crate::ffi::PyIntKind::I32 => serializer.serialize_i32(self.ob.as_i32()),
+                crate::ffi::PyIntKind::U32 => serializer.serialize_u32(self.ob.as_u32()),
+                crate::ffi::PyIntKind::I64 => {
+                    let value = self
+                        .ob
+                        .as_i64()
+                        .map_err(|_| serde::ser::Error::custom(SerializeError::Integer64Bits))?;
                     if opt_enabled!(self.opts, STRICT_INTEGER)
-                        && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
+                        && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&value)
                     {
-                        err!(SerializeError::Integer53Bits)
+                        cold_path!();
+                        err!(SerializeError::Integer53Bits);
                     }
-                    serializer.serialize_i64(val)
+                    serializer.serialize_i64(value)
+                }
+                crate::ffi::PyIntKind::U64 => {
+                    let value = self
+                        .ob
+                        .as_u64()
+                        .map_err(|_| serde::ser::Error::custom(SerializeError::Integer64Bits))?;
+                    if opt_enabled!(self.opts, STRICT_INTEGER) && value > STRICT_INT_MAX as u64 {
+                        cold_path!();
+                        err!(SerializeError::Integer53Bits);
+                    }
+                    serializer.serialize_u64(value)
                 }
             }
         }
@@ -85,28 +68,27 @@ impl Serialize for IntSerializer {
         S: Serializer,
     {
         unsafe {
-            if crate::ffi::pylong_is_unsigned(self.ptr) {
-                let val = ffi!(PyLong_AsUnsignedLongLong(self.ptr));
-                if val == u64::MAX && !ffi!(PyErr_Occurred()).is_null() {
-                    ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
-                } else if opt_enabled!(self.opts, STRICT_INTEGER) && val > STRICT_INT_MAX as u64 {
-                    err!(SerializeError::Integer53Bits)
-                } else {
-                    serializer.serialize_u64(val)
+            match self.ob.as_i64() {
+                Ok(value) => {
+                    if opt_enabled!(self.opts, STRICT_INTEGER)
+                        && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&value)
+                    {
+                        cold_path!();
+                        err!(SerializeError::Integer53Bits);
+                    }
+                    serializer.serialize_i64(value)
                 }
-            } else {
-                let val = ffi!(PyLong_AsLongLong(self.ptr));
-                if val == -1 && !ffi!(PyErr_Occurred()).is_null() {
-                    ffi!(PyErr_Clear());
-                    err!(SerializeError::Integer64Bits)
-                } else if opt_enabled!(self.opts, STRICT_INTEGER)
-                    && !(STRICT_INT_MIN..=STRICT_INT_MAX).contains(&val)
-                {
-                    err!(SerializeError::Integer53Bits)
-                } else {
-                    serializer.serialize_i64(val)
-                }
+                Err(_) => match self.ob.as_u64() {
+                    Ok(value) => {
+                        if opt_enabled!(self.opts, STRICT_INTEGER) && value > STRICT_INT_MAX as u64
+                        {
+                            cold_path!();
+                            err!(SerializeError::Integer53Bits);
+                        }
+                        serializer.serialize_u64(value)
+                    }
+                    Err(_) => err!(SerializeError::Integer64Bits),
+                },
             }
         }
     }

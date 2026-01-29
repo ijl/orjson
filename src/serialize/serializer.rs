@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2018-2026)
 
-use crate::ffi::{PyStrRef, PyStrSubclassRef};
+use crate::ffi::{
+    PyBoolRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef, PyStrRef,
+    PyStrSubclassRef, PyUuidRef,
+};
 use crate::opt::{APPEND_NEWLINE, INDENT_2, Opt};
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
@@ -70,26 +73,42 @@ impl Serialize for PyObjectSerializer {
                     StrSubclassSerializer::new(PyStrSubclassRef::from_ptr_unchecked(self.ptr))
                         .serialize(serializer)
                 }
-                ObType::Int => {
-                    IntSerializer::new(self.ptr, self.state.opts()).serialize(serializer)
-                }
+                ObType::Int => IntSerializer::new(
+                    unsafe { PyIntRef::from_ptr_unchecked(self.ptr) },
+                    self.state.opts(),
+                )
+                .serialize(serializer),
                 ObType::None => NoneSerializer::new().serialize(serializer),
-                ObType::Float => FloatSerializer::new(self.ptr).serialize(serializer),
-                ObType::Bool => BoolSerializer::new(self.ptr).serialize(serializer),
+                ObType::Float => FloatSerializer::new(PyFloatRef::from_ptr_unchecked(self.ptr))
+                    .serialize(serializer),
+                ObType::Bool => {
+                    BoolSerializer::new(unsafe { PyBoolRef::from_ptr_unchecked(self.ptr) })
+                        .serialize(serializer)
+                }
                 ObType::Datetime => {
                     DateTime::new(self.ptr, self.state.opts()).serialize(serializer)
                 }
                 ObType::Date => Date::new(self.ptr).serialize(serializer),
                 ObType::Time => Time::new(self.ptr, self.state.opts()).serialize(serializer),
-                ObType::Uuid => UUID::new(self.ptr).serialize(serializer),
-                ObType::Dict => DictGenericSerializer::new(self.ptr, self.state, self.default)
-                    .serialize(serializer),
+                ObType::Uuid => {
+                    UUID::new(PyUuidRef::from_ptr_unchecked(self.ptr)).serialize(serializer)
+                }
+                ObType::Dict => DictGenericSerializer::new(
+                    PyDictRef::from_ptr_unchecked(self.ptr),
+                    self.state,
+                    self.default,
+                )
+                .serialize(serializer),
                 ObType::List => {
                     if ffi!(Py_SIZE(self.ptr)) == 0 {
                         ZeroListSerializer::new().serialize(serializer)
                     } else {
-                        ListTupleSerializer::from_list(self.ptr, self.state, self.default)
-                            .serialize(serializer)
+                        ListTupleSerializer::from_list(
+                            PyListRef::from_ptr_unchecked(self.ptr),
+                            self.state,
+                            self.default,
+                        )
+                        .serialize(serializer)
                     }
                 }
                 ObType::Tuple => {
@@ -106,7 +125,10 @@ impl Serialize for PyObjectSerializer {
                 ObType::NumpyScalar => {
                     NumpyScalar::new(self.ptr, self.state.opts()).serialize(serializer)
                 }
-                ObType::Fragment => FragmentSerializer::new(self.ptr).serialize(serializer),
+                ObType::Fragment => {
+                    FragmentSerializer::new(unsafe { PyFragmentRef::from_ptr_unchecked(self.ptr) })
+                        .serialize(serializer)
+                }
                 ObType::Unknown => DefaultSerializer::new(self).serialize(serializer),
             }
         }

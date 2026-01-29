@@ -23,5 +23,5 @@ pub(crate) unsafe fn PyBytes_AS_STRING(op: *mut PyObject) -> *const c_char {
 #[allow(non_snake_case)]
 #[inline(always)]
 pub(crate) unsafe fn PyBytes_GET_SIZE(op: *mut PyObject) -> Py_ssize_t {
-    unsafe { super::compat::Py_SIZE(op.cast::<crate::ffi::PyVarObject>()) }
+    unsafe { super::compat::Py_SIZE(op) }
 }

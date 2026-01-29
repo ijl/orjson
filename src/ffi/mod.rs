@@ -8,27 +8,40 @@ mod buffer;
 mod bytes;
 pub(crate) mod compat;
 mod fragment;
-mod long;
+mod pyboolref;
 #[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 mod pybytearrayref;
 mod pybytesref;
+mod pydictref;
+mod pyfloatref;
+mod pyfragmentref;
+mod pyintref;
+mod pylistref;
 #[cfg(all(CPython, not(Py_GIL_DISABLED)))]
 mod pymemoryview;
+mod pynoneref;
 mod pystrref;
+mod pytupleref;
+mod pyuuidref;
 mod utf8;
 
 pub(crate) use compat::*;
 
-pub(crate) use long::pylong_is_unsigned;
-#[cfg(feature = "inline_int")]
-pub(crate) use long::{pylong_fits_in_i32, pylong_get_inline_value, pylong_is_zero};
-
-#[allow(unused)]
+#[allow(unused_imports)]
 pub(crate) use {
     bytes::{PyBytes_AS_STRING, PyBytes_GET_SIZE, PyBytesObject},
     fragment::{Fragment, orjson_fragmenttype_new},
+    pyboolref::PyBoolRef,
     pybytesref::{PyBytesRef, PyBytesRefError},
+    pydictref::PyDictRef,
+    pyfloatref::PyFloatRef,
+    pyfragmentref::{PyFragmentRef, PyFragmentRefError},
+    pyintref::{PyIntError, PyIntKind, PyIntRef},
+    pylistref::PyListRef,
+    pynoneref::PyNoneRef,
     pystrref::{PyStrRef, PyStrSubclassRef, set_str_create_fn},
+    pytupleref::PyTupleRef,
+    pyuuidref::PyUuidRef,
 };
 
 #[allow(unused_imports)]
@@ -41,7 +54,7 @@ pub(crate) use {
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{
     _PyBytes_Resize, METH_FASTCALL, METH_KEYWORDS, METH_O, Py_DECREF, Py_False, Py_INCREF, Py_None,
-    Py_REFCNT, Py_SIZE, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS,
+    Py_REFCNT, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS,
     Py_TPFLAGS_LONG_SUBCLASS, Py_TPFLAGS_TUPLE_SUBCLASS, Py_TPFLAGS_UNICODE_SUBCLASS, Py_TYPE,
     Py_True, Py_XDECREF, Py_buffer, Py_hash_t, Py_intptr_t, Py_mod_exec, Py_ssize_t, PyASCIIObject,
     PyBool_Type, PyBuffer_IsContiguous, PyByteArray_AsString, PyByteArray_Size, PyByteArray_Type,

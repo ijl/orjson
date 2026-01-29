@@ -159,7 +159,7 @@ impl PyStrRef {
 
     #[cfg(CPython)]
     #[allow(unused)]
-    pub fn hash(&self) -> isize {
+    pub fn hash(&self) -> crate::ffi::Py_hash_t {
         unsafe {
             debug_assert!((*self.as_ptr().cast::<PyASCIIObject>()).hash != -1);
             (*self.as_ptr().cast::<PyASCIIObject>()).hash

@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2018-2025)
+// Copyright ijl (2018-2026)
 
+use crate::ffi::PyBoolRef;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct BoolSerializer {
-    ptr: *mut crate::ffi::PyObject,
+    ob: PyBoolRef,
 }
 
 impl BoolSerializer {
-    pub fn new(ptr: *mut crate::ffi::PyObject) -> Self {
-        BoolSerializer { ptr: ptr }
+    pub fn new(ob: PyBoolRef) -> Self {
+        BoolSerializer { ob: ob }
     }
 }
 
@@ -20,6 +21,6 @@ impl Serialize for BoolSerializer {
     where
         S: Serializer,
     {
-        serializer.serialize_bool(unsafe { core::ptr::eq(self.ptr, crate::typeref::TRUE) })
+        serializer.serialize_bool(unsafe { core::ptr::eq(self.ob.as_ptr(), crate::typeref::TRUE) })
     }
 }
