@@ -30,7 +30,7 @@ impl Deserializer {
                     return Ok(nonnull!(ffi!(PyList_New(0))));
                 }
                 b"{}" => {
-                    return Ok(nonnull!(ffi!(PyDict_New())));
+                    return Ok(nonnull!(unsafe { crate::ffi::PyDict_New(0) }));
                 }
                 b"\"\"" => {
                     return Ok(PyStrRef::empty().as_non_null_ptr());

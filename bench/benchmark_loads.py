@@ -1,21 +1,20 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright Aarni Koskela (2021), ijl (2020-2024)
+# Copyright ijl (2020-2026), Aarni Koskela (2021)
 
 from json import loads as json_loads
 
 import pytest
 
-from .data import fixtures, libraries
-from .util import read_fixture
+from .data import FIXTURE_AS_BYTES, FIXTURE_NAMES, LIBRARIES
 
 
-@pytest.mark.parametrize("fixture", fixtures)
-@pytest.mark.parametrize("library", libraries)
+@pytest.mark.parametrize("fixture", FIXTURE_NAMES)
+@pytest.mark.parametrize("library", LIBRARIES)
 def test_loads(benchmark, fixture, library):
-    dumper, loader = libraries[library]
+    dumper, loader = LIBRARIES[library]
     benchmark.group = f"{fixture} deserialization"
     benchmark.extra_info["lib"] = library
-    data = read_fixture(f"{fixture}.xz")
+    data = FIXTURE_AS_BYTES[fixture]
     correct = json_loads(dumper(loader(data))) == json_loads(data)  # type: ignore
     benchmark.extra_info["correct"] = correct
     benchmark(loader, data)

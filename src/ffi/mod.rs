@@ -53,8 +53,8 @@ pub(crate) use {
 
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{
-    _PyBytes_Resize, METH_FASTCALL, METH_KEYWORDS, METH_O, Py_DECREF, Py_False, Py_INCREF, Py_None,
-    Py_REFCNT, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS,
+    METH_FASTCALL, METH_KEYWORDS, METH_O, Py_DECREF, Py_False, Py_INCREF, Py_None, Py_REFCNT,
+    Py_TPFLAGS_DEFAULT, Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS,
     Py_TPFLAGS_LONG_SUBCLASS, Py_TPFLAGS_TUPLE_SUBCLASS, Py_TPFLAGS_UNICODE_SUBCLASS, Py_TYPE,
     Py_True, Py_XDECREF, Py_buffer, Py_hash_t, Py_intptr_t, Py_mod_exec, Py_ssize_t, PyASCIIObject,
     PyBool_Type, PyBuffer_IsContiguous, PyByteArray_AsString, PyByteArray_Size, PyByteArray_Type,
@@ -65,10 +65,10 @@ pub(crate) use pyo3_ffi::{
     PyDateTime_DateTime, PyDateTime_GET_DAY, PyDateTime_GET_MONTH, PyDateTime_GET_YEAR,
     PyDateTime_IMPORT, PyDateTime_TIME_GET_HOUR, PyDateTime_TIME_GET_MICROSECOND,
     PyDateTime_TIME_GET_MINUTE, PyDateTime_TIME_GET_SECOND, PyDateTime_Time, PyDict_Contains,
-    PyDict_New, PyDict_Next, PyDict_SetItem, PyDict_Type, PyDictObject, PyErr_Clear,
-    PyErr_NewException, PyErr_Occurred, PyErr_SetObject, PyExc_TypeError, PyException_SetCause,
-    PyFloat_AS_DOUBLE, PyFloat_FromDouble, PyFloat_Type, PyImport_ImportModule, PyList_GET_ITEM,
-    PyList_New, PyList_SET_ITEM, PyList_Type, PyListObject, PyLong_AsLong, PyLong_AsLongLong,
+    PyDict_Next, PyDict_SetItem, PyDict_Type, PyDictObject, PyErr_Clear, PyErr_NewException,
+    PyErr_Occurred, PyErr_SetObject, PyExc_TypeError, PyException_SetCause, PyFloat_AS_DOUBLE,
+    PyFloat_FromDouble, PyFloat_Type, PyImport_ImportModule, PyList_GET_ITEM, PyList_New,
+    PyList_SET_ITEM, PyList_Type, PyListObject, PyLong_AsLong, PyLong_AsLongLong,
     PyLong_AsUnsignedLongLong, PyLong_FromLongLong, PyLong_FromUnsignedLongLong, PyLong_Type,
     PyLongObject, PyMapping_GetItemString, PyMem_Free, PyMem_Malloc, PyMem_Realloc,
     PyMemoryView_Type, PyMethodDef, PyMethodDefPointer, PyModule_AddIntConstant,

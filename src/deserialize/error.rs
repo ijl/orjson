@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2022-2025), Eric Jolibois (2021)
+// Copyright ijl (2022-2026), Eric Jolibois (2021)
 
 use std::borrow::Cow;
 
@@ -33,7 +33,13 @@ impl<'a> DeserializeError<'a> {
     #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn pos(&self) -> i64 {
         match self.data {
-            Some(as_str) => as_str[0..self.pos as usize].chars().count() as i64,
+            Some(as_str) => {
+                #[allow(clippy::cast_sign_loss)]
+                let pos = self.pos as usize;
+                #[allow(clippy::cast_possible_wrap)]
+                let res = as_str[0..pos].chars().count() as i64; // stmt_expr_attributes
+                res
+            }
             None => 0,
         }
     }

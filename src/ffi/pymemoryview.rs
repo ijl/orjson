@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2024-2026)
 
+#[allow(clippy::enum_variant_names)]
 #[allow(unused)]
 pub(crate) enum PyMemoryViewRefError {
     NotType,

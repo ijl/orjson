@@ -7,7 +7,7 @@ env:
   FORCE_COLOR: "1"
   ORJSON_BUILD_FREETHREADED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2025-12-01"
+  RUST_TOOLCHAIN: "nightly-2026-01-28"
   RUST_TOOLCHAIN_STABLE: "1.89"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
@@ -212,7 +212,7 @@ jobs:
         compression-level: 0
 
     - name: setup-qemu-container
-      if: "matrix.target.arch == 's390x'"
+      if: "matrix.target.arch == 's390x' || matrix.target.arch == 'ppc64le'"
       uses: sandervocke/setup-qemu-container@v1
       with:
         container: registry.fedoraproject.org/fedora:43
@@ -223,7 +223,7 @@ jobs:
       uses: sandervocke/setup-shell-wrapper@v1
 
     - name: Emulated Test
-      if: "matrix.target.arch == 's390x'"
+      if: "matrix.target.arch == 's390x' || matrix.target.arch == 'ppc64le'"
       shell: wrap-shell {0}
       env:
         WRAP_SHELL: run-in-container.sh
@@ -287,7 +287,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.25-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.01.28-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -362,7 +362,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2025.07.25-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.01.28-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata

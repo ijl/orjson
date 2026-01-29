@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2024-2025)
+// Copyright ijl (2024-2026)
 // the constants and SIMD approach are adapted from cloudwego's sonic-rs
 
 #[cfg(feature = "inline_int")]
 macro_rules! write_escape {
     ($byte:expr, $dst:expr) => {
         debug_assert!($byte < 96);
-        let escape = u64::from_ne_bytes(
+        #[allow(unnecessary_transmutes)]
+        let escape = core::mem::transmute::<[u8; 8], u64>(
             *crate::serialize::writer::str::escape::QUOTE_TAB.get_unchecked($byte as usize),
         );
-        core::ptr::write($dst.cast::<u64>(), escape);
+        #[allow(clippy::cast_ptr_alignment)]
+        let _dst = $dst.cast::<u64>(); // stmt_expr_attributes
+        core::ptr::write(_dst, escape);
         $dst = $dst.add((escape as usize) >> 56);
     };
 }

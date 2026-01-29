@@ -41,10 +41,11 @@ Releases follow semantic versioning and serializing a new object type
 without an opt-in flag is considered a breaking change.
 
 orjson contains source code licensed under the Mozilla Public License 2.0,
-Apache 2.0, and MIT licenses. The repository and issue tracker is
-[github.com/ijl/orjson](https://github.com/ijl/orjson), and patches may be
-submitted there. There is a
-[CHANGELOG](https://github.com/ijl/orjson/blob/master/CHANGELOG.md)
+Apache 2.0, and MIT licenses. The repository from which PyPI artifacts are
+published is [github.com/ijl/orjson](https://github.com/ijl/orjson) and an
+alternative repository is [codeberg.org/ijl/orjson](https://codeberg.org/ijl/orjson).
+There is no open issue tracker or pull requests due to signal-to-noise ratio.
+There is a [CHANGELOG](https://github.com/ijl/orjson/blob/master/CHANGELOG.md)
 available in the repository.
 
 1. [Usage](https://github.com/ijl/orjson?tab=readme-ov-file#usage)
@@ -1076,14 +1077,14 @@ The recommended build command is:
 maturin build --release --strip
 ```
 
-The project's own CI tests against `nightly-2025-12-01` and stable 1.89. It
+The project's own CI tests against `nightly-2026-01-28` and stable 1.89. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.
 
-orjson is tested on native hardware for amd64, aarch64, and i686 on Linux and
-for arm7, ppc64le, and s390x is cross-compiled and may be tested via
-emulation. It is tested for aarch64 on macOS and cross-compiles for amd64. For
+orjson is tested on native hardware for amd64, aarch64, and i686 on Linux. It is
+cross-compiled and may be tested via emulation for arm7, ppc64le, and s390x. It
+is tested for aarch64 on macOS and cross-compiles for amd64. For
 Windows it is tested on amd64, i686, and aarch64.
 
 There are no runtime dependencies other than libc.

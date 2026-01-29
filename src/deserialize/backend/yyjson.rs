@@ -105,7 +105,9 @@ pub(crate) fn deserialize(
     if doc.is_null() {
         ffi!(PyMem_Free(buffer_ptr));
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
-        return Err(DeserializeError::from_yyjson(msg, err.pos as i64, data));
+        #[allow(clippy::cast_possible_wrap)]
+        let pos = err.pos as i64;
+        return Err(DeserializeError::from_yyjson(msg, pos, data));
     }
     let val = yyjson_doc_get_root(doc);
     let pyval = {

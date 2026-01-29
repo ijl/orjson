@@ -12,6 +12,7 @@ export CC="${CC:-clang}"
 export LD="${LD:-lld}"
 export TARGET="${TARGET:-x86_64-unknown-linux-gnu}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target}"
+export ORJSON_COMPATIBILITY="${ORJSON_COMPATIBILITY:-manylinux_2_17}"
 
 echo "CC: ${CC}, LD: ${LD}, LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 
@@ -21,6 +22,6 @@ export RUSTFLAGS="-Z unstable-options -C panic=immediate-abort -C linker=${CC} -
 
 rm -f ${CARGO_TARGET_DIR}/wheels/*.whl
 
-maturin build --target="${TARGET}" "$@"
+maturin build --target="${TARGET}" --compatibility="${ORJSON_COMPATIBILITY}" "$@"
 
 uv pip install --link-mode=copy ${CARGO_TARGET_DIR}/wheels/*.whl

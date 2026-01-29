@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2023-2025)
+// Copyright ijl (2023-2026)
 
-use crate::ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject};
+use crate::ffi::{PyASCIIObject, PyCompactUnicodeObject, PyObject, PyUnicode_New};
 use crate::util::usize_to_isize;
 
 macro_rules! validate_str {
@@ -16,7 +16,7 @@ macro_rules! validate_str {
 #[inline(never)]
 pub(crate) fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut PyObject {
     unsafe {
-        let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 127));
+        let ptr = PyUnicode_New(usize_to_isize(num_chars), 127);
         let data_ptr = ptr.cast::<PyASCIIObject>().offset(1).cast::<u8>();
         core::ptr::copy_nonoverlapping(buf, data_ptr, num_chars);
         core::ptr::write(data_ptr.add(num_chars), 0);
@@ -29,7 +29,7 @@ pub(crate) fn pyunicode_ascii(buf: *const u8, num_chars: usize) -> *mut PyObject
 #[inline(never)]
 pub(crate) fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut PyObject {
     unsafe {
-        let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 255));
+        let ptr = PyUnicode_New(usize_to_isize(num_chars), 255);
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u8>();
         for each in buf.chars().fuse() {
             core::ptr::write(data_ptr, each as u8);
@@ -44,7 +44,7 @@ pub(crate) fn pyunicode_onebyte(buf: &str, num_chars: usize) -> *mut PyObject {
 #[inline(never)]
 pub(crate) fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut PyObject {
     unsafe {
-        let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 65535));
+        let ptr = PyUnicode_New(usize_to_isize(num_chars), 65535);
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u16>();
         for each in buf.chars().fuse() {
             core::ptr::write(data_ptr, each as u16);
@@ -59,7 +59,7 @@ pub(crate) fn pyunicode_twobyte(buf: &str, num_chars: usize) -> *mut PyObject {
 #[inline(never)]
 pub(crate) fn pyunicode_fourbyte(buf: &str, num_chars: usize) -> *mut PyObject {
     unsafe {
-        let ptr = ffi!(PyUnicode_New(usize_to_isize(num_chars), 1114111));
+        let ptr = PyUnicode_New(usize_to_isize(num_chars), 1114111);
         let mut data_ptr = ptr.cast::<PyCompactUnicodeObject>().offset(1).cast::<u32>();
         for each in buf.chars().fuse() {
             core::ptr::write(data_ptr, each as u32);

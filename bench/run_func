@@ -20,6 +20,8 @@ with lzma.open(filename, "r") as fileh:
 
 if hasattr(gc, "freeze"):
     gc.freeze()
+if hasattr(gc, "collect"):
+    gc.collect()
 if hasattr(gc, "disable"):
     gc.disable()
 

@@ -24,7 +24,7 @@ impl PyDictRef {
     #[inline]
     pub fn with_capacity(cap: usize) -> Self {
         unsafe {
-            let ptr = crate::ffi::_PyDict_NewPresized(crate::util::usize_to_isize(cap));
+            let ptr = crate::ffi::PyDict_New(crate::util::usize_to_isize(cap));
             debug_assert!(!ptr.is_null());
             Self { ptr: nonnull!(ptr) }
         }
@@ -41,7 +41,7 @@ impl PyDictRef {
     #[inline]
     pub fn new() -> Self {
         unsafe {
-            let ptr = crate::ffi::PyDict_New();
+            let ptr = crate::ffi::PyDict_New(0);
             debug_assert!(!ptr.is_null());
             Self { ptr: nonnull!(ptr) }
         }
