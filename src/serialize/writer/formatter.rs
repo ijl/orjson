@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
+use super::{
+    write_float32, write_float64, write_integer_i32, write_integer_i64, write_integer_u32,
+    write_integer_u64,
+};
 use crate::serialize::writer::WriteExt;
 use std::io;
 
@@ -43,8 +47,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.advance_mut(len);
+            write_integer_i32(writer, value);
         }
         Ok(())
     }
@@ -56,8 +59,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.advance_mut(len);
+            write_integer_i64(writer, value);
         }
         Ok(())
     }
@@ -69,8 +71,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.advance_mut(len);
+            write_integer_u32(writer, value);
         }
         Ok(())
     }
@@ -82,8 +83,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = itoap::write_to_ptr(writer.as_mut_buffer_ptr(), value);
-            writer.advance_mut(len);
+            write_integer_u64(writer, value);
         }
         Ok(())
     }
@@ -95,8 +95,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = ryu::raw::format32(value, writer.as_mut_buffer_ptr());
-            writer.advance_mut(len);
+            write_float32(writer, value);
         }
         Ok(())
     }
@@ -108,8 +107,7 @@ pub(crate) trait Formatter {
     {
         unsafe {
             reserve_minimum!(writer);
-            let len = ryu::raw::format64(value, writer.as_mut_buffer_ptr());
-            writer.advance_mut(len);
+            write_float64(writer, value);
         }
         Ok(())
     }
