@@ -1,6 +1,16 @@
 # Changelog
 
 
+## 3.11.7 - 2026-02-02
+
+### Changed
+
+- Use a faster library to serialize `float`. Users with byte-exact regression
+tests should note positive exponents are now written using a `+`, e.g.,
+`1.2e+30` instead of `1.2e30`. Both formats are spec-compliant.
+- ABI compatibility with CPython 3.15 alpha 5 free-threading.
+
+
 ## 3.11.6 - 2026-01-29
 
 ### Changed
