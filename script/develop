@@ -22,6 +22,6 @@ export RUSTFLAGS="-Z unstable-options -C panic=immediate-abort -C linker=${CC} -
 
 rm -f ${CARGO_TARGET_DIR}/wheels/*.whl
 
-maturin build --target="${TARGET}" --compatibility="${ORJSON_COMPATIBILITY}" "$@"
+maturin build --target="${TARGET}" --features=no_panic --compatibility="${ORJSON_COMPATIBILITY}" "$@"
 
 uv pip install --link-mode=copy ${CARGO_TARGET_DIR}/wheels/*.whl

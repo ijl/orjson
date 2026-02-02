@@ -431,7 +431,7 @@ fn non_str_float(key: *mut crate::ffi::PyObject) -> Result<String, SerializeErro
     if !val.is_finite() {
         Ok(String::from("null"))
     } else {
-        Ok(String::from(ryu::Buffer::new().format_finite(val)))
+        Ok(String::from(zmij::Buffer::new().format_finite(val)))
     }
 }
 

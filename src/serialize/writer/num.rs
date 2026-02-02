@@ -57,11 +57,7 @@ where
         cold_path!();
         buf.put_slice(b"null");
     } else {
-        unsafe {
-            debug_assert!(buf.remaining_mut() >= 40);
-            let len = ryu::raw::format32(val, buf.as_mut_buffer_ptr());
-            buf.advance_mut(len);
-        }
+        write_finite_float(buf, val)
     }
 }
 
@@ -74,10 +70,19 @@ where
         cold_path!();
         buf.put_slice(b"null");
     } else {
-        unsafe {
-            debug_assert!(buf.remaining_mut() >= 40);
-            let len = ryu::raw::format64(val, buf.as_mut_buffer_ptr());
-            buf.advance_mut(len);
-        }
+        write_finite_float(buf, val)
+    }
+}
+
+fn write_finite_float<B, F: zmij::Float>(buf: &mut B, val: F)
+where
+    B: ?Sized + WriteExt + BufMut,
+{
+    unsafe {
+        debug_assert!(buf.remaining_mut() >= 40);
+        let buffer =
+            unsafe { core::mem::transmute::<*mut u8, &mut zmij::Buffer>(buf.as_mut_buffer_ptr()) };
+        let res = buffer.format_finite(val);
+        buf.advance_mut(res.len());
     }
 }

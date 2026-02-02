@@ -152,28 +152,28 @@ jobs:
           {
             arch: 'i686',
             cflags: '-Os -fstrict-aliasing',
-            features: '',
+            features: 'no_panic',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings',
             target: 'i686-unknown-linux-gnu',
           },
           {
             arch: 'armv7',
             cflags: '-Os -fstrict-aliasing',
-            features: '',
+            features: 'no_panic',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings -C opt-level=s',
             target: 'armv7-unknown-linux-gnueabihf',
           },
           {
             arch: 'ppc64le',
             cflags: '-Os -fstrict-aliasing',
-            features: 'generic_simd',
+            features: 'generic_simd,no_panic',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings',
             target: 'powerpc64le-unknown-linux-gnu',
           },
           {
             arch: 's390x',
             cflags: '-Os -fstrict-aliasing -march=z10',
-            features: '',
+            features: 'no_panic',
             rustflags: '-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings -C target-cpu=z10',
             target: 's390x-unknown-linux-gnu',
           },
@@ -332,11 +332,11 @@ jobs:
           - target: aarch64-unknown-linux-musl
             arch: aarch64
             platform: linux/arm64
-            features: generic_simd,unwind
+            features: generic_simd,no_panic,unwind
           - target: armv7-unknown-linux-musleabihf
             arch: armv7l
             platform: linux/arm/v7
-            features: ''
+            features: no_panic
     steps:
     - uses: actions/checkout@v6
 
@@ -445,7 +445,7 @@ jobs:
         maturin build \
           --release \
           --strip \
-          --features=generic_simd \
+          --features=generic_simd,no_panic \
           --interpreter python${{ matrix.python.version }} \
           --target=aarch64-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -530,7 +530,7 @@ jobs:
         maturin build \
           --release \
           --strip \
-          --features=generic_simd \
+          --features=generic_simd,no_panic \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -568,8 +568,8 @@ jobs:
           { version: '3.10', publish: true },
         ]
         platform: [
-          { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512" },
-          { arch: "x86", target: "i686-pc-windows-msvc", features: "" },
+          { arch: "x64", target: "x86_64-pc-windows-msvc", features: "avx512,no_panic" },
+          { arch: "x86", target: "i686-pc-windows-msvc", features: "no_panic" },
         ]
     env:
       CFLAGS: "-O2"
@@ -677,7 +677,7 @@ jobs:
 
     - name: maturin
       run: |
-        maturin.exe build --release --strip --features=generic_simd --target="$env:TARGET"
+        maturin.exe build --release --strip --features=generic_simd,no_panic --target="$env:TARGET"
         python.exe -m pip install orjson --no-index --find-links target\wheels
 
     - run: python.exe -m pytest -s -rxX -v test

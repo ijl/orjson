@@ -39,6 +39,7 @@ cold_path = []
 generic_simd = []
 inline_int = []
 inline_str = []
+no_panic = ["zmij/no-panic"]
 optimize = []
 
 [dependencies]
@@ -52,7 +53,6 @@ itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
 pyo3-ffi = { version = "0.28", default-features = false }
-ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
@@ -60,6 +60,7 @@ smallvec = { version = "^1.11", default-features = false, features = ["union", "
 unwinding = { version = "=0.2.8", default-features = false, features = ["unwinder"], optional = true }
 uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
+zmij = { version = "1", default-features = false }
 
 [build-dependencies]
 cc = { version = "1" }

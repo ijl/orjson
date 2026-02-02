@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2020-2025), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021), Marco Ribeiro (2020), Eric Jolibois (2021)
+# Copyright ijl (2020-2026), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021), Marco Ribeiro (2020), Eric Jolibois (2021)
 # mypy: ignore-errors
 
 import sys
@@ -113,7 +113,7 @@ class TestNumpy:
                 numpy.array([1.0, 3.4028235e38], numpy.float32),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b"[1.0,3.4028235e38]"
+            == b"[1.0,3.4028235e+38]"
         )
 
     def test_numpy_array_d1_f16(self):
@@ -210,7 +210,7 @@ class TestNumpy:
                 numpy.array([1.0, 1.7976931348623157e308], numpy.float64),
                 option=orjson.OPT_SERIALIZE_NUMPY,
             )
-            == b"[1.0,1.7976931348623157e308]"
+            == b"[1.0,1.7976931348623157e+308]"
         )
 
     def test_numpy_array_d1_bool(self):
