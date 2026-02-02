@@ -51,7 +51,7 @@ itoa = { version = "1", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { version = "0.27", default-features = false }
+pyo3-ffi = { version = "0.28", default-features = false }
 ryu = { version = "1", default-features = false }
 serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std"] }
@@ -63,7 +63,7 @@ xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] 
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "0.27" }
+pyo3-build-config = { version = "0.28" }
 version_check = { version = "0.9" }
 
 [profile.dev]
