@@ -4,6 +4,7 @@
 mod buffer;
 pub(crate) mod datetime;
 mod error;
+mod numpy;
 mod obtype;
 mod per_type;
 mod serializer;

@@ -9,12 +9,12 @@ use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS}
 use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::datetime::{write_date, write_datetime, write_time};
 use crate::serialize::error::SerializeError;
+use crate::serialize::numpy::NumpyScalar;
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer, EnumSerializer,
     FloatSerializer, FragmentSerializer, IntSerializer, ListTupleSerializer, NoneSerializer,
-    NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
-    ZeroListSerializer,
+    NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID, ZeroListSerializer,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;

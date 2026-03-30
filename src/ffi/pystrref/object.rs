@@ -53,7 +53,7 @@ pub(crate) enum PyStrRefError {
     NotStrType,
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 #[repr(transparent)]
 pub(crate) struct PyStrRef {
     ptr: core::ptr::NonNull<pyo3_ffi::PyObject>,

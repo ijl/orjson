@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2021-2025)
+// Copyright ijl (2021-2026)
 
+use crate::ffi::PyStrRef;
 use core::ffi::CStr;
 use core::ptr::NonNull;
 
@@ -20,6 +21,7 @@ pub(crate) enum SerializeError {
     NumpyNotCContiguous,
     NumpyNotNativeEndian,
     NumpyUnsupportedDatatype,
+    NumpyUnsupportedDatetimeUnit(PyStrRef),
     UnsupportedType(NonNull<crate::ffi::PyObject>),
 }
 
@@ -60,6 +62,9 @@ impl core::fmt::Display for SerializeError {
             }
             SerializeError::NumpyUnsupportedDatatype => {
                 write!(f, "unsupported datatype in numpy array")
+            }
+            SerializeError::NumpyUnsupportedDatetimeUnit(msg) => {
+                write!(f, "{}", msg.as_str().unwrap())
             }
             SerializeError::UnsupportedType(ptr) => {
                 let name =

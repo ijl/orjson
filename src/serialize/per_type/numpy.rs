@@ -1,24 +1,23 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2018-2026), Ben Sully (2021), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021)
+// Copyright ijl (2018-2026), Nazar Kostetskyi (2022), Aviram Hassan (2020-2021), Ben Sully (2021)
 
 use crate::ffi::{
-    Py_intptr_t, Py_ssize_t, PyListRef, PyObject, PyStrRef, PyTupleRef, PyTypeObject,
+    NumpyBool, NumpyDatetime64, NumpyDatetime64Repr, NumpyDatetimeUnit, NumpyFloat16, NumpyFloat32,
+    NumpyFloat64, NumpyInt8, NumpyInt16, NumpyInt32, NumpyInt64, NumpyUint8, NumpyUint16,
+    NumpyUint32, NumpyUint64, PyTypeObject,
 };
-use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, Opt, UTC_Z};
 use crate::serialize::buffer::SmallFixedBuffer;
+use crate::serialize::error::SerializeError;
+use crate::serialize::numpy::{
+    ItemType, NumpyArray, NumpyBoolArray, NumpyDatetime64Array, NumpyF16Array, NumpyF32Array,
+    NumpyF64Array, NumpyI8Array, NumpyI16Array, NumpyI32Array, NumpyI64Array, NumpyScalar,
+    NumpyU8Array, NumpyU16Array, NumpyU32Array, NumpyU64Array, PyArrayError, datetime_into_error,
+    write_numpy_datetime,
+};
 use crate::serialize::per_type::{DefaultSerializer, ZeroListSerializer};
 use crate::serialize::serializer::PyObjectSerializer;
-use crate::serialize::{
-    error::SerializeError,
-    writer::{WriteExt, write_integer_u32},
-};
-use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES, load_numpy_types};
-use crate::util::isize_to_usize;
-use core::ffi::{c_char, c_int, c_void};
-use jiff::Timestamp;
-use jiff::civil::DateTime;
-use serde::ser::{self, Serialize, SerializeSeq, Serializer};
-use std::fmt;
+use crate::typeref::{NUMPY_TYPES, load_numpy_types};
+use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 #[repr(transparent)]
 pub(crate) struct NumpySerializer<'a> {
@@ -97,222 +96,6 @@ pub(crate) fn is_numpy_array(ob_type: *mut PyTypeObject) -> bool {
     } else {
         let scalar_types = unsafe { numpy_types.unwrap().as_ref() };
         unsafe { core::ptr::eq(ob_type, scalar_types.array) }
-    }
-}
-
-#[repr(C)]
-pub(crate) struct PyCapsule {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub pointer: *mut c_void,
-    pub name: *const c_char,
-    pub context: *mut c_void,
-    pub destructor: *mut c_void, // should be typedef void (*PyCapsule_Destructor)(PyObject *);
-}
-
-// https://docs.scipy.org/doc/numpy/reference/arrays.interface.html#c.__array_struct__
-
-const NPY_ARRAY_C_CONTIGUOUS: c_int = 0x1;
-const NPY_ARRAY_NOTSWAPPED: c_int = 0x200;
-
-#[repr(C)]
-pub(crate) struct PyArrayInterface {
-    pub two: c_int,
-    pub nd: c_int,
-    pub typekind: c_char,
-    pub itemsize: c_int,
-    pub flags: c_int,
-    pub shape: *mut Py_intptr_t,
-    pub strides: *mut Py_intptr_t,
-    pub data: *mut c_void,
-    pub descr: *mut PyObject,
-}
-
-#[derive(Clone, Copy)]
-pub(crate) enum ItemType {
-    BOOL,
-    DATETIME64(NumpyDatetimeUnit),
-    F16,
-    F32,
-    F64,
-    I8,
-    I16,
-    I32,
-    I64,
-    U8,
-    U16,
-    U32,
-    U64,
-}
-
-impl ItemType {
-    fn find(array: *mut PyArrayInterface, ptr: *mut PyObject) -> Option<ItemType> {
-        match unsafe { ((*array).typekind, (*array).itemsize) } {
-            (098, 1) => Some(ItemType::BOOL),
-            (077, 8) => {
-                let unit = NumpyDatetimeUnit::from_pyobject(ptr);
-                Some(ItemType::DATETIME64(unit))
-            }
-            (102, 2) => Some(ItemType::F16),
-            (102, 4) => Some(ItemType::F32),
-            (102, 8) => Some(ItemType::F64),
-            (105, 1) => Some(ItemType::I8),
-            (105, 2) => Some(ItemType::I16),
-            (105, 4) => Some(ItemType::I32),
-            (105, 8) => Some(ItemType::I64),
-            (117, 1) => Some(ItemType::U8),
-            (117, 2) => Some(ItemType::U16),
-            (117, 4) => Some(ItemType::U32),
-            (117, 8) => Some(ItemType::U64),
-            _ => None,
-        }
-    }
-}
-
-pub(crate) enum PyArrayError {
-    Malformed,
-    NotContiguous,
-    NotNativeEndian,
-    UnsupportedDataType,
-}
-
-// >>> arr = numpy.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], numpy.int32)
-// >>> arr.ndim
-// 3
-// >>> arr.shape
-// (2, 2, 2)
-// >>> arr.strides
-// (16, 8, 4)
-pub(crate) struct NumpyArray {
-    array: *mut PyArrayInterface,
-    position: Vec<isize>,
-    children: Vec<NumpyArray>,
-    depth: usize,
-    capsule: *mut PyCapsule,
-    kind: ItemType,
-    opts: Opt,
-}
-
-impl NumpyArray {
-    #[cold]
-    #[inline(never)]
-    #[cfg_attr(feature = "optimize", optimize(size))]
-    pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
-        let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
-        debug_assert!(!capsule.is_null());
-        let array = unsafe {
-            (*capsule.cast::<PyCapsule>())
-                .pointer
-                .cast::<PyArrayInterface>()
-        };
-        debug_assert!(!array.is_null());
-        if unsafe { (*array).two != 2 } {
-            ffi!(Py_DECREF(capsule));
-            Err(PyArrayError::Malformed)
-        } else if unsafe { (*array).flags } & NPY_ARRAY_C_CONTIGUOUS != NPY_ARRAY_C_CONTIGUOUS {
-            ffi!(Py_DECREF(capsule));
-            Err(PyArrayError::NotContiguous)
-        } else if unsafe { (*array).flags } & NPY_ARRAY_NOTSWAPPED != NPY_ARRAY_NOTSWAPPED {
-            ffi!(Py_DECREF(capsule));
-            Err(PyArrayError::NotNativeEndian)
-        } else {
-            debug_assert!(unsafe { (*array).nd >= 0 });
-            let num_dimensions = unsafe { (*array).nd.cast_unsigned() as usize };
-            if num_dimensions == 0 {
-                ffi!(Py_DECREF(capsule));
-                return Err(PyArrayError::UnsupportedDataType);
-            }
-            match ItemType::find(array, ptr) {
-                None => {
-                    ffi!(Py_DECREF(capsule));
-                    Err(PyArrayError::UnsupportedDataType)
-                }
-                Some(kind) => {
-                    let mut pyarray = NumpyArray {
-                        array: array,
-                        position: vec![0; num_dimensions],
-                        children: Vec::with_capacity(num_dimensions),
-                        depth: 0,
-                        capsule: capsule.cast::<PyCapsule>(),
-                        kind: kind,
-                        opts,
-                    };
-                    if pyarray.dimensions() > 1 {
-                        pyarray.build();
-                    }
-                    Ok(pyarray)
-                }
-            }
-        }
-    }
-
-    #[cfg_attr(feature = "optimize", optimize(size))]
-    fn child_from_parent(&self, position: Vec<isize>, num_children: usize) -> Self {
-        let mut arr = NumpyArray {
-            array: self.array,
-            position: position,
-            children: Vec::with_capacity(num_children),
-            depth: self.depth + 1,
-            capsule: self.capsule,
-            kind: self.kind,
-            opts: self.opts,
-        };
-        arr.build();
-        arr
-    }
-
-    #[cfg_attr(feature = "optimize", optimize(size))]
-    fn build(&mut self) {
-        if self.depth < self.dimensions() - 1 {
-            for i in 0..self.shape()[self.depth] {
-                let mut position: Vec<isize> = self.position.clone();
-                position[self.depth] = i;
-                let num_children: usize = if self.depth < self.dimensions() - 2 {
-                    isize_to_usize(self.shape()[self.depth + 1])
-                } else {
-                    0
-                };
-                self.children
-                    .push(self.child_from_parent(position, num_children));
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn data(&self) -> *const c_void {
-        let offset = self
-            .strides()
-            .iter()
-            .zip(self.position.iter().copied())
-            .take(self.depth)
-            .map(|(a, b)| a * b)
-            .sum::<isize>();
-        unsafe { (*self.array).data.offset(offset) }
-    }
-
-    fn num_items(&self) -> usize {
-        isize_to_usize(self.shape()[self.shape().len() - 1])
-    }
-
-    fn dimensions(&self) -> usize {
-        unsafe { (*self.array).nd.cast_unsigned() as usize }
-    }
-
-    fn shape(&self) -> &[isize] {
-        slice!((*self.array).shape.cast_const(), self.dimensions())
-    }
-
-    fn strides(&self) -> &[isize] {
-        slice!((*self.array).strides.cast_const(), self.dimensions())
-    }
-}
-
-impl Drop for NumpyArray {
-    fn drop(&mut self) {
-        if self.depth == 0 {
-            ffi!(Py_DECREF(self.array.cast::<PyObject>()));
-            ffi!(Py_DECREF(self.capsule.cast::<PyObject>()));
-        }
     }
 }
 
@@ -395,17 +178,6 @@ impl Serialize for NumpyArray {
     }
 }
 
-#[repr(transparent)]
-struct NumpyF64Array<'a> {
-    data: &'a [f64],
-}
-
-impl<'a> NumpyF64Array<'a> {
-    fn new(data: &'a [f64]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyF64Array<'_> {
     #[cold]
     #[inline(never)]
@@ -436,17 +208,6 @@ impl Serialize for DataTypeF64 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyF32Array<'a> {
-    data: &'a [f32],
-}
-
-impl<'a> NumpyF32Array<'a> {
-    fn new(data: &'a [f32]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyF32Array<'_> {
     #[cold]
     #[inline(never)]
@@ -474,17 +235,6 @@ impl Serialize for DataTypeF32 {
         S: Serializer,
     {
         serializer.serialize_f32(self.obj)
-    }
-}
-
-#[repr(transparent)]
-struct NumpyF16Array<'a> {
-    data: &'a [u16],
-}
-
-impl<'a> NumpyF16Array<'a> {
-    fn new(data: &'a [u16]) -> Self {
-        Self { data }
     }
 }
 
@@ -520,17 +270,6 @@ impl Serialize for DataTypeF16 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyU64Array<'a> {
-    data: &'a [u64],
-}
-
-impl<'a> NumpyU64Array<'a> {
-    fn new(data: &'a [u64]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyU64Array<'_> {
     #[cold]
     #[inline(never)]
@@ -558,17 +297,6 @@ impl Serialize for DataTypeU64 {
         S: Serializer,
     {
         serializer.serialize_u64(self.obj)
-    }
-}
-
-#[repr(transparent)]
-struct NumpyU32Array<'a> {
-    data: &'a [u32],
-}
-
-impl<'a> NumpyU32Array<'a> {
-    fn new(data: &'a [u32]) -> Self {
-        Self { data }
     }
 }
 
@@ -602,17 +330,6 @@ impl Serialize for DataTypeU32 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyU16Array<'a> {
-    data: &'a [u16],
-}
-
-impl<'a> NumpyU16Array<'a> {
-    fn new(data: &'a [u16]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyU16Array<'_> {
     #[cold]
     #[inline(never)]
@@ -640,17 +357,6 @@ impl Serialize for DataTypeU16 {
         S: Serializer,
     {
         serializer.serialize_u32(u32::from(self.obj))
-    }
-}
-
-#[repr(transparent)]
-struct NumpyI64Array<'a> {
-    data: &'a [i64],
-}
-
-impl<'a> NumpyI64Array<'a> {
-    fn new(data: &'a [i64]) -> Self {
-        Self { data }
     }
 }
 
@@ -684,17 +390,6 @@ impl Serialize for DataTypeI64 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyI32Array<'a> {
-    data: &'a [i32],
-}
-
-impl<'a> NumpyI32Array<'a> {
-    fn new(data: &'a [i32]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyI32Array<'_> {
     #[cold]
     #[inline(never)]
@@ -722,17 +417,6 @@ impl Serialize for DataTypeI32 {
         S: Serializer,
     {
         serializer.serialize_i32(self.obj)
-    }
-}
-
-#[repr(transparent)]
-struct NumpyI16Array<'a> {
-    data: &'a [i16],
-}
-
-impl<'a> NumpyI16Array<'a> {
-    fn new(data: &'a [i16]) -> Self {
-        Self { data }
     }
 }
 
@@ -766,17 +450,6 @@ impl Serialize for DataTypeI16 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyI8Array<'a> {
-    data: &'a [i8],
-}
-
-impl<'a> NumpyI8Array<'a> {
-    fn new(data: &'a [i8]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyI8Array<'_> {
     #[cold]
     #[inline(never)]
@@ -804,17 +477,6 @@ impl Serialize for DataTypeI8 {
         S: Serializer,
     {
         serializer.serialize_i32(i32::from(self.obj))
-    }
-}
-
-#[repr(transparent)]
-struct NumpyU8Array<'a> {
-    data: &'a [u8],
-}
-
-impl<'a> NumpyU8Array<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Self { data }
     }
 }
 
@@ -848,17 +510,6 @@ impl Serialize for DataTypeU8 {
     }
 }
 
-#[repr(transparent)]
-struct NumpyBoolArray<'a> {
-    data: &'a [u8],
-}
-
-impl<'a> NumpyBoolArray<'a> {
-    fn new(data: &'a [u8]) -> Self {
-        Self { data }
-    }
-}
-
 impl Serialize for NumpyBoolArray<'_> {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -885,17 +536,6 @@ impl Serialize for DataTypeBool {
         S: Serializer,
     {
         serializer.serialize_bool(self.obj == 1)
-    }
-}
-
-pub(crate) struct NumpyScalar {
-    ptr: *mut PyObject,
-    opts: Opt,
-}
-
-impl NumpyScalar {
-    pub fn new(ptr: *mut PyObject, opts: Opt) -> Self {
-        NumpyScalar { ptr, opts }
     }
 }
 
@@ -940,7 +580,7 @@ impl Serialize for NumpyScalar {
                 let obj = &*self.ptr.cast::<NumpyDatetime64>();
                 let dt = unit
                     .datetime(obj.value, self.opts)
-                    .map_err(NumpyDateTimeError::into_serde_err)?;
+                    .map_err(|e| serde::ser::Error::custom(datetime_into_error(e)))?;
                 dt.serialize(serializer)
             } else {
                 unreachable!()
@@ -948,14 +588,6 @@ impl Serialize for NumpyScalar {
         }
     }
 }
-
-#[repr(C)]
-pub(crate) struct NumpyInt8 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: i8,
-}
-
 impl Serialize for NumpyInt8 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -964,13 +596,6 @@ impl Serialize for NumpyInt8 {
     {
         serializer.serialize_i32(i32::from(self.value))
     }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyInt16 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: i16,
 }
 
 impl Serialize for NumpyInt16 {
@@ -983,13 +608,6 @@ impl Serialize for NumpyInt16 {
     }
 }
 
-#[repr(C)]
-pub(crate) struct NumpyInt32 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: i32,
-}
-
 impl Serialize for NumpyInt32 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -998,13 +616,6 @@ impl Serialize for NumpyInt32 {
     {
         serializer.serialize_i32(self.value)
     }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyInt64 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: i64,
 }
 
 impl Serialize for NumpyInt64 {
@@ -1017,13 +628,6 @@ impl Serialize for NumpyInt64 {
     }
 }
 
-#[repr(C)]
-pub(crate) struct NumpyUint8 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: u8,
-}
-
 impl Serialize for NumpyUint8 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -1032,13 +636,6 @@ impl Serialize for NumpyUint8 {
     {
         serializer.serialize_u32(u32::from(self.value))
     }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyUint16 {
-    pub ob_refcnt: Py_ssize_t,
-    pub ob_type: *mut PyTypeObject,
-    pub value: u16,
 }
 
 impl Serialize for NumpyUint16 {
@@ -1050,14 +647,6 @@ impl Serialize for NumpyUint16 {
         serializer.serialize_u32(u32::from(self.value))
     }
 }
-
-#[repr(C)]
-pub(crate) struct NumpyUint32 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: u32,
-}
-
 impl Serialize for NumpyUint32 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -1068,13 +657,6 @@ impl Serialize for NumpyUint32 {
     }
 }
 
-#[repr(C)]
-pub(crate) struct NumpyUint64 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: u64,
-}
-
 impl Serialize for NumpyUint64 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -1083,13 +665,6 @@ impl Serialize for NumpyUint64 {
     {
         serializer.serialize_u64(self.value)
     }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyFloat16 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: u16,
 }
 
 impl Serialize for NumpyFloat16 {
@@ -1103,13 +678,6 @@ impl Serialize for NumpyFloat16 {
     }
 }
 
-#[repr(C)]
-pub(crate) struct NumpyFloat32 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: f32,
-}
-
 impl Serialize for NumpyFloat32 {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -1118,13 +686,6 @@ impl Serialize for NumpyFloat32 {
     {
         serializer.serialize_f32(self.value)
     }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyFloat64 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: f64,
 }
 
 impl Serialize for NumpyFloat64 {
@@ -1137,13 +698,6 @@ impl Serialize for NumpyFloat64 {
     }
 }
 
-#[repr(C)]
-pub(crate) struct NumpyBool {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: bool,
-}
-
 impl Serialize for NumpyBool {
     #[cold]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -1151,198 +705,6 @@ impl Serialize for NumpyBool {
         S: Serializer,
     {
         serializer.serialize_bool(self.value)
-    }
-}
-
-/// This mimicks the units supported by numpy's datetime64 type.
-///
-/// See
-/// https://github.com/numpy/numpy/blob/fc8e3bbe419748ac5c6b7f3d0845e4bafa74644b/numpy/core/include/numpy/ndarraytypes.h#L268-L282.
-#[derive(Clone, Copy)]
-pub(crate) enum NumpyDatetimeUnit {
-    NaT,
-    Years,
-    Months,
-    Weeks,
-    Days,
-    Hours,
-    Minutes,
-    Seconds,
-    Milliseconds,
-    Microseconds,
-    Nanoseconds,
-    Picoseconds,
-    Femtoseconds,
-    Attoseconds,
-    Generic,
-}
-
-impl fmt::Display for NumpyDatetimeUnit {
-    #[cold]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let unit = match self {
-            Self::NaT => "NaT",
-            Self::Years => "years",
-            Self::Months => "months",
-            Self::Weeks => "weeks",
-            Self::Days => "days",
-            Self::Hours => "hours",
-            Self::Minutes => "minutes",
-            Self::Seconds => "seconds",
-            Self::Milliseconds => "milliseconds",
-            Self::Microseconds => "microseconds",
-            Self::Nanoseconds => "nanoseconds",
-            Self::Picoseconds => "picoseconds",
-            Self::Femtoseconds => "femtoseconds",
-            Self::Attoseconds => "attoseconds",
-            Self::Generic => "generic",
-        };
-        write!(f, "{unit}")
-    }
-}
-
-#[derive(Clone, Copy)]
-enum NumpyDateTimeError {
-    UnsupportedUnit(NumpyDatetimeUnit),
-    Unrepresentable { unit: NumpyDatetimeUnit, val: i64 },
-}
-
-impl NumpyDateTimeError {
-    #[cold]
-    fn into_serde_err<T: ser::Error>(self) -> T {
-        let err = match self {
-            Self::UnsupportedUnit(unit) => format!("unsupported numpy.datetime64 unit: {unit}"),
-            Self::Unrepresentable { unit, val } => {
-                format!("unrepresentable numpy.datetime64: {val} {unit}")
-            }
-        };
-        ser::Error::custom(err)
-    }
-}
-
-macro_rules! to_jiff_datetime {
-    ($timestamp:expr, $self:expr, $val:expr) => {
-        Ok(
-            ($timestamp.map_err(|_| NumpyDateTimeError::Unrepresentable {
-                unit: $self,
-                val: $val,
-            })?)
-            .to_zoned(jiff::tz::TimeZone::UTC)
-            .datetime(),
-        )
-    };
-}
-
-impl NumpyDatetimeUnit {
-    /// Create a `NumpyDatetimeUnit` from a pointer to a Python object holding a
-    /// numpy array.
-    ///
-    /// This function must only be called with pointers to numpy arrays.
-    ///
-    /// We need to look inside the `obj.dtype.descr` attribute of the Python
-    /// object rather than using the `descr` field of the `__array_struct__`
-    /// because that field isn't populated for datetime64 arrays; see
-    /// https://github.com/numpy/numpy/issues/5350.
-    #[cold]
-    #[cfg_attr(feature = "optimize", optimize(size))]
-    fn from_pyobject(ptr: *mut PyObject) -> Self {
-        let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
-        let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
-        let el0 = unsafe { PyListRef::from_ptr_unchecked(descr).get(0) };
-        let descr_str = unsafe { PyTupleRef::from_ptr_unchecked(el0).get(1) };
-        match PyStrRef::from_ptr(descr_str) {
-            Ok(uni) => {
-                match uni.as_str() {
-                    Some(as_str) => {
-                        if as_str.len() < 5 {
-                            return Self::NaT;
-                        }
-                        // unit descriptions are found at
-                        // https://github.com/numpy/numpy/blob/b235f9e701e14ed6f6f6dcba885f7986a833743f/numpy/core/src/multiarray/datetime.c#L79-L96.
-                        let ret = match &as_str[4..as_str.len() - 1] {
-                            "Y" => Self::Years,
-                            "M" => Self::Months,
-                            "W" => Self::Weeks,
-                            "D" => Self::Days,
-                            "h" => Self::Hours,
-                            "m" => Self::Minutes,
-                            "s" => Self::Seconds,
-                            "ms" => Self::Milliseconds,
-                            "us" => Self::Microseconds,
-                            "ns" => Self::Nanoseconds,
-                            "ps" => Self::Picoseconds,
-                            "fs" => Self::Femtoseconds,
-                            "as" => Self::Attoseconds,
-                            "generic" => Self::Generic,
-                            _ => unreachable!(),
-                        };
-                        ffi!(Py_DECREF(dtype));
-                        ffi!(Py_DECREF(descr));
-                        ret
-                    }
-                    None => Self::NaT,
-                }
-            }
-            Err(_) => Self::NaT,
-        }
-    }
-
-    #[cold]
-    #[cfg_attr(feature = "optimize", optimize(size))]
-    fn datetime(self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
-        let datetime = match self {
-            Self::Years => {
-                let year = val + 1970;
-                if !(0..=9999).contains(&year) {
-                    cold_path!();
-                    return Err(NumpyDateTimeError::Unrepresentable { unit: self, val });
-                } else {
-                    Ok(DateTime::new(year as i16, 1, 1, 0, 0, 0, 0).unwrap())
-                }
-            }
-            Self::Months => {
-                let year = val / 12 + 1970;
-                let month = val % 12 + 1;
-                if !(0..=9999).contains(&year) || !(0..=12).contains(&month) {
-                    cold_path!();
-                    return Err(NumpyDateTimeError::Unrepresentable { unit: self, val });
-                } else {
-                    Ok(DateTime::new(year as i16, month as i8, 1, 0, 0, 0, 0).unwrap())
-                }
-            }
-            Self::Weeks => {
-                to_jiff_datetime!(Timestamp::from_second(val * 7 * 24 * 60 * 60), self, val)
-            }
-            Self::Days => to_jiff_datetime!(Timestamp::from_second(val * 24 * 60 * 60), self, val),
-            Self::Hours => to_jiff_datetime!(Timestamp::from_second(val * 60 * 60), self, val),
-            Self::Minutes => to_jiff_datetime!(Timestamp::from_second(val * 60), self, val),
-            Self::Seconds => to_jiff_datetime!(Timestamp::from_second(val), self, val),
-            Self::Milliseconds => to_jiff_datetime!(Timestamp::from_millisecond(val), self, val),
-            Self::Microseconds => to_jiff_datetime!(Timestamp::from_microsecond(val), self, val),
-            Self::Nanoseconds => {
-                to_jiff_datetime!(Timestamp::from_nanosecond(i128::from(val)), self, val)
-            }
-            _ => Err(NumpyDateTimeError::UnsupportedUnit(self)),
-        };
-        match datetime {
-            Ok(dt) => match dt.year() {
-                0..=9999 => Ok(NumpyDatetime64Repr { dt, opts }),
-                _ => Err(NumpyDateTimeError::Unrepresentable { unit: self, val }),
-            },
-            Err(err) => Err(err),
-        }
-    }
-}
-
-struct NumpyDatetime64Array<'a> {
-    data: &'a [i64],
-    unit: NumpyDatetimeUnit,
-    opts: Opt,
-}
-
-impl<'a> NumpyDatetime64Array<'a> {
-    fn new(data: &'a [i64], unit: NumpyDatetimeUnit, opts: Opt) -> Self {
-        Self { data, unit, opts }
     }
 }
 
@@ -1357,68 +719,10 @@ impl Serialize for NumpyDatetime64Array<'_> {
             let dt = self
                 .unit
                 .datetime(each, self.opts)
-                .map_err(NumpyDateTimeError::into_serde_err)?;
+                .map_err(|e| serde::ser::Error::custom(datetime_into_error(e)))?;
             seq.serialize_element(&dt).unwrap();
         }
         seq.end()
-    }
-}
-
-#[repr(C)]
-pub(crate) struct NumpyDatetime64 {
-    ob_refcnt: Py_ssize_t,
-    ob_type: *mut PyTypeObject,
-    value: i64,
-}
-
-struct NumpyDatetime64Repr {
-    dt: DateTime,
-    opts: Opt,
-}
-
-fn write_numpy_datetime<B>(dt: &DateTime, opts: Opt, buf: &mut B)
-where
-    B: ?Sized + WriteExt + bytes::BufMut,
-{
-    {
-        let year = dt.year() as u32;
-        if year < 1000 {
-            cold_path!();
-            // date-fullyear   = 4DIGIT
-            buf.put_u8(b'0');
-            if year < 100 {
-                buf.put_u8(b'0');
-            }
-            if year < 10 {
-                buf.put_u8(b'0');
-            }
-        }
-        write_integer_u32(buf, year);
-    }
-    buf.put_u8(b'-');
-    write_double_digit!(buf, dt.month() as u32);
-    buf.put_u8(b'-');
-    write_double_digit!(buf, dt.day() as u32);
-    buf.put_u8(b'T');
-    write_double_digit!(buf, dt.hour() as u32);
-    buf.put_u8(b':');
-    write_double_digit!(buf, dt.minute() as u32);
-    buf.put_u8(b':');
-    write_double_digit!(buf, dt.second() as u32);
-    if opt_disabled!(opts, OMIT_MICROSECONDS) {
-        let microsecond = dt.subsec_nanosecond().cast_unsigned() / 1_000;
-        if microsecond != 0 {
-            buf.put_u8(b'.');
-            write_triple_digit!(buf, microsecond / 1_000);
-            write_triple_digit!(buf, microsecond % 1_000);
-        }
-    }
-    if opt_enabled!(opts, NAIVE_UTC) {
-        if opt_enabled!(opts, UTC_Z) {
-            buf.put_u8(b'Z');
-        } else {
-            buf.put_slice(b"+00:00");
-        }
     }
 }
 
@@ -1429,7 +733,7 @@ impl Serialize for NumpyDatetime64Repr {
         S: Serializer,
     {
         let mut buf = SmallFixedBuffer::new();
-        write_numpy_datetime(&self.dt, self.opts, &mut buf);
+        write_numpy_datetime(&self, &mut buf);
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

@@ -6,11 +6,12 @@ use crate::ffi::{
     PyStrRef, PyStrSubclassRef, PyTimeRef, PyUuidRef,
 };
 use crate::serialize::error::SerializeError;
+use crate::serialize::numpy::NumpyScalar;
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer,
     DictGenericSerializer, EnumSerializer, FloatSerializer, FragmentSerializer, IntSerializer,
-    NoneSerializer, NumpyScalar, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
+    NoneSerializer, NumpySerializer, StrSerializer, StrSubclassSerializer, Time, UUID,
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
