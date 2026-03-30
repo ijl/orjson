@@ -203,6 +203,20 @@ pub(crate) unsafe fn PyTuple_SET_ITEM(
     }
 }
 
+#[cfg(CPython)]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyObject_Type(o: *mut pyo3_ffi::PyObject) -> *mut pyo3_ffi::PyTypeObject {
+    unsafe { (*o).ob_type }
+}
+
+#[cfg(not(CPython))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyObject_Type(o: *mut pyo3_ffi::PyObject) -> *mut pyo3_ffi::PyTypeObject {
+    unsafe { pyo3_ffi::Py_TYPE(o) }
+}
+
 unsafe extern "C" {
 
     #[cfg(CPython)]

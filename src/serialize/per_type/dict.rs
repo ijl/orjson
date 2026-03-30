@@ -2,14 +2,14 @@
 // Copyright ijl (2018-2026)
 
 use crate::ffi::{
-    PyBoolRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef, PyStrRef,
-    PyStrSubclassRef, PyUuidRef,
+    PyBoolRef, PyDateRef, PyDateTimeRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef,
+    PyStrRef, PyStrSubclassRef, PyTimeRef, PyUuidRef,
 };
 use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
 use crate::serialize::buffer::SmallFixedBuffer;
+use crate::serialize::datetime::{write_date, write_datetime, write_time};
 use crate::serialize::error::SerializeError;
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
-use crate::serialize::per_type::datetimelike::DateTimeLike;
 use crate::serialize::per_type::{
     BoolSerializer, DataclassGenericSerializer, Date, DateTime, DefaultSerializer, EnumSerializer,
     FloatSerializer, FragmentSerializer, IntSerializer, ListTupleSerializer, NoneSerializer,
@@ -18,6 +18,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
+use crate::serialize::writer::{write_integer_i64, write_integer_u64};
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
@@ -136,15 +137,21 @@ macro_rules! impl_serialize_entry {
             }
             ObType::Datetime => {
                 $map.serialize_key($key).unwrap();
-                $map.serialize_value(&DateTime::new($value, $self.state.opts()))?;
+                $map.serialize_value(&DateTime::new(
+                    unsafe { PyDateTimeRef::from_ptr_unchecked($value) },
+                    $self.state.opts(),
+                ))?;
             }
             ObType::Date => {
                 $map.serialize_key($key).unwrap();
-                $map.serialize_value(&Date::new($value))?;
+                $map.serialize_value(&Date::new(unsafe { PyDateRef::from_ptr_unchecked($value) }))?;
             }
             ObType::Time => {
                 $map.serialize_key($key).unwrap();
-                $map.serialize_value(&Time::new($value, $self.state.opts()))?;
+                $map.serialize_value(&Time::new(
+                    unsafe { PyTimeRef::from_ptr_unchecked($value) },
+                    $self.state.opts(),
+                ))?;
             }
             ObType::Uuid => {
                 $map.serialize_key($key).unwrap();
@@ -377,41 +384,30 @@ fn non_str_str_subclass(key: PyStrSubclassRef) -> Result<String, SerializeError>
 }
 
 #[allow(clippy::unnecessary_wraps)]
+#[cold]
 #[inline(never)]
-fn non_str_date(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
+fn non_str_date(key: PyDateRef) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
-    Date::new(key).write_buf(&mut buf);
-    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-    Ok(String::from(key_as_str))
-}
-
-#[inline(never)]
-fn non_str_datetime(
-    key: *mut crate::ffi::PyObject,
-    opts: crate::opt::Opt,
-) -> Result<String, SerializeError> {
-    let mut buf = SmallFixedBuffer::new();
-    let dt = DateTime::new(key, opts);
-    if dt.write_buf(&mut buf, opts).is_err() {
-        return Err(SerializeError::DatetimeLibraryUnsupported);
-    }
-    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-    Ok(String::from(key_as_str))
+    write_date(key, &mut buf);
+    Ok(buf.to_string())
 }
 
 #[cold]
 #[inline(never)]
-fn non_str_time(
-    key: *mut crate::ffi::PyObject,
-    opts: crate::opt::Opt,
-) -> Result<String, SerializeError> {
+fn non_str_datetime(key: PyDateTimeRef, opts: crate::opt::Opt) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
-    let time = Time::new(key, opts);
-    if time.write_buf(&mut buf).is_err() {
-        return Err(SerializeError::TimeHasTzinfo);
+    if write_datetime(key, opts, &mut buf).is_err() {
+        return Err(SerializeError::DatetimeLibraryUnsupported);
     }
-    let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
-    Ok(String::from(key_as_str))
+    Ok(buf.to_string())
+}
+
+#[cold]
+#[inline(never)]
+fn non_str_time(key: PyTimeRef, opts: crate::opt::Opt) -> Result<String, SerializeError> {
+    let mut buf = SmallFixedBuffer::new();
+    write_time(key, opts, &mut buf)?;
+    Ok(buf.to_string())
 }
 
 #[allow(clippy::unnecessary_wraps)]
@@ -444,11 +440,16 @@ fn non_str_int(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError>
         ffi!(PyErr_Clear());
         let uval = ffi!(PyLong_AsUnsignedLongLong(key));
         if uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null() {
+            cold_path!();
             return Err(SerializeError::DictIntegerKey64Bit);
         }
-        Ok(String::from(itoa::Buffer::new().format(uval)))
+        let mut buf = SmallFixedBuffer::new();
+        write_integer_u64(&mut buf, uval);
+        Ok(buf.to_string())
     } else {
-        Ok(String::from(itoa::Buffer::new().format(ival)))
+        let mut buf = SmallFixedBuffer::new();
+        write_integer_i64(&mut buf, ival);
+        Ok(buf.to_string())
     }
 }
 
@@ -480,9 +481,9 @@ impl DictNonStrKey {
                 }
                 ObType::Int => non_str_int(key),
                 ObType::Float => non_str_float(key),
-                ObType::Datetime => non_str_datetime(key, opts),
-                ObType::Date => non_str_date(key),
-                ObType::Time => non_str_time(key, opts),
+                ObType::Datetime => non_str_datetime(PyDateTimeRef::from_ptr_unchecked(key), opts),
+                ObType::Date => non_str_date(PyDateRef::from_ptr_unchecked(key)),
+                ObType::Time => non_str_time(PyTimeRef::from_ptr_unchecked(key), opts),
                 ObType::Uuid => non_str_uuid(PyUuidRef::from_ptr_unchecked(key)),
                 ObType::Enum => {
                     let value = ffi!(PyObject_GetAttr(key, VALUE_STR));

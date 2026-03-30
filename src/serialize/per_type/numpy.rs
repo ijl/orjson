@@ -4,13 +4,14 @@
 use crate::ffi::{
     Py_intptr_t, Py_ssize_t, PyListRef, PyObject, PyStrRef, PyTupleRef, PyTypeObject,
 };
-use crate::opt::Opt;
+use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, Opt, UTC_Z};
 use crate::serialize::buffer::SmallFixedBuffer;
-use crate::serialize::error::SerializeError;
-use crate::serialize::per_type::{
-    DateTimeError, DateTimeLike, DefaultSerializer, Offset, ZeroListSerializer,
-};
+use crate::serialize::per_type::{DefaultSerializer, ZeroListSerializer};
 use crate::serialize::serializer::PyObjectSerializer;
+use crate::serialize::{
+    error::SerializeError,
+    writer::{WriteExt, write_integer_u32},
+};
 use crate::typeref::{ARRAY_STRUCT_STR, DESCR_STR, DTYPE_STR, NUMPY_TYPES, load_numpy_types};
 use crate::util::isize_to_usize;
 use core::ffi::{c_char, c_int, c_void};
@@ -1286,39 +1287,29 @@ impl NumpyDatetimeUnit {
         }
     }
 
-    /// Return a `NumpyDatetime64Repr` for a value in array with this unit.
-    ///
-    /// Returns an `Err(NumpyDateTimeError)` if the value is invalid for this unit.
     #[cold]
     #[cfg_attr(feature = "optimize", optimize(size))]
     fn datetime(self, val: i64, opts: Opt) -> Result<NumpyDatetime64Repr, NumpyDateTimeError> {
-        match self {
-            Self::Years => Ok(DateTime::new(
-                (val + 1970)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: self, val })?,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0,
-            )
-            .unwrap()),
-            Self::Months => Ok(DateTime::new(
-                (val / 12 + 1970)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: self, val })?,
-                (val % 12 + 1)
-                    .try_into()
-                    .map_err(|_| NumpyDateTimeError::Unrepresentable { unit: self, val })?,
-                1,
-                0,
-                0,
-                0,
-                0,
-            )
-            .unwrap()),
+        let datetime = match self {
+            Self::Years => {
+                let year = val + 1970;
+                if !(0..=9999).contains(&year) {
+                    cold_path!();
+                    return Err(NumpyDateTimeError::Unrepresentable { unit: self, val });
+                } else {
+                    Ok(DateTime::new(year as i16, 1, 1, 0, 0, 0, 0).unwrap())
+                }
+            }
+            Self::Months => {
+                let year = val / 12 + 1970;
+                let month = val % 12 + 1;
+                if !(0..=9999).contains(&year) || !(0..=12).contains(&month) {
+                    cold_path!();
+                    return Err(NumpyDateTimeError::Unrepresentable { unit: self, val });
+                } else {
+                    Ok(DateTime::new(year as i16, month as i8, 1, 0, 0, 0, 0).unwrap())
+                }
+            }
             Self::Weeks => {
                 to_jiff_datetime!(Timestamp::from_second(val * 7 * 24 * 60 * 60), self, val)
             }
@@ -1332,8 +1323,14 @@ impl NumpyDatetimeUnit {
                 to_jiff_datetime!(Timestamp::from_nanosecond(i128::from(val)), self, val)
             }
             _ => Err(NumpyDateTimeError::UnsupportedUnit(self)),
+        };
+        match datetime {
+            Ok(dt) => match dt.year() {
+                0..=9999 => Ok(NumpyDatetime64Repr { dt, opts }),
+                _ => Err(NumpyDateTimeError::Unrepresentable { unit: self, val }),
+            },
+            Err(err) => Err(err),
         }
-        .map(|dt| NumpyDatetime64Repr { dt, opts })
     }
 }
 
@@ -1374,49 +1371,54 @@ pub(crate) struct NumpyDatetime64 {
     value: i64,
 }
 
-macro_rules! forward_inner {
-    ($meth: ident, $ty: ident) => {
-        fn $meth(&self) -> $ty {
-            debug_assert!(self.dt.$meth() >= 0);
-            #[allow(clippy::cast_sign_loss)]
-            let ret = self.dt.$meth() as $ty; // stmt_expr_attributes
-            ret
-        }
-    };
-}
-
 struct NumpyDatetime64Repr {
     dt: DateTime,
     opts: Opt,
 }
 
-impl DateTimeLike for NumpyDatetime64Repr {
-    forward_inner!(year, i32);
-    forward_inner!(month, u8);
-    forward_inner!(day, u8);
-    forward_inner!(hour, u8);
-    forward_inner!(minute, u8);
-    forward_inner!(second, u8);
-
-    fn nanosecond(&self) -> u32 {
-        debug_assert!(self.dt.subsec_nanosecond() >= 0);
-        self.dt.subsec_nanosecond().cast_unsigned()
+fn write_numpy_datetime<B>(dt: &DateTime, opts: Opt, buf: &mut B)
+where
+    B: ?Sized + WriteExt + bytes::BufMut,
+{
+    {
+        let year = dt.year() as u32;
+        if year < 1000 {
+            cold_path!();
+            // date-fullyear   = 4DIGIT
+            buf.put_u8(b'0');
+            if year < 100 {
+                buf.put_u8(b'0');
+            }
+            if year < 10 {
+                buf.put_u8(b'0');
+            }
+        }
+        write_integer_u32(buf, year);
     }
-
-    fn microsecond(&self) -> u32 {
-        self.nanosecond() / 1_000
+    buf.put_u8(b'-');
+    write_double_digit!(buf, dt.month() as u32);
+    buf.put_u8(b'-');
+    write_double_digit!(buf, dt.day() as u32);
+    buf.put_u8(b'T');
+    write_double_digit!(buf, dt.hour() as u32);
+    buf.put_u8(b':');
+    write_double_digit!(buf, dt.minute() as u32);
+    buf.put_u8(b':');
+    write_double_digit!(buf, dt.second() as u32);
+    if opt_disabled!(opts, OMIT_MICROSECONDS) {
+        let microsecond = dt.subsec_nanosecond().cast_unsigned() / 1_000;
+        if microsecond != 0 {
+            buf.put_u8(b'.');
+            write_triple_digit!(buf, microsecond / 1_000);
+            write_triple_digit!(buf, microsecond % 1_000);
+        }
     }
-
-    fn has_tz(&self) -> bool {
-        false
-    }
-
-    fn slow_offset(&self) -> Result<Offset, DateTimeError> {
-        unreachable!()
-    }
-
-    fn offset(&self) -> Result<Offset, DateTimeError> {
-        Ok(Offset::default())
+    if opt_enabled!(opts, NAIVE_UTC) {
+        if opt_enabled!(opts, UTC_Z) {
+            buf.put_u8(b'Z');
+        } else {
+            buf.put_slice(b"+00:00");
+        }
     }
 }
 
@@ -1427,7 +1429,7 @@ impl Serialize for NumpyDatetime64Repr {
         S: Serializer,
     {
         let mut buf = SmallFixedBuffer::new();
-        let _ = self.write_buf(&mut buf, self.opts);
+        write_numpy_datetime(&self.dt, self.opts, &mut buf);
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

@@ -2,8 +2,8 @@
 // Copyright ijl (2018-2026)
 
 use crate::ffi::{
-    PyBoolRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef, PyStrRef,
-    PyStrSubclassRef, PyUuidRef,
+    PyBoolRef, PyDateRef, PyDateTimeRef, PyDictRef, PyFloatRef, PyFragmentRef, PyIntRef, PyListRef,
+    PyStrRef, PyStrSubclassRef, PyTimeRef, PyUuidRef,
 };
 use crate::opt::{APPEND_NEWLINE, INDENT_2, Opt};
 use crate::serialize::obtype::{ObType, pyobject_to_obtype};
@@ -81,15 +81,20 @@ impl Serialize for PyObjectSerializer {
                 ObType::None => NoneSerializer::new().serialize(serializer),
                 ObType::Float => FloatSerializer::new(PyFloatRef::from_ptr_unchecked(self.ptr))
                     .serialize(serializer),
-                ObType::Bool => {
-                    BoolSerializer::new(unsafe { PyBoolRef::from_ptr_unchecked(self.ptr) })
+                ObType::Bool => BoolSerializer::new(PyBoolRef::from_ptr_unchecked(self.ptr))
+                    .serialize(serializer),
+                ObType::Datetime => DateTime::new(
+                    PyDateTimeRef::from_ptr_unchecked(self.ptr),
+                    self.state.opts(),
+                )
+                .serialize(serializer),
+                ObType::Date => {
+                    Date::new(PyDateRef::from_ptr_unchecked(self.ptr)).serialize(serializer)
+                }
+                ObType::Time => {
+                    Time::new(PyTimeRef::from_ptr_unchecked(self.ptr), self.state.opts())
                         .serialize(serializer)
                 }
-                ObType::Datetime => {
-                    DateTime::new(self.ptr, self.state.opts()).serialize(serializer)
-                }
-                ObType::Date => Date::new(self.ptr).serialize(serializer),
-                ObType::Time => Time::new(self.ptr, self.state.opts()).serialize(serializer),
                 ObType::Uuid => {
                     UUID::new(PyUuidRef::from_ptr_unchecked(self.ptr)).serialize(serializer)
                 }

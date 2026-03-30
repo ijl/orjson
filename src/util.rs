@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2019-2026), Marc Mueller (2023)
+// Copyright ijl (2019-2026), Ben Sully (2021), Marc Mueller (2023)
 
 pub(crate) const INVALID_STR: &str = "str is not valid UTF-8: surrogates not allowed";
 
@@ -154,26 +154,6 @@ macro_rules! ffi {
     };
 }
 
-#[cfg(CPython)]
-macro_rules! call_method {
-    ($obj1:expr, $obj2:expr) => {
-        unsafe { crate::ffi::PyObject_CallMethodNoArgs($obj1, $obj2) }
-    };
-    ($obj1:expr, $obj2:expr, $obj3:expr) => {
-        unsafe { crate::ffi::PyObject_CallMethodOneArg($obj1, $obj2, $obj3) }
-    };
-}
-
-#[cfg(not(CPython))]
-macro_rules! call_method {
-    ($obj1:expr, $obj2:expr) => {
-        unsafe { crate::ffi::PyObject_CallMethodObjArgs($obj1, $obj2) }
-    };
-    ($obj1:expr, $obj2:expr, $obj3:expr) => {
-        unsafe { crate::ffi::PyObject_CallMethodObjArgs($obj1, $obj2, $obj3) }
-    };
-}
-
 #[cfg(all(CPython, Py_3_13))]
 macro_rules! pydict_contains {
     ($obj1:expr, $obj2:expr) => {
@@ -292,4 +272,43 @@ pub(crate) fn usize_to_isize(val: usize) -> isize {
 pub(crate) fn isize_to_usize(val: isize) -> usize {
     debug_assert!(val >= 0);
     val.cast_unsigned()
+}
+
+macro_rules! write_double_digit {
+    ($buf:ident, $value:expr) => {
+        if $value < 10 {
+            $buf.put_u8(b'0');
+        }
+        crate::serialize::writer::write_integer_u32($buf, $value);
+    };
+}
+
+macro_rules! write_triple_digit {
+    ($buf:ident, $value:expr) => {
+        if $value < 100 {
+            $buf.put_u8(b'0');
+        }
+        if $value < 10 {
+            $buf.put_u8(b'0');
+        }
+        crate::serialize::writer::write_integer_u32($buf, $value);
+    };
+}
+
+macro_rules! write_microsecond {
+    ($buf:ident, $microsecond:expr) => {
+        unsafe {
+            if $microsecond != 0 {
+                $buf.put_u8(b'.');
+                match $microsecond {
+                    0..=9 => $buf.put_slice(b"00000"),
+                    10..=99 => $buf.put_slice(b"0000"),
+                    100..=999 => $buf.put_slice(b"000"),
+                    1000..=9999 => $buf.put_slice(b"00"),
+                    _ => {}
+                }
+                crate::serialize::writer::write_integer_u32($buf, $microsecond);
+            }
+        }
+    };
 }

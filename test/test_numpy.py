@@ -222,6 +222,20 @@ class TestNumpy:
             == b"[true,false,false,true]"
         )
 
+    def test_numpy_array_datetime_min_invalid(self):
+        """
+        numpy.datetime64 min range invalid
+        """
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(numpy.datetime64("-1"), option=orjson.OPT_SERIALIZE_NUMPY)
+
+    def test_numpy_array_datetime_max_invalid(self):
+        """
+        numpy.datetime64 max range invalid
+        """
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(numpy.datetime64("10000"), option=orjson.OPT_SERIALIZE_NUMPY)
+
     def test_numpy_array_d1_datetime64_years(self):
         assert (
             orjson.dumps(

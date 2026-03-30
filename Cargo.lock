@@ -147,7 +147,6 @@ dependencies = [
  "cc",
  "encoding_rs",
  "half",
- "itoa",
  "itoap",
  "jiff",
  "once_cell",
