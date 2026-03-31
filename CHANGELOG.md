@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 3.11.8 - 2026-03-31
+
+### Changed
+
+- Build and compatibility improvements.
+
+
 ## 3.11.7 - 2026-02-02
 
 ### Changed

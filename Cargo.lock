@@ -122,7 +122,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "orjson"
-version = "3.11.7"
+version = "3.11.8"
 dependencies = [
  "associative-cache",
  "bytecount",
