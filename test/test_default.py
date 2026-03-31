@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
-# Copyright ijl (2019-2025), Rami Chowdhury (2020), Marc Mueller (2023), Jack Amadeo (2023)
+# Copyright ijl (2019-2026), Rami Chowdhury (2020), Marc Mueller (2023), Jack Amadeo (2023)
 
 import datetime
 import sys
@@ -213,7 +213,7 @@ class TestType:
         dumps() default lambda
         """
         ref = Custom()
-        assert orjson.dumps(ref, default=lambda x: str(x)) == b'"%s"' % str(ref).encode(
+        assert orjson.dumps(ref, default=str) == b'"%s"' % str(ref).encode(
             "utf-8",
         )
 
@@ -322,7 +322,7 @@ class TestType:
         orjson.dumps(
             ref,
             option=orjson.OPT_PASSTHROUGH_DATETIME,
-            default=lambda val: str(val),
+            default=str,
         )
         if SUPPORTS_GETREFCOUNT:
             assert sys.getrefcount(ref) == refcount

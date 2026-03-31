@@ -3,8 +3,8 @@
 
 use super::item::ItemType;
 use crate::ffi::{
-    NPY_ARRAY_C_CONTIGUOUS, NPY_ARRAY_NOTSWAPPED, NumpyDatetimeUnit, PyArrayInterface, PyCapsule,
-    PyObject,
+    NPY_ARRAY_C_CONTIGUOUS, NPY_ARRAY_NOTSWAPPED, NumpyDatetimeUnit, Py_DECREF, PyArrayInterface,
+    PyCapsule, PyObject, PyObject_GetAttr,
 };
 use crate::opt::Opt;
 use crate::typeref::ARRAY_STRUCT_STR;
@@ -47,7 +47,7 @@ impl NumpyArray {
     #[inline(never)]
     #[cfg_attr(feature = "optimize", optimize(size))]
     pub fn new(ptr: *mut PyObject, opts: Opt) -> Result<Self, PyArrayError> {
-        let capsule = ffi!(PyObject_GetAttr(ptr, ARRAY_STRUCT_STR));
+        let capsule = unsafe { PyObject_GetAttr(ptr, ARRAY_STRUCT_STR) };
         debug_assert!(!capsule.is_null());
         let array = unsafe {
             (*capsule.cast::<PyCapsule>())
@@ -56,25 +56,35 @@ impl NumpyArray {
         };
         debug_assert!(!array.is_null());
         if unsafe { (*array).two != 2 } {
-            ffi!(Py_DECREF(capsule));
+            unsafe {
+                Py_DECREF(capsule);
+            }
             Err(PyArrayError::Malformed)
         } else if unsafe { (*array).flags } & NPY_ARRAY_C_CONTIGUOUS != NPY_ARRAY_C_CONTIGUOUS {
-            ffi!(Py_DECREF(capsule));
+            unsafe {
+                Py_DECREF(capsule);
+            }
             Err(PyArrayError::NotContiguous)
         } else if unsafe { (*array).flags } & NPY_ARRAY_NOTSWAPPED != NPY_ARRAY_NOTSWAPPED {
-            ffi!(Py_DECREF(capsule));
+            unsafe {
+                Py_DECREF(capsule);
+            }
             Err(PyArrayError::NotNativeEndian)
         } else {
             debug_assert!(unsafe { (*array).nd >= 0 });
             #[allow(clippy::cast_sign_loss)]
             let num_dimensions = unsafe { (*array).nd as usize };
             if num_dimensions == 0 {
-                ffi!(Py_DECREF(capsule));
+                unsafe {
+                    Py_DECREF(capsule);
+                }
                 return Err(PyArrayError::UnsupportedDataType);
             }
             match ItemType::find(array, ptr) {
                 None => {
-                    ffi!(Py_DECREF(capsule));
+                    unsafe {
+                        Py_DECREF(capsule);
+                    }
                     Err(PyArrayError::UnsupportedDataType)
                 }
                 Some(kind) => {
@@ -167,8 +177,10 @@ impl NumpyArray {
 impl Drop for NumpyArray {
     fn drop(&mut self) {
         if self.depth == 0 {
-            ffi!(Py_DECREF(self.array.cast::<PyObject>()));
-            ffi!(Py_DECREF(self.capsule.cast::<PyObject>()));
+            unsafe {
+                Py_DECREF(self.array.cast::<PyObject>());
+                Py_DECREF(self.capsule.cast::<PyObject>());
+            };
         }
     }
 }

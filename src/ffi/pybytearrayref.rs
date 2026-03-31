@@ -25,7 +25,7 @@ impl PyByteArrayRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyByteArrayRefError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == &raw mut crate::ffi::PyByteArray_Type {
+            if crate::ffi::PyObject_Type(ptr) == &raw mut crate::ffi::PyByteArray_Type {
                 Ok(Self {
                     ptr: core::ptr::NonNull::new_unchecked(ptr),
                 })

@@ -1077,7 +1077,7 @@ The recommended build command is:
 maturin build --release --strip
 ```
 
-The project's own CI tests against `nightly-2026-01-28` and stable 1.89. It
+The project's own CI tests against `nightly-2026-03-28` and stable 1.89. It
 is prudent to pin the nightly version because that channel can introduce
 breaking changes. There is a significant performance benefit to using
 nightly.

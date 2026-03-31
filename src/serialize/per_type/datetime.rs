@@ -3,9 +3,9 @@
 
 use crate::ffi::{PyDateRef, PyDateTimeRef, PyTimeRef};
 use crate::opt::Opt;
-use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::datetime::{write_date, write_datetime, write_time};
 use crate::serialize::error::SerializeError;
+use crate::serialize::writer::SmallFixedBuffer;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]

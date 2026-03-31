@@ -36,7 +36,7 @@ impl Serialize for DataclassGenericSerializer<'_> {
             err!(SerializeError::RecursionLimit)
         }
         let dict = ffi!(PyObject_GetAttr(self.previous.ptr, DICT_STR));
-        let ob_type = ob_type!(self.previous.ptr);
+        let ob_type = unsafe { crate::ffi::PyObject_Type(self.previous.ptr) };
         if dict.is_null() {
             cold_path!();
             ffi!(PyErr_Clear());
@@ -102,26 +102,30 @@ impl Serialize for DataclassFastSerializer {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(
-            self.ptr,
-            &raw mut pos,
-            &raw mut next_key,
-            &raw mut next_value
-        );
+        unsafe {
+            crate::ffi::PyDict_Next(
+                self.ptr,
+                &raw mut pos,
+                &raw mut next_key,
+                &raw mut next_value,
+            );
+        }
 
         for _ in 0..len {
             let key = next_key;
             let value = next_value;
 
-            pydict_next!(
-                self.ptr,
-                &raw mut pos,
-                &raw mut next_key,
-                &raw mut next_value
-            );
+            unsafe {
+                crate::ffi::PyDict_Next(
+                    self.ptr,
+                    &raw mut pos,
+                    &raw mut next_key,
+                    &raw mut next_value,
+                );
+            }
 
             let key_as_str = {
-                let key_ob_type = ob_type!(key);
+                let key_ob_type = unsafe { crate::ffi::PyObject_Type(key) };
                 if !is_class_by_type!(key_ob_type, STR_TYPE) {
                     cold_path!();
                     err!(SerializeError::KeyMustBeStr)
@@ -184,13 +188,21 @@ impl Serialize for DataclassFallbackSerializer {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(fields, &raw mut pos, &raw mut next_key, &raw mut next_value);
+        unsafe {
+            crate::ffi::PyDict_Next(fields, &raw mut pos, &raw mut next_key, &raw mut next_value);
+        }
 
         for _ in 0..len {
             let attr = next_key;
             let field = next_value;
-
-            pydict_next!(fields, &raw mut pos, &raw mut next_key, &raw mut next_value);
+            unsafe {
+                crate::ffi::PyDict_Next(
+                    fields,
+                    &raw mut pos,
+                    &raw mut next_key,
+                    &raw mut next_value,
+                );
+            }
 
             let field_type = ffi!(PyObject_GetAttr(field, FIELD_TYPE_STR));
             debug_assert!(ffi!(Py_REFCNT(field_type)) >= 2);

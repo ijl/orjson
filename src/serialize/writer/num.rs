@@ -55,7 +55,7 @@ where
 {
     if val.is_infinite() || val.is_nan() {
         cold_path!();
-        buf.put_slice(b"null");
+        buf.put_null();
     } else {
         write_finite_float(buf, val)
     }
@@ -68,7 +68,7 @@ where
 {
     if val.is_infinite() || val.is_nan() {
         cold_path!();
-        buf.put_slice(b"null");
+        buf.put_null();
     } else {
         write_finite_float(buf, val)
     }
@@ -80,8 +80,7 @@ where
 {
     unsafe {
         debug_assert!(buf.remaining_mut() >= 40);
-        let buffer =
-            unsafe { core::mem::transmute::<*mut u8, &mut zmij::Buffer>(buf.as_mut_buffer_ptr()) };
+        let buffer = &mut *buf.as_mut_buffer_ptr().cast::<zmij::Buffer>();
         let res = buffer.format_finite(val);
         buf.advance_mut(res.len());
     }

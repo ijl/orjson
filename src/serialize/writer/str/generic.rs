@@ -4,7 +4,6 @@
 use core::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 use core::simd::u8x16;
 
-#[inline(never)]
 #[cfg_attr(target_arch = "aarch64", target_feature(enable = "neon"))]
 pub(crate) unsafe fn format_escaped_str_impl_generic_128(
     odst: *mut u8,

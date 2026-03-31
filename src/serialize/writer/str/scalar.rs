@@ -1,23 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2024-2025)
+// Copyright ijl (2024-2026)
 
 macro_rules! impl_format_scalar {
     ($dst:expr, $src:expr, $value_len:expr) => {
-        unsafe {
-            for _ in 0..$value_len {
-                core::ptr::write($dst, *($src));
-                $src = $src.add(1);
-                $dst = $dst.add(1);
-                if *super::escape::NEED_ESCAPED.get_unchecked(*($src.sub(1)) as usize) != 0 {
-                    $dst = $dst.sub(1);
-                    write_escape!(*($src.sub(1)), $dst);
-                }
+        for _ in 0..$value_len {
+            core::ptr::write($dst, *($src));
+            $src = $src.add(1);
+            $dst = $dst.add(1);
+            if *super::escape::NEED_ESCAPED.get_unchecked(*($src.sub(1)) as usize) != 0 {
+                $dst = $dst.sub(1);
+                write_escape!(*($src.sub(1)), $dst);
             }
         }
     };
 }
 
-#[inline(never)]
 #[cfg(all(not(target_arch = "x86_64"), not(feature = "generic_simd")))]
 pub(crate) unsafe fn format_escaped_str_scalar(
     odst: *mut u8,

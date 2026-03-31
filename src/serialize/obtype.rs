@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
-// Copyright ijl (2020-2025), Aviram Hassan (2020)
+// Copyright ijl (2020-2026), Aviram Hassan (2020)
 
+use crate::ffi::PyType_GetFlags;
 use crate::opt::{
     Opt, PASSTHROUGH_DATACLASS, PASSTHROUGH_DATETIME, PASSTHROUGH_SUBCLASS, SERIALIZE_NUMPY,
 };
@@ -34,7 +35,7 @@ pub(crate) enum ObType {
 }
 
 pub(crate) fn pyobject_to_obtype(obj: *mut crate::ffi::PyObject, opts: Opt) -> ObType {
-    let ob_type = ob_type!(obj);
+    let ob_type = unsafe { crate::ffi::PyObject_Type(obj) };
     if is_class_by_type!(ob_type, STR_TYPE) {
         ObType::Str
     } else if is_class_by_type!(ob_type, INT_TYPE) {
@@ -79,7 +80,7 @@ pub(crate) fn pyobject_to_obtype_unlikely(
         }
     }
 
-    let tp_flags = tp_flags!(ob_type);
+    let tp_flags = unsafe { PyType_GetFlags(ob_type) };
 
     if opt_disabled!(opts, PASSTHROUGH_SUBCLASS) {
         if is_subclass_by_flag!(tp_flags, Py_TPFLAGS_UNICODE_SUBCLASS) {

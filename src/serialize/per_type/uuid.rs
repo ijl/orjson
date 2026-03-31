@@ -2,7 +2,7 @@
 // Copyright ijl (2018-2026)
 
 use crate::ffi::PyUuidRef;
-use crate::serialize::buffer::SmallFixedBuffer;
+use crate::serialize::writer::SmallFixedBuffer;
 use serde::ser::{Serialize, Serializer};
 
 #[repr(transparent)]

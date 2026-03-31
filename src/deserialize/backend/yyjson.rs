@@ -7,7 +7,10 @@ use super::ffi::{
 };
 use crate::deserialize::DeserializeError;
 use crate::deserialize::pyobject::get_unicode_key;
-use crate::ffi::{PyBoolRef, PyDictRef, PyFloatRef, PyIntRef, PyListRef, PyNoneRef, PyStrRef};
+use crate::ffi::{
+    PyBoolRef, PyDictRef, PyFloatRef, PyIntRef, PyListRef, PyMem_Free, PyMem_Malloc, PyNoneRef,
+    PyStrRef,
+};
 use core::ffi::c_char;
 use core::ptr::{NonNull, null, null_mut};
 use std::borrow::Cow;
@@ -70,7 +73,7 @@ pub(crate) fn deserialize(
 ) -> Result<NonNull<crate::ffi::PyObject>, DeserializeError<'static>> {
     assume!(!data.is_empty());
     let buffer_capacity = buffer_capacity_to_allocate(data.len());
-    let buffer_ptr = ffi!(PyMem_Malloc(buffer_capacity));
+    let buffer_ptr = unsafe { PyMem_Malloc(buffer_capacity) };
     if buffer_ptr.is_null() {
         return Err(DeserializeError::from_yyjson(
             Cow::Borrowed("Not enough memory to allocate buffer for parsing"),
@@ -103,7 +106,9 @@ pub(crate) fn deserialize(
         )
     };
     if doc.is_null() {
-        ffi!(PyMem_Free(buffer_ptr));
+        unsafe {
+            PyMem_Free(buffer_ptr);
+        }
         let msg: Cow<str> = unsafe { core::ffi::CStr::from_ptr(err.msg).to_string_lossy() };
         #[allow(clippy::cast_possible_wrap)]
         let pos = err.pos as i64;
@@ -137,7 +142,9 @@ pub(crate) fn deserialize(
             pyval.as_non_null_ptr()
         }
     };
-    ffi!(PyMem_Free(buffer_ptr));
+    unsafe {
+        PyMem_Free(buffer_ptr);
+    }
     Ok(pyval)
 }
 

@@ -25,7 +25,7 @@ impl PyBytesRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyBytesRefError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == crate::typeref::BYTES_TYPE {
+            if crate::ffi::PyObject_Type(ptr) == crate::typeref::BYTES_TYPE {
                 Ok(Self {
                     ptr: core::ptr::NonNull::new_unchecked(ptr),
                 })

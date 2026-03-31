@@ -14,8 +14,11 @@ fn main() {
     match python_config.implementation {
         pyo3_build_config::PythonImplementation::CPython => {
             println!("cargo:rustc-cfg=CPython");
+            if python_config.abi3 {
+                println!("cargo:rustc-cfg=Py_LIMITED_ABI");
+            }
             #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-            if is_64_bit_python {
+            if is_64_bit_python && !python_config.abi3 {
                 println!("cargo:rustc-cfg=feature=\"inline_int\"");
                 #[cfg(target_endian = "little")]
                 println!("cargo:rustc-cfg=feature=\"inline_str\"");
@@ -47,6 +50,7 @@ fn main() {
     println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_15)");
     println!("cargo:rustc-check-cfg=cfg(Py_GIL_DISABLED)");
+    println!("cargo:rustc-check-cfg=cfg(Py_LIMITED_ABI)");
     println!("cargo:rustc-check-cfg=cfg(PyPy)");
 
     #[cfg(all(target_arch = "x86_64", not(target_os = "macos")))]
@@ -59,7 +63,9 @@ fn main() {
         println!("cargo:rustc-cfg=feature=\"generic_simd\"");
     }
 
-    if version_check::supports_feature("cold_path").unwrap_or(false) {
+    if version_check::is_min_version("1.95.0")
+        .unwrap_or(version_check::supports_feature("cold_path").unwrap_or(false))
+    {
         println!("cargo:rustc-cfg=feature=\"cold_path\"");
     }
 

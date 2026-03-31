@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 // Copyright ijl (2022-2026), Ben Sully (2021)
 
-use crate::ffi::{PyListRef, PyObject, PyStrRef, PyTupleRef};
+use crate::ffi::{Py_DECREF, PyListRef, PyObject, PyObject_GetAttr, PyStrRef, PyTupleRef};
 use crate::opt::Opt;
 use crate::typeref::{DESCR_STR, DTYPE_STR};
 use jiff::Timestamp;
@@ -85,8 +85,8 @@ impl NumpyDatetimeUnit {
     #[cold]
     #[inline(never)]
     pub fn from_pyobject(ptr: *mut PyObject) -> Self {
-        let dtype = ffi!(PyObject_GetAttr(ptr, DTYPE_STR));
-        let descr = ffi!(PyObject_GetAttr(dtype, DESCR_STR));
+        let dtype = unsafe { PyObject_GetAttr(ptr, DTYPE_STR) };
+        let descr = unsafe { PyObject_GetAttr(dtype, DESCR_STR) };
         let el0 = unsafe { PyListRef::from_ptr_unchecked(descr).get(0) };
         let descr_str = unsafe { PyTupleRef::from_ptr_unchecked(el0).get(1) };
         match PyStrRef::from_ptr(descr_str) {
@@ -115,8 +115,10 @@ impl NumpyDatetimeUnit {
                             "generic" => Self::Generic,
                             _ => unreachable!(),
                         };
-                        ffi!(Py_DECREF(dtype));
-                        ffi!(Py_DECREF(descr));
+                        unsafe {
+                            Py_DECREF(dtype);
+                            Py_DECREF(descr);
+                        };
                         ret
                     }
                     None => Self::NaT,

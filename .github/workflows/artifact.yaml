@@ -7,7 +7,7 @@ env:
   FORCE_COLOR: "1"
   ORJSON_BUILD_FREETHREADED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2026-01-28"
+  RUST_TOOLCHAIN: "nightly-2026-03-28"
   RUST_TOOLCHAIN_STABLE: "1.89"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
   UNSAFE_PYO3_SKIP_VERSION_CHECK: "1"
@@ -35,7 +35,7 @@ jobs:
     - name: Cargo.toml and pyproject.toml version must match
       run: ./script/check-version
 
-    - run: python3 -m pip install --user --upgrade pip "maturin>=1.10,<2" wheel
+    - run: python3 -m pip install --user --upgrade pip "maturin>=1.12,<2" wheel
 
     - name: Vendor dependencies
       run: |
@@ -63,7 +63,7 @@ jobs:
     - run: ./integration/run typestubs
 
     - name: Store sdist
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_sdist
         path: dist
@@ -82,6 +82,8 @@ jobs:
       fail-fast: false
       matrix:
         python: [
+          { interpreter: 'python3.15', compatibility: "manylinux_2_39", publish: false },
+          { interpreter: 'python3.15t', compatibility: "manylinux_2_39", publish: false },
           { interpreter: 'python3.14', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.13', compatibility: "manylinux_2_17", publish: true },
           { interpreter: 'python3.12', compatibility: "manylinux_2_17", publish: true },
@@ -118,7 +120,7 @@ jobs:
 
       - name: Store wheels
         if: matrix.python.publish == true
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: "orjson_manylinux_${{ matrix.arch.arch }}_${{ matrix.python.interpreter }}_${{ matrix.python.compatibility }}"
           path: dist
@@ -213,7 +215,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: "orjson_manylinux_${{ matrix.target.arch }}_${{ matrix.python.interpreter }}"
         path: dist
@@ -252,6 +254,7 @@ jobs:
         pytest -v test
 
   musllinux_amd64:
+    name: "musllinux_amd64_python${{ matrix.python.version }}"
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:
@@ -298,7 +301,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.01.28-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.03.27-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -317,7 +320,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_musllinux_${{ matrix.platform.arch }}_${{ matrix.python.version }}
         path: dist
@@ -327,6 +330,7 @@ jobs:
         compression-level: 0
 
   musllinux_aarch64:
+    name: "musllinux_aarch64_python${{ matrix.python.version }}"
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     strategy:
@@ -373,7 +377,7 @@ jobs:
     - name: Test
       uses: addnab/docker-run-action@v3
       with:
-        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.01.28-1"
+        image: "quay.io/pypa/musllinux_1_2_${{ matrix.platform.arch }}:2026.03.27-1"
         options: -v ${{ github.workspace }}:/io -w /io
         run: |
           apk add tzdata
@@ -389,7 +393,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_musllinux_${{ matrix.platform.arch }}_${{ matrix.python.version }}
         path: dist
@@ -399,6 +403,7 @@ jobs:
         compression-level: 0
 
   macos_aarch64:
+    name: "macos_aarch64_python${{ matrix.python.version }}"
     runs-on: macos-26
     timeout-minutes: 10
     strategy:
@@ -442,7 +447,7 @@ jobs:
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
-        uv pip install --upgrade "maturin>=1.10,<2" -r test/requirements.txt -r integration/requirements.txt
+        uv pip install --upgrade "maturin>=1.12,<2" -r test/requirements.txt -r integration/requirements.txt
 
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -471,7 +476,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_macos_aarch64_${{ matrix.python.version }}
         path: target/wheels
@@ -481,6 +486,7 @@ jobs:
         compression-level: 0
 
   macos_universal2_aarch64:
+    name: "macos_universal2_python${{ matrix.python.version }}"
     runs-on: macos-26
     timeout-minutes: 10
     strategy:
@@ -527,7 +533,7 @@ jobs:
 
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv venv --python python${{ matrix.python.version }}
-        uv pip install --upgrade "maturin>=1.10,<2" -r test/requirements.txt -r integration/requirements.txt
+        uv pip install --upgrade "maturin>=1.12,<2" -r test/requirements.txt -r integration/requirements.txt
 
         mkdir .cargo
         cp ci/config.toml .cargo/config.toml
@@ -556,7 +562,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_universal2_aarch64_${{ matrix.python.version }}
         path: target/wheels
@@ -566,6 +572,7 @@ jobs:
         compression-level: 0
 
   windows_amd64:
+    name: "windows_amd64_python${{ matrix.python.version }}"
     runs-on: windows-2025
     timeout-minutes: 10
     strategy:
@@ -610,7 +617,7 @@ jobs:
       run: |
         cargo fetch --target "${{ matrix.platform.target }}" &
 
-        python.exe -m pip install --upgrade pip "maturin>=1.10,<2" wheel
+        python.exe -m pip install --upgrade pip "maturin>=1.12,<2" wheel
         python.exe -m pip install -r test\requirements.txt
 
         mkdir .cargo
@@ -627,7 +634,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_windows_amd64_${{ matrix.platform.arch }}_${{ matrix.python.version }}
         path: target\wheels
@@ -637,6 +644,7 @@ jobs:
         compression-level: 0
 
   windows_aarch64:
+    name: "windows_aarch64_python${{ matrix.python.version }}"
     runs-on: windows-11-arm
     timeout-minutes: 10
     strategy:
@@ -680,7 +688,7 @@ jobs:
         cargo fetch --target "$" &
 
         python.exe -m sysconfig
-        python.exe -m pip install --upgrade pip "maturin>=1.10,<2" wheel
+        python.exe -m pip install --upgrade pip "maturin>=1.12,<2" wheel
         python.exe -m pip install -r test\requirements.txt
 
         mkdir .cargo
@@ -697,7 +705,7 @@ jobs:
 
     - name: Store wheels
       if: matrix.python.publish == true
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: orjson_windows_aarch64_${{ matrix.python.version }}
         path: target\wheels
@@ -729,7 +737,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           path: dist/

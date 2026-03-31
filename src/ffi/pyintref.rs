@@ -2,7 +2,7 @@
 // Copyright ijl (2023-2026)
 
 #[allow(unused)]
-use super::Py_TPFLAGS_LONG_SUBCLASS;
+use super::{Py_TPFLAGS_LONG_SUBCLASS, PyType_GetFlags};
 use super::{PyLong_FromLongLong, PyLong_FromUnsignedLongLong, PyObject};
 use crate::opt::{MAX_OPT, Opt};
 
@@ -79,7 +79,7 @@ impl PyIntRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyIntError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == crate::typeref::INT_TYPE {
+            if crate::ffi::PyObject_Type(ptr) == crate::typeref::INT_TYPE {
                 Ok(Self {
                     ptr: core::ptr::NonNull::new_unchecked(ptr),
                 })
@@ -93,8 +93,11 @@ impl PyIntRef {
         unsafe {
             debug_assert!(!ptr.is_null());
             debug_assert!(
-                ob_type!(ptr) == crate::typeref::INT_TYPE
-                    || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_LONG_SUBCLASS)
+                crate::ffi::PyObject_Type(ptr) == crate::typeref::INT_TYPE
+                    || is_subclass_by_flag!(
+                        PyType_GetFlags(crate::ffi::PyObject_Type(ptr)),
+                        Py_TPFLAGS_LONG_SUBCLASS
+                    )
             );
             Self {
                 ptr: core::ptr::NonNull::new_unchecked(ptr),
@@ -188,7 +191,9 @@ impl PyIntRef {
             if ret == -1 {
                 cold_path!();
                 #[cfg(not(Py_3_13))]
-                ffi!(PyErr_Clear());
+                unsafe {
+                    crate::ffi::PyErr_Clear()
+                };
                 Err(PyIntError::Exceeds64Bit)
             } else {
                 Ok(buffer)
@@ -221,10 +226,10 @@ impl PyIntRef {
     #[cfg(not(feature = "inline_int"))]
     #[inline]
     pub unsafe fn as_i64(&self) -> Result<i64, PyIntError> {
-        let ival = ffi!(PyLong_AsLongLong(self.as_ptr()));
-        if ival == -1 && !ffi!(PyErr_Occurred()).is_null() {
+        let ival = unsafe { crate::ffi::PyLong_AsLongLong(self.as_ptr()) };
+        if ival == -1 && unsafe { !crate::ffi::PyErr_Occurred().is_null() } {
             cold_path!();
-            ffi!(PyErr_Clear());
+            unsafe { crate::ffi::PyErr_Clear() };
             Err(PyIntError::NotSigned)
         } else {
             Ok(ival)
@@ -234,8 +239,8 @@ impl PyIntRef {
     #[cfg(not(feature = "inline_int"))]
     #[inline]
     pub unsafe fn as_u64(&self) -> Result<u64, PyIntError> {
-        let uval = ffi!(PyLong_AsUnsignedLongLong(self.as_ptr()));
-        if uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null() {
+        let uval = unsafe { crate::ffi::PyLong_AsUnsignedLongLong(self.as_ptr()) };
+        if uval == u64::MAX && unsafe { !crate::ffi::PyErr_Occurred().is_null() } {
             cold_path!();
             Err(PyIntError::Exceeds64Bit)
         } else {

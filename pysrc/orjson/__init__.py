@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright ijl (2023)
+# Copyright ijl (2023-2026)
+
+"""
+Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy
+"""
 
 from .orjson import *
 from .orjson import __version__

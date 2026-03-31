@@ -6,7 +6,6 @@ use crate::ffi::{
     NumpyFloat64, NumpyInt8, NumpyInt16, NumpyInt32, NumpyInt64, NumpyUint8, NumpyUint16,
     NumpyUint32, NumpyUint64, PyTypeObject,
 };
-use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::error::SerializeError;
 use crate::serialize::numpy::{
     ItemType, NumpyArray, NumpyBoolArray, NumpyDatetime64Array, NumpyF16Array, NumpyF32Array,
@@ -16,6 +15,7 @@ use crate::serialize::numpy::{
 };
 use crate::serialize::per_type::{DefaultSerializer, ZeroListSerializer};
 use crate::serialize::serializer::PyObjectSerializer;
+use crate::serialize::writer::SmallFixedBuffer;
 use crate::typeref::{NUMPY_TYPES, load_numpy_types};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
@@ -548,7 +548,7 @@ impl Serialize for NumpyScalar {
         S: Serializer,
     {
         unsafe {
-            let ob_type = ob_type!(self.ptr);
+            let ob_type = crate::ffi::PyObject_Type(self.ptr);
             let scalar_types =
                 unsafe { NUMPY_TYPES.get_or_init(load_numpy_types).unwrap().as_ref() };
             if core::ptr::eq(ob_type, scalar_types.float64) {
@@ -733,7 +733,7 @@ impl Serialize for NumpyDatetime64Repr {
         S: Serializer,
     {
         let mut buf = SmallFixedBuffer::new();
-        write_numpy_datetime(&self, &mut buf);
+        write_numpy_datetime(self, &mut buf);
         serializer.collect_str(str_from_slice!(buf.as_ptr(), buf.len()))
     }
 }

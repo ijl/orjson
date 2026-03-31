@@ -9,41 +9,9 @@ macro_rules! is_type {
     };
 }
 
-#[cfg(CPython)]
-macro_rules! ob_type {
-    ($obj:expr) => {
-        unsafe { (*$obj).ob_type }
-    };
-}
-
-#[cfg(not(CPython))]
-macro_rules! ob_type {
-    ($obj:expr) => {
-        unsafe { crate::ffi::Py_TYPE($obj) }
-    };
-}
-
 macro_rules! is_class_by_type {
     ($ob_type:expr, $type_ptr:ident) => {
         unsafe { $ob_type == $type_ptr }
-    };
-}
-
-#[cfg(not(Py_GIL_DISABLED))]
-macro_rules! tp_flags {
-    ($ob_type:expr) => {
-        unsafe { (*$ob_type).tp_flags }
-    };
-}
-
-#[cfg(Py_GIL_DISABLED)]
-macro_rules! tp_flags {
-    ($ob_type:expr) => {
-        unsafe {
-            (*$ob_type)
-                .tp_flags
-                .load(core::sync::atomic::Ordering::Relaxed)
-        }
     };
 }
 
@@ -107,7 +75,6 @@ macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
             if crate::ffi::_Py_IsImmortal($op) == 0 {
-                debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
                 (*$op).ob_refcnt.ob_refcnt -= 1;
             }
         }
@@ -117,8 +84,7 @@ macro_rules! reverse_pydict_incref {
 #[cfg(Py_GIL_DISABLED)]
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
-        debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
-        ffi!(Py_DECREF($op))
+        unsafe { crate::ffi::Py_DECREF($op) }
     };
 }
 
@@ -126,7 +92,6 @@ macro_rules! reverse_pydict_incref {
 macro_rules! reverse_pydict_incref {
     ($op:expr) => {
         unsafe {
-            debug_assert!(ffi!(Py_REFCNT($op)) >= 2);
             (*$op).ob_refcnt -= 1;
         }
     };
@@ -207,42 +172,9 @@ macro_rules! use_immortal {
 macro_rules! use_immortal {
     ($op:expr) => {
         unsafe {
-            ffi!(Py_INCREF($op));
+            unsafe { crate::ffi::Py_INCREF($op) };
             $op
         }
-    };
-}
-
-#[cfg(all(CPython, not(Py_3_13)))]
-macro_rules! pydict_next {
-    ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { crate::ffi::_PyDict_Next($obj1, $obj2, $obj3, $obj4, core::ptr::null_mut()) }
-    };
-}
-
-#[cfg(all(CPython, Py_3_13))]
-macro_rules! pydict_next {
-    ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { crate::ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
-    };
-}
-
-#[cfg(not(CPython))]
-macro_rules! pydict_next {
-    ($obj1:expr, $obj2:expr, $obj3:expr, $obj4:expr) => {
-        unsafe { crate::ffi::PyDict_Next($obj1, $obj2, $obj3, $obj4) }
-    };
-}
-
-macro_rules! reserve_minimum {
-    ($writer:expr) => {
-        $writer.reserve(128);
-    };
-}
-
-macro_rules! reserve_pretty {
-    ($writer:expr, $val:expr) => {
-        $writer.reserve($val + 32);
     };
 }
 

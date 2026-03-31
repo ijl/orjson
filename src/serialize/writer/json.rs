@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 // This is an adaptation of `src/value/ser.rs` from serde-json.
 
+use super::format_str::format_escaped_str;
 use crate::serialize::writer::WriteExt;
 use crate::serialize::writer::formatter::{CompactFormatter, Formatter, PrettyFormatter};
 use serde::ser::{self, Impossible, Serialize};
@@ -170,7 +171,7 @@ where
     #[inline(always)]
     fn serialize_unit_struct(self, name: &'static str) -> Result<()> {
         debug_assert!(name.len() <= 36);
-        reserve_minimum!(self.writer);
+        self.writer.reserve_minimum();
         unsafe {
             self.writer.put_u8(b'"');
             self.writer.put_slice(name.as_bytes());
@@ -559,108 +560,6 @@ where
         _len: usize,
     ) -> Result<Self::SerializeStructVariant> {
         unreachable!();
-    }
-}
-
-macro_rules! reserve_str {
-    ($writer:expr, $value:expr) => {
-        $writer.reserve($value.len() * 8 + 32);
-    };
-}
-
-#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-type StrFormatter = unsafe fn(*mut u8, *const u8, usize) -> usize;
-
-#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-static mut STR_FORMATTER_FN: StrFormatter =
-    crate::serialize::writer::str::format_escaped_str_impl_sse2_128;
-
-pub(crate) fn set_str_formatter_fn() {
-    unsafe {
-        #[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-        if std::is_x86_feature_detected!("avx512vl") {
-            STR_FORMATTER_FN = crate::serialize::writer::str::format_escaped_str_impl_512vl;
-        }
-    }
-}
-
-#[cfg(all(target_arch = "x86_64", not(feature = "avx512")))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str)
-where
-    W: ?Sized + WriteExt + bytes::BufMut,
-{
-    unsafe {
-        reserve_str!(writer, value);
-
-        let written = crate::serialize::writer::str::format_escaped_str_impl_sse2_128(
-            writer.as_mut_buffer_ptr(),
-            value.as_bytes().as_ptr(),
-            value.len(),
-        );
-
-        writer.advance_mut(written);
-    }
-}
-
-#[cfg(all(target_arch = "x86_64", feature = "avx512"))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str)
-where
-    W: ?Sized + WriteExt + bytes::BufMut,
-{
-    unsafe {
-        reserve_str!(writer, value);
-
-        let written = STR_FORMATTER_FN(
-            writer.as_mut_buffer_ptr(),
-            value.as_bytes().as_ptr(),
-            value.len(),
-        );
-
-        writer.advance_mut(written);
-    }
-}
-
-#[cfg(all(
-    not(target_arch = "x86_64"),
-    not(feature = "avx512"),
-    feature = "generic_simd"
-))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str)
-where
-    W: ?Sized + WriteExt + bytes::BufMut,
-{
-    unsafe {
-        reserve_str!(writer, value);
-
-        let written = crate::serialize::writer::str::format_escaped_str_impl_generic_128(
-            writer.as_mut_buffer_ptr(),
-            value.as_bytes().as_ptr(),
-            value.len(),
-        );
-
-        writer.advance_mut(written);
-    }
-}
-
-#[cfg(all(not(target_arch = "x86_64"), not(feature = "generic_simd")))]
-#[inline(always)]
-fn format_escaped_str<W>(writer: &mut W, value: &str)
-where
-    W: ?Sized + WriteExt + bytes::BufMut,
-{
-    unsafe {
-        reserve_str!(writer, value);
-
-        let written = crate::serialize::writer::str::format_escaped_str_scalar(
-            writer.as_mut_buffer_ptr(),
-            value.as_bytes().as_ptr(),
-            value.len(),
-        );
-
-        writer.advance_mut(written);
     }
 }
 

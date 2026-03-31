@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2022-2025)
+// Copyright ijl (2022-2026)
 
 #[repr(C)]
 pub(crate) struct yyjson_alc {
@@ -22,6 +22,7 @@ pub(crate) struct yyjson_alc {
     pub ctx: *mut ::core::ffi::c_void,
 }
 
+#[allow(non_camel_case_types)]
 pub(crate) type yyjson_read_code = u32;
 pub(crate) const YYJSON_READ_SUCCESS: yyjson_read_code = 0;
 

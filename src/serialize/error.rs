@@ -67,8 +67,10 @@ impl core::fmt::Display for SerializeError {
                 write!(f, "{}", msg.as_str().unwrap())
             }
             SerializeError::UnsupportedType(ptr) => {
-                let name =
-                    unsafe { CStr::from_ptr((*ob_type!(ptr.as_ptr())).tp_name).to_string_lossy() };
+                let name = unsafe {
+                    CStr::from_ptr((*crate::ffi::PyObject_Type(ptr.as_ptr())).tp_name)
+                        .to_string_lossy()
+                };
                 write!(f, "Type is not JSON serializable: {name}")
             }
         }

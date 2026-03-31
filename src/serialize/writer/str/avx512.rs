@@ -6,7 +6,6 @@ use core::arch::x86_64::{
     _mm256_set1_epi8, _mm256_storeu_epi8,
 };
 
-#[inline(never)]
 #[target_feature(enable = "avx512f,avx512bw,avx512vl,bmi2")]
 pub(crate) unsafe fn format_escaped_str_impl_512vl(
     odst: *mut u8,

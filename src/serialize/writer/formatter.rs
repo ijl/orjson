@@ -21,11 +21,9 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            writer.put_slice(b"null");
-            Ok(())
-        }
+        writer.reserve_minimum();
+        writer.put_null();
+        Ok(())
     }
 
     #[inline]
@@ -33,10 +31,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_slice(if value { b"true" } else { b"false" });
-        }
+        writer.reserve_minimum();
+        writer.put_bool(value);
         Ok(())
     }
 
@@ -45,10 +41,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_integer_i32(writer, value);
-        }
+        writer.reserve_minimum();
+        write_integer_i32(writer, value);
         Ok(())
     }
 
@@ -57,10 +51,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_integer_i64(writer, value);
-        }
+        writer.reserve_minimum();
+        write_integer_i64(writer, value);
         Ok(())
     }
 
@@ -69,10 +61,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_integer_u32(writer, value);
-        }
+        writer.reserve_minimum();
+        write_integer_u32(writer, value);
         Ok(())
     }
 
@@ -81,10 +71,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_integer_u64(writer, value);
-        }
+        writer.reserve_minimum();
+        write_integer_u64(writer, value);
         Ok(())
     }
 
@@ -93,10 +81,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_float32(writer, value);
-        }
+        writer.reserve_minimum();
+        write_float32(writer, value);
         Ok(())
     }
 
@@ -105,10 +91,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        unsafe {
-            reserve_minimum!(writer);
-            write_float64(writer, value);
-        }
+        writer.reserve_minimum();
+        write_float64(writer, value);
         Ok(())
     }
 
@@ -117,10 +101,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_u8(b'[');
-        }
+        writer.reserve_minimum();
+        writer.put_u8(b'[');
         Ok(())
     }
 
@@ -130,9 +112,7 @@ pub(crate) trait Formatter {
         W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
-        unsafe {
-            writer.put_u8(b']');
-        }
+        writer.put_u8(b']');
         Ok(())
     }
 
@@ -143,7 +123,7 @@ pub(crate) trait Formatter {
     {
         debug_assert_has_capacity!(writer);
         if !first {
-            unsafe { writer.put_u8(b',') }
+            writer.put_u8(b',');
         }
         Ok(())
     }
@@ -161,10 +141,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_u8(b'{');
-        }
+        writer.reserve_minimum();
+        writer.put_u8(b'{');
         Ok(())
     }
 
@@ -173,10 +151,8 @@ pub(crate) trait Formatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_u8(b'}');
-        }
+        writer.reserve_minimum();
+        writer.put_u8(b'}');
         Ok(())
     }
 
@@ -187,9 +163,7 @@ pub(crate) trait Formatter {
     {
         debug_assert_has_capacity!(writer);
         if !first {
-            unsafe {
-                writer.put_u8(b',');
-            }
+            writer.put_u8(b',');
         }
         Ok(())
     }
@@ -208,9 +182,7 @@ pub(crate) trait Formatter {
         W: ?Sized + WriteExt + bytes::BufMut,
     {
         debug_assert_has_capacity!(writer);
-        unsafe {
-            writer.put_u8(b':');
-        }
+        writer.put_u8(b':');
         Ok(())
     }
 
@@ -250,10 +222,8 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent += 1;
         self.has_value = false;
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_u8(b'[');
-        }
+        writer.reserve_minimum();
+        writer.put_u8(b'[');
         Ok(())
     }
 
@@ -264,16 +234,14 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
-        reserve_pretty!(writer, num_spaces);
+        writer.reserve(num_spaces + 32);
 
-        unsafe {
-            if self.has_value {
-                writer.put_u8(b'\n');
-                writer.put_bytes(b' ', num_spaces);
-            }
-            writer.put_u8(b']');
-            Ok(())
+        if self.has_value {
+            writer.put_u8(b'\n');
+            writer.put_bytes(b' ', num_spaces);
         }
+        writer.put_u8(b']');
+        Ok(())
     }
 
     #[inline]
@@ -282,12 +250,10 @@ impl Formatter for PrettyFormatter {
         W: ?Sized + WriteExt + bytes::BufMut,
     {
         let num_spaces = self.current_indent * 2;
-        reserve_pretty!(writer, num_spaces);
+        writer.reserve(num_spaces + 32);
 
-        unsafe {
-            writer.put_slice(if first { b"\n" } else { b",\n" });
-            writer.put_bytes(b' ', num_spaces);
-        };
+        writer.put_slice(if first { b"\n" } else { b",\n" });
+        writer.put_bytes(b' ', num_spaces);
         Ok(())
     }
 
@@ -308,10 +274,8 @@ impl Formatter for PrettyFormatter {
         self.current_indent += 1;
         self.has_value = false;
 
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_u8(b'{');
-        }
+        writer.reserve_minimum();
+        writer.put_u8(b'{');
         Ok(())
     }
 
@@ -322,17 +286,15 @@ impl Formatter for PrettyFormatter {
     {
         self.current_indent -= 1;
         let num_spaces = self.current_indent * 2;
-        reserve_pretty!(writer, num_spaces);
+        writer.reserve(num_spaces + 32);
 
-        unsafe {
-            if self.has_value {
-                writer.put_u8(b'\n');
-                writer.put_bytes(b' ', num_spaces);
-            }
-
-            writer.put_u8(b'}');
-            Ok(())
+        if self.has_value {
+            writer.put_u8(b'\n');
+            writer.put_bytes(b' ', num_spaces);
         }
+
+        writer.put_u8(b'}');
+        Ok(())
     }
 
     #[inline]
@@ -341,11 +303,9 @@ impl Formatter for PrettyFormatter {
         W: ?Sized + WriteExt + bytes::BufMut,
     {
         let num_spaces = self.current_indent * 2;
-        reserve_pretty!(writer, num_spaces);
-        unsafe {
-            writer.put_slice(if first { b"\n" } else { b",\n" });
-            writer.put_bytes(b' ', num_spaces);
-        }
+        writer.reserve(num_spaces + 32);
+        writer.put_slice(if first { b"\n" } else { b",\n" });
+        writer.put_bytes(b' ', num_spaces);
         Ok(())
     }
 
@@ -354,10 +314,8 @@ impl Formatter for PrettyFormatter {
     where
         W: ?Sized + WriteExt + bytes::BufMut,
     {
-        reserve_minimum!(writer);
-        unsafe {
-            writer.put_slice(b": ");
-        }
+        writer.reserve_minimum();
+        writer.put_slice(b": ");
         Ok(())
     }
 

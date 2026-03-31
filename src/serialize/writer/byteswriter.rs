@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright ijl (2020-2025)
+// Copyright ijl (2020-2026)
 
 use crate::ffi::{PyBytes_FromStringAndSize, PyObject};
 use crate::util::usize_to_isize;
@@ -12,6 +12,8 @@ const BUFFER_LENGTH: usize = 1024;
 
 #[cfg(not(CPython))]
 const BUFFER_LENGTH: usize = 4096;
+
+const OVERALLOCATION: usize = 64;
 
 pub(crate) struct BytesWriter {
     cap: usize,
@@ -40,7 +42,9 @@ impl BytesWriter {
 
     #[cfg(CPython)]
     pub fn abort(&mut self) {
-        ffi!(Py_DECREF(self.bytes.cast::<PyObject>()));
+        unsafe {
+            crate::ffi::Py_DECREF(self.bytes.cast::<PyObject>());
+        }
     }
 
     #[cfg(not(CPython))]
@@ -160,7 +164,7 @@ unsafe impl BufMut for BytesWriter {
 
     #[inline]
     fn put_u8(&mut self, value: u8) {
-        debug_assert!(self.remaining_mut() > 1);
+        debug_assert!(self.remaining_mut() > 8);
         unsafe {
             core::ptr::write(self.buffer_ptr(), value);
             self.advance_mut(1);
@@ -170,6 +174,7 @@ unsafe impl BufMut for BytesWriter {
     #[inline]
     fn put_bytes(&mut self, val: u8, cnt: usize) {
         debug_assert!(self.remaining_mut() > cnt);
+        debug_assert!(self.remaining_mut() > 8);
         unsafe {
             core::ptr::write_bytes(self.buffer_ptr(), val, cnt);
             self.advance_mut(cnt);
@@ -178,25 +183,25 @@ unsafe impl BufMut for BytesWriter {
 
     #[inline]
     fn put_slice(&mut self, src: &[u8]) {
-        debug_assert!(self.remaining_mut() > src.len());
+        let len = src.len();
+        debug_assert!(self.remaining_mut() > len);
+        debug_assert!(self.remaining_mut() > 8);
         unsafe {
-            core::ptr::copy_nonoverlapping(src.as_ptr(), self.buffer_ptr(), src.len());
-            self.advance_mut(src.len());
+            core::ptr::copy_nonoverlapping(src.as_ptr(), self.buffer_ptr(), len);
+            self.advance_mut(len);
         }
     }
 }
 
 // hack based on saethlin's research and patch in https://github.com/serde-rs/json/issues/766
 pub(crate) trait WriteExt {
-    #[inline]
-    fn as_mut_buffer_ptr(&mut self) -> *mut u8 {
-        core::ptr::null_mut()
-    }
+    fn as_mut_buffer_ptr(&mut self) -> *mut u8;
 
-    #[inline]
-    fn reserve(&mut self, len: usize) {
-        let _ = len;
-    }
+    fn reserve(&mut self, len: usize);
+
+    fn reserve_minimum(&mut self);
+    fn put_bool(&mut self, val: bool);
+    fn put_null(&mut self);
 }
 
 impl WriteExt for &mut BytesWriter {
@@ -212,5 +217,50 @@ impl WriteExt for &mut BytesWriter {
             cold_path!();
             self.grow(end_length);
         }
+    }
+
+    #[inline]
+    fn reserve_minimum(&mut self) {
+        self.reserve(OVERALLOCATION * 2);
+    }
+
+    #[cfg(feature = "inline_int")]
+    #[inline]
+    fn put_bool(&mut self, val: bool) {
+        debug_assert!(self.cap - self.len > 8);
+        unsafe {
+            const TRUE: (u64, usize) = (u64::from_ne_bytes(*b"true0000"), 4);
+            const FALSE: (u64, usize) = (u64::from_ne_bytes(*b"false000"), 5);
+            let (pattern, len) = core::hint::select_unpredictable(val, TRUE, FALSE);
+            #[allow(clippy::cast_ptr_alignment)]
+            core::ptr::write(self.buffer_ptr().cast::<u64>(), pattern);
+            self.advance_mut(len);
+        }
+    }
+
+    #[cfg(not(feature = "inline_int"))]
+    #[inline]
+    fn put_bool(&mut self, val: bool) {
+        debug_assert!(self.cap - self.len > 8);
+        self.put_slice(core::hint::select_unpredictable(val, b"true", b"false"));
+    }
+
+    #[cfg(feature = "inline_int")]
+    #[inline]
+    fn put_null(&mut self) {
+        debug_assert!(self.cap - self.len > 8);
+        unsafe {
+            const VAL: u32 = u32::from_ne_bytes(*b"null");
+            #[allow(clippy::cast_ptr_alignment)]
+            core::ptr::write(self.buffer_ptr().cast::<u32>(), VAL);
+            self.advance_mut(4);
+        }
+    }
+
+    #[cfg(not(feature = "inline_int"))]
+    #[inline]
+    fn put_null(&mut self) {
+        debug_assert!(self.cap - self.len > 8);
+        self.put_slice(b"null");
     }
 }

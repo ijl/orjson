@@ -3,7 +3,7 @@
 
 use super::DeserializeError;
 use super::input::Utf8Buffer;
-use crate::ffi::PyStrRef;
+use crate::ffi::{PyDictRef, PyListRef, PyStrRef};
 use core::ptr::NonNull;
 
 #[repr(transparent)]
@@ -26,15 +26,9 @@ impl Deserializer {
         if self.buffer.len() == 2 {
             cold_path!();
             match self.buffer.as_bytes() {
-                b"[]" => {
-                    return Ok(nonnull!(ffi!(PyList_New(0))));
-                }
-                b"{}" => {
-                    return Ok(nonnull!(unsafe { crate::ffi::PyDict_New(0) }));
-                }
-                b"\"\"" => {
-                    return Ok(PyStrRef::empty().as_non_null_ptr());
-                }
+                b"[]" => return Ok(PyListRef::with_capacity(0).as_non_null_ptr()),
+                b"{}" => return Ok(PyDictRef::new().as_non_null_ptr()),
+                b"\"\"" => return Ok(PyStrRef::empty().as_non_null_ptr()),
                 _ => {}
             }
         }

@@ -8,7 +8,6 @@ use crate::serialize::{
     datetime::{write_date, write_datetime, write_time},
     error::SerializeError,
     obtype::ObType,
-    uuid::write_uuid,
     writer::{
         SmallFixedBuffer, pyobject_to_obtype, write_float64, write_integer_i64, write_integer_u64,
     },
@@ -60,7 +59,7 @@ fn non_str_time(key: PyTimeRef, opts: crate::opt::Opt) -> Result<String, Seriali
 #[allow(clippy::unnecessary_wraps)]
 fn non_str_uuid(key: PyUuidRef) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
-    write_uuid(key, &mut buf);
+    UUID::new(key).write_buf(&mut buf);
     Ok(buf.to_string())
 }
 
@@ -73,12 +72,12 @@ fn non_str_float(ob: PyFloatRef) -> Result<String, SerializeError> {
 
 #[allow(clippy::unnecessary_wraps)]
 fn non_str_int(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError> {
-    let ival = ffi!(PyLong_AsLongLong(key));
-    if ival == -1 && !ffi!(PyErr_Occurred()).is_null() {
+    let ival = unsafe { crate::ffi::PyLong_AsLongLong(key) };
+    if ival == -1 && unsafe { !crate::ffi::PyErr_Occurred().is_null() } {
         cold_path!();
-        ffi!(PyErr_Clear());
-        let uval = ffi!(PyLong_AsUnsignedLongLong(key));
-        if uval == u64::MAX && !ffi!(PyErr_Occurred()).is_null() {
+        unsafe { crate::ffi::PyErr_Clear() };
+        let uval = unsafe { crate::ffi::PyLong_AsUnsignedLongLong(key) };
+        if uval == u64::MAX && unsafe { !crate::ffi::PyErr_Occurred().is_null() } {
             cold_path!();
             return Err(SerializeError::DictIntegerKey64Bit);
         }
@@ -115,10 +114,10 @@ pub(crate) fn pyobject_to_string(
             ObType::Time => non_str_time(PyTimeRef::from_ptr_unchecked(key), opts),
             ObType::Uuid => non_str_uuid(PyUuidRef::from_ptr_unchecked(key)),
             ObType::Enum => {
-                let value = ffi!(PyObject_GetAttr(key, VALUE_STR));
-                debug_assert!(ffi!(Py_REFCNT(value)) >= 2);
+                let value = unsafe { crate::ffi::PyObject_GetAttr(key, VALUE_STR) };
+                debug_assert!(unsafe { crate::ffi::Py_REFCNT(value) >= 2 });
                 let ret = pyobject_to_string(value, opts);
-                ffi!(Py_DECREF(value));
+                unsafe { crate::ffi::Py_DECREF(value) };
                 ret
             }
             ObType::Str => non_str_str(PyStrRef::from_ptr_unchecked(key)),

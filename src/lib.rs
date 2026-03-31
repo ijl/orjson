@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2018-2026)
 
-#![cfg_attr(feature = "optimize", feature(optimize_attribute))]
-#![cfg_attr(feature = "generic_simd", feature(portable_simd))]
 #![cfg_attr(feature = "cold_path", feature(cold_path))]
-#![allow(non_camel_case_types)]
+#![cfg_attr(feature = "generic_simd", feature(portable_simd))]
+#![cfg_attr(feature = "optimize", feature(optimize_attribute))]
+#![allow(unused_features)] // portable_simd on universal2 cross-compile
+#![allow(stable_features)] // MSRV 1.95, cold_path
 #![allow(static_mut_refs)]
 #![allow(unused_unsafe)]
-#![warn(clippy::correctness)]
-#![warn(clippy::suspicious)]
 #![warn(clippy::complexity)]
+#![warn(clippy::correctness)]
 #![warn(clippy::perf)]
 #![warn(clippy::style)]
-#![allow(clippy::inline_always)]
+#![warn(clippy::suspicious)]
 #![allow(clippy::explicit_iter_loop)]
+#![allow(clippy::inline_always)]
+#![allow(clippy::missing_safety_doc)]
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::zero_prefixed_literal)]
@@ -61,8 +63,9 @@ use crate::exception::{
 };
 use crate::ffi::{
     METH_KEYWORDS, METH_O, Py_SIZE, Py_ssize_t, PyCFunction_NewEx, PyIntRef, PyMethodDef,
-    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Slot, PyNoneRef, PyObject,
-    PyTupleRef, PyUnicode_FromStringAndSize, PyUnicode_InternFromString, PyVectorcall_NARGS,
+    PyMethodDefPointer, PyModuleDef, PyModuleDef_HEAD_INIT, PyModuleDef_Init, PyModuleDef_Slot,
+    PyNoneRef, PyObject, PyTupleRef, PyUnicode_FromStringAndSize, PyUnicode_InternFromString,
+    PyVectorcall_NARGS,
 };
 use crate::serialize::serialize;
 use crate::util::{isize_to_usize, usize_to_isize};
@@ -179,14 +182,8 @@ pub(crate) unsafe extern "C" fn orjson_init_exec(mptr: *mut PyObject) -> c_int {
 #[cold]
 #[cfg_attr(feature = "optimize", optimize(size))]
 pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
-    #[cfg(not(Py_3_12))]
-    const PYMODULEDEF_LEN: usize = 2;
-    #[cfg(all(Py_3_12, not(Py_3_13)))]
-    const PYMODULEDEF_LEN: usize = 3;
-    #[cfg(Py_3_13)]
-    const PYMODULEDEF_LEN: usize = 4;
     unsafe {
-        let mod_slots: Box<[PyModuleDef_Slot; PYMODULEDEF_LEN]> = Box::new([
+        let mod_slots = Box::new([
             PyModuleDef_Slot {
                 slot: crate::ffi::Py_mod_exec,
                 #[allow(clippy::fn_to_numeric_cast_any, clippy::as_conversions)]
@@ -220,7 +217,7 @@ pub(crate) unsafe extern "C" fn PyInit_orjson() -> *mut PyModuleDef {
             m_free: None,
         });
         let init_ptr = Box::into_raw(init);
-        ffi!(PyModuleDef_Init(init_ptr));
+        PyModuleDef_Init(init_ptr);
         init_ptr
     }
 }
@@ -233,14 +230,14 @@ pub(crate) unsafe extern "C" fn loads(_self: *mut PyObject, obj: *mut PyObject) 
 #[cfg(CPython)]
 macro_rules! matches_kwarg {
     ($val:expr, $ref:expr) => {
-        unsafe { core::ptr::eq($val, $ref) }
+        core::ptr::eq($val, $ref)
     };
 }
 
 #[cfg(not(CPython))]
 macro_rules! matches_kwarg {
     ($val:expr, $ref:expr) => {
-        unsafe { crate::ffi::PyObject_Hash($val) == crate::ffi::PyObject_Hash($ref) }
+        crate::ffi::PyObject_Hash($val) == crate::ffi::PyObject_Hash($ref)
     };
 }
 

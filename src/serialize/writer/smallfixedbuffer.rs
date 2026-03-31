@@ -36,7 +36,7 @@ impl SmallFixedBuffer {
     #[allow(clippy::inherent_to_string)]
     #[inline]
     pub fn to_string(&self) -> String {
-        unsafe { String::from(str_from_slice!(self.as_ptr(), self.len())) }
+        String::from(str_from_slice!(self.as_ptr(), self.len()))
     }
 }
 
@@ -58,7 +58,7 @@ unsafe impl BufMut for SmallFixedBuffer {
 
     #[inline]
     fn put_u8(&mut self, value: u8) {
-        debug_assert!(self.remaining_mut() > 1);
+        debug_assert!(self.remaining_mut() > 8);
         unsafe {
             core::ptr::write((&raw mut self.bytes).cast::<u8>().add(self.idx), value);
             self.advance_mut(1);
@@ -86,6 +86,18 @@ impl WriteExt for SmallFixedBuffer {
     }
 
     fn reserve(&mut self, _len: usize) {
+        unimplemented!()
+    }
+
+    fn reserve_minimum(&mut self) {
+        unimplemented!()
+    }
+
+    fn put_bool(&mut self, _val: bool) {
+        unimplemented!()
+    }
+
+    fn put_null(&mut self) {
         unimplemented!()
     }
 }

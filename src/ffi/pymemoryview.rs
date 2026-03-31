@@ -30,12 +30,10 @@ impl PyMemoryViewRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyMemoryViewRefError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == &raw mut crate::ffi::PyMemoryView_Type {
-                let membuf = unsafe { crate::ffi::PyMemoryView_GET_BUFFER(ptr) };
+            if crate::ffi::PyObject_Type(ptr) == &raw mut crate::ffi::PyMemoryView_Type {
+                let membuf = crate::ffi::PyMemoryView_GET_BUFFER(ptr);
                 #[allow(clippy::cast_possible_wrap)]
-                if unsafe {
-                    crate::ffi::PyBuffer_IsContiguous(membuf, b'C' as core::ffi::c_char) == 0
-                } {
+                if crate::ffi::PyBuffer_IsContiguous(membuf, b'C' as core::ffi::c_char) == 0 {
                     return Err(PyMemoryViewRefError::NotCContiguous);
                 }
                 Ok(Self {
@@ -52,7 +50,7 @@ impl PyMemoryViewRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyMemoryViewRefError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == &raw mut crate::ffi::PyMemoryView_Type {
+            if crate::ffi::PyObject_Type(ptr) == &raw mut crate::ffi::PyMemoryView_Type {
                 Err(PyMemoryViewRefError::NotSupported)
             } else {
                 Err(PyMemoryViewRefError::NotType)

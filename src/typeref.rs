@@ -61,6 +61,8 @@ pub(crate) static mut JsonEncodeError: *mut PyObject = null_mut();
 #[allow(non_upper_case_globals)]
 pub(crate) static mut JsonDecodeError: *mut PyObject = null_mut();
 
+#[cold]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut PyTypeObject {
     unsafe {
         let module = PyImport_ImportModule(module_name.as_ptr());
@@ -73,6 +75,8 @@ unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut Py
 }
 
 #[cfg(not(PyPy))]
+#[cold]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_datetime() {
     unsafe {
         crate::ffi::PyDateTime_IMPORT();
@@ -88,6 +92,8 @@ unsafe fn look_up_datetime() {
 }
 
 #[cfg(PyPy)]
+#[cold]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_datetime() {
     unsafe {
         DATETIME_TYPE = look_up_type_object(c"datetime", c"datetime");
@@ -116,7 +122,7 @@ fn _init_typerefs_impl() -> bool {
                 .is_ok()
         );
 
-        crate::serialize::writer::set_str_formatter_fn();
+        crate::serialize::set_str_formatter_fn();
         crate::ffi::set_str_create_fn();
 
         NONE = Py_None();
@@ -129,7 +135,7 @@ fn _init_typerefs_impl() -> bool {
         DICT_TYPE = &raw mut PyDict_Type;
         LIST_TYPE = &raw mut PyList_Type;
         TUPLE_TYPE = &raw mut PyTuple_Type;
-        NONE_TYPE = ob_type!(NONE);
+        NONE_TYPE = crate::ffi::PyObject_Type(NONE);
         BOOL_TYPE = &raw mut PyBool_Type;
         INT_TYPE = &raw mut PyLong_Type;
         FLOAT_TYPE = &raw mut PyFloat_Type;
@@ -193,6 +199,8 @@ pub(crate) struct NumpyTypes {
 
 pub(crate) static mut NUMPY_TYPES: OnceBox<Option<NonNull<NumpyTypes>>> = OnceBox::new();
 
+#[cold]
+#[cfg_attr(feature = "optimize", optimize(size))]
 unsafe fn look_up_numpy_type(
     numpy_module_dict: *mut PyObject,
     np_type: &CStr,

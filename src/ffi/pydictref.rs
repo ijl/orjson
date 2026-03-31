@@ -2,7 +2,7 @@
 // Copyright ijl (2025-2026)
 
 #[allow(unused)]
-use super::Py_TPFLAGS_DICT_SUBCLASS;
+use super::{Py_TPFLAGS_DICT_SUBCLASS, PyType_GetFlags};
 
 #[derive(Clone)]
 #[repr(transparent)]
@@ -52,8 +52,11 @@ impl PyDictRef {
         unsafe {
             debug_assert!(!ptr.is_null());
             debug_assert!(
-                ob_type!(ptr) == crate::typeref::DICT_TYPE
-                    || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_DICT_SUBCLASS)
+                crate::ffi::PyObject_Type(ptr) == crate::typeref::DICT_TYPE
+                    || is_subclass_by_flag!(
+                        PyType_GetFlags(crate::ffi::PyObject_Type(ptr)),
+                        Py_TPFLAGS_DICT_SUBCLASS
+                    )
             );
             Self {
                 ptr: core::ptr::NonNull::new_unchecked(ptr),
@@ -81,7 +84,7 @@ impl PyDictRef {
     #[cfg(CPython)]
     #[inline]
     pub fn set(&mut self, key: crate::ffi::PyStrRef, value: *mut crate::ffi::PyObject) {
-        debug_assert!(ffi!(Py_REFCNT(self.as_ptr())) == 1);
+        debug_assert!(unsafe { crate::ffi::Py_REFCNT(self.as_ptr()) == 1 });
         debug_assert!(key.hash() != -1);
         #[cfg(not(Py_3_13))]
         unsafe {

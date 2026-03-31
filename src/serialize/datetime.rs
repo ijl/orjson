@@ -49,9 +49,9 @@ where
         }
         write_integer_u32(buf, year);
         buf.put_u8(b'-');
-        write_double_digit!(buf, ob.month() as u32);
+        write_double_digit!(buf, ob.month());
         buf.put_u8(b'-');
-        write_double_digit!(buf, ob.day() as u32);
+        write_double_digit!(buf, ob.day());
     }
 }
 
@@ -78,7 +78,7 @@ where
                 buf.put_u8(b'0');
             }
         }
-        write_integer_u32(buf, year as u32);
+        write_integer_u32(buf, year.cast_unsigned());
     }
     buf.put_u8(b'-');
     write_double_digit!(buf, ob.month() as u32);
@@ -119,7 +119,7 @@ where
                     }
                     let offset_minute = offset_second / 60;
                     let offset_hour = offset_minute / 60;
-                    write_double_digit!(buf, offset_hour as u32);
+                    write_double_digit!(buf, offset_hour.cast_unsigned());
                     buf.put_u8(b':');
                     let mut offset_minute_print = offset_minute % 60;
                     // https://tools.ietf.org/html/rfc3339#section-5.8
@@ -131,7 +131,7 @@ where
                     if offset_excess_second >= 30 {
                         offset_minute_print += 1;
                     }
-                    write_double_digit!(buf, offset_minute_print as u32);
+                    write_double_digit!(buf, offset_minute_print.cast_unsigned());
                 }
             }
             None => {

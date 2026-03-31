@@ -203,6 +203,34 @@ pub(crate) unsafe fn PyTuple_SET_ITEM(
     }
 }
 
+#[cfg(not(Py_GIL_DISABLED))]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyUnstable_Unicode_GET_CACHED_HASH(
+    op: *mut pyo3_ffi::PyObject,
+) -> pyo3_ffi::Py_hash_t {
+    unsafe {
+        let hash = (*op.cast::<pyo3_ffi::PyASCIIObject>()).hash;
+        debug_assert!(hash != -1);
+        hash
+    }
+}
+
+#[cfg(Py_GIL_DISABLED)]
+#[inline(always)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyUnstable_Unicode_GET_CACHED_HASH(
+    op: *mut pyo3_ffi::PyObject,
+) -> pyo3_ffi::Py_hash_t {
+    unsafe {
+        let hash =
+            core::sync::atomic::AtomicIsize::new((*op.cast::<pyo3_ffi::PyASCIIObject>()).hash)
+                .load(core::sync::atomic::Ordering::Relaxed);
+        debug_assert!(hash != -1);
+        hash
+    }
+}
+
 #[cfg(CPython)]
 #[inline(always)]
 #[allow(non_snake_case)]
@@ -217,21 +245,33 @@ pub(crate) unsafe fn PyObject_Type(o: *mut pyo3_ffi::PyObject) -> *mut pyo3_ffi:
     unsafe { pyo3_ffi::Py_TYPE(o) }
 }
 
-unsafe extern "C" {
+#[cfg(all(not(Py_GIL_DISABLED), not(Py_LIMITED_ABI)))]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyType_GetFlags(type_: *mut pyo3_ffi::PyTypeObject) -> core::ffi::c_ulong {
+    unsafe { (*type_).tp_flags }
+}
 
+#[cfg(Py_GIL_DISABLED)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyType_GetFlags(type_: *mut pyo3_ffi::PyTypeObject) -> core::ffi::c_ulong {
+    unsafe {
+        (*type_)
+            .tp_flags
+            .load(core::sync::atomic::Ordering::Relaxed)
+    }
+}
+
+#[cfg(Py_LIMITED_ABI)]
+#[allow(non_snake_case)]
+pub(crate) unsafe fn PyType_GetFlags(type_: *mut pyo3_ffi::PyTypeObject) -> core::ffi::c_ulong {
+    unsafe { pyo3_ffi::PyType_GetFlags(type_) }
+}
+
+unsafe extern "C" {
     #[cfg(CPython)]
     pub fn _PyBytes_Resize(
         pv: *mut *mut pyo3_ffi::PyObject,
         newsize: pyo3_ffi::Py_ssize_t,
-    ) -> core::ffi::c_int;
-
-    #[cfg(CPython)]
-    pub fn _PyDict_Next(
-        mp: *mut pyo3_ffi::PyObject,
-        pos: *mut pyo3_ffi::Py_ssize_t,
-        key: *mut *mut pyo3_ffi::PyObject,
-        value: *mut *mut pyo3_ffi::PyObject,
-        hash: *mut pyo3_ffi::Py_hash_t,
     ) -> core::ffi::c_int;
 
     #[cfg(CPython)]

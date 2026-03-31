@@ -2,7 +2,10 @@
 // Copyright ijl (2025-2026)
 
 #[allow(unused)]
-use crate::ffi::{Py_HashBuffer, Py_ssize_t, PyASCIIObject, PyCompactUnicodeObject, PyObject};
+use crate::ffi::{
+    Py_HashBuffer, Py_SIZE, Py_ssize_t, PyASCIIObject, PyCompactUnicodeObject, PyObject,
+    PyUnicode_AsUTF8AndSize,
+};
 #[cfg(all(CPython, not(feature = "inline_str")))]
 use crate::ffi::{PyUnicode_DATA, PyUnicode_KIND};
 use crate::typeref::{EMPTY_UNICODE, STR_TYPE};
@@ -10,7 +13,7 @@ use core::ptr::NonNull;
 
 fn to_str_via_ffi(op: *mut PyObject) -> Option<&'static str> {
     let mut str_size: Py_ssize_t = 0;
-    let ptr = ffi!(PyUnicode_AsUTF8AndSize(op, &raw mut str_size)).cast::<u8>();
+    let ptr = unsafe { PyUnicode_AsUTF8AndSize(op, &raw mut str_size).cast::<u8>() };
     if ptr.is_null() {
         cold_path!();
         None
@@ -73,7 +76,7 @@ impl PyStrRef {
     pub fn from_ptr(ptr: *mut pyo3_ffi::PyObject) -> Result<Self, PyStrRefError> {
         unsafe {
             debug_assert!(!ptr.is_null());
-            if ob_type!(ptr) == crate::typeref::STR_TYPE {
+            if crate::ffi::PyObject_Type(ptr) == crate::typeref::STR_TYPE {
                 Ok(Self {
                     ptr: core::ptr::NonNull::new_unchecked(ptr),
                 })
@@ -88,7 +91,7 @@ impl PyStrRef {
     pub unsafe fn from_ptr_unchecked(ptr: *mut pyo3_ffi::PyObject) -> Self {
         unsafe {
             debug_assert!(!ptr.is_null());
-            debug_assert!(ob_type!(ptr) == crate::typeref::STR_TYPE);
+            debug_assert!(crate::ffi::PyObject_Type(ptr) == crate::typeref::STR_TYPE);
             Self {
                 ptr: core::ptr::NonNull::new_unchecked(ptr),
             }
@@ -160,10 +163,7 @@ impl PyStrRef {
     #[cfg(CPython)]
     #[allow(unused)]
     pub fn hash(&self) -> crate::ffi::Py_hash_t {
-        unsafe {
-            debug_assert!((*self.as_ptr().cast::<PyASCIIObject>()).hash != -1);
-            (*self.as_ptr().cast::<PyASCIIObject>()).hash
-        }
+        unsafe { crate::ffi::PyUnstable_Unicode_GET_CACHED_HASH(self.as_ptr()) }
     }
 
     #[cfg(feature = "inline_str")]
@@ -192,7 +192,7 @@ impl PyStrRef {
         unsafe {
             let data_ptr = PyUnicode_DATA(self.as_ptr());
             #[allow(clippy::cast_possible_wrap)]
-            let num_bytes = PyUnicode_KIND(self.as_ptr()) as isize * ffi!(Py_SIZE(self.as_ptr()));
+            let num_bytes = PyUnicode_KIND(self.as_ptr()) as isize * Py_SIZE(self.as_ptr());
             let hash = Py_HashBuffer(data_ptr, num_bytes);
             (*self.as_ptr().cast::<PyASCIIObject>()).hash = hash;
             debug_assert!(self.hash() != -1);
@@ -236,8 +236,8 @@ pub(crate) struct PyStrSubclassRef {
 
 impl PyStrSubclassRef {
     pub unsafe fn from_ptr_unchecked(ptr: *mut PyObject) -> PyStrSubclassRef {
-        let ob_type = ob_type!(ptr);
-        let tp_flags = tp_flags!(ob_type);
+        let ob_type = unsafe { crate::ffi::PyObject_Type(ptr) };
+        let tp_flags = unsafe { crate::ffi::PyType_GetFlags(ob_type) };
         debug_assert!(!ptr.is_null());
         debug_assert!(!is_class_by_type!(ob_type, STR_TYPE));
         debug_assert!(is_subclass_by_flag!(tp_flags, Py_TPFLAGS_UNICODE_SUBCLASS));

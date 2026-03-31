@@ -66,8 +66,11 @@ impl ListTupleSerializer {
         default: Option<NonNull<crate::ffi::PyObject>>,
     ) -> Self {
         debug_assert!(
-            is_type!(ob_type!(ptr), TUPLE_TYPE)
-                || is_subclass_by_flag!(tp_flags!(ob_type!(ptr)), Py_TPFLAGS_TUPLE_SUBCLASS)
+            is_type!(crate::ffi::PyObject_Type(ptr), TUPLE_TYPE)
+                || is_subclass_by_flag!(
+                    crate::ffi::PyType_GetFlags(crate::ffi::PyObject_Type(ptr)),
+                    Py_TPFLAGS_TUPLE_SUBCLASS
+                )
         );
         let data_ptr = unsafe { (*ptr.cast::<crate::ffi::PyTupleObject>()).ob_item.as_ptr() };
         let len = isize_to_usize(ffi!(Py_SIZE(ptr)));

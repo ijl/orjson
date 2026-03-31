@@ -84,6 +84,7 @@ ignore = [
     "F601", # Dictionary key literal ... repeated
     "PIE810", # Call `startswith` once with a `tuple`
     "PLR2004", # Magic value used in comparison
+    "RUF061", # Use context-manager form of `pytest.raises()`
     "UP012", # Unnecessary call to encode as UTF-8
 ]
 

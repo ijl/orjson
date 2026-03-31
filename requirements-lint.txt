@@ -1,2 +1,2 @@
-mypy==1.18.2
-ruff>=0.14,<0.15
+mypy==1.19.1;python_version<"3.15"
+ruff==0.15.8

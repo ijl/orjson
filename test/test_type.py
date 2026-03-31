@@ -284,14 +284,14 @@ class TestType:
         arr.extend(b"[]")
         assert orjson.loads(arr) == []
 
-    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is True, reason="memoryview")
+    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is False, reason="memoryview")
     def test_memoryview_loads_supported(self):
         """
         memoryview loads supported
         """
         assert orjson.loads(memoryview(b"[]")) == []
 
-    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is False, reason="memoryview")
+    @pytest.mark.skipif(SUPPORTS_MEMORYVIEW is True, reason="memoryview")
     def test_memoryview_loads_unsupported(self):
         """
         memoryview loads unsupported

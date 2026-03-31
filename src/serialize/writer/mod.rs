@@ -2,14 +2,18 @@
 // Copyright ijl (2024-2026)
 
 mod byteswriter;
+mod format_str;
 mod formatter;
 mod json;
 mod num;
+mod smallfixedbuffer;
 mod str;
 
 pub(crate) use byteswriter::{BytesWriter, WriteExt};
-pub(crate) use json::{set_str_formatter_fn, to_writer, to_writer_pretty};
+pub(crate) use format_str::set_str_formatter_fn;
+pub(crate) use json::{to_writer, to_writer_pretty};
 pub(crate) use num::{
     write_float32, write_float64, write_integer_i32, write_integer_i64, write_integer_u32,
     write_integer_u64,
 };
+pub(crate) use smallfixedbuffer::SmallFixedBuffer;

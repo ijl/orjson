@@ -19,14 +19,18 @@ impl CachedKey {
     }
     pub fn get(&mut self) -> PyStrRef {
         let ptr = self.ptr.as_ptr();
-        unsafe { Py_INCREF(ptr) };
-        self.ptr.clone()
+        unsafe {
+            Py_INCREF(ptr);
+        }
+        self.ptr
     }
 }
 
 impl Drop for CachedKey {
     fn drop(&mut self) {
-        unsafe { Py_DECREF(self.ptr.as_ptr().cast::<crate::ffi::PyObject>()) };
+        unsafe {
+            Py_DECREF(self.ptr.as_ptr().cast::<crate::ffi::PyObject>());
+        }
     }
 }
 

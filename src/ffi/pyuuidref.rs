@@ -23,7 +23,7 @@ impl PyUuidRef {
     pub(crate) unsafe fn from_ptr_unchecked(ptr: *mut pyo3_ffi::PyObject) -> Self {
         unsafe {
             debug_assert!(!ptr.is_null());
-            debug_assert!(ob_type!(ptr) == crate::typeref::UUID_TYPE);
+            debug_assert!(crate::ffi::PyObject_Type(ptr) == crate::typeref::UUID_TYPE);
             Self {
                 ptr: core::ptr::NonNull::new_unchecked(ptr),
             }

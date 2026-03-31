@@ -6,7 +6,6 @@ use crate::ffi::{
     PyStrRef, PyStrSubclassRef, PyTimeRef, PyUuidRef,
 };
 use crate::opt::{NON_STR_KEYS, NOT_PASSTHROUGH, SORT_KEYS, SORT_OR_NON_STR_KEYS};
-use crate::serialize::buffer::SmallFixedBuffer;
 use crate::serialize::datetime::{write_date, write_datetime, write_time};
 use crate::serialize::error::SerializeError;
 use crate::serialize::numpy::NumpyScalar;
@@ -18,11 +17,10 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
-use crate::serialize::writer::{write_integer_i64, write_integer_u64};
+use crate::serialize::writer::{SmallFixedBuffer, write_integer_i64, write_integer_u64};
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use core::ptr::NonNull;
 use serde::ser::{Serialize, SerializeMap, Serializer};
-use smallvec::SmallVec;
 
 pub(crate) struct ZeroDictSerializer;
 
@@ -253,13 +251,14 @@ impl Serialize for Dict {
         let mut pos = 0;
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
-
-        pydict_next!(
-            self.dict.as_ptr(),
-            &raw mut pos,
-            &raw mut next_key,
-            &raw mut next_value
-        );
+        unsafe {
+            crate::ffi::PyDict_Next(
+                self.dict.as_ptr(),
+                &raw mut pos,
+                &raw mut next_key,
+                &raw mut next_value,
+            );
+        }
 
         let mut map = serializer.serialize_map(None).unwrap();
 
@@ -270,12 +269,14 @@ impl Serialize for Dict {
             let key = next_key;
             let value = next_value;
 
-            pydict_next!(
-                self.dict.as_ptr(),
-                &raw mut pos,
-                &raw mut next_key,
-                &raw mut next_value
-            );
+            unsafe {
+                crate::ffi::PyDict_Next(
+                    self.dict.as_ptr(),
+                    &raw mut pos,
+                    &raw mut next_key,
+                    &raw mut next_value,
+                );
+            }
 
             // key
             let uni = PyStrRef::from_ptr(key)
@@ -310,31 +311,33 @@ impl Serialize for DictSortedKey {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(
-            self.dict.as_ptr(),
-            &raw mut pos,
-            &raw mut next_key,
-            &raw mut next_value
-        );
+        unsafe {
+            crate::ffi::PyDict_Next(
+                self.dict.as_ptr(),
+                &raw mut pos,
+                &raw mut next_key,
+                &raw mut next_value,
+            );
+        }
 
         let len = self.dict.len();
         assume!(len > 0);
 
-        let mut items: SmallVec<[(&str, *mut crate::ffi::PyObject); 8]> =
-            SmallVec::with_capacity(len);
+        let mut items: Vec<(&str, *mut crate::ffi::PyObject)> = Vec::with_capacity(len);
 
         for _ in 0..len {
             let key = next_key;
             let value = next_value;
+            unsafe {
+                crate::ffi::PyDict_Next(
+                    self.dict.as_ptr(),
+                    &raw mut pos,
+                    &raw mut next_key,
+                    &raw mut next_value,
+                );
+            }
 
-            pydict_next!(
-                self.dict.as_ptr(),
-                &raw mut pos,
-                &raw mut next_key,
-                &raw mut next_value
-            );
-
-            if unsafe { !core::ptr::eq(ob_type!(key), STR_TYPE) } {
+            if unsafe { !core::ptr::eq(crate::ffi::PyObject_Type(key), STR_TYPE) } {
                 err!(SerializeError::KeyMustBeStr)
             }
             let pystr = unsafe { PyStrRef::from_ptr_unchecked(key) };
@@ -454,7 +457,7 @@ fn non_str_int(key: *mut crate::ffi::PyObject) -> Result<String, SerializeError>
 }
 
 #[inline(never)]
-fn sort_dict_items(items: &mut SmallVec<[(&str, *mut crate::ffi::PyObject); 8]>) {
+fn sort_dict_items(items: &mut Vec<(&str, *mut crate::ffi::PyObject)>) {
     items.sort_unstable_by(|a, b| a.0.cmp(b.0));
 }
 
@@ -519,31 +522,34 @@ impl Serialize for DictNonStrKey {
         let mut next_key: *mut crate::ffi::PyObject = core::ptr::null_mut();
         let mut next_value: *mut crate::ffi::PyObject = core::ptr::null_mut();
 
-        pydict_next!(
-            self.dict.as_ptr(),
-            &raw mut pos,
-            &raw mut next_key,
-            &raw mut next_value
-        );
+        unsafe {
+            crate::ffi::PyDict_Next(
+                self.dict.as_ptr(),
+                &raw mut pos,
+                &raw mut next_key,
+                &raw mut next_value,
+            );
+        }
 
         let opts = self.state.opts() & NOT_PASSTHROUGH;
 
         let len = self.dict.len();
         assume!(len > 0);
 
-        let mut items: SmallVec<[(String, *mut crate::ffi::PyObject); 8]> =
-            SmallVec::with_capacity(len);
+        let mut items: Vec<(String, *mut crate::ffi::PyObject)> = Vec::with_capacity(len);
 
         for _ in 0..len {
             let key = next_key;
             let value = next_value;
 
-            pydict_next!(
-                self.dict.as_ptr(),
-                &raw mut pos,
-                &raw mut next_key,
-                &raw mut next_value
-            );
+            unsafe {
+                crate::ffi::PyDict_Next(
+                    self.dict.as_ptr(),
+                    &raw mut pos,
+                    &raw mut next_key,
+                    &raw mut next_value,
+                );
+            }
 
             match PyStrRef::from_ptr(key) {
                 Ok(pystr) => match pystr.as_str() {
@@ -559,8 +565,7 @@ impl Serialize for DictNonStrKey {
             }
         }
 
-        let mut items_as_str: SmallVec<[(&str, *mut crate::ffi::PyObject); 8]> =
-            SmallVec::with_capacity(len);
+        let mut items_as_str: Vec<(&str, *mut crate::ffi::PyObject)> = Vec::with_capacity(len);
         items
             .iter()
             .for_each(|(key, val)| items_as_str.push(((*key).as_str(), *val)));

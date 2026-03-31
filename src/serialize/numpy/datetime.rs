@@ -4,19 +4,18 @@
 use crate::ffi::{NumpyDateTimeError, NumpyDatetime64Repr, PyStrRef};
 use crate::opt::{NAIVE_UTC, OMIT_MICROSECONDS, UTC_Z};
 use crate::serialize::{
-    buffer::SmallFixedBuffer,
     error::SerializeError,
-    writer::{WriteExt, write_integer_i64, write_integer_u32},
+    writer::{SmallFixedBuffer, WriteExt, write_integer_i64, write_integer_u32},
 };
 
 pub(crate) fn datetime_into_error(val: NumpyDateTimeError) -> SerializeError {
     let err = match val {
-        NumpyDateTimeError::UnsupportedUnit(unit) => unsafe {
+        NumpyDateTimeError::UnsupportedUnit(unit) => {
             let mut msg = String::from("unsupported numpy.datetime64 unit: ");
             msg.push_str(unit.as_str());
             msg
-        },
-        NumpyDateTimeError::Unrepresentable { unit, val } => unsafe {
+        }
+        NumpyDateTimeError::Unrepresentable { unit, val } => {
             let mut buf = SmallFixedBuffer::new();
             write_integer_i64(&mut buf, val);
             let val_str = str_from_slice!(buf.as_ptr(), buf.len());
@@ -26,7 +25,7 @@ pub(crate) fn datetime_into_error(val: NumpyDateTimeError) -> SerializeError {
             msg.push(' ');
             msg.push_str(unit.as_str());
             msg
-        },
+        }
     };
     SerializeError::NumpyUnsupportedDatetimeUnit(PyStrRef::from_str(&err))
 }
@@ -49,7 +48,7 @@ where
                 buf.put_u8(b'0');
             }
         }
-        write_integer_u32(buf, year as u32);
+        write_integer_u32(buf, year.cast_unsigned());
     }
     buf.put_u8(b'-');
     write_double_digit!(buf, ob.month() as u32);
@@ -65,8 +64,8 @@ where
         let microsecond = ob.microsecond();
         if microsecond != 0 {
             buf.put_u8(b'.');
-            write_triple_digit!(buf, microsecond as u32 / 1_000);
-            write_triple_digit!(buf, microsecond as u32 % 1_000);
+            write_triple_digit!(buf, microsecond / 1_000);
+            write_triple_digit!(buf, microsecond % 1_000);
         }
     }
     if opt_enabled!(ob.opts, NAIVE_UTC) {
