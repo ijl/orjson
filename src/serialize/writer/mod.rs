@@ -8,6 +8,7 @@ mod json;
 mod num;
 mod smallfixedbuffer;
 mod str;
+mod uuid;
 
 pub(crate) use byteswriter::{BytesWriter, WriteExt};
 pub(crate) use format_str::set_str_formatter_fn;
@@ -17,3 +18,4 @@ pub(crate) use num::{
     write_integer_u64,
 };
 pub(crate) use smallfixedbuffer::SmallFixedBuffer;
+pub(crate) use uuid::format_hyphenated;

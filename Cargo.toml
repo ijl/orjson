@@ -56,7 +56,6 @@ serde = { version = "1", default-features = false }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 unwinding = { version = "=0.2.8", default-features = false, features = ["unwinder"], optional = true }
-uuid = { version = "1", default-features = false }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
 zmij = { version = "1", default-features = false }
 

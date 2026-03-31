@@ -17,6 +17,7 @@ use crate::serialize::per_type::{
 };
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::state::SerializerState;
+use crate::serialize::uuid::write_uuid;
 use crate::serialize::writer::{SmallFixedBuffer, write_integer_i64, write_integer_u64};
 use crate::typeref::{STR_TYPE, TRUE, VALUE_STR};
 use core::ptr::NonNull;
@@ -417,7 +418,7 @@ fn non_str_time(key: PyTimeRef, opts: crate::opt::Opt) -> Result<String, Seriali
 #[inline(never)]
 fn non_str_uuid(key: PyUuidRef) -> Result<String, SerializeError> {
     let mut buf = SmallFixedBuffer::new();
-    UUID::new(key).write_buf(&mut buf);
+    write_uuid(key, &mut buf);
     let key_as_str = str_from_slice!(buf.as_ptr(), buf.len());
     Ok(String::from(key_as_str))
 }

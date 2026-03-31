@@ -8,6 +8,7 @@ mod obtype;
 mod per_type;
 mod serializer;
 mod state;
+mod uuid;
 pub(crate) mod writer;
 
 pub(crate) use serializer::serialize;
