@@ -16,6 +16,7 @@ use crate::serialize::numpy::{
 use crate::serialize::per_type::{DefaultSerializer, ZeroListSerializer};
 use crate::serialize::serializer::PyObjectSerializer;
 use crate::serialize::writer::SmallFixedBuffer;
+use crate::serialize::writer::f16_to_f32;
 use crate::typeref::{NUMPY_TYPES, load_numpy_types};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
@@ -265,8 +266,7 @@ impl Serialize for DataTypeF16 {
     where
         S: Serializer,
     {
-        let as_f16 = half::f16::from_bits(self.obj);
-        serializer.serialize_f32(as_f16.to_f32())
+        serializer.serialize_f32(f16_to_f32(self.obj))
     }
 }
 
@@ -673,8 +673,7 @@ impl Serialize for NumpyFloat16 {
     where
         S: Serializer,
     {
-        let as_f16 = half::f16::from_bits(self.value);
-        serializer.serialize_f32(as_f16.to_f32())
+        serializer.serialize_f32(f16_to_f32(self.value))
     }
 }
 

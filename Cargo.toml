@@ -47,7 +47,6 @@ associative-cache = { version = "3", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
 bytes = { version = "1", default-features = false }
 encoding_rs = { version = "0.8", default-features = false }
-half = { version = "2", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff = { version = "^0.2", default-features = false, features = ["perf-inline"] }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
