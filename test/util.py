@@ -16,6 +16,8 @@ SUPPORTS_BYTEARRAY = not IS_FREETHREADING
 
 SUPPORTS_GETREFCOUNT = sys.implementation == "cpython"
 
+SUPPORTS_FROZENDICT = sys.version_info.minor >= 15
+
 numpy = None  # type: ignore
 try:
     import numpy  # type: ignore # noqa: F401

@@ -151,14 +151,16 @@ def dumps(
 `dumps()` serializes Python objects to JSON.
 
 It natively serializes
-`str`, `dict`, `list`, `tuple`, `int`, `float`, `bool`, `None`,
+`str`, `dict`, `frozendict`, `list`, `tuple`, `int`, `float`, `bool`, `None`,
 `dataclasses.dataclass`, `typing.TypedDict`, `datetime.datetime`,
 `datetime.date`, `datetime.time`, `uuid.UUID`, `numpy.ndarray`, and
 `orjson.Fragment` instances. It supports arbitrary types through `default`. It
 serializes subclasses of `str`, `int`, `dict`, `list`,
 `dataclasses.dataclass`, and `enum.Enum`. It does not serialize subclasses
-of `tuple` to avoid serializing `namedtuple` objects as arrays. To avoid
-serializing subclasses, specify the option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
+of `tuple` to avoid serializing `namedtuple` objects as arrays. It does not
+serialize subclasses of `float` or `frozendict` due to implementation details
+in CPython. To avoid serializing subclasses, specify the
+option `orjson.OPT_PASSTHROUGH_SUBCLASS`.
 
 The output is a `bytes` object containing UTF-8.
 
@@ -174,8 +176,8 @@ It raises `JSONEncodeError` on a `str` that contains invalid UTF-8.
 It raises `JSONEncodeError` on an integer that exceeds 64 bits by default or,
 with `OPT_STRICT_INTEGER`, 53 bits.
 
-It raises `JSONEncodeError` if a `dict` has a key of a type other than `str`,
-unless `OPT_NON_STR_KEYS` is specified.
+It raises `JSONEncodeError` if a `dict` or `frozendict` has a key of a type
+other than `str`, unless `OPT_NON_STR_KEYS` is specified.
 
 It raises `JSONEncodeError` if the output of `default` recurses to handling by
 `default` more than 254 levels deep.
@@ -326,9 +328,10 @@ b'"1970-01-01T00:00:00+00:00"'
 
 ##### OPT_NON_STR_KEYS
 
-Serialize `dict` keys of type other than `str`. This allows `dict` keys
-to be one of `str`, `int`, `float`, `bool`, `None`, `datetime.datetime`,
-`datetime.date`, `datetime.time`, `enum.Enum`, and `uuid.UUID`. For comparison,
+Serialize `dict` and `frozendict` keys of type other than `str`. This allows
+`dict` and `frozendict` keys to be one of `str`, `int`, `float`,
+`bool`, `None`, `datetime.datetime`, `datetime.date`,
+`datetime.time`, `enum.Enum`, and `uuid.UUID`. For comparison,
 the standard library serializes `str`, `int`, `float`, `bool` or `None` by
 default. orjson benchmarks as being faster at serializing non-`str` keys
 than other libraries. This option is slower for `str` keys than the default.
@@ -462,7 +465,7 @@ TypeError: Type is not JSON serializable: datetime.datetime
 b'{"created_at":"Thu, 01 Jan 1970 00:00:00 GMT"}'
 ```
 
-This does not affect datetimes in `dict` keys if using OPT_NON_STR_KEYS.
+This does not affect datetimes in `dict` or `frozendict` keys if using `OPT_NON_STR_KEYS`.
 
 ##### OPT_PASSTHROUGH_SUBCLASS
 
@@ -487,8 +490,8 @@ TypeError: Type is not JSON serializable: Secret
 b'"******"'
 ```
 
-This does not affect serializing subclasses as `dict` keys if using
-OPT_NON_STR_KEYS.
+This does not affect serializing subclasses as `dict` or `frozendict` keys
+if using `OPT_NON_STR_KEYS`.
 
 ##### OPT_SERIALIZE_DATACLASS
 
@@ -509,9 +512,9 @@ required to serialize `uuid.UUID` instances. For more, see
 
 ##### OPT_SORT_KEYS
 
-Serialize `dict` keys in sorted order. The default is to serialize in an
-unspecified order. This is equivalent to `sort_keys=True` in the standard
-library.
+Serialize `dict` and `frozendict` keys in sorted order. The default is
+to serialize in an unspecified order. This is equivalent
+to `sort_keys=True` in the standard library.
 
 This can be used to ensure the order is deterministic for hashing or tests.
 It has a substantial performance penalty and is not recommended in general.

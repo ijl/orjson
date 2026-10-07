@@ -136,3 +136,7 @@ pub(crate) use pyo3_ffi::{PyDict_Contains, PyDictObject};
 #[cfg(Py_3_13)]
 #[allow(unused_imports)]
 pub(crate) use pyo3_ffi::{Py_MOD_GIL_NOT_USED, Py_MOD_GIL_USED, Py_mod_gil};
+
+#[cfg(Py_3_15)]
+#[allow(unused_imports)]
+pub(crate) use pyo3_ffi::PyFrozenDict_New;

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-# Copyright ijl (2018-2022)
+# Copyright ijl (2018-2026)
 
 import collections
 import json
@@ -7,6 +7,8 @@ import json
 import pytest
 
 import orjson
+
+from .util import SUPPORTS_FROZENDICT
 
 
 class SubStr(str):
@@ -55,6 +57,21 @@ class TestSubclass:
 
     def test_subclass_dict(self):
         assert orjson.dumps(SubDict({"a": "b"})) == b'{"a":"b"}'
+
+    @pytest.mark.skipif(SUPPORTS_FROZENDICT is False, reason="python3.15")
+    def test_subclass_frozendict(self):
+        """
+        frozendict subclasses are not supported
+
+        As of 3.15b2, these do not have Py_TPFLAGS_DICT_SUBCLASS and there
+        is no equivalent such as Py_TPFLAGS_FROZENDICT_SUBCLASS.
+        """
+
+        class SubFrozenDict(frozendict):  # type: ignore[name-defined]
+            pass
+
+        with pytest.raises(orjson.JSONEncodeError):
+            orjson.dumps(SubFrozenDict({"a": "b"}))
 
     def test_subclass_list(self):
         assert orjson.dumps(SubList(["a", "b"])) == b'["a","b"]'

@@ -79,6 +79,16 @@ impl PyDictRef {
     pub(crate) unsafe fn from_ptr_unchecked(ptr: *mut pyo3_ffi::PyObject) -> Self {
         unsafe {
             debug_assert!(!ptr.is_null());
+            #[cfg(Py_3_15)]
+            debug_assert!(
+                crate::ffi::PyObject_Type(ptr) == crate::typeref::DICT_TYPE
+                    || crate::ffi::PyObject_Type(ptr) == crate::typeref::FROZENDICT_TYPE
+                    || is_subclass_by_flag!(
+                        PyType_GetFlags(crate::ffi::PyObject_Type(ptr)),
+                        Py_TPFLAGS_DICT_SUBCLASS
+                    )
+            );
+            #[cfg(not(Py_3_15))]
             debug_assert!(
                 crate::ffi::PyObject_Type(ptr) == crate::typeref::DICT_TYPE
                     || is_subclass_by_flag!(

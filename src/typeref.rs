@@ -14,6 +14,9 @@ use crate::ffi::{
     PyUnicode_InternFromString, PyUnicode_New, PyUnicode_Type, orjson_fragmenttype_new,
 };
 
+#[cfg(Py_3_15)]
+use crate::ffi::{PyDict_New, PyFrozenDict_New};
+
 pub(crate) static mut DEFAULT: *mut PyObject = null_mut();
 pub(crate) static mut OPTION: *mut PyObject = null_mut();
 
@@ -31,6 +34,8 @@ pub(crate) static mut FLOAT_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut LIST_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut DICT_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut DATETIME_TYPE: *mut PyTypeObject = null_mut();
+#[cfg(Py_3_15)]
+pub(crate) static mut FROZENDICT_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut UUID_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut TUPLE_TYPE: *mut PyTypeObject = null_mut();
 pub(crate) static mut DATE_TYPE: *mut PyTypeObject = null_mut();
@@ -137,6 +142,12 @@ fn _init_typerefs_impl() -> bool {
         BOOL_TYPE = &raw mut PyBool_Type;
         INT_TYPE = &raw mut PyLong_Type;
         FLOAT_TYPE = &raw mut PyFloat_Type;
+
+        #[cfg(Py_3_15)]
+        {
+            // PyFrozenDict_Type link error on Windows as of v3.15.0rc1 and pyo3 0.29
+            FROZENDICT_TYPE = PyObject_Type(PyFrozenDict_New(PyDict_New(0)));
+        }
 
         look_up_datetime();
 
