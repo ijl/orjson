@@ -3,9 +3,10 @@
 
 use crate::ffi::{
     Py_DECREF, Py_INCREF, Py_TPFLAGS_DEFAULT, Py_TPFLAGS_IMMUTABLETYPE, Py_tp_dealloc, Py_tp_new,
-    PyErr_SetObject, PyExc_TypeError, PyObject, PyTupleRef, PyType_FromSpec, PyType_Slot,
-    PyType_Spec, PyTypeObject, PyUnicode_FromStringAndSize,
+    PyErr_SetObject, PyExc_TypeError, PyObject, PyObject_Type, PyTupleRef, PyType_FromSpec,
+    PyType_Slot, PyType_Spec, PyTypeObject, PyUnicode_FromStringAndSize,
 };
+use crate::typeref::FRAGMENT_TYPE;
 use core::ffi::{c_char, c_void};
 use core::ptr::null_mut;
 
@@ -72,6 +73,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
         } else {
             let contents = argsob.get(0);
             Py_INCREF(contents);
+            Py_INCREF(FRAGMENT_TYPE.cast::<PyObject>());
             let obj = Box::new(Fragment {
                 #[cfg(Py_GIL_DISABLED)]
                 ob_tid: 0,
@@ -91,7 +93,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
                 ob_refcnt: 1,
                 #[cfg(PyPy)]
                 ob_pypy_link: 0,
-                ob_type: crate::typeref::FRAGMENT_TYPE,
+                ob_type: FRAGMENT_TYPE,
                 contents: contents,
             });
             Box::into_raw(obj).cast::<PyObject>()
@@ -105,6 +107,7 @@ pub(crate) unsafe extern "C" fn orjson_fragment_tp_new(
 pub(crate) unsafe extern "C" fn orjson_fragment_dealloc(object: *mut PyObject) {
     unsafe {
         Py_DECREF((*object.cast::<Fragment>()).contents);
+        Py_DECREF(PyObject_Type(object).cast::<PyObject>());
         crate::ffi::PyMem_Free(object.cast::<core::ffi::c_void>());
     }
 }

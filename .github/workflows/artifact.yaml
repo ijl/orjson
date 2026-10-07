@@ -7,7 +7,7 @@ env:
   FORCE_COLOR: "1"
   ORJSON_BUILD_FREETHREADED: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  RUST_TOOLCHAIN: "nightly-2026-08-01"
+  RUST_TOOLCHAIN: "nightly-2026-10-01"
   RUST_TOOLCHAIN_STABLE: "1.95"
   RUSTUP_TERM_PROGRESS_WHEN: "never"
   UNSAFE_PYO3_BUILD_FREE_THREADED: "1"
@@ -105,10 +105,10 @@ jobs:
         arch:
           - arch: "x86_64"
             runner: "ubuntu-26.04"
-            features: "avx512,optimize,no_panic"
+            features: "avx512,nightly"
           - arch: "aarch64"
             runner: "ubuntu-26.04-arm"
-            features: "generic_simd,optimize,no_panic"
+            features: "generic_simd,nightly"
     env:
       CARGO_TARGET_DIR: "/tmp/orjson"
       CC: "clang"
@@ -149,6 +149,7 @@ jobs:
 
       - run: ./integration/run init
         env:
+          PYTHON_LAZY_IMPORTS: "all"
           PYTHONMALLOC: "debug"
 
       - name: Store wheels
@@ -188,7 +189,7 @@ jobs:
         platform:
           - arch: "i686"
             cflags: "-Os -fstrict-aliasing"
-            features: "no_panic,optimize"
+            features: "nightly"
             image: "quay.io/pypa/manylinux_2_34_i686:latest"
             runner: "ubuntu-26.04"
             rustflags: "-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings"
@@ -196,7 +197,7 @@ jobs:
             target: "i686-unknown-linux-gnu"
           - arch: "armv7"
             cflags: "-Os -fstrict-aliasing"
-            features: "no_panic,optimize"
+            features: "nightly"
             image: "quay.io/pypa/manylinux_2_35_armv7l:latest"
             runner: "ubuntu-26.04-arm"
             rustflags: "-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings -C opt-level=s"
@@ -254,7 +255,7 @@ jobs:
         platform:
           - arch: "x86_64"
             cflags: "-O2 -fstrict-aliasing"
-            features: "avx512,no_panic,optimize,unwind"
+            features: "avx512,nightly,unwind"
             image: "quay.io/pypa/musllinux_1_2_x86_64:latest"
             platform: "linux/amd64"
             runner: "ubuntu-26.04"
@@ -263,7 +264,7 @@ jobs:
             target: "x86_64-unknown-linux-musl"
           - arch: "aarch64"
             cflags: "-O2 -fstrict-aliasing"
-            features: "generic_simd,no_panic,optimize,unwind"
+            features: "generic_simd,nightly,unwind"
             image: "quay.io/pypa/musllinux_1_2_aarch64:latest"
             platform: "linux/arm64"
             runner: "ubuntu-26.04-arm"
@@ -337,7 +338,7 @@ jobs:
         CFLAGS: "-O2 -fstrict-aliasing -fno-plt -mcpu=apple-m1 -mtune=generic"
         LDFLAGS: "-Wl,--as-needed"
         MACOSX_DEPLOYMENT_TARGET: "15.0"
-        ORJSON_FEATURES: "generic_simd,no_panic,optimize"
+        ORJSON_FEATURES: "generic_simd,nightly"
         PATH: "/Users/runner/work/orjson/orjson/.venv/bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         PYTHON: "python${{ matrix.python.version }}"
         RUST_TOOLCHAIN: "${{ env.RUST_TOOLCHAIN }}"
@@ -419,7 +420,7 @@ jobs:
         maturin build \
           --release \
           --strip \
-          --features=generic_simd,no_panic,optimize \
+          --features=generic_simd,nightly \
           --interpreter python${{ matrix.python.version }} \
           --target=universal2-apple-darwin
         uv pip install target/wheels/orjson*.whl
@@ -458,13 +459,13 @@ jobs:
           { version: '3.11', publish: true },
         ]
         platform: [
-          { arch: "arm64", target: "aarch64-pc-windows-msvc", "runner": "windows-11-vs2026-arm", features: "generic_simd,no_panic,optimize" },
-          { arch: "x64", target: "x86_64-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "avx512,no_panic,optimize" },
-          { arch: "x86", target: "i686-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "no_panic,optimize" },
+          { arch: "arm64", target: "aarch64-pc-windows-msvc", "runner": "windows-11-vs2026-arm", features: "generic_simd,nightly" },
+          { arch: "x64", target: "x86_64-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "avx512,nightly" },
         ]
     env:
       CFLAGS: "-O2"
       LDFLAGS: "-Wl,--as-needed"
+      PYO3_USE_RAW_DYLIB: "0"
       RUSTFLAGS: "-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings"
     steps:
 
@@ -529,12 +530,12 @@ jobs:
           { version: '3.10', publish: true },
         ]
         platform: [
-          { arch: "x64", target: "x86_64-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "avx512,no_panic,optimize" },
-          { arch: "x86", target: "i686-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "no_panic,optimize" },
+          { arch: "x64", target: "x86_64-pc-windows-msvc", "runner": "windows-2025-vs2026", features: "avx512,nightly" },
         ]
     env:
       CFLAGS: "-O2"
       LDFLAGS: "-Wl,--as-needed"
+      PYO3_USE_RAW_DYLIB: "0"
       RUSTFLAGS: "-Z unstable-options -C panic=immediate-abort -Z mir-opt-level=4 -D warnings"
     steps:
 

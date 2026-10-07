@@ -12,23 +12,24 @@ mod state;
 mod uuid;
 pub(crate) mod writer;
 
+use crate::ffi::PyObject;
+use crate::opt::{INDENT_2, Opt};
+use core::ptr::NonNull;
 pub(crate) use error::SerializeError;
+use state::SerializerState;
 pub(crate) use writer::{
     CompactFormatter, ContainerSerializer, IndentFormatter, set_str_formatter_fn,
 };
 
 pub(crate) fn serialize(
-    ptr: *mut pyo3_ffi::PyObject,
-    default: Option<core::ptr::NonNull<pyo3_ffi::PyObject>>,
-    opts: crate::opt::Opt,
-) -> Result<core::ptr::NonNull<pyo3_ffi::PyObject>, SerializeError> {
-    if opt_disabled!(opts, crate::opt::INDENT_2) {
-        let mut serializer =
-            ContainerSerializer::new(CompactFormatter, state::SerializerState::new(opts), default);
-        serializer.write(ptr)
+    ptr: *mut PyObject,
+    default: Option<NonNull<PyObject>>,
+    opts: Opt,
+) -> Result<NonNull<PyObject>, SerializeError> {
+    let state = SerializerState::new(opts);
+    if opt_disabled!(opts, INDENT_2) {
+        ContainerSerializer::new(CompactFormatter, state, default).write(ptr)
     } else {
-        let mut serializer =
-            ContainerSerializer::new(IndentFormatter, state::SerializerState::new(opts), default);
-        serializer.write(ptr)
+        ContainerSerializer::new(IndentFormatter, state, default).write(ptr)
     }
 }

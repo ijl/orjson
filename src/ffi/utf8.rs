@@ -6,7 +6,7 @@ pub(crate) fn is_valid_utf8(buf: &[u8]) -> bool {
     if std::is_x86_feature_detected!("avx2") {
         unsafe { simdutf8::basic::imp::x86::avx2::validate_utf8(buf).is_ok() }
     } else {
-        encoding_rs::Encoding::utf8_valid_up_to(buf) == buf.len()
+        std::str::from_utf8(buf).is_ok()
     }
 }
 

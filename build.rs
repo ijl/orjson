@@ -9,22 +9,26 @@ fn main() {
     }
 
     #[allow(unused_variables)]
-    let is_64_bit_python = matches!(python_config.pointer_width, Some(64));
+    let is_64_bit_python = matches!(python_config.pointer_width(), Some(64));
 
-    match python_config.implementation {
+    match python_config.implementation() {
         pyo3_build_config::PythonImplementation::CPython => {
             println!("cargo:rustc-cfg=CPython");
-            if python_config.abi3 {
+            let is_abi3 = matches!(
+                python_config.target_abi().kind(),
+                pyo3_build_config::PythonAbiKind::Stable(_)
+            );
+            if is_abi3 {
                 println!("cargo:rustc-cfg=Py_LIMITED_ABI");
             }
             #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-            if is_64_bit_python && !python_config.abi3 {
+            if is_64_bit_python && !is_abi3 {
                 println!("cargo:rustc-cfg=feature=\"inline_int\"");
                 #[cfg(target_endian = "little")]
                 println!("cargo:rustc-cfg=feature=\"inline_str\"");
             }
         }
-        _ => not_supported(&python_config.implementation.to_string()),
+        _ => not_supported(&python_config.implementation().to_string()),
     }
 
     for cfg in python_config.build_script_outputs() {
@@ -40,6 +44,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
     println!("cargo:rustc-check-cfg=cfg(CPython)");
     println!("cargo:rustc-check-cfg=cfg(GraalPy)");
+    println!("cargo:rustc-check-cfg=cfg(nightly)");
     println!("cargo:rustc-check-cfg=cfg(optimize)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_10)");
     println!("cargo:rustc-check-cfg=cfg(Py_3_11)");

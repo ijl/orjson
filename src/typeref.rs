@@ -10,8 +10,8 @@ use crate::ffi::{
     Py_DECREF, Py_False, Py_INCREF, Py_None, Py_True, Py_XDECREF, PyBool_Type, PyBytes_Type,
     PyDict_Type, PyErr_Clear, PyErr_NewException, PyExc_TypeError, PyFloat_Type,
     PyImport_ImportModule, PyList_Type, PyLong_Type, PyMapping_GetItemString, PyObject,
-    PyObject_GenericGetDict, PyTuple_Type, PyTypeObject, PyUnicode_InternFromString, PyUnicode_New,
-    PyUnicode_Type, orjson_fragmenttype_new,
+    PyObject_GenericGetDict, PyObject_GetAttrString, PyObject_Type, PyTuple_Type, PyTypeObject,
+    PyUnicode_InternFromString, PyUnicode_New, PyUnicode_Type, orjson_fragmenttype_new,
 };
 
 pub(crate) static mut DEFAULT: *mut PyObject = null_mut();
@@ -66,9 +66,7 @@ pub(crate) static mut JsonDecodeError: *mut PyObject = null_mut();
 unsafe fn look_up_type_object(module_name: &CStr, member_name: &CStr) -> *mut PyTypeObject {
     unsafe {
         let module = PyImport_ImportModule(module_name.as_ptr());
-        let module_dict = PyObject_GenericGetDict(module, null_mut());
-        let ptr = PyMapping_GetItemString(module_dict, member_name.as_ptr()).cast::<PyTypeObject>();
-        Py_DECREF(module_dict);
+        let ptr = PyObject_GetAttrString(module, member_name.as_ptr()).cast::<PyTypeObject>();
         Py_DECREF(module);
         ptr
     }
@@ -135,7 +133,7 @@ fn _init_typerefs_impl() -> bool {
         DICT_TYPE = &raw mut PyDict_Type;
         LIST_TYPE = &raw mut PyList_Type;
         TUPLE_TYPE = &raw mut PyTuple_Type;
-        NONE_TYPE = crate::ffi::PyObject_Type(NONE);
+        NONE_TYPE = PyObject_Type(NONE);
         BOOL_TYPE = &raw mut PyBool_Type;
         INT_TYPE = &raw mut PyLong_Type;
         FLOAT_TYPE = &raw mut PyFloat_Type;

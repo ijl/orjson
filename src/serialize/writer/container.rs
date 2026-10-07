@@ -27,15 +27,15 @@ use core::ptr::NonNull;
 use crate::ffi::{
     BorrowedPyRef, Py_DECREF, Py_REFCNT, PyBoolRef, PyDateRef, PyDateTimeRef, PyDictIterator,
     PyDictRef, PyErr_Clear, PyFloatRef, PyFragmentRef, PyIntRef, PyListIterator, PyListRef,
-    PyObject_GetAttr, PyObject_Type, PyStrRef, PyStrSubclassRef, PyTimeRef, PyTupleIterator,
-    PyTupleRef, PyTypeRef, PyUuidRef, PyVectorcall_NARGS,
+    PyObject, PyObject_GetAttr, PyObject_Type, PyObject_Vectorcall, PyStrRef, PyStrSubclassRef,
+    PyTimeRef, PyTupleIterator, PyTupleRef, PyTypeRef, PyUuidRef, PyVectorcall_NARGS,
 };
 
 const PER_ITEM_RESERVE: usize = 128;
 
 #[cold]
 #[inline(never)]
-pub(crate) fn format_default_unserializable(ptr: *mut crate::ffi::PyObject) -> PyStrRef {
+pub(crate) fn format_default_unserializable(ptr: *mut PyObject) -> PyStrRef {
     unsafe {
         let mut msg = String::from("Type is not JSON serializable: ");
         let name = core::ffi::CStr::from_ptr((*PyObject_Type(ptr)).tp_name).to_string_lossy();
@@ -71,7 +71,7 @@ pub(crate) struct ContainerSerializer<F> {
     default_calls: u32,
     state: SerializerState,
     dict_opt: DictOption,
-    default: Option<NonNull<pyo3_ffi::PyObject>>,
+    default: Option<NonNull<PyObject>>,
 }
 
 impl<F> ContainerSerializer<F>
@@ -81,7 +81,7 @@ where
     pub fn new(
         formatter: F,
         state: SerializerState,
-        default: Option<NonNull<pyo3_ffi::PyObject>>,
+        default: Option<NonNull<PyObject>>,
     ) -> ContainerSerializer<F> {
         ContainerSerializer::<F> {
             formatter: formatter,
@@ -99,10 +99,7 @@ impl<F> ContainerSerializer<F>
 where
     F: WriteFormatter + Clone,
 {
-    pub fn write(
-        &mut self,
-        ptr: *mut pyo3_ffi::PyObject,
-    ) -> Result<NonNull<pyo3_ffi::PyObject>, SerializeError> {
+    pub fn write(&mut self, ptr: *mut PyObject) -> Result<NonNull<PyObject>, SerializeError> {
         match self.serialize(ptr) {
             Ok(()) => Ok(self
                 .writer
@@ -116,11 +113,7 @@ where
     }
 
     #[inline(always)]
-    fn serialize_pair(
-        &mut self,
-        key: &str,
-        value: *mut pyo3_ffi::PyObject,
-    ) -> Result<(), SerializeError> {
+    fn serialize_pair(&mut self, key: &str, value: *mut PyObject) -> Result<(), SerializeError> {
         self.write_escaped_str(key);
         F::map_key_value_separator(&mut self.writer);
         self.serialize(value)
@@ -231,7 +224,7 @@ where
     #[inline(never)]
     fn serialize_str_value_items(
         &mut self,
-        items: &Vec<(&str, *mut crate::ffi::PyObject)>,
+        items: &Vec<(&str, *mut PyObject)>,
     ) -> Result<(), SerializeError> {
         F::map_open(&mut self.writer);
         F::reserve_map(&mut self.writer, items.len(), PER_ITEM_RESERVE);
@@ -254,8 +247,7 @@ where
         let opts = self.state.opts() & NOT_PASSTHROUGH;
 
         let map_iter = PyDictIterator::from_dict(dict).fuse();
-        let mut items: Vec<(String, *mut crate::ffi::PyObject)> =
-            Vec::with_capacity(map_iter.len());
+        let mut items: Vec<(String, *mut PyObject)> = Vec::with_capacity(map_iter.len());
         for (key, value) in map_iter {
             if let Ok(ob) = PyStrRef::from_ptr(key.as_ptr()) {
                 match ob.as_str() {
@@ -277,8 +269,7 @@ where
             }
         }
 
-        let mut items_as_str: Vec<(&str, *mut crate::ffi::PyObject)> =
-            Vec::with_capacity(items.len());
+        let mut items_as_str: Vec<(&str, *mut PyObject)> = Vec::with_capacity(items.len());
         items
             .iter()
             .fuse()
@@ -295,7 +286,7 @@ where
     #[inline(never)]
     fn serialize_dict_sorted(&mut self, dict: PyDictRef) -> Result<(), SerializeError> {
         let map_iter = PyDictIterator::from_dict(dict).fuse();
-        let mut items: Vec<(&str, *mut crate::ffi::PyObject)> = Vec::with_capacity(map_iter.len());
+        let mut items: Vec<(&str, *mut PyObject)> = Vec::with_capacity(map_iter.len());
         for (key, value) in map_iter {
             // key
             match PyStrRef::from_ptr(key.as_ptr())
@@ -322,7 +313,7 @@ where
     }
 
     #[inline(never)]
-    fn serialize_dataclass(&mut self, ptr: *mut pyo3_ffi::PyObject) -> Result<(), SerializeError> {
+    fn serialize_dataclass(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         self.recursion += 1;
         if self.recursion == 255 {
             cold_path!();
@@ -410,7 +401,7 @@ where
     #[inline(never)]
     fn serialize_dataclass_inner_fallback(
         &mut self,
-        ptr: *mut pyo3_ffi::PyObject,
+        ptr: *mut PyObject,
     ) -> Result<(), SerializeError> {
         let fields =
             unsafe { PyDictRef::from_ptr_unchecked(PyObject_GetAttr(ptr, DATACLASS_FIELDS_STR)) };
@@ -467,7 +458,7 @@ where
 
     #[cold]
     #[inline(never)]
-    fn serialize_unknown(&mut self, ptr: *mut pyo3_ffi::PyObject) -> Result<(), SerializeError> {
+    fn serialize_unknown(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         match self.default {
             Some(callable) => {
                 if self.default_calls == 255 {
@@ -478,7 +469,7 @@ where
                 #[allow(clippy::cast_sign_loss)]
                 let nargs = unsafe { PyVectorcall_NARGS(1) as usize };
                 let default_obj = unsafe {
-                    pyo3_ffi::PyObject_Vectorcall(
+                    PyObject_Vectorcall(
                         callable.as_ptr(),
                         &raw const ptr,
                         nargs,
@@ -507,10 +498,7 @@ where
 
     #[cold]
     #[inline(never)]
-    fn serialize_numpy_array(
-        &mut self,
-        ptr: *mut pyo3_ffi::PyObject,
-    ) -> Result<(), SerializeError> {
+    fn serialize_numpy_array(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         match NumpyArray::new(self.formatter.clone(), ptr, self.state.opts()) {
             Ok(serializer) => serializer.write(&mut self.writer),
             Err(PyArrayError::Malformed) => Err(SerializeError::NumpyMalformed),
@@ -527,10 +515,7 @@ where
 
     #[cold]
     #[inline(never)]
-    fn serialize_numpy_scalar(
-        &mut self,
-        ptr: *mut pyo3_ffi::PyObject,
-    ) -> Result<(), SerializeError> {
+    fn serialize_numpy_scalar(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         NumpyScalar::new(ptr, self.state.opts()).write(&mut self.writer)
     }
 
@@ -641,14 +626,14 @@ where
 
     #[cold]
     #[inline(never)]
-    fn serialize_enum(&mut self, ptr: *mut pyo3_ffi::PyObject) -> Result<(), SerializeError> {
+    fn serialize_enum(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         let value = unsafe { PyObject_GetAttr(ptr, VALUE_STR) };
         debug_assert!(unsafe { Py_REFCNT(value) >= 2 });
         self.serialize(value)
     }
 
     #[inline(always)]
-    pub fn serialize(&mut self, ptr: *mut pyo3_ffi::PyObject) -> Result<(), SerializeError> {
+    pub fn serialize(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         match pyobject_to_obtype_likely(PyTypeRef::from_pyobject(ptr)) {
             Some(ObType::Str) => {
                 self.serialize_str(unsafe { PyStrRef::from_ptr_unchecked(ptr) })?
@@ -685,10 +670,7 @@ where
 
     #[cold]
     #[inline(never)]
-    pub fn serialize_unlikely(
-        &mut self,
-        ptr: *mut pyo3_ffi::PyObject,
-    ) -> Result<(), SerializeError> {
+    pub fn serialize_unlikely(&mut self, ptr: *mut PyObject) -> Result<(), SerializeError> {
         match pyobject_to_obtype_unlikely(PyTypeRef::from_pyobject(ptr), self.state.opts()) {
             ObType::List => self.serialize_list(unsafe { PyListRef::from_ptr_unchecked(ptr) })?,
             ObType::Dict => self.serialize_map(unsafe { PyDictRef::from_ptr_unchecked(ptr) })?,
@@ -742,6 +724,6 @@ where
 }
 
 #[inline(never)]
-fn sort_dict_items(items: &mut Vec<(&str, *mut crate::ffi::PyObject)>) {
+fn sort_dict_items(items: &mut Vec<(&str, *mut PyObject)>) {
     items.sort_unstable_by(|a, b| a.0.cmp(b.0));
 }

@@ -10,7 +10,7 @@ use crate::typeref::{
 
 use crate::ffi::{
     Py_TPFLAGS_DICT_SUBCLASS, Py_TPFLAGS_LIST_SUBCLASS, Py_TPFLAGS_LONG_SUBCLASS,
-    Py_TPFLAGS_UNICODE_SUBCLASS, PyType_GetFlags, PyTypeRef,
+    Py_TPFLAGS_UNICODE_SUBCLASS, PyObject, PyType_GetFlags, PyTypeRef,
 };
 
 pub(crate) enum ObType {
@@ -36,7 +36,7 @@ pub(crate) enum ObType {
 }
 
 #[inline(always)]
-pub(crate) fn pyobject_to_obtype(ptr: *mut pyo3_ffi::PyObject, opts: u32) -> ObType {
+pub(crate) fn pyobject_to_obtype(ptr: *mut PyObject, opts: u32) -> ObType {
     pyobject_to_obtype_likely(PyTypeRef::from_pyobject(ptr))
         .unwrap_or_else(|| pyobject_to_obtype_unlikely(PyTypeRef::from_pyobject(ptr), opts))
 }

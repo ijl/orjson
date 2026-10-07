@@ -37,18 +37,17 @@ avx512 = []
 generic_simd = []
 inline_int = []
 inline_str = []
-no_panic = ["zmij/no-panic"]
+nightly = ["optimize", "zmij/no-panic", "trusted_len"]
 optimize = []
 trusted_len = []
 
 [dependencies]
 associative-cache = { version = "3", default-features = false }
 bytecount = { version = "^0.6.7", default-features = false, features = ["runtime-dispatch-simd"] }
-encoding_rs = { version = "0.8", default-features = false }
 itoap = { version = "1", default-features = false, features = ["std", "simd"] }
 jiff-core = { version = "0.1", default-features = false }
 once_cell = { version = "1", default-features = false, features = ["alloc", "race"] }
-pyo3-ffi = { version = "0.28", default-features = false }
+pyo3-ffi = { version = "0.29", default-features = false }
 simdutf8 = { version = "0.1", default-features = false, features = ["std", "public_imp", "aarch64_neon"] }
 unwinding = { version = "=0.2.10", default-features = false, features = ["unwinder"], optional = true }
 xxhash-rust = { version = "^0.8", default-features = false, features = ["xxh3"] }
@@ -56,7 +55,7 @@ zmij = { version = "1", default-features = false }
 
 [build-dependencies]
 cc = { version = "1" }
-pyo3-build-config = { version = "0.28" }
+pyo3-build-config = { version = "0.29" }
 
 [profile.dev]
 codegen-units = 1

@@ -45,8 +45,7 @@ MUSLLINUX = [
     "musllinux_1_2_x86_64",
 ]
 
-WIN_AMD64_I686 = [
-    "win32",
+WIN_AMD64 = [
     "win_amd64",
 ]
 
@@ -66,7 +65,7 @@ for abi in ABIS:
     tags = []
     tags.extend(MACOS_UNIVERSAL2)
     tags.extend(MUSLLINUX)
-    tags.extend(WIN_AMD64_I686)
+    tags.extend(WIN_AMD64)
 
     if abi > "cp310-cp310":
         tags.extend(MACOS_ARM64)
