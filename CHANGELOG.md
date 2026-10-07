@@ -1,5 +1,18 @@
 # Changelog
 
+
+## 3.13.0 - 2026-08-17
+
+### Changed
+
+- No longer publish PyPI wheels for Windows x86/i686.
+
+### Added
+
+- Serialize new Python 3.15 built-in type `frozendict` identical to
+`dict` (PEP 814).
+
+
 ## 3.12.0 - 2026-08-14
 
 ### Changed
@@ -8,6 +21,7 @@
 - Publish PyPI wheels for Python 3.15. For Python 3.15 and later,
 `manylinux_2_39` (2024) is targeted instead of `manylinux_2_17` (2012).
 - No longer publish PyPI wheels for ppc64le and s390x.
+
 
 ## 3.11.9 - 2026-05-06
 
